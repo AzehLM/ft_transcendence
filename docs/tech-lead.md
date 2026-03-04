@@ -18,3 +18,21 @@ Oversees technical decisions and architecture.
 - descriptif + comparatif entre techno vues/choisies/eliminées
 - ci/cd intégré
 - outils 'quality check' vu/utilisé/intégré
+
+## Technical architecture choice
+
+### Builder
+
+- Building the project via a Makefile as it fits quite well our needs:
+  - **Unversally available** on Linux without any installation
+    - No need external dependency compared to `just` or `task`
+  - **Single entry point** for contributors
+    - `make dev`, `make up` are enough to launch fully fonctionnal builds
+  - **Microservices by design**
+    - the `SERVICES` is auto-declared via `docker compose config --services`, so adding new services to the compose file also exposes them to the Makefile with no changes required
+  - **Launching scripts** and/or shell commands to set up the environment
+    - Technology version updating, downloading and installing dependencies, etc...
+  - **Modularity** with differents sets of variable and rules
+    - Development mode is straight forward to be used as dependencies can be declared in variables which makes isolation easy to read
+  - **CI/CD integration**
+    - GitHub Actions workflows stays minimal and readable by delegating to Makefile targets. The logic is defined once and is versioned with the code.
