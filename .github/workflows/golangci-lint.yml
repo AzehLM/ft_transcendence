@@ -22,7 +22,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.10.1
-          args: --verbose --disable=typecheck --disable=typecheck --disable=gochecknoglobals --disable=gochecknoinits
+          args: --verbose --no-config --disable-all --enable=revive,gofmt,goimports,staticcheck
 
 
 # found on https://github.com/golangci/golangci-lint-action
