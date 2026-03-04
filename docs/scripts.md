@@ -4,6 +4,8 @@ Installs/updates `go` and `golangci-lint` binaries to latest versions in `$HOME/
 
 It is aimed for school computers, where sysadmins won't update the outdated system Go for dependencies reasons
 
+The sole purpose of this is for our dev environment. Our Go binaries will run inside Docker containers as microservices, but we need an up‑to‑date version of Go to test our progress locally while developing.
+
 ### Usage
 
 Every collaborators for this project work wih zsh so the script is focused for zsh users
