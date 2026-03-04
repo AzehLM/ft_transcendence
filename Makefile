@@ -77,9 +77,11 @@ fclean: clean
 # only runs golangci-lint in the backend directory yet, might have to be updated depending on future architecture
 .PHONY: lint-back
 lint-back:
-	@[ -n "$(shell find backend -name '*.go' 2>/dev/null)" ] \
-		|| (echo "No Go files found, skipping lint." && exit 0)
-	cd backend && golangci-lint run ./...
+	@if [ -n "$$(find backend -name '*.go' 2>/dev/null)" ]; then \
+		cd backend && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
 
 # Dummy target to absorb arguments passed to logs-service / exec
 %:
