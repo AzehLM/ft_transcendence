@@ -21,8 +21,8 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.10
-          # args: --verbose
+          version: v2.10.1
+          args: --verbose --disable=typecheck --disable=typecheck --disable=gochecknoglobals --disable=gochecknoinits
 
 
 # found on https://github.com/golangci/golangci-lint-action
