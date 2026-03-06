@@ -53,7 +53,7 @@ Oversees technical decisions and architecture.
 
 ### Monitoring Stack
 
-> We want high observability over the whole application with globaly industrial standards.
+> We want high observability over the whole application with globaly industrial standards. Serves as both **production monitoring/alerting** and **development debugging tool** (local metrics/dashboards)
 
 - **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafanfa is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
   - **cAdvisor** (Container Advisor) as the container monitor agent, which is designed for containerized environment (perfect for our backend as microservice architecture). It discovers and collects performance metrics from running containers.
@@ -63,4 +63,5 @@ Oversees technical decisions and architecture.
 > ⚠️ **THE FOLLOWING ARE NOT DEFINED YET**
 
 - Prometheus AlertManager exposing important metrics via defined extra service ? (sending discord/slack/email ?)
-- Grafana dashboards would be either imported from Community plateform or handmade depending on the needs. 
+- Grafana dashboards would be either imported from Community plateform or handmade depending on the needs.
+- CI/CD integration: depending on the workload I'll implement `make dev`/`make test` auto‑includes monitoring for local validation
