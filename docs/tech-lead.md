@@ -49,3 +49,18 @@ Oversees technical decisions and architecture.
   - **Security Headers** - CSP (Content Security Policy), HSTS (HTTP Strict Transport Security) and external plugins for XSS mitigation
   - **Single Entrypoint** - is the solely entrypoint of communication with our webapp, everything goes throught Caddy first, it acts as the public front door
   - **Monitoring Integration** - Native Prometheus metrics endpoint (via the `/metrics` route)
+
+
+### Monitoring Stack
+
+> We want high observability over the whole application with globaly industrial standards.
+
+- **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafanfa is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
+  - **cAdvisor** (Container Advisor) as the container monitor agent, which is designed for containerized environment (perfect for our backend as microservice architecture). It discovers and collects performance metrics from running containers.
+  - **Caddy** internal **HTTP/service** metrics via Caddy `/metrics` endpoint (exposing requests, latency, 5xx errors, active connections, rate limits, etc.).
+  - Business metrics will be exposed by **PostgreSQL data source** + **MinIO Prometheus exporter** for storage usage. The objective here is to create Heatmaps per user/org/group and have quota alerts
+
+> ⚠️ **THE FOLLOWING ARE NOT DEFINED YET**
+
+- Prometheus AlertManager exposing important metrics via defined extra service ? (sending discord/slack/email ?)
+- Grafana dashboards would be either imported from Community plateform or handmade depending on the needs. 
