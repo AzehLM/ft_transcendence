@@ -1,0 +1,31 @@
+services:
+  caddy:
+    container_name: caddy
+    build:
+      context: ./caddy
+      args:
+        - CADDY_CONFIG=Caddyfile
+    image: caddy
+    networks:
+      - dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9001:443"
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  dev:
+    driver: bridge
+    name: dev-network
