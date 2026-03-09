@@ -55,6 +55,7 @@ services:
         - grafana_data:/var/lib/grafana
         - ./services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
         - ./services/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+        - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       depends_on:
         prometheus:
           condition: service_started
