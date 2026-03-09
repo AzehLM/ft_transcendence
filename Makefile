@@ -1,12 +1,18 @@
 export DOCKER_BUILDKIT=1
 
-COMPOSE_FILE		:= infra/docker-compose.yml
-COMPOSE_DEV_FILE	:= infra/docker-compose.dev.yml
-COMPOSE_CMD			:= docker compose -f $(COMPOSE_FILE)
-COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE)
-
 ENV_FILE			:= .env
 ENV_EXAMPLE			:= .env.example
+
+COMPOSE_FILE		:= infra/docker-compose.yml
+COMPOSE_DEV_FILE	:= infra/docker-compose.dev.yml
+COMPOSE_CMD			:= docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE)
+COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE) --env-file $(ENV_FILE)
+
+SECRETS_PATH		:= secrets/
+GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
+
+$(SECRETS_PATH):
+	mkdir -p $@
 
 # List of the microservices in the speficied $(COMPOSE_FILE)
 SERVICES := $(shell docker compose -f $(COMPOSE_FILE) config --services)
