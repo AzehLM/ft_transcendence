@@ -34,8 +34,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus/"
+      - "--web.external-url=/prometheus/"
     volumes:
       - ./services/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -49,8 +51,6 @@ services:
       networks:
         - dev
       restart: unless-stopped
-      ports:
-        - "127.0.0.1:3000:3000"
       volumes:
         - grafana_data:/var/lib/grafana
         - ./services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -64,6 +64,8 @@ services:
       environment:
         - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
         - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
+        - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
+        - GF_SERVER_SERVE_FROM_SUB_PATH=true
 
   cadvisor:
     container_name: cadvisor
