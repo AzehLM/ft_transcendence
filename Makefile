@@ -37,7 +37,8 @@ stop:
 
 .PHONY: down
 down:
-	$(COMPOSE_CMD) down
+	@$(COMPOSE_DEV_CMD) down
+	@#$(COMPOSE_CMD) down
 
 .PHONY: re
 re: down
@@ -65,12 +66,14 @@ exec:
 
 .PHONY: clean
 clean: down
-	docker system prune -af
-	docker volume prune -f
+	@docker system prune -af
+	@docker volume prune -f
 
 .PHONY: fclean
 fclean: clean
-	rm -rf frontend/node_modules frontend/dist
+	@# $(COMPOSE_CMD) down --volumes --remove-orphans
+	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
+	@rm -rf frontend/node_modules frontend/dist
 
 # --------------------------------- CI/CD ------------------------------------
 
