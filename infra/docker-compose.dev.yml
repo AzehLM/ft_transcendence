@@ -8,6 +8,7 @@ services:
     image: caddy
     networks:
       - dev
+      - monitoring
     restart: unless-stopped
     ports:
       - "127.0.0.1:9001:443"
@@ -32,7 +33,7 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     networks:
-      - dev
+      - monitoring
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -50,7 +51,7 @@ services:
       container_name: grafana
       image: grafana/grafana-oss:12.2.0-17142428006
       networks:
-        - dev
+        - monitoring
       restart: unless-stopped
       volumes:
         - grafana_data:/var/lib/grafana
@@ -95,6 +96,10 @@ networks:
   dev:
     driver: bridge
     name: dev-network
+  monitoring:
+    driver: bridge
+    name: monitoring-network
+    internal: true
 
 secrets:
   grafana_admin_user:
