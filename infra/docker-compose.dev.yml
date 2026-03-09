@@ -70,22 +70,6 @@ services:
         - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
         - GF_SERVER_SERVE_FROM_SUB_PATH=true
 
-  cadvisor:
-    container_name: cadvisor
-    build:
-      context: ./services/monitoring/cadvisor
-    image: cadvisor
-    networks:
-      - dev
-    restart: unless-stopped
-    init: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-
 volumes:
   caddy_data:
   caddy_config:

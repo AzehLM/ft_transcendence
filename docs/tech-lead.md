@@ -56,7 +56,6 @@ Oversees technical decisions and architecture.
 > We want high observability over the whole application with globaly industrial standards. Serves as both **production monitoring/alerting** and **development debugging tool** (local metrics/dashboards)
 
 - **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafanfa is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
-  - **cAdvisor** (Container Advisor) as the container monitor agent, which is designed for containerized environment (perfect for our backend as microservice architecture). It discovers and collects performance metrics from running containers.
   - **Caddy** internal **HTTP/service** metrics via Caddy `/metrics` endpoint (exposing requests, latency, 5xx errors, active connections, rate limits, etc.).
   - Business metrics will be exposed by **PostgreSQL data source** + **MinIO Prometheus exporter** for storage usage. The objective here is to create Heatmaps per user/org/group and have quota alerts
 
