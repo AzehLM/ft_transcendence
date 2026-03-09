@@ -58,7 +58,8 @@ localhost:443 {
     header {
         # Security
         X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
+        X-Frame-Options "DENY" # DENY breaks Grafana iframes so I'm overriding it directly in grafana endpoint
+
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
 
@@ -74,6 +75,15 @@ localhost:443 {
             connect-src 'self';
             frame-ancestors 'none';
         "
+		# Content-Security-Policy "
+		# 	default-src 'self';
+		# 	script-src 'self' 'unsafe-inline' 'unsafe-eval';
+		# 	style-src 'self' 'unsafe-inline';
+		# 	img-src 'self' data: blob:;
+		# 	font-src 'self' data:;
+		# 	connect-src 'self' wss:;
+		# 	frame-ancestors 'self';
+		# "
 
         # CORS for API
         # Access-Control-Allow-Origin "*"
@@ -87,6 +97,25 @@ localhost:443 {
     handle @metrics {
         metrics
     }
+
+	# Grafana is configured with GF_SERVER_ROOT_URL so it knows it lives at /grafana/.
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+        header X-Frame-Options "SAMEORIGIN"
+		reverse_proxy grafana:3000
+	}
+
+	# Started with --web.external-url=/prometheus/ so all its
+	# internal links and redirects are prefix-aware.
+	@prometheus path /prometheus /prometheus/*
+	handle @prometheus {
+		reverse_proxy prometheus:9090
+	}
+
+	# handle_path /cadvisor/* {
+	# 	reverse_proxy cadvisor:8080
+	# }
+
     # SPA fallback
     handle {
         try_files {path} {path}/ /index.html
