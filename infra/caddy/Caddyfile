@@ -1,5 +1,5 @@
 {
-    admin localhost:2019
+    admin 0.0.0.0:2019
 
     servers {
         metrics
@@ -35,10 +35,12 @@ localhost:443 {
         Access-Control-Allow-Headers "Content-Type, Authorization"
     }
 
-    @metrics path /metrics
-    handle @metrics {
-        metrics
-    }
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+        header X-Frame-Options "SAMEORIGIN"
+		reverse_proxy grafana:3000
+	}
+
     handle {
         try_files {path} {path}/ /index.html
         file_server
