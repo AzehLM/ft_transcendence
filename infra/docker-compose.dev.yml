@@ -58,6 +58,12 @@ services:
       depends_on:
         prometheus:
           condition: service_started
+      secrets:
+        - grafana_admin_user
+        - grafana_admin_pwd
+      environment:
+        - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
+        - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
 
   cadvisor:
     container_name: cadvisor
@@ -85,3 +91,9 @@ networks:
   dev:
     driver: bridge
     name: dev-network
+
+secrets:
+  grafana_admin_user:
+    file: ../secrets/grafana/grafana_admin_user.txt
+  grafana_admin_pwd:
+    file: ../secrets/grafana/grafana_admin_pwd.txt
