@@ -20,7 +20,7 @@
     # documentation exposes API endpoint we might want/have to use
     # this will be set to off for production unless we really use the admin rights which I doubt
     # admin has to be turned off to make config reload possible, I found a bypass for that but its not clean so this is a reminder to change back the service docker config for production
-    admin localhost:2019
+    admin 0.0.0.0:2019
 
 
 
