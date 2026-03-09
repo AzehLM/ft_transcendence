@@ -109,6 +109,7 @@ localhost:443 {
 	# internal links and redirects are prefix-aware.
 	@prometheus path /prometheus /prometheus/*
 	handle @prometheus {
+        uri strip_prefix /prometheus
 		reverse_proxy prometheus:9090
 	}
 
