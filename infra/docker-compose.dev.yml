@@ -24,7 +24,7 @@ services:
             command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
     healthcheck:
       test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 3
 
@@ -69,11 +69,35 @@ services:
         - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
         - GF_SERVER_SERVE_FROM_SUB_PATH=true
 
+  postgres:
+    container_name: postgres
+    image: postgres:18.3-alpine3.23@sha256:4da1a4828be12604092fa55311276f08f9224a74a62dcb4708bd7439e2a03911
+    networks:
+      - dev
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_pwd
+    environment:
+      - POSTGRES_DB_FILE=/run/secrets/postgres_db
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_pwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   caddy_data:
   caddy_config:
   prometheus_data:
   grafana_data:
+  postgres_data:
 
 networks:
   dev:
@@ -89,3 +113,9 @@ secrets:
     file: ../secrets/grafana/grafana_admin_user.txt
   grafana_admin_pwd:
     file: ../secrets/grafana/grafana_admin_pwd.txt
+  postgres_db:
+    file: ../secrets/postgres/postgres_db.txt
+  postgres_user:
+    file: ../secrets/postgres/postgres_user.txt
+  postgres_pwd:
+    file: ../secrets/postgres/postgres_pwd.txt
