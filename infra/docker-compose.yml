@@ -11,8 +11,7 @@ services:
       - monitoring
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9001:443"
-      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:${PORT}:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
