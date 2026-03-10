@@ -1,0 +1,49 @@
+{
+    admin 0.0.0.0:2019
+
+    servers {
+        metrics
+    }
+
+	local_certs
+}
+
+
+localhost:443 {
+
+	tls internal
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        Content-Security-Policy "
+            default-src 'self';
+            script-src 'self';
+            style-src 'self' 'unsafe-inline';
+            img-src 'self' data: blob:;
+            connect-src 'self';
+            frame-ancestors 'none';
+        "
+
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+        header X-Frame-Options "SAMEORIGIN"
+		reverse_proxy grafana:3000
+	}
+
+    handle {
+        root * /usr/share/caddy
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}

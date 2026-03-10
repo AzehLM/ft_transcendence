@@ -31,9 +31,11 @@ go.work.sum
 .secret*
 secret/*
 
+secrets
+
 # Editor/IDE
 .idea/
-.vscode
+.vscode/
 
 # logs file
 *.log

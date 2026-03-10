@@ -1,0 +1,91 @@
+services:
+  caddy:
+    container_name: caddy
+    build:
+      context: ./caddy
+      args:
+        - CADDY_CONFIG=Caddyfile.dev
+    image: caddy
+    networks:
+      - dev
+      - monitoring
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PORT}:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    develop:
+      watch:
+        - path: ./caddy/Caddyfile.dev
+          target: /etc/caddy/Caddyfile
+          action: rebuild
+          exec:
+            command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    networks:
+      - monitoring
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus/"
+      - "--web.external-url=/prometheus/"
+      - "--web.route-prefix=/"
+    volumes:
+      - ./services/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      caddy:
+        condition: service_started
+
+  grafana:
+      container_name: grafana
+      image: grafana/grafana-oss:12.2.0-17142428006
+      networks:
+        - monitoring
+      restart: unless-stopped
+      volumes:
+        - grafana_data:/var/lib/grafana
+        - ./services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+        - ./services/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+        - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      depends_on:
+        prometheus:
+          condition: service_started
+      secrets:
+        - grafana_admin_user
+        - grafana_admin_pwd
+      environment:
+        - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
+        - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
+        - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
+        - GF_SERVER_SERVE_FROM_SUB_PATH=true
+
+volumes:
+  caddy_data:
+  caddy_config:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  dev:
+    driver: bridge
+    name: dev-network
+  monitoring:
+    driver: bridge
+    name: monitoring-network
+    internal: true
+
+secrets:
+  grafana_admin_user:
+    file: ../secrets/grafana/grafana_admin_user.txt
+  grafana_admin_pwd:
+    file: ../secrets/grafana/grafana_admin_pwd.txt

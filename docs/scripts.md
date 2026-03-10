@@ -1,0 +1,26 @@
+# install-update-go.sh
+
+Installs/updates `go` and `golangci-lint` binaries to latest versions in `$HOME/local`
+
+It is aimed for school computers, where sysadmins won't update the outdated system Go for dependencies reasons
+
+The sole purpose of this is for our dev environment. Our Go binaries will run inside Docker containers as microservices, but we need an up‑to‑date version of Go to test our progress locally while developing.
+
+### Usage
+
+Every collaborators for this project work with zsh so the script is focused for zsh users
+```sh
+chmod +x install-update-go.sh
+./install-update-go.sh
+source ~/.zshrc
+```
+
+### Verify
+
+```sh
+# as of the day of writing
+go version    # go1.26.0
+golangci-cli --version # v2.10.1
+```
+
+# next script details if any (to delete)

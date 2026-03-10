@@ -1,0 +1,122 @@
+# Development Caddyfile.
+# This is the environment you can touch a lot to adapt to the behavior you want to reach.
+# Once you found the correct configuration please update the Caddyfile for production to ensure you modifications are also up in prod.
+# Also documentation in here is required, but please remove it from the production config file.
+
+# To use your own domain name (with automatic HTTPS), first make
+# sure your domain's A/AAAA DNS records are properly pointed to
+# this machine's public IP, then replace ":80" below with your
+# domain name.
+
+
+# Global options block
+# https://caddyserver.com/docs/caddyfile/options
+{
+    debug # for development mode only as it is very verbose
+
+
+
+    # might want to hide that via CADDY_ADMIN environment variable: https://caddyserver.com/docs/api
+    # documentation exposes API endpoint we might want/have to use
+    # this will be set to off for production unless we really use the admin rights which I doubt
+    # admin has to be turned off to make config reload possible, I found a bypass for that but its not clean so this is a reminder to change back the service docker config for production
+    admin 0.0.0.0:2019
+
+
+
+
+    servers {
+        metrics
+    }
+
+    # Enable Prometheus metrics at /metrics (custom path)
+    # metrics /metrics
+
+    # Logs (structured JSON, to stdout for Docker)
+
+    # for local development, there might be a cleaner way to have an automatic https server
+	local_certs
+}
+
+
+# Refer to the Caddy docs for more information:
+# https://caddyserver.com/docs/caddyfile
+
+
+
+# Listen on :443 (HTTPS only), accessible externally via host:9001 proxy
+localhost:443 {
+
+	tls internal
+
+    log test_1 {
+        output stdout
+        format json
+    }
+
+    # Security headers (anti-XSS, etc.)
+    header {
+        # Security
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY" # DENY breaks Grafana iframes so I'm overriding it directly in grafana endpoint
+
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+        # HSTS (force HTTPS)
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        # CSP (customize later)
+        Content-Security-Policy "
+            default-src 'self';
+            script-src 'self';
+            style-src 'self' 'unsafe-inline';
+            img-src 'self' data: blob:;
+            connect-src 'self';
+            frame-ancestors 'none';
+        "
+		# Content-Security-Policy "
+		# 	default-src 'self';
+		# 	script-src 'self' 'unsafe-inline' 'unsafe-eval';
+		# 	style-src 'self' 'unsafe-inline';
+		# 	img-src 'self' data: blob:;
+		# 	font-src 'self' data:;
+		# 	connect-src 'self' wss:;
+		# 	frame-ancestors 'self';
+		# "
+
+        # CORS for API
+        # Access-Control-Allow-Origin "*"
+        # Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        # Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+
+
+    # public in prod, we wont expose this route later on, the metrics will only be accessible via Grafana, which we will secured as well
+    @metrics path /metrics
+    handle @metrics {
+        metrics
+    }
+
+	# Grafana is configured with GF_SERVER_ROOT_URL so it knows it lives at /grafana/.
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+        header X-Frame-Options "SAMEORIGIN"
+		reverse_proxy grafana:3000
+	}
+
+	# Started with --web.external-url=/prometheus/ so all its
+	# internal links and redirects are prefix-aware.
+	@prometheus path /prometheus /prometheus/*
+	handle @prometheus {
+        uri strip_prefix /prometheus
+		reverse_proxy prometheus:9090
+	}
+
+    # SPA fallback
+    handle {
+        root * /usr/share/caddy  # Your SPA build
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
