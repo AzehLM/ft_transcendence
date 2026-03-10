@@ -42,7 +42,7 @@ Oversees technical decisions and architecture.
 
 > Not 100% defined but I'm committing a first choice
 
-- Choosed **Caddy** as main edge gateway or reverse proxy/load balancer for its features and as reference of our backend Go choice. Caddy has also a large amount of community built **plugins** that we might want to use. Here are some features we'll use Caddy for:
+- Chose **Caddy** as main edge gateway or reverse proxy/load balancer for its features and as reference of our backend Go choice. Caddy has also a large amount of community built **plugins** that we might want to use. Here are some features we'll use Caddy for:
   - **Traffic routing** - takes requests and forwards them to our dockerized services
   - **Load balancing** - distributes traffic across multiple service instances
   - **Automatic TLS termination** - automatic HTTPS certificates (via Let's Encrypt) with HTTP to HTTPS redirects and no manual certificates renewals
@@ -55,7 +55,7 @@ Oversees technical decisions and architecture.
 
 > We want high observability over the whole application with globaly industrial standards. Serves as both **production monitoring/alerting** and **development debugging tool** (local metrics/dashboards)
 
-- **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafanfa is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
+- **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafana is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
   - **Caddy** internal **HTTP/service** metrics via Caddy `/metrics` endpoint (exposing requests, latency, 5xx errors, active connections, rate limits, etc.).
   - Business metrics will be exposed by **PostgreSQL data source** + **MinIO Prometheus exporter** for storage usage. The objective here is to create Heatmaps per user/org/group and have quota alerts
 

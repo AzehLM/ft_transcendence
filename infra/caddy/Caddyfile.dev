@@ -115,8 +115,8 @@ localhost:443 {
 
     # SPA fallback
     handle {
+        root * /usr/share/caddy  # Your SPA build
         try_files {path} {path}/ /index.html
         file_server
-        root * /usr/share/caddy  # Your SPA build
     }
 }

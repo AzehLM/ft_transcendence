@@ -44,7 +44,7 @@ stop:
 .PHONY: down
 down:
 	@$(COMPOSE_DEV_CMD) down
-	@#$(COMPOSE_CMD) down
+	@$(COMPOSE_CMD) down
 
 .PHONY: re
 re: down

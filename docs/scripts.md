@@ -8,7 +8,7 @@ The sole purpose of this is for our dev environment. Our Go binaries will run in
 
 ### Usage
 
-Every collaborators for this project work wih zsh so the script is focused for zsh users
+Every collaborators for this project work with zsh so the script is focused for zsh users
 ```sh
 chmod +x install-update-go.sh
 ./install-update-go.sh
@@ -20,7 +20,7 @@ source ~/.zshrc
 ```sh
 # as of the day of writing
 go version    # go1.26.0
-golangci-cli  # v2.10.1
+golangci-cli --version # v2.10.1
 ```
 
 # next script details if any (to delete)
