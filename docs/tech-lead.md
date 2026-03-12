@@ -64,3 +64,29 @@ Oversees technical decisions and architecture.
 - Prometheus AlertManager exposing important metrics via defined extra service ? (sending discord/slack/email ?)
 - Grafana dashboards would be either imported from Community plateform or handmade depending on the needs.
 - CI/CD integration: depending on the workload I'll implement `make dev`/`make test` auto‑includes monitoring for local validation
+
+### Database (Postgres)
+
+- Chose **PostgreSQL 18 (on an alpine container)** as the sole relational database, shared across backend microservices that needs it. The following are reasons we believe Postgres is the right choice:
+  - **UUID primary keys** - native generation of UUID keys via `gen_random_uuid()` from the `pgcrypto` extension (built-in alpine container).
+  - **Encryption-aware** - columns storing cryptographic material use native `BYTEA` type;no encoding, no ORM abstraction leakage (`public_key`, `salt`, `encrypted_private_key`, etc.)
+  - **Quota enforcement** - `used_space` / `max_space` fields on `users` and `organizations` can enforce default space limits and be tracked by the file service on upload and deletion
+  - **Referential integrity** - rules like `ON DELETE CASCADE` / `ON DELETE RESTRICT` define ownership of folders and files at the database level
+  - **Credentials via docker secrets** - `POSTGRES_USER_FILE`, `POSTGRES_PASSWORD_FILE`,`POSTGRES_DB_FILE` can be passed as `secrets` so we never have plaintext of critical environment variables
+  - **Query** - GORM or SQLC SQL are is easily interpreted queries by Postgres.
+
+### File storage (MinIO)
+
+- Chose **MinIO** (via a maintained chainguard docker image) as the S3-compatible object store for users and organization uploaded files
+  - **S3-compatible API** - MinIO is self-hosted implementation of the S3 HTTP protocol, we don't need an AWS account or cloud dependency for the backend to interact with our object store
+  - **Separation** - MinIO stores raw encrypted bytes, identified by a UUID (`minio_object_key` in the Postgres db). All metadata are exclusive to Postgres, neither of the services are aware of the other; the backend is the bridge between them.
+  - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
+  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` and 
+
+### ORM (GORM ?)
+
+### Design Systen
+
+> Custom design system built with Material-UI (MUI) to ensure consistent UI.
+
+- **MUI** is a React component library
