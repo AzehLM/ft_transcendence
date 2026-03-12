@@ -92,12 +92,38 @@ services:
       timeout: 5s
       retries: 3
 
+  # https://images.chainguard.dev/directory/image/minio/overview
+  # minio is not maintained anymore so I choose to go for the chainguard community maintenance
+  minio:
+    container_name: minio
+    image: cgr.dev/chainguard/minio:latest # I could not find a security hash for this one I'll look for it later
+    networks:
+      - dev
+    restart: unless-stopped
+    volumes:
+      - minio_data:/minio
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd # natively requires a minimum of 8 characters btw
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
+    ports: # temporary
+      - "127.0.0.1:9001:9001" # CLI exposed for local debug
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: server /data --console-address :9001
+
 volumes:
   caddy_data:
   caddy_config:
   prometheus_data:
   grafana_data:
   postgres_data:
+  minio_data:
 
 networks:
   dev:
@@ -119,3 +145,7 @@ secrets:
     file: ../secrets/postgres/postgres_user.txt
   postgres_pwd:
     file: ../secrets/postgres/postgres_pwd.txt
+  minio_admin_user:
+    file: ../secrets/minio/minio_admin_user.txt
+  minio_admin_pwd:
+    file: ../secrets/minio/minio_admin_pwd.txt
