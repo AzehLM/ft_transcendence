@@ -73,11 +73,57 @@ services:
         retries: 5
         start_period: 15s
 
+  postgres:
+    container_name: postgres
+    image: postgres:18.3-alpine3.23@sha256:4da1a4828be12604092fa55311276f08f9224a74a62dcb4708bd7439e2a03911
+    networks:
+      - app
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_pwd
+    environment:
+      - POSTGRES_DB_FILE=/run/secrets/postgres_db
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_pwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  minio:
+    container_name: minio
+    image: cgr.dev/chainguard/minio@sha256:29e9fe1fc994f5836d680f74ceae381b092f05ac4f9653a7a4d72289cd0ec5ab
+    networks:
+      - app
+    restart: unless-stopped
+    volumes:
+      - minio_data:/data
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: server /data --console-address :9001
+
 volumes:
   caddy_data:
   caddy_config:
   prometheus_data:
   grafana_data:
+  postgres_data:
+  minio_data:
 
 networks:
   app:
@@ -93,3 +139,13 @@ secrets:
     file: ../secrets/grafana/grafana_admin_user.txt
   grafana_admin_pwd:
     file: ../secrets/grafana/grafana_admin_pwd.txt
+  postgres_db:
+    file: ../secrets/postgres/postgres_db.txt
+  postgres_user:
+    file: ../secrets/postgres/postgres_user.txt
+  postgres_pwd:
+    file: ../secrets/postgres/postgres_pwd.txt
+  minio_admin_user:
+    file: ../secrets/minio/minio_admin_user.txt
+  minio_admin_pwd:
+    file: ../secrets/minio/minio_admin_pwd.txt
