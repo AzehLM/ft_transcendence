@@ -96,7 +96,7 @@ services:
   # minio is not maintained anymore so I choose to go for the chainguard community maintenance
   minio:
     container_name: minio
-    image: cgr.dev/chainguard/minio:latest # I could not find a security hash for this one I'll look for it later
+    image: cgr.dev/chainguard/minio@sha256:29e9fe1fc994f5836d680f74ceae381b092f05ac4f9653a7a4d72289cd0ec5ab # found with docker inspect cgr.dev/chainguard/minio:latest --format='{{index .RepoDigests 0}}'
     networks:
       - dev
     restart: unless-stopped
