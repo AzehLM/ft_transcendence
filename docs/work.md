@@ -2,6 +2,8 @@
 
 Stack : React (front) / Go + GORM (back) / PostgreSQL / Redis / MinIO
 
+authash == "Argon2id Stocker en db"
+
 Les JWT sont generes uniquement au register et au login. Toutes les autres requetes envoient le Access JWT dans le header `Authorization: Bearer ...`. Quand il expire, le client fait `POST /api/v1/auth/refresh` avec le Refresh JWT (cookie HttpOnly) pour en obtenir un nouveau. C'est tout.
 
 ---
