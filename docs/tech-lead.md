@@ -81,7 +81,26 @@ Oversees technical decisions and architecture.
   - **S3-compatible API** - MinIO is self-hosted implementation of the S3 HTTP protocol, we don't need an AWS account or cloud dependency for the backend to interact with our object store
   - **Separation** - MinIO stores raw encrypted bytes, identified by a UUID (`minio_object_key` in the Postgres db). All metadata are exclusive to Postgres, neither of the services are aware of the other; the backend is the bridge between them.
   - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
-  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` and 
+  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` and
+
+### ⚠️ Security tradeoff: client-side encryption vs server-side file scanning
+
+The core security guarantee of our project is that **uploaded files are never in plaintext within our infrastructure**. Encryption is performed client-side in the browser before transmission; the backend receives and stores **ciphertext**.
+
+This guarantee is fundamentally incompatible with server-side antivirus scanning:
+- **ClamAV** (or any server-side scanner) requires plaintext bytes to match against signatures. Since the backend only sees ciphertext, scanning at the backend level is architecturally impossible without decryption or upload files in plaintext somewhere on the infrastructure - which would break our guarantee.
+- **VirusTotal API** calls from the frontend would require sending the plaintext file to a third-party server before encryption. These kind of services explicitly state that files uploaded via their free API may be shared with security vendors - which directly violates our confidentiality model.
+- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the thread model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructire and does not provide a proof to users that a plaintext copy was destroyed after scanning.
+
+**Decision**: server-side malware scanning is intentionnaly absent. This is a conscious architectural tradeoff, not an oversight.
+
+**What is enforced client-side** as a lightweight mitigation:
+- **MIME** type and file extension validation before encryption - ⚠️ a voir ensemble
+- **File size limits** enforced before upload - ⚠️ a voir ensemble
+
+These are acknoledged as bypassable by a motivated attacker, and are not presented as security guarantees - only as friction against accidental misuse.
+
+> ⚠️ Dans l'idée cette partie pourrait etre déplacer dans nos pages *Privacy Policy* et *Terms of Service*
 
 ### ORM (GORM ?)
 
