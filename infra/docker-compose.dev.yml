@@ -74,6 +74,8 @@ services:
     image: postgres:18.3-alpine3.23@sha256:4da1a4828be12604092fa55311276f08f9224a74a62dcb4708bd7439e2a03911
     networks:
       - dev
+    ports:
+      - "5432:5432"
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
