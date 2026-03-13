@@ -30,7 +30,7 @@ services:
 
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:main@sha256:cc486edb7d313138f1b2020057a9e0ad77cd2ab211a549a5d6bc67d4e062ab24
     networks:
       - monitoring
     restart: unless-stopped
