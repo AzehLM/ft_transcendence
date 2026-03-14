@@ -109,7 +109,6 @@ services:
     environment:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
-      MINIO_API_CORS_ALLOW_ORIGIN: "https://localhost:${PORT}" # we are not allowed to use mc cors set command without an entreprise image of minio, so there is no other way that allowing a specific origin for CORS
       MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
     ports: # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
