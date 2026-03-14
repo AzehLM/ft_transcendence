@@ -119,11 +119,12 @@ localhost:443 {
 		uri strip_prefix /storage
 
 		# CORS headers for presigned URL PUT/GET from the browser
+        # useless if the presigned URL goes throught https://localhost:4242/storage/... (because it will be the same origin and the browser does not triggers CORS)
 		header Access-Control-Allow-Origin "{http.request.header.Origin}"
 		header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
 		header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-*"
 		header Access-Control-Expose-Headers "ETag"
-		header Access-Control-Max-Age "3600" # garde 
+		header Access-Control-Max-Age "3600"
 
 		# Handle preflight OPTIONS requests
 		@preflight method OPTIONS
