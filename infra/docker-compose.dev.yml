@@ -42,12 +42,9 @@ services:
     volumes:
       - ./services/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
-      - minio_jwt:/etc/prometheus/:ro  # minio_prometheus_jwt.txt written by minio-init
     depends_on:
       caddy:
         condition: service_started
-      minio-init:
-        condition: service_completed_successfully
 
   grafana:
     container_name: grafana
@@ -113,6 +110,7 @@ services:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
       MINIO_API_CORS_ALLOW_ORIGIN: "https://localhost:${PORT}" # we are not allowed to use mc cors set command without an entreprise image of minio, so there is no other way that allowing a specific origin for CORS
+      MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
     ports: # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
@@ -123,27 +121,6 @@ services:
       retries: 5
     command: server /data --console-address :9001
 
-  # This is an initializatioon container that is run after minio is healthy, it is used for:
-  # - applying the CORS policy (required for browser presigned URL (PUT/GET))
-  # - generates the Prometheus JWT and writes it to a shared volume between minio and prometheus
-  # - creates a ft-box bucket (temporary test)
-  minio-init:
-    container_name: minio-init
-    build:
-      context: ./services/minio/init
-    image: minio-init
-    networks:
-      - dev
-    restart: "no"
-    volumes:
-      - minio_jwt:/jwt
-    secrets:
-      - minio_admin_user
-      - minio_admin_pwd
-    depends_on:
-      minio:
-        condition: service_healthy
-
 volumes:
   caddy_data:
   caddy_config:
@@ -151,7 +128,6 @@ volumes:
   grafana_data:
   postgres_data:
   minio_data:
-  minio_jwt:  # ephemeral volume: JWT written by minio-init, read by prometheus
 
 networks:
   dev:
