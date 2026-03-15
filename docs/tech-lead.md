@@ -90,7 +90,7 @@ The core security guarantee of our project is that **uploaded files are never in
 This guarantee is fundamentally incompatible with server-side antivirus scanning:
 - **ClamAV** (or any server-side scanner) requires plaintext bytes to match against signatures. Since the backend only sees ciphertext, scanning at the backend level is architecturally impossible without decryption or upload files in plaintext somewhere on the infrastructure - which would break our guarantee.
 - **VirusTotal API** calls from the frontend would require sending the plaintext file to a third-party server before encryption. These kind of services explicitly state that files uploaded via their free API may be shared with security vendors - which directly violates our confidentiality model.
-- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the thread model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructire and does not provide a proof to users that a plaintext copy was destroyed after scanning.
+- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the threat model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructire and does not provide a proof to users that a plaintext copy was destroyed after scanning.
 
 **Decision**: server-side malware scanning is intentionnaly absent. This is a conscious architectural tradeoff, not an oversight.
 
