@@ -44,11 +44,17 @@ services:
       - prometheus_data:/prometheus
     depends_on:
       caddy:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   grafana:
     container_name: grafana
-    image: grafana/grafana-oss:12.2.0-17142428006
+    image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
     restart: unless-stopped
@@ -59,7 +65,7 @@ services:
       - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
     depends_on:
       prometheus:
-        condition: service_started
+        condition: service_healthy
     secrets:
       - grafana_admin_user
       - grafana_admin_pwd
@@ -119,6 +125,30 @@ services:
       timeout: 5s
       retries: 5
     command: server /data --console-address :9001
+    init: true
+
+  redis:
+    container_name: redis
+    image: redis:trixie@sha256:9bb8e98889679d1dcd42794248b5c7d480e69b7f08906bdd872981bf2c8f232f # might want to switch for an alpine image
+    networks:
+      - dev
+    init: true
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+      - ./services/redis/redis.dev.conf:/etc/redis/redis.conf:ro
+    secrets:
+      - redis_pwd
+    ports:
+      - "127.0.0.1:9002:6379" # to test with the CLI in dev mode only, will be deleted in prod
+    command: >
+      sh -c "redis-server /etc/redis/redis.conf
+      --requirepass $$(cat /run/secrets/redis_pwd)"
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$(cat /run/secrets/redis_pwd) redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   caddy_data:
@@ -127,6 +157,7 @@ volumes:
   grafana_data:
   postgres_data:
   minio_data:
+  redis_data:
 
 networks:
   dev:
@@ -152,3 +183,5 @@ secrets:
     file: ../secrets/minio/minio_admin_user.txt
   minio_admin_pwd:
     file: ../secrets/minio/minio_admin_pwd.txt
+  redis_pwd:
+    file: ../secrets/redis/redis_pwd.txt
