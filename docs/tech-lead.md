@@ -92,7 +92,7 @@ This guarantee is fundamentally incompatible with server-side antivirus scanning
 - **VirusTotal API** calls from the frontend would require sending the plaintext file to a third-party server before encryption. These kind of services explicitly state that files uploaded via their free API may be shared with security vendors - which directly violates our confidentiality model.
 - **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the threat model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructire and does not provide a proof to users that a plaintext copy was destroyed after scanning.
 
-**Decision**: server-side malware scanning is intentionnaly absent. This is a conscious architectural tradeoff, not an oversight.
+**Decision**: server-side malware scanning is intentionally absent. This is a conscious architectural tradeoff, not an oversight.
 
 **What is enforced client-side** as a lightweight mitigation:
 - **MIME** type and file extension validation before encryption - ⚠️ a voir ensemble
