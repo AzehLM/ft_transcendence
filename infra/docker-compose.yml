@@ -125,6 +125,7 @@ services:
     image: redis:trixie@sha256:9bb8e98889679d1dcd42794248b5c7d480e69b7f08906bdd872981bf2c8f232f
     networks:
       - app
+    init: true
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -135,11 +136,10 @@ services:
       sh -c "redis-server /etc/redis/redis.conf
       --requirepass $$(cat /run/secrets/redis_pwd)"
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$(cat /run/secrets/redis_pwd) ping | grep PONG"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$(cat /run/secrets/redis_pwd) redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 3
-    init: true
 
 volumes:
   caddy_data:
