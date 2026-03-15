@@ -44,11 +44,11 @@ services:
       - prometheus_data:/prometheus
     depends_on:
       caddy:
-        condition: service_started
+        condition: service_healthy
 
   grafana:
     container_name: grafana
-    image: grafana/grafana-oss:12.2.0-17142428006
+    image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
     restart: unless-stopped
@@ -59,7 +59,7 @@ services:
       - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
     depends_on:
       prometheus:
-        condition: service_started
+        condition: service_healthy
     secrets:
       - grafana_admin_user
       - grafana_admin_pwd
@@ -119,6 +119,7 @@ services:
       timeout: 5s
       retries: 5
     command: server /data --console-address :9001
+    init: true
 
   redis:
     container_name: redis
