@@ -141,7 +141,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    init: true
+    init: true # mandatory as I'm replacing the entrypoint by the command: instruction
 
 volumes:
   caddy_data:
