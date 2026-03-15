@@ -81,7 +81,7 @@ Oversees technical decisions and architecture.
   - **S3-compatible API** - MinIO is self-hosted implementation of the S3 HTTP protocol, we don't need an AWS account or cloud dependency for the backend to interact with our object store
   - **Separation** - MinIO stores raw encrypted bytes, identified by a UUID (`minio_object_key` in the Postgres db). All metadata are exclusive to Postgres, neither of the services are aware of the other; the backend is the bridge between them.
   - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
-  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` and
+  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` endpoint and metrics that can be scraped by our monitoring stack (Prometheus/Grafana).
 
 ### ⚠️ Security tradeoff: client-side encryption vs server-side file scanning
 
