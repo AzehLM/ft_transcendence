@@ -55,8 +55,9 @@ localhost:443 {
         uri strip_prefix /storage
 
         header Access-Control-Allow-Origin "{http.request.header.Origin}"
+        header Vary "Origin"
         header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-*"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-date, x-amz-content-sha256, x-amz-security-token, x-amz-*"
         header Access-Control-Expose-Headers "ETag"
         header Access-Control-Max-Age "3600"
 
