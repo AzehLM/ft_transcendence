@@ -98,7 +98,7 @@ This guarantee is fundamentally incompatible with server-side antivirus scanning
 - **MIME** type and file extension validation before encryption - ⚠️ a voir ensemble
 - **File size limits** enforced before upload - ⚠️ a voir ensemble
 
-These are acknoledged as bypassable by a motivated attacker, and are not presented as security guarantees - only as friction against accidental misuse.
+These are acknowledged as bypassable by a motivated attacker, and are not presented as security guarantees - only as friction against accidental misuse.
 
 > ⚠️ Dans l'idée cette partie pourrait etre déplacer dans nos pages *Privacy Policy* et *Terms of Service*
 
