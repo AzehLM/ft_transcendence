@@ -10,3 +10,24 @@ scrape_configs:
   - job_name: caddy
     static_configs:
       - targets: ["caddy:2019"] # scrape Caddy metrics directly via admin API, so we won't have to expose the /metrics route
+
+    # Metrics about an entire MinIO cluster.
+  - job_name: minio-cluster
+    metrics_path: /minio/metrics/v3/cluster # replace for bucket if it doesn't match what I need
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]
+
+    # Metrics about requests served by the current node.
+  - job_name: minio-api-system
+    metrics_path: /minio/metrics/v3/api
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]
+
+    # Metrics about the MinIO process and the node
+  - job_name: minio-system
+    metrics_path: /minio/metrics/v3/system
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]

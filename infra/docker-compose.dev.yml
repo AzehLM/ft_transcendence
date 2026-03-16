@@ -24,13 +24,13 @@ services:
             command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
     healthcheck:
       test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 3
 
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:main@sha256:cc486edb7d313138f1b2020057a9e0ad77cd2ab211a549a5d6bc67d4e062ab24
     networks:
       - monitoring
     restart: unless-stopped
@@ -44,36 +44,120 @@ services:
       - prometheus_data:/prometheus
     depends_on:
       caddy:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   grafana:
-      container_name: grafana
-      image: grafana/grafana-oss:12.2.0-17142428006
-      networks:
-        - monitoring
-      restart: unless-stopped
-      volumes:
-        - grafana_data:/var/lib/grafana
-        - ./services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-        - ./services/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
-        - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
-      depends_on:
-        prometheus:
-          condition: service_started
-      secrets:
-        - grafana_admin_user
-        - grafana_admin_pwd
-      environment:
-        - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
-        - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
-        - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
-        - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    container_name: grafana
+    image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
+    networks:
+      - monitoring
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./services/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./services/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    secrets:
+      - grafana_admin_user
+      - grafana_admin_pwd
+    environment:
+      - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
+      - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+
+  postgres:
+    container_name: postgres
+    image: postgres:18.3-alpine3.23@sha256:4da1a4828be12604092fa55311276f08f9224a74a62dcb4708bd7439e2a03911
+    networks:
+      - dev
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_pwd
+    environment:
+      - POSTGRES_DB_FILE=/run/secrets/postgres_db
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_pwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # https://images.chainguard.dev/directory/image/minio/overview
+  # minio is not maintained anymore so I choose to go for the chainguard community maintenance
+  minio:
+    container_name: minio
+    image: cgr.dev/chainguard/minio@sha256:29e9fe1fc994f5836d680f74ceae381b092f05ac4f9653a7a4d72289cd0ec5ab # found with docker inspect cgr.dev/chainguard/minio:latest --format='{{index .RepoDigests 0}}'
+    networks:
+      - dev
+      - monitoring
+    restart: unless-stopped
+    volumes:
+      - minio_data:/data
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd # natively requires a minimum of 8 characters btw
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
+      MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
+    ports: # temporary
+      - "127.0.0.1:9000:9000" # to test metrics endpoint
+      - "127.0.0.1:9001:9001" # CLI exposed for local debug
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: server /data --console-address :9001
+    init: true
+
+  redis:
+    container_name: redis
+    image: redis:trixie@sha256:9bb8e98889679d1dcd42794248b5c7d480e69b7f08906bdd872981bf2c8f232f # might want to switch for an alpine image
+    networks:
+      - dev
+    init: true
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+      - ./services/redis/redis.dev.conf:/etc/redis/redis.conf:ro
+    secrets:
+      - redis_pwd
+    ports:
+      - "127.0.0.1:9002:6379" # to test with the CLI in dev mode only, will be deleted in prod
+    command: >
+      sh -c "redis-server /etc/redis/redis.conf
+      --requirepass $$(cat /run/secrets/redis_pwd)"
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$(cat /run/secrets/redis_pwd) redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   caddy_data:
   caddy_config:
   prometheus_data:
   grafana_data:
+  postgres_data:
+  minio_data:
+  redis_data:
 
 networks:
   dev:
@@ -89,3 +173,15 @@ secrets:
     file: ../secrets/grafana/grafana_admin_user.txt
   grafana_admin_pwd:
     file: ../secrets/grafana/grafana_admin_pwd.txt
+  postgres_db:
+    file: ../secrets/postgres/postgres_db.txt
+  postgres_user:
+    file: ../secrets/postgres/postgres_user.txt
+  postgres_pwd:
+    file: ../secrets/postgres/postgres_pwd.txt
+  minio_admin_user:
+    file: ../secrets/minio/minio_admin_user.txt
+  minio_admin_pwd:
+    file: ../secrets/minio/minio_admin_pwd.txt
+  redis_pwd:
+    file: ../secrets/redis/redis_pwd.txt

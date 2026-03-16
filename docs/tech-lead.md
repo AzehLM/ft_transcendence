@@ -64,3 +64,48 @@ Oversees technical decisions and architecture.
 - Prometheus AlertManager exposing important metrics via defined extra service ? (sending discord/slack/email ?)
 - Grafana dashboards would be either imported from Community plateform or handmade depending on the needs.
 - CI/CD integration: depending on the workload I'll implement `make dev`/`make test` auto‑includes monitoring for local validation
+
+### Database (Postgres)
+
+- Chose **PostgreSQL 18 (on an alpine container)** as the sole relational database, shared across backend microservices that needs it. The following are reasons we believe Postgres is the right choice:
+  - **UUID primary keys** - native generation of UUID keys via `gen_random_uuid()` from the `pgcrypto` extension (built-in alpine container).
+  - **Encryption-aware** - columns storing cryptographic material use native `BYTEA` type;no encoding, no ORM abstraction leakage (`public_key`, `salt`, `encrypted_private_key`, etc.)
+  - **Quota enforcement** - `used_space` / `max_space` fields on `users` and `organizations` can enforce default space limits and be tracked by the file service on upload and deletion
+  - **Referential integrity** - rules like `ON DELETE CASCADE` / `ON DELETE RESTRICT` define ownership of folders and files at the database level
+  - **Credentials via docker secrets** - `POSTGRES_USER_FILE`, `POSTGRES_PASSWORD_FILE`,`POSTGRES_DB_FILE` can be passed as `secrets` so we never have plaintext of critical environment variables
+  - **Query** - GORM or SQLC SQL are is easily interpreted queries by Postgres.
+
+### File storage (MinIO)
+
+- Chose **MinIO** (via a maintained chainguard docker image) as the S3-compatible object store for users and organization uploaded files
+  - **S3-compatible API** - MinIO is self-hosted implementation of the S3 HTTP protocol, we don't need an AWS account or cloud dependency for the backend to interact with our object store
+  - **Separation** - MinIO stores raw encrypted bytes, identified by a UUID (`minio_object_key` in the Postgres db). All metadata are exclusive to Postgres, neither of the services are aware of the other; the backend is the bridge between them.
+  - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
+  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` endpoint and metrics that can be scraped by our monitoring stack (Prometheus/Grafana).
+
+### ⚠️ Security tradeoff: client-side encryption vs server-side file scanning
+
+The core security guarantee of our project is that **uploaded files are never in plaintext within our infrastructure**. Encryption is performed client-side in the browser before transmission; the backend receives and stores **ciphertext**.
+
+This guarantee is fundamentally incompatible with server-side antivirus scanning:
+- **ClamAV** (or any server-side scanner) requires plaintext bytes to match against signatures. Since the backend only sees ciphertext, scanning at the backend level is architecturally impossible without decryption or upload files in plaintext somewhere on the infrastructure - which would break our guarantee.
+- **VirusTotal API** calls from the frontend would require sending the plaintext file to a third-party server before encryption. These kind of services explicitly state that files uploaded via their free API may be shared with security vendors - which directly violates our confidentiality model.
+- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the threat model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructure and does not provide a proof to users that a plaintext copy was destroyed after scanning.
+
+**Decision**: server-side malware scanning is intentionally absent. This is a conscious architectural tradeoff, not an oversight.
+
+**What is enforced client-side** as a lightweight mitigation:
+- **MIME** type and file extension validation before encryption - ⚠️ a voir ensemble
+- **File size limits** enforced before upload - ⚠️ a voir ensemble
+
+These are acknowledged as bypassable by a motivated attacker, and are not presented as security guarantees - only as friction against accidental misuse.
+
+> ⚠️ Dans l'idée cette partie pourrait etre déplacer dans nos pages *Privacy Policy* et *Terms of Service*
+
+### ORM (GORM ?)
+
+### Design Systen
+
+> Custom design system built with Material-UI (MUI) to ensure consistent UI.
+
+- **MUI** is a React component library

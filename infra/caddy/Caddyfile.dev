@@ -44,7 +44,7 @@
 
 
 
-# Listen on :443 (HTTPS only), accessible externally via host:9001 proxy
+# Listen on :443 (HTTPS only), accessible externally via host:${PORT} proxy
 localhost:443 {
 
 	tls internal
@@ -67,12 +67,13 @@ localhost:443 {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
         # CSP (customize later)
+        # the localhost:9000 connect-src is to test CORS (Cross-Origin Resource Sharing) setup from frontend to minio directly
         Content-Security-Policy "
             default-src 'self';
             script-src 'self';
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
-            connect-src 'self';
+            connect-src 'self' http://localhost:9000;
             frame-ancestors 'none';
         "
 		# Content-Security-Policy "
@@ -111,6 +112,27 @@ localhost:443 {
 	handle @prometheus {
         uri strip_prefix /prometheus
 		reverse_proxy prometheus:9090
+	}
+
+	@storage path /storage /storage/*
+	handle @storage {
+		uri strip_prefix /storage
+
+		# CORS headers for presigned URL PUT/GET from the browser
+        # useless if the presigned URL goes throught https://localhost:4242/storage/... (because it will be the same origin and the browser does not triggers CORS)
+		header Access-Control-Allow-Origin "{http.request.header.Origin}"
+		header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-date, x-amz-content-sha256, x-amz-security-token, x-amz-*"
+		header Access-Control-Expose-Headers "ETag"
+		header Access-Control-Max-Age "3600"
+
+		# Handle preflight OPTIONS requests
+		@preflight method OPTIONS
+		handle @preflight {
+			respond 204
+		}
+
+		reverse_proxy minio:9000
 	}
 
     # SPA fallback
