@@ -1,0 +1,4 @@
+# auth/backend/internal/models
+backend/internal/models/user.go:4:22: undefined: uuid
+backend/internal/models/user.go:12:22: undefined: time
+backend/internal/models/user.go:13:22: undefined: time

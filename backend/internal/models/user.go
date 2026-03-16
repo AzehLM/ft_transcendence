@@ -1,0 +1,20 @@
+package user
+
+import (
+	"github.com/google/uuid"
+
+	"time"
+)
+
+type User struct {
+	ID                  uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Email               string    `gorm:"size:255;uniqueIndex;not null"`
+	Salt1               []byte    `gorm:"type:bytea;not null"`
+	PublicKey           []byte    `gorm:"type:bytea;not null"`
+	EncryptedPrivateKey []byte    `gorm:"type:bytea;not null"`
+	AuthHash            string    `gorm:"size:255;not null"`
+	UsedSpace           int64     `gorm:"not null;default:0"`
+	MaxSpace            int64     `gorm:"not null;default:5368709120"`
+	CreatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+	UpdatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+}

@@ -35,7 +35,10 @@ up: $(ENV_FILE)
 # to be defined
 .PHONY: dev
 dev: $(ENV_FILE)
-	$(COMPOSE_DEV_CMD) up --build --watch
+	$(COMPOSE_DEV_CMD) up -d --build
+	@echo "--------------------------tetetete"
+	cd backend && go run ./cmd/auth
+	@echo "+++++++++++++++++++++++++++++++yudihfusdhfjsdf"
 
 .PHONY: stop
 stop:
