@@ -27,6 +27,7 @@ Les JWT sont generes uniquement au register et au login. Toutes les autres reque
 6. Ouvre la websocket `wss://api.../ws` avec l'Access JWT
 7. Backend ajoute la connexion au pool + ecoute le broker Redis pour ce user
 
+![Logo](images/project-register.webp)
 
 ---
 
@@ -63,7 +64,7 @@ Les JWT sont generes uniquement au register et au login. Toutes les autres reque
 - On ecrase la KEK direct de la memoire
 - Ouverture websocket + redirect `/dashboard`
 
-
+![Logo](images/project-login.webp)
 ---
 
 ## 3. Creation d'une orga
