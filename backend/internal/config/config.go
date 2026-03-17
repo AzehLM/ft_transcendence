@@ -19,11 +19,11 @@ func LoadEnv() (*Env, error) {
 	_ = godotenv.Load()
 
 	env := &Env{
-		PostgresHost:     os.Getenv("PostgresHost"),
-		PostgresPort:     os.Getenv("PostgresPort"),
-		PostgresUser:     os.Getenv("PostgresUser"),
-		PostgresPassword: os.Getenv("PostgresPassword"),
-		PostgresDBname:   os.Getenv("PostgresDBname"),
+		PostgresHost:     os.Getenv("POSTGRES_HOST"),
+		PostgresPort:     os.Getenv("POSTGRES_PORT"),
+		PostgresUser:     os.Getenv("POSTGRES_USER"),
+		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
+		PostgresDBname:   os.Getenv("POSTGRES_DB_NAME"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" {
