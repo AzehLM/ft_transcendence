@@ -27,9 +27,9 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request
 	})
 
-	// routes.SetupAuthRoutes(app, dbConn)
+	authHandler := handlers.NewAuthHandler(dbConn, env)
 
-	app.Post("/api/auth/register", handlers.RegisterUser)
+	app.Post("/api/auth/register", authHandler.RegisterUser)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")
