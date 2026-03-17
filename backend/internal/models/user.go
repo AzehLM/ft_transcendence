@@ -9,7 +9,9 @@ import (
 type User struct {
 	ID                  uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Email               string    `gorm:"size:255;uniqueIndex;not null"`
-	Salt1               []byte    `gorm:"type:bytea;not null"`
+	ClientSalt          []byte    `gorm:"type:bytea;not null"`
+	ServerSalt          []byte    `gorm:"type:bytea;not null"`
+	Iv                  []byte    `gorm:"type:bytea;not null"`
 	PublicKey           []byte    `gorm:"type:bytea;not null"`
 	EncryptedPrivateKey []byte    `gorm:"type:bytea;not null"`
 	AuthHash            string    `gorm:"size:255;not null"`

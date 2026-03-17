@@ -145,7 +145,6 @@ localhost:443 {
     # --- API Backend (Fiber) ---
 	@api path /api/*
 	handle @api {
-		header X-Frame-Options "DENY"
 		reverse_proxy auth:3000
 	}
 }

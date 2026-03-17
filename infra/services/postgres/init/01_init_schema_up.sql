@@ -6,6 +6,8 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     salt_1 BYTEA NOT NULL,
+    server_salt_1 BYTEA NOT NULL,
+    iv BYTEA NOT NULL,
     public_key BYTEA NOT NULL,
     encrypted_private_key BYTEA NOT NULL,
     auth_hash VARCHAR(255) NOT NULL,
