@@ -9,6 +9,7 @@ import (
 	"auth/backend/internal/config"
 	"auth/backend/internal/db"
 	"github.com/gofiber/fiber/v2"
+	"auth/backend/internal/handlers"
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 	})
 
 	// routes.SetupAuthRoutes(app, dbConn)
+
+	app.Post("/api/auth/register", handlers.RegisterUser)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")

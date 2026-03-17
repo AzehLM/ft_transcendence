@@ -141,4 +141,11 @@ localhost:443 {
         try_files {path} {path}/ /index.html
         file_server
     }
+
+    # --- API Backend (Fiber) ---
+	@api path /api/*
+	handle @api {
+		header X-Frame-Options "DENY"
+		reverse_proxy auth:3000
+	}
 }

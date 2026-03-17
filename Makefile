@@ -36,7 +36,6 @@ up: $(ENV_FILE)
 .PHONY: dev
 dev: $(ENV_FILE)
 	$(COMPOSE_DEV_CMD) up -d --build
-	go run ./backend/cmd/auth
 
 .PHONY: stop
 stop:
