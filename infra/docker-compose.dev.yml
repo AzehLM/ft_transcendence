@@ -15,13 +15,13 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-    develop:
-      watch:
-        - path: ./caddy/Caddyfile.dev
-          target: /etc/caddy/Caddyfile
-          action: rebuild
-          exec:
-            command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
+    # develop:
+    #   watch:
+    #     - path: ./caddy/Caddyfile.dev
+    #       target: /etc/caddy/Caddyfile
+    #       action: rebuild
+    #       exec:
+    #         command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
     healthcheck:
       test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
       interval: 10s
@@ -81,6 +81,10 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    # delete
+    ports:
+      - "127.0.0.1:5432:5432"
+    # end delete
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
