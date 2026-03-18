@@ -4,6 +4,7 @@ import (
 	"auth/backend/internal/config"
 	"auth/backend/internal/models"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"log"
 	"time"
@@ -28,6 +29,11 @@ type AuthHandler struct {
 	Env *config.Env
 }
 
+type LoginRequest struct {
+	Email    string `json:"email"`
+	AuthHash string `json:"auth_hash"`
+}
+
 func NewAuthHandler(db *gorm.DB, env *config.Env) *AuthHandler {
 	return &AuthHandler{
 		DB:  db,
@@ -50,6 +56,18 @@ func hashWithArgon2id(clientAuthHash string) (string, string, error) {
 	hash := argon2.IDKey([]byte(clientAuthHash), serverSalt, timeCost, memory, threads, keyLen)
 
 	return hex.EncodeToString(hash), hex.EncodeToString(serverSalt), nil
+}
+
+func verifyArgon2idHash(clientAuthHash string, serverSalt []byte, storedHashHex string) bool {
+	var timeCost uint32 = 2
+	var memory uint32 = 32768
+	var threads uint8 = 4
+	var keyLen uint32 = 32
+
+	computedHash := argon2.IDKey([]byte(clientAuthHash), serverSalt, timeCost, memory, threads, keyLen)
+	computedHashHex := hex.EncodeToString(computedHash)
+
+	return subtle.ConstantTimeCompare([]byte(computedHashHex), []byte(storedHashHex)) == 1
 }
 
 func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
@@ -154,5 +172,61 @@ func (h *AuthHandler) GetInfo(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"id":    userID,
 		"email": userEmail,
+	})
+}
+
+func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
+	req := new(LoginRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	}
+
+	if req.Email == "" || req.AuthHash == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
+	}
+
+	var user models.User
+	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_credentials"})
+	}
+
+	if !verifyArgon2idHash(req.AuthHash, user.ServerSalt, user.AuthHash) {
+		log.Printf("[WARN] Login failed for %s: wrong auth_hash", req.Email)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_credentials"})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID.String(),
+		"user_email": user.Email,
+		"exp":        time.Now().Add(15 * time.Minute).Unix(),
+	})
+
+	jwtSecret := []byte(h.Env.JwtSecret)
+	accessToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
+
+	rtBytes := make([]byte, 32)
+	rand.Read(rtBytes)
+	refreshToken := hex.EncodeToString(rtBytes)
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+	})
+
+	log.Printf("[INFO] User %s logged in successfully", user.Email)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token": accessToken,
+		"encrypted_private_key": hex.EncodeToString(user.EncryptedPrivateKey),
+		"iv":                    hex.EncodeToString(user.IV),
+		"public_key":            hex.EncodeToString(user.PublicKey),
 	})
 }
