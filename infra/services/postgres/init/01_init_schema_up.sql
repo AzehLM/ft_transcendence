@@ -58,6 +58,7 @@ CREATE TABLE files (
     minio_object_key UUID UNIQUE NOT NULL,
     encrypted_dek BYTEA NOT NULL,
     iv BYTEA NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
