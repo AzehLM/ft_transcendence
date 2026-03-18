@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"auth/backend/internal/config"
+	"auth/backend/internal/models"
 	"crypto/rand"
 	"encoding/hex"
 	"log"
@@ -63,31 +64,71 @@ func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
 	}
 
-	// TODO: DB Check  Ensure req.Email doesn't already exist in PostgreSQL
+	// TODO:  Regex Email
+	// if !isValidEmail(req.Email) { return 400 ... }
 
-	serverHash, serverSalt, err := hashWithArgon2id(req.AuthHash)
+	serverHash, serverSaltHex, err := hashWithArgon2id(req.AuthHash)
 	if err != nil {
 		log.Printf("[ERROR] Register: Argon2id failure: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	println(serverHash, serverSalt)
-	// TODO: DB Insert  Create the User  in PostgreSQL via GORM
-	//  store: Email, req.Salt (Client salt), serverSalt (Server salt), serverHash (The Argon2 output with auth_hash), PublicKey, EncryptedPrivateKey.
+	clientSalt, err := hex.DecodeString(req.ClientSalt)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_client_salt_format"})
+	}
+
+	iv, err := hex.DecodeString(req.Iv)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_iv_format"})
+	}
+
+	pubKey, err := hex.DecodeString(req.PublicKey)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_public_key_format"})
+	}
+
+	privKey, err := hex.DecodeString(req.EncryptedPrivateKey)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_private_key_format"})
+	}
+
+	serverSalt, _ := hex.DecodeString(serverSaltHex)
+
+	newUser := models.User{
+		Email:               req.Email,
+		ClientSalt:          clientSalt,
+		ServerSalt:          serverSalt,
+		IV:                  iv,
+		PublicKey:           pubKey,
+		EncryptedPrivateKey: privKey,
+		AuthHash:            serverHash,
+	}
+
+	if err := h.DB.Create(&newUser).Error; err != nil {
+		log.Printf("[WARN] Register: Failed to insert user %s (Duplicate?): %v\n", req.Email, err)
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "email_already_exists"})
+	}
+
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_email": req.Email,
+		"user_id":    newUser.ID.String(),
+		"user_email": newUser.Email,
 		"exp":        time.Now().Add(15 * time.Minute).Unix(),
 	})
 
 	jwtSecret := []byte(h.Env.JwtSecret)
 	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
+		log.Printf("[ERROR] Register: JWT generation failed for %s: %v\n", req.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
 
 	rtBytes := make([]byte, 32)
-	rand.Read(rtBytes)
+	if _, err := rand.Read(rtBytes); err != nil {
+		log.Printf("[ERROR] Register: Random string generation failed: %v\n", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
 	refreshToken := hex.EncodeToString(rtBytes)
 
 	c.Cookie(&fiber.Cookie{
