@@ -1,4 +1,4 @@
-package user
+package models
 
 import (
 	"github.com/google/uuid"
@@ -11,7 +11,7 @@ type User struct {
 	Email               string    `gorm:"size:255;uniqueIndex;not null"`
 	ClientSalt          []byte    `gorm:"type:bytea;not null"`
 	ServerSalt          []byte    `gorm:"type:bytea;not null"`
-	Iv                  []byte    `gorm:"type:bytea;not null"`
+	IV                  []byte    `gorm:"type:bytea;not null"`
 	PublicKey           []byte    `gorm:"type:bytea;not null"`
 	EncryptedPrivateKey []byte    `gorm:"type:bytea;not null"`
 	AuthHash            string    `gorm:"size:255;not null"`

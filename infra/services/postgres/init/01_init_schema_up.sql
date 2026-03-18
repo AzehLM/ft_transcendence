@@ -5,18 +5,16 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    salt_1 BYTEA NOT NULL,
-    server_salt_1 BYTEA NOT NULL,
+    client_salt BYTEA NOT NULL,
+    server_salt BYTEA NOT NULL,
     iv BYTEA NOT NULL,
     public_key BYTEA NOT NULL,
     encrypted_private_key BYTEA NOT NULL,
     auth_hash VARCHAR(255) NOT NULL,
     used_space BIGINT NOT NULL DEFAULT 0,
-    max_space BIGINT NOT NULL DEFAULT 5368709120, -- 5 GB
+    max_space BIGINT NOT NULL DEFAULT 5368709120,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-	-- username VARCHAR(10) UNIQUE NOT NULL,
-	-- avatar
 );
 
 -- 2. ORGANIZATIONS
