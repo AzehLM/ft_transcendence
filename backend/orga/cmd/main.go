@@ -27,7 +27,7 @@ func main() {
 	})
 
 	// Routes
-	app.Get("/orgs", func(c *fiber.Ctx) error {
+	app.Get("/api/orga/orgs", func(c *fiber.Ctx) error {
 		return handlers.GetOrgas(c, dbConn)
 	})
 
