@@ -21,7 +21,6 @@ func main() {
 
 	dbConn := db.InitDB(env)
 
-	_ = dbConn //tmp
 
 	app := fiber.New(fiber.Config{
 		AppName: "ft_box_auth v1.0",
@@ -31,7 +30,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(dbConn, env)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
-	//TODO: login route
+	app.Post("/api/auth/login", authHandler.LoginUser)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env))

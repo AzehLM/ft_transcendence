@@ -1,9 +1,8 @@
 package middleware
 
 import (
-	"strings"
-
 	"auth/backend/internal/config"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
