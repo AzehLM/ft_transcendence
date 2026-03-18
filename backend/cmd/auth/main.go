@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"auth/backend/internal/middleware"
 	"auth/backend/internal/config"
 	"auth/backend/internal/db"
 	"github.com/gofiber/fiber/v2"
@@ -30,6 +31,12 @@ func main() {
 	authHandler := handlers.NewAuthHandler(dbConn, env)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
+	//TODO: login route
+
+	api := app.Group("/api")
+	api.Use(middleware.ProtectedRoute(env))
+
+	api.Get("/users/me",authHandler.GetInfo)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")

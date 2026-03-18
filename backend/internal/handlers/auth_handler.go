@@ -110,7 +110,6 @@ func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "email_already_exists"})
 	}
 
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    newUser.ID.String(),
 		"user_email": newUser.Email,
@@ -144,5 +143,16 @@ func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message":      "User successfully registered",
 		"access_token": accessToken,
+	})
+}
+
+func (h *AuthHandler) GetInfo(c *fiber.Ctx) error {
+
+	userID := c.Locals("user_id").(string)
+	userEmail := c.Locals("user_email").(string)
+
+	return c.JSON(fiber.Map{
+		"id":    userID,
+		"email": userEmail,
 	})
 }
