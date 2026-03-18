@@ -30,6 +30,9 @@ func main() {
 	app.Get("/api/orga/orgs", func(c *fiber.Ctx) error {
 		return handlers.GetOrgas(c, dbConn)
 	})
+	app.Post("/api/orga/orgs", func(c *fiber.Ctx) error {
+		return handlers.CreateOrga(c, dbConn)
+	})
 
 	// Run
 	go func() {
