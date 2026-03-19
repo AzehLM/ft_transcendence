@@ -24,6 +24,10 @@ type RegisterRequest struct {
 	Iv                  string `json:"iv"`
 }
 
+type SaltRequest struct {
+	Email string `json:"email"`
+}
+
 type AuthHandler struct {
 	DB  *gorm.DB
 	Env *config.Env
@@ -224,9 +228,36 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 	log.Printf("[INFO] User %s logged in successfully", user.Email)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"access_token": accessToken,
+		"access_token":          accessToken,
 		"encrypted_private_key": hex.EncodeToString(user.EncryptedPrivateKey),
 		"iv":                    hex.EncodeToString(user.IV),
 		"public_key":            hex.EncodeToString(user.PublicKey),
+	})
+}
+
+func (h *AuthHandler) GetClientSalt(c *fiber.Ctx) error {
+
+	req := new(SaltRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_request"})
+	}
+
+	var user models.User
+
+	err := h.DB.Where("email= ?", req.Email).First(&user).Error
+
+	var saltHex string
+
+	if err != nil {
+		// creat a fake SaltHex pour ne pas leak que le mail n'a pas de compte
+		saltHex = "random"
+
+	} else {
+		saltHex = hex.EncodeToString(user.ClientSalt)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"salt": saltHex,
 	})
 }
