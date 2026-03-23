@@ -117,6 +117,13 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 
 	serverSalt, _ := hex.DecodeString(serverSaltHex)
 
+	rtBytes := make([]byte, 32)
+	if _, err := rand.Read(rtBytes); err != nil {
+		log.Printf("[ERROR] Register: Random string generation failed: %v\n", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
+	refreshToken := hex.EncodeToString(rtBytes)
+
 	newUser := models.User{
 		Email:               req.Email,
 		ClientSalt:          clientSalt,
@@ -125,6 +132,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		PublicKey:           pubKey,
 		EncryptedPrivateKey: privKey,
 		AuthHash:            serverHash,
+		RefreshToken:        &refreshToken,
 	}
 
 	if err := h.DB.Create(&newUser).Error; err != nil {
@@ -144,13 +152,6 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		log.Printf("[ERROR] Register: JWT generation failed for %s: %v\n", req.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
-
-	rtBytes := make([]byte, 32)
-	if _, err := rand.Read(rtBytes); err != nil {
-		log.Printf("[ERROR] Register: Random string generation failed: %v\n", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
-	}
-	refreshToken := hex.EncodeToString(rtBytes)
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
@@ -216,6 +217,14 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 	rand.Read(rtBytes)
 	refreshToken := hex.EncodeToString(rtBytes)
 
+	user.RefreshToken = &refreshToken
+
+	if err := h.DB.Save(&user).Error; err != nil {
+		log.Printf("[ERROR] Login: Failed to save refresh token for %s: %v\n", req.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
+
+	
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
@@ -259,5 +268,49 @@ func (h *AuthHandler) GetClientSalt(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"salt": saltHex,
+	})
+}
+
+func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
+
+	cookieToken := c.Cookies("refresh_token")
+
+	if cookieToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "missing_refresh_token",
+		})
+	}
+
+	var user models.User
+	if err := h.DB.Where("refresh_token = ?", cookieToken).First(&user).Error; err != nil {
+		c.Cookie(&fiber.Cookie{
+			Name:     "refresh_token",
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			HTTPOnly: true,
+			Secure:   true,
+			SameSite: "Strict",
+		})
+
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "invalid_refresh_token",
+		})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID.String(),
+		"user_email": user.Email,
+		"exp":        time.Now().Add(15 * time.Minute).Unix(),
+	})
+
+	jwtSecret := []byte(h.Env.JwtSecret)
+	accessToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+	}
+
+	log.Printf("[INFO] Access token refreshed for %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token": accessToken,
 	})
 }
