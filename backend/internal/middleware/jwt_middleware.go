@@ -4,12 +4,12 @@ import (
 	"auth/backend/internal/config"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 func ProtectedRoute(env *config.Env) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {

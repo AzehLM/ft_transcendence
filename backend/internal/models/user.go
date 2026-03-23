@@ -17,6 +17,7 @@ type User struct {
 	AuthHash            string    `gorm:"size:255;not null"`
 	UsedSpace           int64     `gorm:"not null;default:0"`
 	MaxSpace            int64     `gorm:"not null;default:5368709120"`
-	CreatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
-	UpdatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+	RefreshToken *string `gorm:"type:varchar(255);uniqueIndex"`
+	CreatedAt time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
 }

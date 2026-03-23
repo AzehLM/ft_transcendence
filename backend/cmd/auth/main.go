@@ -6,11 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"auth/backend/internal/middleware"
 	"auth/backend/internal/config"
 	"auth/backend/internal/db"
-	"github.com/gofiber/fiber/v2"
 	"auth/backend/internal/handlers"
+	"auth/backend/internal/middleware"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 func main() {
@@ -21,10 +22,9 @@ func main() {
 
 	dbConn := db.InitDB(env)
 
-
 	app := fiber.New(fiber.Config{
-		AppName: "ft_box_auth v1.0",
-		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request
+		AppName:   "ft_box_auth v1.0",
+		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
 	})
 
 	authHandler := handlers.NewAuthHandler(dbConn, env)
@@ -36,7 +36,7 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env))
 
-	api.Get("/users/me",authHandler.GetInfo)
+	api.Get("/users/me", authHandler.GetInfo)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")
@@ -44,7 +44,6 @@ func main() {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()
-
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

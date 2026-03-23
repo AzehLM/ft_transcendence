@@ -9,7 +9,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/gorm"
@@ -74,10 +74,10 @@ func verifyArgon2idHash(clientAuthHash string, serverSalt []byte, storedHashHex 
 	return subtle.ConstantTimeCompare([]byte(computedHashHex), []byte(storedHashHex)) == 1
 }
 
-func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
+func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 	req := new(RegisterRequest)
 
-	if err := c.BodyParser(req); err != nil {
+	if err := c.Bind().Body(req); err != nil {
 		log.Printf("[WARN] Register: Bad JSON format: %v\n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
 	}
@@ -168,7 +168,7 @@ func (h *AuthHandler) RegisterUser(c *fiber.Ctx) error {
 	})
 }
 
-func (h *AuthHandler) GetInfo(c *fiber.Ctx) error {
+func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 
 	userID := c.Locals("user_id").(string)
 	userEmail := c.Locals("user_email").(string)
@@ -179,10 +179,10 @@ func (h *AuthHandler) GetInfo(c *fiber.Ctx) error {
 	})
 }
 
-func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
+func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 	req := new(LoginRequest)
 
-	if err := c.BodyParser(req); err != nil {
+	if err := c.Bind().Body(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
 	}
 
@@ -235,11 +235,11 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 	})
 }
 
-func (h *AuthHandler) GetClientSalt(c *fiber.Ctx) error {
+func (h *AuthHandler) GetClientSalt(c fiber.Ctx) error {
 
 	req := new(SaltRequest)
 
-	if err := c.BodyParser(req); err != nil {
+	if err := c.Bind().Body(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_request"})
 	}
 
@@ -250,7 +250,7 @@ func (h *AuthHandler) GetClientSalt(c *fiber.Ctx) error {
 	var saltHex string
 
 	if err != nil {
-		// creat a fake SaltHex pour ne pas leak que le mail n'a pas de compte
+		//TODO: creat a fake SaltHex pour ne pas leak que le mail n'a pas de compte
 		saltHex = "random"
 
 	} else {
