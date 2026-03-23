@@ -66,14 +66,31 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
     }
     
     // create an orga member with role owner
-    var userID uuid.UUID
-    db.Table("users").Select("id").Where("email = ?", body.Email).
-    Scan(&userID) // temporary
+    // var userID uuid.UUID
+    // db.Table("users").Select("id").Where("email = ?", body.Email).
+    // Scan(&userID) // temporary
+
+    // temporary
+    var result struct {
+        ID uuid.UUID
+    }
+
+    err := db.Table("users").
+        Select("id").
+        Where("email = ?", body.Email).
+        Take(&result).Error
+    if err != nil {
+        return err
+    }
+
+    userID := result.ID
+    // temporary
+
     orgaMember := models.OrgaMember {
-        OrgaID: orga.ID,
+        OrgID: orga.ID,
         UserID: userID,
         Role: "owner",
-        EncOrgaPrivateKey: []byte(body.EncOrgaPrivateKey),
+        EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
     }
 
     if err := db.Create(&orgaMember).Error; err != nil {
