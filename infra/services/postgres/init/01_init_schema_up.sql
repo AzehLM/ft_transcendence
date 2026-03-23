@@ -31,7 +31,7 @@ CREATE TABLE organizations (
 CREATE TABLE org_members (
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('owner', 'admin', 'member')),
     enc_org_priv_key BYTEA NOT NULL,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (org_id, user_id)
