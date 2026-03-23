@@ -10,7 +10,7 @@ import (
 	"orga/backend/orga/internal/db"
 	"orga/backend/orga/internal/handlers"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func main() {
@@ -27,10 +27,10 @@ func main() {
 	})
 
 	// Routes
-	app.Get("/api/orga/orgs", func(c *fiber.Ctx) error {
+	app.Get("/api/orga/orgs", func(c fiber.Ctx) error {
 		return handlers.GetOrgas(c, dbConn)
 	})
-	app.Post("/api/orga/orgs", func(c *fiber.Ctx) error {
+	app.Post("/api/orga/orgs", func(c fiber.Ctx) error {
 		return handlers.CreateOrga(c, dbConn)
 	})
 
