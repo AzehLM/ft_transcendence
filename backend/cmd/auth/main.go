@@ -32,6 +32,7 @@ func main() {
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", authHandler.LoginUser)
 	app.Post("/api/auth/salt", authHandler.GetClientSalt)
+	app.Post("/api/auth/refresh", authHandler.RefreshToken)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env))
