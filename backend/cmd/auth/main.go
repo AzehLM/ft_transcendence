@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"auth/backend/internal/config"
 	"auth/backend/internal/db"
@@ -12,6 +13,7 @@ import (
 	"auth/backend/internal/middleware"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
 func main() {
@@ -27,10 +29,24 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
 	})
 
+	loginLimiter := limiter.New(limiter.Config{
+		Max:        5,
+		Expiration: 15 * time.Minute,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c fiber.Ctx) error {
+			log.Printf("[SECURITY] Rate limit reached for IP: %s\n", c.IP())
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_attempts_please_try_again_later",
+			})
+		},
+	})
+
 	authHandler := handlers.NewAuthHandler(dbConn, env)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
-	app.Post("/api/auth/login", authHandler.LoginUser)
+	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
 	app.Post("/api/auth/salt", authHandler.GetClientSalt)
 	app.Post("/api/auth/refresh", authHandler.RefreshToken)
 	app.Post("/api/auth/logout", authHandler.LogoutUser)
