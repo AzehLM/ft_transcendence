@@ -40,6 +40,7 @@ func main() {
 
 	api.Get("/users/me", authHandler.GetInfo)
 	api.Delete("/users/me", authHandler.DeleteUser)
+	api.Put("/users/password", authHandler.UpdatePassword)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")

@@ -39,6 +39,14 @@ type LoginRequest struct {
 	AuthHash string `json:"auth_hash"`
 }
 
+type UpdatePasswordRequest struct {
+	OldAuthHash         string `json:"old_auth_hash"`
+	NewAuthHash         string `json:"new_auth_hash"`
+	NewClientSalt       string `json:"new_client_salt"`
+	NewIv               string `json:"new_iv"`
+	NewEncryptedPrivKey string `json:"new_encrypted_private_key"`
+}
+
 func NewAuthHandler(db *gorm.DB, env *config.Env) *AuthHandler {
 	return &AuthHandler{
 		DB:  db,
@@ -159,7 +167,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		Value:    refreshToken,
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   true, // test avec redi cady sinon pas de cookie
 		SameSite: "Strict",
 	})
 
@@ -241,7 +249,7 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		Value:    refreshToken,
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   true, // test avec redi cady sinon pas de cookie
 		SameSite: "Strict",
 	})
 
@@ -301,7 +309,7 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 			Value:    "",
 			Expires:  time.Now().Add(-1 * time.Hour),
 			HTTPOnly: true,
-			Secure:   true,
+			Secure:   true, // test avec redi cady sinon pas de cookie
 			SameSite: "Strict",
 		})
 
@@ -350,7 +358,7 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   true, // test avec redi cady sinon pas de cookie
 		SameSite: "Strict",
 	})
 
@@ -368,19 +376,80 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
 	}
 
-	//TODO: delete files ect
+	//TODO: delete files ect check if not last admin in org
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   true, // test avec redi cady sinon pas de cookie
 		SameSite: "Strict",
 	})
 
 	log.Printf("[INFO] User %s deleted their account", userID)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "account_deleted_successfully",
+	})
+}
+
+func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
+	req := new(UpdatePasswordRequest)
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	}
+
+	if req.OldAuthHash == "" || req.NewAuthHash == "" || req.NewClientSalt == "" || req.NewIv == "" || req.NewEncryptedPrivKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
+	}
+
+	userID := c.Locals("user_id").(string)
+	var user models.User
+
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	if !verifyArgon2idHash(req.OldAuthHash, user.ServerSalt, user.AuthHash) {
+		log.Printf("[WARN] Failed password update attempt for user %s", user.Email)
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "invalid_old_password"})
+	}
+
+	newServerHash, newServerSaltHex, err := hashWithArgon2id(req.NewAuthHash)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
+
+	newClientSalt, _ := hex.DecodeString(req.NewClientSalt)
+	newServerSalt, _ := hex.DecodeString(newServerSaltHex)
+	newIV, _ := hex.DecodeString(req.NewIv)
+	newPrivKey, _ := hex.DecodeString(req.NewEncryptedPrivKey)
+
+	err = h.DB.Model(&user).Updates(map[string]interface{}{
+		"auth_hash":             newServerHash,
+		"server_salt":           newServerSalt,
+		"client_salt":           newClientSalt,
+		"iv":                    newIV,
+		"encrypted_private_key": newPrivKey,
+		"refresh_token":         nil,
+	}).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	}
+
+	//TODO: generate a new jwt and refresh token maybe 
+	// c.Cookie(&fiber.Cookie{
+	// 	Name:     "refresh_token",
+	// 	Value:    "",
+	// 	Expires:  time.Now().Add(-1 * time.Hour),
+	// 	HTTPOnly: true,
+	// 	Secure:   true,
+	// 	SameSite: "Strict",
+	// })
+
+	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "password_updated_please_login_again",
 	})
 }
