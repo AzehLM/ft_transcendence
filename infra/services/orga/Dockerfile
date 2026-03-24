@@ -4,12 +4,15 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY ./backend/services/orga/go.mod ./backend/services/orga/go.sum ./
+COPY ./backend/shared/go.mod ./backend/shared/go.sum ./
+
 RUN go mod download
 
-COPY ./backend/orga ./backend/orga
+COPY ./backend/services/orga .
+COPY ./backend/shared ../../shared
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_orga ./backend/orga/cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_orga ./cmd/api
 
 
 FROM alpine:3.19

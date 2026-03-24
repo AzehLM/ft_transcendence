@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"orga/backend/orga/internal/models"
-	"orga/backend/orga/internal/repository"
+	"backend/orga/internal/models"
+	"backend/orga/internal/repository"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"

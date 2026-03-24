@@ -17,7 +17,7 @@ type Env struct {
 }
 
 func LoadEnv() (*Env, error) {
-	_ = godotenv.Load()
+	_ = godotenv.Load("../../../../../.env")
 
 	env := &Env{
 		PostgresHost:     os.Getenv("POSTGRES_HOST"),

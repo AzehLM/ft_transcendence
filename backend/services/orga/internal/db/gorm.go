@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
-	"orga/backend/orga/internal/config"
+	"backend/orga/internal/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

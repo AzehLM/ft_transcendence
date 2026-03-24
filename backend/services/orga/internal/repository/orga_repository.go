@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"orga/backend/orga/internal/models"
+	"backend/orga/internal/models"
 	"gorm.io/gorm"
 	"github.com/google/uuid"
 )

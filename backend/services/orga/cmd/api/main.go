@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"orga/backend/orga/internal/config"
-	"orga/backend/orga/internal/db"
-	"orga/backend/orga/internal/handlers"
-	"orga/backend/orga/internal/middleware"
+	"backend/orga/internal/config"
+	"backend/orga/internal/db"
+	"backend/orga/internal/handlers"
+	"backend/shared/middleware"
 
 	"github.com/gofiber/fiber/v3"
 )

@@ -1,8 +1,9 @@
-module orga
+module backend/orga
 
 go 1.25.5
 
 require (
+	backend/shared v0.0.0-00010101000000-000000000000
 	github.com/gofiber/fiber/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
@@ -33,3 +34,5 @@ require (
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 )
+
+replace backend/shared => ../../shared

@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"fmt"
-	"orga/backend/orga/internal/models"
 
 	"github.com/google/uuid"
 )
@@ -42,7 +41,10 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 			return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
 		}
 
-		var Member models.OrgaMember
+		var Member struct {
+			ID uuid.UUID
+			Role string
+		}
 		memberErr := db.Where("user_id = ? AND org_id = ?", userID, orgID).First(&Member).Error
 
 		if memberErr != nil {
