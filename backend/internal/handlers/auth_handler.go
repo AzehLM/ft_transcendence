@@ -170,14 +170,25 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
+    userID := c.Locals("user_id").(string)
 
-	userID := c.Locals("user_id").(string)
-	userEmail := c.Locals("user_email").(string)
+    var user models.User
 
-	return c.JSON(fiber.Map{
-		"id":    userID,
-		"email": userEmail,
-	})
+    err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+        Where("id = ?", userID).
+        First(&user).Error
+
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "id":         user.ID,
+        "email":      user.Email,
+        "used_space": user.UsedSpace,
+        "max_space":  user.MaxSpace,
+        "created_at": user.CreatedAt,
+    })
 }
 
 func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
@@ -224,7 +235,7 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	
+
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
@@ -312,5 +323,37 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 	log.Printf("[INFO] Access token refreshed for %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"access_token": accessToken,
+	})
+}
+
+func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
+	cookieToken := c.Cookies("refresh_token")
+
+	if cookieToken == "" {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "already_logged_out",
+		})
+	}
+
+	err := h.DB.Model(&models.User{}).
+		Where("refresh_token = ?", cookieToken).
+		Update("refresh_token", nil).Error
+
+	if err != nil {
+		log.Printf("[WARN] Logout: Could not clear token in DB: %v\n", err)
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+	})
+
+	log.Printf("[INFO] User logged out successfully (token cleared)")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "logged_out_successfully",
 	})
 }
