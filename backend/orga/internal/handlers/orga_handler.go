@@ -143,3 +143,8 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	})
 
 }
+
+func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
+    fmt.Println("Entering delete function")
+    return nil
+}

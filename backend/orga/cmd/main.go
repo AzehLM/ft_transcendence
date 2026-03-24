@@ -9,6 +9,7 @@ import (
 	"orga/backend/orga/internal/config"
 	"orga/backend/orga/internal/db"
 	"orga/backend/orga/internal/handlers"
+	"orga/backend/orga/internal/middleware"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -32,6 +33,9 @@ func main() {
 	})
 	app.Post("/api/orga/orgs", func(c fiber.Ctx) error {
 		return handlers.CreateOrga(c, dbConn)
+	})
+	app.Delete("/api/orga/orgs/:org_id", middleware.CheckRoleAdminOwner(dbConn), func(c fiber.Ctx) error {
+		return handlers.DeleteOrga(c, dbConn)
 	})
 
 	// Run
