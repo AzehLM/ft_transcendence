@@ -12,17 +12,51 @@ import (
 )
 
 func GetOrgas(c fiber.Ctx, db *gorm.DB) error {
-	var Orgas []models.Orga 
+    // queries := c.Queries()
+    // fmt.Println("All query params:", queries)
+    email := c.Query("email") // temporary
+    // fmt.Println("email = " + email)
+    if (email == "") {
+        var Orgas []models.Orga 
+    
+        Orgas, err := repository.GetAllOrgas(db)
+    
+        if err != nil {
+            return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
+                "error": err.Error(),
+            })
+        }
+    
+        return c.JSON(Orgas)
+    } else {
+        // temporary
+        var result struct {
+            ID uuid.UUID
+        }
 
-	Orgas, err := repository.GetAllOrgas(db)
+        err := db.Table("users").
+            Select("id").
+            Where("email = ?", email).
+            Take(&result).Error
+        if err != nil {
+            fmt.Println("error: no user found")
+            return err
+        }
 
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
-            "error": err.Error(),
-        })
+        userID := result.ID
+        // temporary
+
+        var Orgas []models.Orga
+
+        Orgas, resErr := repository.GetMemberOrga(db, userID)
+        if resErr != nil {
+            return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
+                "error": resErr.Error(),
+            })
+        }
+        return c.JSON(Orgas)
+
     }
-
-    return c.JSON(Orgas)
 	
 }
 
@@ -60,7 +94,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 		PublicKey: []byte(body.PublicKey),
 	}
 
-    
+    // to tranfer to repository
     if err := db.Create(&orga).Error; err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
             "error": "could not create organization",
@@ -95,6 +129,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
         EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
     }
 
+    // to transfer to repository
     if err := db.Create(&orgaMember).Error; err != nil {
         db.Delete(&models.Orga{}, orga.ID) // protect ?
         return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
