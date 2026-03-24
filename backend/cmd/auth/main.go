@@ -39,6 +39,7 @@ func main() {
 	api.Use(middleware.ProtectedRoute(env))
 
 	api.Get("/users/me", authHandler.GetInfo)
+	api.Delete("/users/me", authHandler.DeleteUser)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")

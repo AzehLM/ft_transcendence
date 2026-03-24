@@ -170,25 +170,25 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
-    userID := c.Locals("user_id").(string)
+	userID := c.Locals("user_id").(string)
 
-    var user models.User
+	var user models.User
 
-    err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
-        Where("id = ?", userID).
-        First(&user).Error
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+		Where("id = ?", userID).
+		First(&user).Error
 
-    if err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
-    }
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "id":         user.ID,
-        "email":      user.Email,
-        "used_space": user.UsedSpace,
-        "max_space":  user.MaxSpace,
-        "created_at": user.CreatedAt,
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id":         user.ID,
+		"email":      user.Email,
+		"used_space": user.UsedSpace,
+		"max_space":  user.MaxSpace,
+		"created_at": user.CreatedAt,
+	})
 }
 
 func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
@@ -234,7 +234,6 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		log.Printf("[ERROR] Login: Failed to save refresh token for %s: %v\n", req.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
-
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
@@ -355,5 +354,30 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	log.Printf("[INFO] User logged out successfully (token cleared)")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "logged_out_successfully",
+	})
+}
+
+func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+
+	if err := h.DB.Where("id = ?", userID).Delete(&models.User{}).Error; err != nil {
+		log.Printf("[ERROR] Failed to delete user %s: %v\n", userID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
+	}
+
+	//TODO: delete files ect
+	
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+	})
+
+	log.Printf("[INFO] User %s deleted their account", userID)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "account_deleted_successfully",
 	})
 }
