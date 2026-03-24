@@ -162,14 +162,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		HTTPOnly: true,
-		Secure:   true, // test avec redi cady sinon pas de cookie
-		SameSite: "Strict",
-	})
+	setRefreshTokenCookie(c, refreshToken)
 
 	log.Printf("[INFO] User %s registered successfully\n", req.Email)
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -244,14 +237,7 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		HTTPOnly: true,
-		Secure:   true, // test avec redi cady sinon pas de cookie
-		SameSite: "Strict",
-	})
+	setRefreshTokenCookie(c, refreshToken)
 
 	log.Printf("[INFO] User %s logged in successfully", user.Email)
 
@@ -304,14 +290,8 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 
 	var user models.User
 	if err := h.DB.Where("refresh_token = ?", cookieToken).First(&user).Error; err != nil {
-		c.Cookie(&fiber.Cookie{
-			Name:     "refresh_token",
-			Value:    "",
-			Expires:  time.Now().Add(-1 * time.Hour),
-			HTTPOnly: true,
-			Secure:   true, // test avec redi cady sinon pas de cookie
-			SameSite: "Strict",
-		})
+
+		clearRefreshTokenCookie(c)
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "invalid_refresh_token",
@@ -353,14 +333,7 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 		log.Printf("[WARN] Logout: Could not clear token in DB: %v\n", err)
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HTTPOnly: true,
-		Secure:   true, // test avec redi cady sinon pas de cookie
-		SameSite: "Strict",
-	})
+	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] User logged out successfully (token cleared)")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -378,14 +351,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	//TODO: delete files ect check if not last admin in org
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HTTPOnly: true,
-		Secure:   true, // test avec redi cady sinon pas de cookie
-		SameSite: "Strict",
-	})
+	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] User %s deleted their account", userID)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -438,18 +404,33 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
 	}
 
-	//TODO: generate a new jwt and refresh token maybe 
-	// c.Cookie(&fiber.Cookie{
-	// 	Name:     "refresh_token",
-	// 	Value:    "",
-	// 	Expires:  time.Now().Add(-1 * time.Hour),
-	// 	HTTPOnly: true,
-	// 	Secure:   true,
-	// 	SameSite: "Strict",
-	// })
+	//TODO: generate a new jwt and refresh token maybe
+	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "password_updated_please_login_again",
+	})
+}
+
+func setRefreshTokenCookie(c fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true, // test avec caddy
+		SameSite: "Strict",
+	})
+}
+
+func clearRefreshTokenCookie(c fiber.Ctx) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true, // test avec caddy
+		SameSite: "Strict",
 	})
 }
