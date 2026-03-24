@@ -4,6 +4,7 @@ import (
 	"auth/backend/internal/config"
 	"auth/backend/internal/models"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"log"
@@ -269,8 +270,10 @@ func (h *AuthHandler) GetClientSalt(c fiber.Ctx) error {
 	var saltHex string
 
 	if err != nil {
-		//TODO: creat a fake SaltHex pour ne pas leak que le mail n'a pas de compte
-		saltHex = "random"
+		hasher := sha256.New()
+		hasher.Write([]byte(req.Email + h.Env.JwtSecret))
+		fakeSalt := hasher.Sum(nil)[:16]
+		saltHex = hex.EncodeToString(fakeSalt)
 
 	} else {
 		saltHex = hex.EncodeToString(user.ClientSalt)
@@ -366,7 +369,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	}
 
 	//TODO: delete files ect
-	
+
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
