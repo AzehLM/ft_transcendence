@@ -7,6 +7,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+    "fmt"
 )
 
 func GetOrgas(c fiber.Ctx, db *gorm.DB) error {
@@ -80,7 +82,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
         Where("email = ?", body.Email).
         Take(&result).Error
     if err != nil {
-        return err
+        fmt.Println("error: no user found")
     }
 
     userID := result.ID
