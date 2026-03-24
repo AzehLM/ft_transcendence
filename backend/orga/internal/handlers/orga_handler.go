@@ -8,143 +8,143 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-    "fmt"
+	"fmt"
 )
 
 func GetOrgas(c fiber.Ctx, db *gorm.DB) error {
-    // queries := c.Queries()
-    // fmt.Println("All query params:", queries)
-    email := c.Query("email") // temporary
-    // fmt.Println("email = " + email)
-    if (email == "") {
-        var Orgas []models.Orga 
-    
-        Orgas, err := repository.GetAllOrgas(db)
-    
-        if err != nil {
-            return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
-                "error": err.Error(),
-            })
-        }
-    
-        return c.JSON(Orgas)
-    } else {
-        // temporary
-        var result struct {
-            ID uuid.UUID
-        }
+	// queries := c.Queries()
+	// fmt.Println("All query params:", queries)
+	email := c.Query("email") // temporary
+	// fmt.Println("email = " + email)
+	if email == "" {
+		var Orgas []models.Orga
 
-        err := db.Table("users").
-            Select("id").
-            Where("email = ?", email).
-            Take(&result).Error
-        if err != nil {
-            fmt.Println("error: no user found")
-            return err
-        }
+		Orgas, err := repository.GetAllOrgas(db)
 
-        userID := result.ID
-        // temporary
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
 
-        var Orgas []models.Orga
+		return c.JSON(Orgas)
+	} else {
+		// temporary
+		var result struct {
+			ID uuid.UUID
+		}
 
-        Orgas, resErr := repository.GetMemberOrga(db, userID)
-        if resErr != nil {
-            return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
-                "error": resErr.Error(),
-            })
-        }
-        return c.JSON(Orgas)
+		err := db.Table("users").
+			Select("id").
+			Where("email = ?", email).
+			Take(&result).Error
+		if err != nil {
+			fmt.Println("error: no user found")
+			return err
+		}
 
-    }
-	
+		userID := result.ID
+		// temporary
+
+		var Orgas []models.Orga
+
+		Orgas, resErr := repository.GetMemberOrga(db, userID)
+		if resErr != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": resErr.Error(),
+			})
+		}
+		return c.JSON(Orgas)
+
+	}
+
 }
 
 func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	var body struct {
-		Name string `json:"name" validate:"required"`
-		PublicKey string `json:"public_key" validate:"required"`
-        EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-        Email string `json:"email"` // temporary to find the user
-    }
-
-	if err:= c.Bind().Body(&body); err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(map[string]any{
-            "error": err.Error(),
-        })
+		Name              string `json:"name" validate:"required"`
+		PublicKey         string `json:"public_key" validate:"required"`
+		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
+		Email             string `json:"email"` // temporary to find the user
 	}
-    if body.Name == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(map[string]any{
-            "error": "name is required",
-        })
-    }
-    if body.PublicKey == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(map[string]any{
-            "error": "public key is required",
-        })
-    }
-    if body.EncOrgaPrivateKey == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(map[string]any{
-            "error": "encrypted private key is required",
-        })
-    }
 
-	orga := models.Orga {
-		Name: body.Name,
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	if body.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "name is required",
+		})
+	}
+	if body.PublicKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "public key is required",
+		})
+	}
+	if body.EncOrgaPrivateKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "encrypted private key is required",
+		})
+	}
+
+	orga := models.Orga{
+		Name:      body.Name,
 		PublicKey: []byte(body.PublicKey),
 	}
 
-    // to tranfer to repository
-    if err := db.Create(&orga).Error; err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
-            "error": "could not create organization",
-        })
-    }
-    
-    // create an orga member with role owner
-    // var userID uuid.UUID
-    // db.Table("users").Select("id").Where("email = ?", body.Email).
-    // Scan(&userID) // temporary
+	// to tranfer to repository
+	if err := db.Create(&orga).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create organization",
+		})
+	}
 
-    // temporary
-    var result struct {
-        ID uuid.UUID
-    }
+	// create an orga member with role owner
+	// var userID uuid.UUID
+	// db.Table("users").Select("id").Where("email = ?", body.Email).
+	// Scan(&userID) // temporary
 
-    err := db.Table("users").
-        Select("id").
-        Where("email = ?", body.Email).
-        Take(&result).Error
-    if err != nil {
-        fmt.Println("error: no user found")
-    }
+	// temporary
+	var result struct {
+		ID uuid.UUID
+	}
 
-    userID := result.ID
-    // temporary
+	err := db.Table("users").
+		Select("id").
+		Where("email = ?", body.Email).
+		Take(&result).Error
+	if err != nil {
+		fmt.Println("error: no user found")
+	}
 
-    orgaMember := models.OrgaMember {
-        OrgID: orga.ID,
-        UserID: userID,
-        Role: "owner",
-        EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
-    }
+	userID := result.ID
+	// temporary
 
-    // to transfer to repository
-    if err := db.Create(&orgaMember).Error; err != nil {
-        db.Delete(&models.Orga{}, orga.ID) // protect ?
-        return c.Status(fiber.StatusInternalServerError).JSON(map[string]any{
-            "error": "could not create owner",
-        })
-    }
+	orgaMember := models.OrgaMember{
+		OrgID:         orga.ID,
+		UserID:        userID,
+		Role:          "owner",
+		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
+	}
 
-    return c.Status(fiber.StatusCreated).JSON(map[string]any{
-		"id": orga.ID,
+	// to transfer to repository
+	if err := db.Create(&orgaMember).Error; err != nil {
+		db.Delete(&models.Orga{}, orga.ID) // protect ?
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create owner",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"id":   orga.ID,
 		"name": orga.Name,
 	})
 
 }
 
 func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
-    fmt.Println("Entering delete function")
-    return nil
+	fmt.Println("Entering delete function")
+	return nil
 }
