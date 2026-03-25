@@ -52,7 +52,7 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
 				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
 			}
-			return c.Status(500).JSON(fiber.Map{"error": "database error"})
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
 		}
 
 		if Member.Role == "admin" || Member.Role == "owner" {
