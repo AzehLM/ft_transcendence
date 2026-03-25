@@ -7,10 +7,10 @@ import (
 	"syscall"
 	"time"
 
-	"auth/backend/internal/config"
-	"auth/backend/internal/db"
-	"auth/backend/internal/handlers"
-	"auth/backend/internal/middleware"
+	"auth/backend/services/auth/internal/config"
+	"auth/backend/services/auth/internal/db"
+	"auth/backend/services/auth/internal/handlers"
+	"auth/backend/services/auth/internal/middleware"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"

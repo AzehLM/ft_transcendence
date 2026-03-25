@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"auth/backend/internal/config"
+	"auth/backend/services/auth/internal/config"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"

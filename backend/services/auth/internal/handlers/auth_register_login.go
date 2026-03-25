@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"auth/backend/internal/models"
+	"auth/backend/services/auth/internal/models"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"

@@ -1,7 +1,7 @@
 package db
 
 import (
-	"auth/backend/internal/config"
+	"auth/backend/services/auth/internal/config"
 	"fmt"
 	"log"
 
