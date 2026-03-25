@@ -16,6 +16,10 @@ CREATE TABLE users (
     refresh_token VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    -- username VARCHAR(50) UNIQUE
+    -- avatar
+    -- two_factor_secret VARCHAR(255)
+    -- two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 2. ORGANIZATIONS

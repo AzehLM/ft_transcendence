@@ -20,4 +20,10 @@ type User struct {
 	RefreshToken *string `gorm:"type:varchar(255);uniqueIndex"`
 	CreatedAt time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+
+	// Username  *string `gorm:"type:varchar(50);uniqueIndex"`
+	// AvatarURL *string `gorm:"type:varchar(255)"`
+
+	// TwoFactorSecret    *string `gorm:"type:varchar(255)"`
+	// IsTwoFactorEnabled bool    `gorm:"default:false"`
 }
