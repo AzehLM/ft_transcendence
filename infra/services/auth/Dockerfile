@@ -15,7 +15,7 @@ RUN go mod download
 COPY ./backend ./backend
 
 # On compile en pointant vers le bon chemin relatif
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_auth ./backend/cmd/auth
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_auth ./backend/services/auth/cmd
 # ==========================================
 # Stage 2: Runner (Production/Dev ready)
 # ==========================================
