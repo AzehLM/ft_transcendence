@@ -45,7 +45,7 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 			ID uuid.UUID
 			Role string
 		}
-		memberErr := db.Where("user_id = ? AND org_id = ?", userID, orgID).First(&Member).Error
+		memberErr := db.Table("org_members").Where("user_id = ? AND org_id = ?", userID, orgID).Take(&Member).Error
 
 		if memberErr != nil {
 			// fmt.Println("error is ", memberErr)
