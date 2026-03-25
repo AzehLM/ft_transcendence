@@ -36,9 +36,16 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 		userID := result.ID
 		// temporary
 
-		orgID := c.Params("org_id")
-		if orgID == "" {
+		orgIDParam := c.Params("org_id")
+		if orgIDParam == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		}
+
+		orgID, err := uuid.Parse(orgIDParam)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "invalid orga id format",
+			})
 		}
 
 		var Member struct {

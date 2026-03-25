@@ -146,5 +146,36 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 
 func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
 	fmt.Println("Entering delete function")
-	return nil
+
+
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+    result := db.
+        Table("organizations").
+        Where("id = ?", orgID).
+        Delete(nil)
+
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "database error",
+        })
+    }
+
+    if result.RowsAffected == 0 {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error": "orga not found",
+        })
+    }
+
+    return c.SendStatus(fiber.StatusNoContent)
 }
