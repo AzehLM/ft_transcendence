@@ -35,4 +35,4 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 )
 
-replace backend/shared => ../../shared
+replace backend/shared => ../shared

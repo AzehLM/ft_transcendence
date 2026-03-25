@@ -4,13 +4,13 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY ./backend/services/orga/go.mod ./backend/services/orga/go.sum ./
+COPY ./backend/orga/go.mod ./backend/orga/go.sum ./
 COPY ./backend/shared/go.mod ./backend/shared/go.sum ./
 
 RUN go mod download
 
-COPY ./backend/services/orga .
-COPY ./backend/shared ../../shared
+COPY ./backend/orga .
+COPY ./backend/shared ../shared
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_orga ./cmd/api
 
