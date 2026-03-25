@@ -270,7 +270,7 @@ Reponse (201) :
 
 Admin only. Supprime l'orga + tous ses fichiers sur MinIO.
 
-Reponse : `200 OK`
+Reponse : `204 No Content`
 
 
 ---
