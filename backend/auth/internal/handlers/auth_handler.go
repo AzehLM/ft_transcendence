@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"auth/backend/services/auth/internal/config"
+	"backend/auth/internal/config"
 
 	"gorm.io/gorm"
 )
