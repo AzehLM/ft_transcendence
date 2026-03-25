@@ -74,4 +74,10 @@ localhost:443 {
         try_files {path} {path}/ /index.html
         file_server
     }
+
+        # --- API Backend (Fiber) ---
+	@api path /api/*
+	handle @api {
+		reverse_proxy auth:3000
+	}
 }
