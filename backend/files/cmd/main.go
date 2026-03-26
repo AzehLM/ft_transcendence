@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"backend/internal/config"
-	"backend/internal/files"
-
+	"backend/shared/config"  // Pour LoadEnv() depuis shared/config
+	"backend/shared/db"      // Pour InitDB() depuis shared/db
+	"backend/files/internal" // Pour NewFileRepository() – adapte si c'est repository.go
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -20,11 +20,14 @@ func main() {
 		log.Fatalf("[FATAL], Failed to load configuration: %v", err)
 	}
 
+	log.Printf("[INFO] env values: %s | %s | %s\n", env.PostgresDBname, env.PostgresHost, env.PostgresPort)
+
 	// meme chose pour db
 	database := db.InitDB(env)
 
 	// faut compiler avant de pouvoir tester...
-	// fileRep := files.NewFileRepository(database)
+	_ = files.NewFileRepository(database)
+
 
 	app := fiber.New(fiber.Config{})
 
@@ -33,12 +36,12 @@ func main() {
 	})
 
 	go func() {
-		if err := app.Listen(":8089"); err != nil {
+		if err := app.Listen(":3004"); err != nil {
 			log.Fatalf("[FATAL] Server error: %v", err)
 		}
 	}()
 
-	log.Println("[INFO] Files service started on :8089")
+	log.Println("[INFO] Files service started on :3004")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

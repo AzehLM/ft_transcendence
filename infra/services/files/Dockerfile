@@ -9,11 +9,11 @@ WORKDIR /app
 COPY ./backend/files/go.mod ./backend/files/go.sum ./
 COPY ./backend/shared/go.mod ./backend/shared/go.sum ./shared/
 
-RUN go mod download
-
 COPY ./backend/files .
 COPY ./backend/shared ../../shared
 COPY ./backend/internal ../../internal
+
+RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o files-test ./cmd/
 

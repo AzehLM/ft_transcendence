@@ -152,11 +152,11 @@ services:
       timeout: 5s
       retries: 3
 
-  auth:
-    container_name: auth
+  files:
+    container_name: files
     build:
       context: ../
-      dockerfile: ./infra/services/auth/Dockerfile
+      dockerfile: ./infra/services/files/Dockerfile
     networks:
       - dev
     restart: unless-stopped

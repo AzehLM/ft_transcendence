@@ -33,7 +33,7 @@ func main() {
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")
-		if err := app.Listen(":3000"); err != nil {
+		if err := app.Listen(":3003"); err != nil {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()

@@ -28,6 +28,6 @@ USER ftuser
 
 COPY --from=builder /app/ft_box_auth .
 
-EXPOSE 3000
+EXPOSE 3003
 
 CMD ["./ft_box_auth"]
