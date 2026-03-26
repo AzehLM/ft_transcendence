@@ -68,6 +68,12 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 		Email             string `json:"email"` // temporary to find the user
 	}
 
+	if len(c.Body()) == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
 	if err := c.Bind().Body(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
@@ -164,6 +170,8 @@ func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
         Table("organizations").
         Where("id = ?", orgID).
         Delete(nil)
+
+	// delete all MinIO files
 
     if result.Error != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
