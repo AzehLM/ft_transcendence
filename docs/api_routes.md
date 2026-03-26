@@ -272,6 +272,26 @@ Admin only. Supprime l'orga + tous ses fichiers sur MinIO.
 
 Reponse : `204 No Content`
 
+---
+
+### `PATCH /orgs/{org_id}`
+
+Renommer une orga. Admin only.
+
+Body :
+```json
+{
+  "name": "new_name"
+}
+```
+
+Reponse (201) :
+```json
+{
+  "id": "<uuid>",
+  "name": "new_name"
+}
+```
 
 ---
 
