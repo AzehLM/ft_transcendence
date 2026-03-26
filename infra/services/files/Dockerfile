@@ -13,6 +13,7 @@ COPY ./backend/files .
 COPY ./backend/shared ../../shared
 COPY ./backend/internal ../../internal
 
+# putting this below the COPYs seems to make me compile properly but I have absolutely not understood WHY...
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o files-test ./cmd/
