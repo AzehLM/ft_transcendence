@@ -76,7 +76,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
 	}
 
-	if req.Email == "" || req.AuthHash == "" || req.PublicKey == "" || req.ClientSalt == "" || req.Iv == "" {
+	if req.Email == "" || req.AuthHash == "" || req.PublicKey == "" || req.ClientSalt == "" || req.Iv == "" || req.EncryptedPrivateKey == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
 	}
 
