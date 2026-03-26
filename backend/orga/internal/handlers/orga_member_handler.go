@@ -61,11 +61,11 @@ func CreateOrgaMember(c fiber.Ctx, db *gorm.DB) error {
 	orgaResult := db.Table("organizations").Where("id = ?", orgID).First(&Orga)
 	fmt.Println("orga result = ", orgaResult)
 	if orgaResult.Error != nil {
-			if errors.Is(orgaResult.Error, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
-			}
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgaResult.Error.Error()})
+		if errors.Is(orgaResult.Error, gorm.ErrRecordNotFound) {
+			return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
 		}
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgaResult.Error.Error()})
+	}
 	// check if user exist
 	var User struct {
 		ID uuid.UUID

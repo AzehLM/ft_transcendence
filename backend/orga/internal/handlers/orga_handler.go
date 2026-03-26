@@ -187,3 +187,55 @@ func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
 
     return c.SendStatus(fiber.StatusNoContent)
 }
+
+func ChangeOrgaName(c fiber.Ctx, db *gorm.DB) error {
+	var body struct {
+		Name string `json:"name" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if body.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error" : "name required",
+		})
+	}
+
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+    result := db.Model(&models.Orga{}).Where("id = ?", orgID).Update("name", body.Name)
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": result.Error.Error(),
+		})
+    }
+    if result.RowsAffected == 0 {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "organization not found",
+		})
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "organization name updated",
+	})
+}

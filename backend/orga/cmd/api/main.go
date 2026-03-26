@@ -34,6 +34,9 @@ func main() {
 	app.Post("/api/orga/orgs", func(c fiber.Ctx) error {
 		return handlers.CreateOrga(c, dbConn)
 	})
+	app.Patch("/api/orga/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+		return handlers.ChangeOrgaName(c, dbConn)
+	})
 	app.Delete("/api/orga/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.DeleteOrga(c, dbConn)
 	})
