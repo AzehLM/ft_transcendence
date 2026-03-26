@@ -2,6 +2,13 @@ module backend/auth
 
 go 1.25.4
 
+require backend/shared v0.0.0
+
+replace backend/shared => ../shared
+
+// Sans replace, Go essaie de résoudre shared comme module externe et échoue.
+// Avec replace, il utilise directement go.mod.
+
 require (
 	github.com/gofiber/fiber/v3 v3.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

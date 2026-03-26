@@ -7,10 +7,11 @@ import (
 	"syscall"
 	"time"
 
-	"backend/auth/internal/config"
+	"backend/shared/config"
 	"backend/auth/internal/db"
 	"backend/auth/internal/handlers"
-	"backend/auth/internal/middleware"
+
+	"backend/shared/middleware"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
@@ -52,7 +53,7 @@ func main() {
 	app.Post("/api/auth/logout", authHandler.LogoutUser)
 
 	api := app.Group("/api")
-	api.Use(middleware.ProtectedRoute(env))
+	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
 	api.Get("/users/me", authHandler.GetInfo)
 	api.Delete("/users/me", authHandler.DeleteUser)
