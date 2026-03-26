@@ -46,7 +46,10 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 	}
 
 	rtBytes := make([]byte, 32)
-	rand.Read(rtBytes)
+	if _, err := rand.Read(rtBytes); err != nil {
+		log.Printf("[ERROR] Login: Failed to generate refresh token for %s: %v\n", req.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
 	refreshToken := hex.EncodeToString(rtBytes)
 
 	user.RefreshToken = &refreshToken
