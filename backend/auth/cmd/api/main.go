@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
-	"backend/shared/config"
-	"backend/auth/internal/db"
 	"backend/auth/internal/handlers"
+	"backend/shared/config"
+	"backend/shared/db"
 
 	"backend/shared/middleware"
 
