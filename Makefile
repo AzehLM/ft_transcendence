@@ -35,7 +35,11 @@ up: $(ENV_FILE)
 # to be defined
 .PHONY: dev
 dev: $(ENV_FILE)
-	$(COMPOSE_DEV_CMD) up -d --build
+	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
+
+.PHONY: watch
+watch: $(ENV_FILE)
+	$(COMPOSE_DEV_CMD) up --build --watch --remove-orphans
 
 .PHONY: stop
 stop:
@@ -87,7 +91,7 @@ fclean: clean
 .PHONY: lint-back
 lint-back:
 	@if [ -n "$$(find backend -name '*.go' 2>/dev/null)" ]; then \
-		cd backend && golangci-lint run ./...; \
+		cd backend/files && golangci-lint run ./...; \
 	else \
 		echo "No Go files found, skipping lint." && exit 0; \
 	fi
