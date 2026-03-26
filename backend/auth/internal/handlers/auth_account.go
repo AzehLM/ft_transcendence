@@ -75,10 +75,22 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	newClientSalt, _ := hex.DecodeString(req.NewClientSalt)
+	newClientSalt, err := hex.DecodeString(req.NewClientSalt)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_client_salt_format"})
+	}
+
+	newIV, err := hex.DecodeString(req.NewIv)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_iv_format"})
+	}
+
+	newPrivKey, err := hex.DecodeString(req.NewEncryptedPrivKey)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_private_key_format"})
+	}
+
 	newServerSalt, _ := hex.DecodeString(newServerSaltHex)
-	newIV, _ := hex.DecodeString(req.NewIv)
-	newPrivKey, _ := hex.DecodeString(req.NewEncryptedPrivKey)
 
 	err = h.DB.Model(&user).Updates(map[string]interface{}{
 		"auth_hash":             newServerHash,
