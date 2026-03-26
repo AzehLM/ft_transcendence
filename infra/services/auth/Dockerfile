@@ -24,6 +24,6 @@ USER ftuser
 
 COPY --from=builder /app/backend/auth/ft_box_auth .
 
-EXPOSE 3000
+EXPOSE 8081
 
 CMD ["./ft_box_auth"]

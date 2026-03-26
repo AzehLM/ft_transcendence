@@ -60,8 +60,8 @@ func main() {
 	api.Put("/users/password", authHandler.UpdatePassword)
 
 	go func() {
-		log.Println("[INFO] Starting Fiber server on port 3000...")
-		if err := app.Listen(":3000"); err != nil {
+		log.Println("[INFO] Starting Fiber server on port 8081...")
+		if err := app.Listen(":8081"); err != nil {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()
