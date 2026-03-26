@@ -40,8 +40,10 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 		})
 	}
 
+	hashedCookieToken := hashToken(cookieToken)
+
 	err := h.DB.Model(&models.User{}).
-		Where("refresh_token = ?", cookieToken).
+		Where("refresh_token = ?", hashedCookieToken).
 		Update("refresh_token", nil).Error
 
 	if err != nil {
@@ -66,8 +68,10 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 		})
 	}
 
+	hashedCookieToken := hashToken(cookieToken)
+
 	var user models.User
-	if err := h.DB.Where("refresh_token = ?", cookieToken).First(&user).Error; err != nil {
+	if err := h.DB.Where("refresh_token = ?", hashedCookieToken).First(&user).Error; err != nil {
 
 		clearRefreshTokenCookie(c)
 

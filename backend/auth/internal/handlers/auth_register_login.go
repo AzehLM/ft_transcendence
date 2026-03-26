@@ -50,16 +50,17 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		log.Printf("[ERROR] Login: Failed to generate refresh token for %s: %v\n", req.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
-	refreshToken := hex.EncodeToString(rtBytes)
+	rawRefreshToken := hex.EncodeToString(rtBytes)
 
-	user.RefreshToken = &refreshToken
+	hashedRefreshToken := hashToken(rawRefreshToken)
+	user.RefreshToken = &hashedRefreshToken
 
 	if err := h.DB.Save(&user).Error; err != nil {
 		log.Printf("[ERROR] Login: Failed to save refresh token for %s: %v\n", req.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	setRefreshTokenCookie(c, refreshToken)
+	setRefreshTokenCookie(c, rawRefreshToken)
 
 	log.Printf("[INFO] User %s logged in successfully", user.Email)
 
@@ -119,7 +120,9 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		log.Printf("[ERROR] Register: Random string generation failed: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
-	refreshToken := hex.EncodeToString(rtBytes)
+	rawRefreshToken := hex.EncodeToString(rtBytes)
+
+	hashedRefreshToken := hashToken(rawRefreshToken)
 
 	newUser := models.User{
 		Email:               req.Email,
@@ -129,7 +132,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		PublicKey:           pubKey,
 		EncryptedPrivateKey: privKey,
 		AuthHash:            serverHash,
-		RefreshToken:        &refreshToken,
+		RefreshToken:        &hashedRefreshToken,
 	}
 
 	if err := h.DB.Create(&newUser).Error; err != nil {
@@ -150,7 +153,7 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
 
-	setRefreshTokenCookie(c, refreshToken)
+	setRefreshTokenCookie(c, rawRefreshToken)
 
 	log.Printf("[INFO] User %s registered successfully\n", req.Email)
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{

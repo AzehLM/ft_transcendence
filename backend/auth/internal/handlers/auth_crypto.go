@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 
@@ -35,4 +36,9 @@ func verifyArgon2idHash(clientAuthHash string, serverSalt []byte, storedHashHex 
 	computedHashHex := hex.EncodeToString(computedHash)
 
 	return subtle.ConstantTimeCompare([]byte(computedHashHex), []byte(storedHashHex)) == 1
+}
+
+func hashToken(rawToken string) string {
+	hash := sha256.Sum256([]byte(rawToken))
+	return hex.EncodeToString(hash[:])
 }
