@@ -38,6 +38,10 @@ func main() {
 		return handlers.DeleteOrga(c, dbConn)
 	})
 
+	app.Post("/api/orga/orgs/:org_id/member", func(c fiber.Ctx) error {
+		return handlers.CreateOrgaMember(c, dbConn)
+	})
+
 	// Run
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 3000...")

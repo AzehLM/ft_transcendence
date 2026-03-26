@@ -48,6 +48,8 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 			})
 		}
 
+		// check if organization exist ?
+
 		var Member struct {
 			ID uuid.UUID
 			Role string
