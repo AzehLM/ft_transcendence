@@ -101,7 +101,7 @@ func CreateOrgaMember(c fiber.Ctx, db *gorm.DB) error {
 
 	if err := db.Create(&orgaMember).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create owner",
+			"error": "could not create member",
 		})
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{

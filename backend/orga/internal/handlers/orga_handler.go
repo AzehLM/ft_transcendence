@@ -107,7 +107,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 		})
 	}
 
-	// create an orga member with role owner
+	// create an orga member with role admin
 	// var userID uuid.UUID
 	// db.Table("users").Select("id").Where("email = ?", body.Email).
 	// Scan(&userID) // temporary
@@ -131,7 +131,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	orgaMember := models.OrgaMember{
 		OrgID:         orga.ID,
 		UserID:        userID,
-		Role:          "owner",
+		Role:          "admin",
 		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 	}
 
@@ -139,7 +139,7 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	if err := db.Create(&orgaMember).Error; err != nil {
 		db.Delete(&models.Orga{}, orga.ID) // protect ?
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create owner",
+			"error": "could not create admin",
 		})
 	}
 

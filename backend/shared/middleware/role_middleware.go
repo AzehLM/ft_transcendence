@@ -12,7 +12,7 @@ import (
 )
 
 // temporary middleware to check user role in organization
-func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
+func CheckRoleAdmin(db *gorm.DB) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		email := c.Query("email")
 		if email == "" {
@@ -64,7 +64,7 @@ func CheckRoleAdminOwner(db *gorm.DB) fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
 		}
 
-		if Member.Role == "admin" || Member.Role == "owner" {
+		if Member.Role == "admin" {
 			return c.Next()
 		}
 
