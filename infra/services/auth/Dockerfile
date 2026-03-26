@@ -4,8 +4,8 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
+COPY ./backend/shared/go.mod ./backend/shared/go.sum ./shared/
 COPY ./backend/auth/go.mod ./backend/auth/go.sum ./
-COPY ./backend/shared/go.mod ./backend/shared/go.sum ./
 
 RUN go mod download
 
