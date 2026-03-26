@@ -6,17 +6,16 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY ./backend/files/go.mod ./backend/files/go.sum ./
+COPY ./backend/go.work ./backend/go.work.sum ./
+COPY ./backend/files/go.mod ./backend/files/go.sum ./files/
 COPY ./backend/shared/go.mod ./backend/shared/go.sum ./shared/
 
-COPY ./backend/files .
-COPY ./backend/shared ../../shared
-COPY ./backend/internal ../../internal
+RUN go work sync
 
-# putting this below the COPYs seems to make me compile properly but I have absolutely not understood WHY...
-RUN go mod download
+COPY ./backend/files ./files/
+COPY ./backend/shared ./shared/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o files-test ./cmd/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o files-test ./files/cmd/
 
 FROM alpine:3.23.3
 
