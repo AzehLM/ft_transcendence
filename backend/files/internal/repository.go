@@ -7,12 +7,12 @@ import (
 
 // contract -> ce que chaque repo de fichier doit savoir faire
 type FileRepository interface {
-    ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error // POST /files/finalize
-	FindByObjectID(objectID uuid.UUID) (*File, error)				// POST /files/finalize
-    FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
-	InsertPendingFile(file *File) error								// POST /files/upload-url
 	DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
-    UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
+	FindByObjectID(objectID uuid.UUID) (*File, error)				// POST /files/finalize
+	InsertPendingFile(file *File) error								// POST /files/upload-url
+	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error // POST /files/finalize
+	FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
+	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 }
