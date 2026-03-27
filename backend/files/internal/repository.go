@@ -11,7 +11,7 @@ type FileRepository interface {
 	FindByObjectID(objectID uuid.UUID) (*File, error)				// POST /files/finalize
     FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
 	InsertPendingFile(file *File) error								// POST /files/upload-url
-	// DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
+	DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
     // UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
@@ -74,4 +74,9 @@ func (r *fileRepository) FindByID(fileID uuid.UUID) (*File, error) {
 		return nil, err
 	}
 	return &file, nil
+}
+
+// needs to be called before removing a real MinIO object
+func (r *fileRepository) DeleteFile(fileID uuid.UUID) error {
+	return r.db.Delete(&File{}, fileID).Error
 }
