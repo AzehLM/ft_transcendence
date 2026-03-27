@@ -12,7 +12,7 @@ type FileRepository interface {
     FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
 	InsertPendingFile(file *File) error								// POST /files/upload-url
 	DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
-    // UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
+    UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 }
@@ -79,4 +79,14 @@ func (r *fileRepository) FindByID(fileID uuid.UUID) (*File, error) {
 // needs to be called before removing a real MinIO object
 func (r *fileRepository) DeleteFile(fileID uuid.UUID) error {
 	return r.db.Delete(&File{}, fileID).Error
+}
+
+// updates a file folder, folderID is a pointer because it can be nil (case where the file is not in a folder, its at the root of the user storage space)
+func (r *fileRepository) UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error {
+	err := r.db.Model(&File{}).
+		Where("id = ?", fileID).
+		Updates(map[string]interface{}{
+			"folder_id":		folderID,
+		}).Error
+	return err
 }
