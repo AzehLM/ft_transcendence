@@ -285,7 +285,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Reponse (200) :
 ```json
 {
   "id": "<uuid>",
@@ -310,6 +310,20 @@ Body :
 ```
 
 Reponse : `201 Created`
+
+---
+
+### `GET /orgs/{org_id}/members`
+
+Récupérer tous les membres d'une organisation.
+
+Reponse : `200 OK`
+```json
+{
+  "user_email": "alice@42lyon.fr",
+  "role": "admin"
+}
+```
 
 ---
 
