@@ -1,8 +1,6 @@
 @import './fonts.css';
 @import './theme.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 * {
     margin: 0;
@@ -11,10 +9,15 @@
 }
 
 html,
-body,
-#root {
+body {
     height: 100%;
     width: 100%;
+}
+
+#root {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 body {

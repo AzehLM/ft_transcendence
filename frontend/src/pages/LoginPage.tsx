@@ -1,15 +1,17 @@
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import styles from "../styles/LoginPage.module.css";
 
 function Button({ children, variant = "primary", className = "", type = "button" }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit" }) {
-    const baseStyles = "px-8 py-4 rounded-[12px] font-['IBM_Plex_Sans',sans-serif] font-medium text-[18px] tracking-[0.5px] transition-all hover:scale-105 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] w-full";
     const variantStyles = variant === "primary"
         ? "bg-[#de7356] text-white hover:bg-[#d16649]"
         : "bg-[rgba(230,225,224,0.71)] text-[#2b1008] hover:bg-[rgba(230,225,224,0.9)]";
 
+    const buttonClass = type === "submit" ? styles.submit_button : "";
+
     return (
-        <button type={type} className={`${baseStyles} ${variantStyles} ${className}`}>
+        <button type={type} className={`${buttonClass} ${variantStyles} ${className}`}>
             {children}
         </button>
     );
@@ -31,20 +33,20 @@ function InputField({
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
     return (
-        <div className="space-y-3">
-            <label className="font-['IBM_Plex_Sans',sans-serif] font-medium text-[18px] text-[#2b1008] block mb-1">
+        <div className={styles.input_field_wrapper}>
+            <label className={styles.input_label}>
                 {label}
             </label>
-            <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#de7356]">
-                    <Icon className="size-6" />
+            <div className={styles.input_container}>
+                <div className={styles.input_icon}>
+                    <Icon className="w-6 h-6" />
                 </div>
                 <input
                     type={type}
                     placeholder={placeholder}
                     value={value}
                     onChange={onChange}
-                    className="w-full pl-16 pr-4 py-5 rounded-[14px] bg-white border-2 border-[rgba(222,115,86,0.2)] focus:border-[#de7356] focus:outline-none font-['IBM_Plex_Sans',sans-serif] text-[18px] text-[#2b1008] placeholder:text-[#2b1008] placeholder:opacity-40 transition-all"
+                    className={styles.input_field}
                 />
             </div>
         </div>
@@ -62,29 +64,29 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#fef9f7] to-white flex items-center justify-center px-4 sm:px-8 py-16">
-            <div className="w-full max-w-md flex flex-col gap-10">
+        <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
+            <div className={styles.login_page_container} style={{ maxWidth: "448px" }}>
                 {/* Logo */}
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-4 mb-5">
-                        <div className="bg-[#de7356] rounded-[16px] p-4 flex items-center justify-center">
-                            <Package className="size-12 text-white" strokeWidth={2.5} />
+                <div className={styles.logo_section}>
+                    <div className={styles.logo_container}>
+                        <div className={styles.logo_box}>
+                            <Package className="w-11 h-11 text-white" strokeWidth={2} />
                         </div>
-                        <span className="font-['IBM_Plex_Sans',sans-serif] font-bold text-[40px] text-[#de7356]">
+                        <span className={styles.logo_title}>
                             ft_box
                         </span>
                     </div>
-                    <h1 className="font-['IBM_Plex_Sans',sans-serif] font-bold text-[40px] text-[#2b1008] mb-3">
+                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "#2b1008", marginBottom: "12px" }}>
                         Welcome Back
                     </h1>
-                    <p className="font-['IBM_Plex_Sans',sans-serif] text-[18px] text-[#2b1008] opacity-70">
+                    <p className={styles.logo_subtitle}>
                         Log in to access your secure files
                     </p>
                 </div>
 
                 {/* Login Form */}
-                <div className="bg-[rgba(230,225,224,0.85)] rounded-[24px] shadow-xl border border-[#e0d6d2] p-100">
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                <div className={styles.login_form}>
+                    <form className={styles.login_form_inner} onSubmit={handleSubmit}>
                         <InputField
                             label="Email Address"
                             type="email"
@@ -104,36 +106,33 @@ export default function LoginPage() {
                         />
 
                         {/* Forgot Password Link */}
-                        <div className="flex justify-end mt-1">
-                            <a
-                                href="#"
-                                className="font-['IBM_Plex_Sans',sans-serif] text-[14px] text-[#de7356] hover:text-[#d16649] transition-colors"
-                            >
+                        <div className={styles.forgot_password}>
+                            <a href="#">
                                 Forgot password?
                             </a>
                         </div>
 
                         {/* Security Notice */}
-                        <div className="bg-[#eeb9aa] bg-opacity-70 rounded-[12px] p-4 flex gap-4 mt-2 mb-4">
-                            <Shield className="size-5 text-[#de7356] flex-shrink-0 mt-0.5" />
-                            <p className="font-['IBM_Plex_Sans',sans-serif] text-[14px] text-[#2b1008] leading-relaxed">
-                                <strong className="font-['IBM_Plex_Sans',sans-serif] font-semibold">Secure Login:</strong> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
+                        <div className={styles.security_notice}>
+                            <Shield className={`${styles.security_notice_icon} w-5 h-5 text-[#de7356]`} />
+                            <p className={styles.security_notice_text}>
+                                <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
                             </p>
                         </div>
 
-                        <Button type="submit" variant="primary" className="mt-2 mb-1">
+                        <Button type="submit" variant="primary">
                             Log In
-                            <ArrowRight className="inline-block ml-2 size-5" />
+                            <ArrowRight className="inline-block ml-2 w-5 h-5" />
                         </Button>
                     </form>
 
                     {/* Divider */}
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-[#2b1008] opacity-20"></div>
+                    <div className={styles.divider}>
+                        <div className={styles.divider_line}>
+                            <div className={styles.divider_border}></div>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-[rgba(230,225,224,0.71)] font-['IBM_Plex_Sans',sans-serif] text-[14px] text-[#2b1008] opacity-60">
+                        <div className={styles.divider_text_container}>
+                            <span className={styles.divider_text}>
                                 Don't have an account?
                             </span>
                         </div>
@@ -142,17 +141,17 @@ export default function LoginPage() {
                     {/* Sign Up Link */}
                     <Link
                         to="/signup"
-                        className="block text-center font-['IBM_Plex_Sans',sans-serif] font-medium text-[18px] text-[#de7356] hover:text-[#d16649] transition-colors mt-3"
+                        className={styles.signup_link}
                     >
                         Create Account
                     </Link>
                 </div>
 
                 {/* Back to Home */}
-                <div className="mt-12 text-center">
+                <div className={styles.back_home_container}>
                     <Link
                         to="/"
-                        className="font-['IBM_Plex_Sans',sans-serif] text-[14px] text-[#2b1008] opacity-60 hover:opacity-100 transition-opacity"
+                        className={styles.back_home_link}
                     >
                         ← Back to Home
                     </Link>

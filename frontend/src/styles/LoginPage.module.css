@@ -1,0 +1,254 @@
+/* ===== LOGIN PAGE CONTAINERS ===== */
+.login_page_wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 16px;
+}
+
+.login_page_container {
+    width: 100%;
+}
+
+/* ===== LOGO SECTION ===== */
+.logo_section {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.logo_container {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.logo_box {
+    background-color: #de7356;
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo_title {
+    font-size: 40px;
+    font-weight: bold;
+    color: #de7356;
+}
+
+.logo_description {
+    font-size: 18px;
+    color: #2b1008;
+    margin-top: 12px;
+}
+
+.logo_subtitle {
+    font-size: 18px;
+    color: #2b1008;
+    opacity: 0.7;
+}
+
+/* ===== LOGIN FORM ===== */
+.login_form {
+    background-color: rgba(230, 225, 224, 0.85);
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+}
+
+.login_form_inner {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* ===== INPUT FIELDS ===== */
+.input_field_wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input_label {
+    font-size: 18px;
+    font-weight: 500;
+    color: #2b1008;
+    display: block;
+}
+
+.input_container {
+    position: relative;
+}
+
+.input_icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #de7356;
+}
+
+.input_field {
+    width: 100%;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+    height: 60px;
+    border-radius: 14px;
+    background-color: white;
+    border: 2px solid rgba(222, 115, 86, 0.2);
+    font-size: 18px;
+    color: #2b1008;
+    transition: all 0.3s ease;
+    text-indent: 2.5rem;
+}
+
+.input_field:focus {
+    border-color: #de7356;
+    outline: none;
+}
+
+.input_field::placeholder {
+    text-indent: 2.5rem;
+}
+
+/* ===== BUTTON ===== */
+.submit_button {
+    padding: 18px 18px !important;
+    height: 60px !important;
+    border-radius: 12px;
+    background-color: #de7356;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+}
+
+.submit_button:hover {
+    background-color: #d16649;
+    transform: scale(1.05);
+}
+
+/* ===== FORGOT PASSWORD LINK ===== */
+.forgot_password {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.forgot_password a {
+    font-size: 14px;
+    color: #de7356;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.forgot_password a:hover {
+    color: #d16649;
+}
+
+/* ===== SECURITY NOTICE ===== */
+.security_notice {
+    background-color: #eeb9aa;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.security_notice_icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.security_notice_text {
+    font-size: 14px;
+    color: #2b1008;
+    line-height: 1.5;
+}
+
+.security_notice_title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* ===== DIVIDER ===== */
+.divider {
+    position: relative;
+    margin-top: 30px;
+    margin-bottom: 12px;
+}
+
+.divider_line {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+}
+
+.divider_border {
+    width: 100%;
+    border-top: 1px solid #2b1008;
+    opacity: 0.2;
+}
+
+.divider_text_container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.divider_text {
+    padding: 0 16px;
+    background-color: rgba(230, 225, 224, 0.71);
+    color: #2b1008;
+    opacity: 0.6;
+}
+
+/* ===== SIGNUP LINK ===== */
+.signup_link {
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 500;
+    color: #de7356;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.signup_link:hover {
+    color: #d16649;
+}
+
+/* ===== BACK HOME LINK ===== */
+.back_home_container {
+    margin-top: 48px;
+    text-align: center;
+}
+
+.back_home_link {
+    font-size: 14px;
+    color: #2b1008;
+    opacity: 0.6;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.back_home_link:hover {
+    opacity: 1;
+}
