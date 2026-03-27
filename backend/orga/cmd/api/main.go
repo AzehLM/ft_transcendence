@@ -41,11 +41,14 @@ func main() {
 		return handlers.DeleteOrga(c, dbConn)
 	})
 
-	app.Post("/api/orga/orgs/:org_id/member", func(c fiber.Ctx) error {
+	app.Post("/api/orga/orgs/:org_id/members", func(c fiber.Ctx) error {
 		return handlers.CreateOrgaMember(c, dbConn)
 	})
-	app.Patch("/api/orga/orgs/:org_id/member/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+	app.Patch("/api/orga/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.ChangeRole(c, dbConn)
+	})
+	app.Delete("/api/orga/orgs/:org_id/members/me", func(c fiber.Ctx) error {
+		return handlers.LeaveOrga(c, dbConn)
 	})
 
 	// Run
