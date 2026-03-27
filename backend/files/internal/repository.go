@@ -8,10 +8,10 @@ import (
 // contract -> ce que chaque repo de fichier doit savoir faire
 type FileRepository interface {
     ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error // POST /files/finalize
-	// DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
 	FindByObjectID(objectID uuid.UUID) (*File, error)				// POST /files/finalize
+    FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
 	InsertPendingFile(file *File) error								// POST /files/upload-url
-    // FindByID(fileID uuid.UUID) (*File, error)						// GET /downlowd and DELETE
+	// DeleteFile(fileID uuid.UUID) error								// DELETE /files/{file_id}
     // UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error	// PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
@@ -53,7 +53,7 @@ func (r *fileRepository) FindByObjectID (objectID uuid.UUID) (*File, error) {
 	return &file, nil
 }
 
-
+// Each map key represent a SQL column name
 func (r *fileRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
 	err := r.db.Model(&File{}).
 		Where("minio_object_key = ?", objectID).
@@ -65,4 +65,13 @@ func (r *fileRepository) ActivateFile(objectID uuid.UUID, name string, encrypted
 			"org_id":        orgID,
 		}).Error
 	return err
+}
+
+func (r *fileRepository) FindByID(fileID uuid.UUID) (*File, error) {
+	var file File
+	err := r.db.First(&file, fileID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &file, nil
 }
