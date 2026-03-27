@@ -83,7 +83,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Login Form */}
-                <div className="bg-[rgba(230,225,224,0.85)] rounded-[24px] shadow-xl border border-[#e0d6d2] p-10">
+                <div className="bg-[rgba(230,225,224,0.85)] rounded-[24px] shadow-xl border border-[#e0d6d2] p-100">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
                         <InputField
                             label="Email Address"
