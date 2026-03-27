@@ -357,3 +357,53 @@ func DeleteMember(c fiber.Ctx, db *gorm.DB) error {
 
     return c.SendStatus(fiber.StatusNoContent)
 }
+
+func GetMembers(c fiber.Ctx, db *gorm.DB) error {
+	// check if user asking is part of this organization
+
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+	var orga models.Orga
+	if err := db.First(&orga, "id = ?", orgID).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "organization not found",
+		})
+    }
+	
+	type OrgaMemberResponse struct {
+		UserID    	uuid.UUID   `json:"user_id"`
+		Role  		string `json:"role"`
+		Email		string `json:"email"` // not sure
+	}
+	
+	var OrgaMembers []OrgaMemberResponse
+
+	// result := db.Model(&models.OrgaMember{}).
+	// 	Select("user_id, role").
+	// 	Where("org_id = ?", orgID).
+	// 	Scan(&OrgaMembers)
+
+	result := db.Model(&models.OrgaMember{}).
+		Select("org_members.user_id, org_members.role, users.email").
+		Joins("JOIN users ON users.id = org_members.user_id").
+		Where("org_members.org_id = ?", orgID).
+		Scan(&OrgaMembers)
+
+	if result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "database error",
+		})
+	}
+
+	return c.Status(fiber.StatusAccepted).JSON(OrgaMembers)
+}
