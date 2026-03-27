@@ -160,10 +160,15 @@ services:
     networks:
       - dev
     restart: unless-stopped
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd
     env_file:
       - ../.env
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
 volumes:
