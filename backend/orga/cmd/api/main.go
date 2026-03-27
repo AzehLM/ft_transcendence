@@ -50,6 +50,11 @@ func main() {
 	app.Delete("/api/orga/orgs/:org_id/members/me", func(c fiber.Ctx) error {
 		return handlers.LeaveOrga(c, dbConn)
 	})
+	app.Delete("/api/orga/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+		return handlers.DeleteMember(c, dbConn)
+	})
+	// app.Get("/api/orga/orgs/:org_id/members/"
+
 
 	// Run
 	go func() {

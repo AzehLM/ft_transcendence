@@ -285,3 +285,75 @@ func LeaveOrga(c fiber.Ctx, db *gorm.DB) error {
 
     return c.SendStatus(fiber.StatusNoContent)
 }
+
+func DeleteMember(c fiber.Ctx, db *gorm.DB) error {
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+	var orga models.Orga
+	if err := db.First(&orga, "id = ?", orgID).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "organization not found",
+		})
+    }
+
+	userIDParam := c.Params("user_id")
+	if userIDParam == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	userID, err := uuid.Parse(userIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user id format",
+		})
+	}
+
+	var member models.OrgaMember
+	if err := db.First(&member, "user_id = ? AND org_id = ?", userID, orgID).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "member not found",
+		})
+    }
+
+	if member.Role == "admin" {
+        var count int64
+        db.Model(&models.OrgaMember{}).
+            Where("org_id = ? AND role = ?", orgID, "admin").
+            Count(&count)
+
+        if count <= 1 {
+            return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+                "error": "cannot remove the last admin",
+            })
+        }
+	}
+
+    result := db.
+        Table("org_members").
+        Where("user_id = ? AND org_id = ?", userID, orgID).
+        Delete(nil)
+
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "database error",
+        })
+    }
+
+    if result.RowsAffected == 0 {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error": "member not found",
+        })
+    }
+
+    return c.SendStatus(fiber.StatusNoContent)
+}
