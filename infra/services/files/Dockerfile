@@ -23,6 +23,6 @@ WORKDIR /app
 
 COPY --from=builder /app/files-test .
 
-EXPOSE 3004
+EXPOSE 8083
 
 CMD ["./files-test"]
