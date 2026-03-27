@@ -54,17 +54,15 @@ func (r *fileRepository) FindByObjectID (objectID uuid.UUID) (*File, error) {
 }
 
 
-// to check, zero-value are ignored by GORM in a struct
-// Which means I'll have to test for name = "", iv = nil, encryptedDEK empty etc...
 func (r *fileRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
 	err := r.db.Model(&File{}).
 		Where("minio_object_key = ?", objectID).
-		Updates(File{
-			Name: name,
-			EncryptedDEK: encryptedDEK,
-			IV: iv,
-			Status: "ACTIVE",
-			OrgID: orgID,
+		Updates(map[string]interface{}{
+			"name":          name,
+			"encrypted_dek": encryptedDEK,
+			"iv":            iv,
+			"status":        "ACTIVE",
+			"org_id":        orgID,
 		}).Error
 	return err
 }
