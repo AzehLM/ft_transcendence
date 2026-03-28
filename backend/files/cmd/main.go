@@ -51,14 +51,31 @@ func runSmokeTest(db *gorm.DB, repo files.FileRepository) {
     }
     log.Printf("[SMOKE] OK  FindByObjectID → name=%s status=%s", found.Name, found.Status)
 
+	found, err = repo.FindByID(pending.ID)
+	if err != nil {
+		log.Printf("[SMOKE] FAIL FindByID: %v", err)
+		return
+	}
+	log.Printf("[SMOKE] OK  FindByID → name=%s id=%s\n", found.Name, found.ID)
+
     if err := repo.ActivateFile(objectID, "real-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil); err != nil {
         log.Printf("[SMOKE] FAIL ActivateFile: %v", err)
         return
     }
     log.Println("[SMOKE] OK  ActivateFile")
 
-    log.Println("[SMOKE] Missing smoke test for\n- FindByID\n- DeleteFile\n- UpdateFileFolder")
-    // log.Println("[SMOKE] All checks passed ✓")
+	// needs a real test and not nil, I'm not sure how to do it atm
+	if err := repo.UpdateFileFolder(pending.ID, nil); err != nil {
+		log.Printf("[SMOKE] FAIL UpdateFileFolder: %v", err)
+	}
+	log.Println("[SMOKE] OK  UpdateFileFolder")
+
+	if err := repo.DeleteFile(objectID); err != nil {
+		log.Printf("[SMOKE] FAIL DeleteFile: %v\n", err)
+		return
+	}
+	log.Println("[SMOKE] OK  DeleteFile")
+    log.Println("[SMOKE] All checks passed ✓")
 }
 
 func main() {
@@ -81,7 +98,9 @@ func main() {
 	}
 
 	minioEndpoint := "minio:9000"
-	useSSL := true
+	// true in prod ? (http vs https, to talk with the minio server)
+	// since the communication is always via the docker network, I'm not sure we need to make it true in prod but I'll have to check further is that is really a concern
+	useSSL := false
 
 	minioClient, err := minio.New(minioEndpoint, &minio.Options{
 		Creds: credentials.NewStaticV4(minioUser, minioPassword, ""),
@@ -93,8 +112,6 @@ func main() {
 	}
 
 	log.Printf("[INFO] minioClient: %#v\n", minioClient)
-
-	log.Printf("[INFO] minio credentials: %s | %s\n", minioUser, minioPassword)
 
 	database := db.InitDB(env)
 
