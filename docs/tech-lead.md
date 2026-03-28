@@ -102,7 +102,17 @@ These are acknowledged as bypassable by a motivated attacker, and are not presen
 
 > ⚠️ Dans l'idée cette partie pourrait etre déplacer dans nos pages *Privacy Policy* et *Terms of Service*
 
-### ORM (GORM ?)
+### ORM (GORM)
+
+- Chose **GORM** over **SQLC** for its developer ergonomics and how well it fits our CRUD‑oriented backend services. SQLC was our second choice because it offers strong compile‑time type safety, but it is a SQL‑to‑Go code generator, not a full ORM. Our service is more convention‑driven and benefits from a higher‑level abstraction that GORM provides via:
+
+  - **Auto‑migration** via `AutoMigrate()` on our models, which keeps our schema in sync with Go structs during development.
+  - **Struct‑based modeling** aligned with our domain (users, organizations, folders, files), reusing the same structs as DTOs (Data Transfer Object) across services.
+  - **Native associations** Can express ownership and relationships without manual joins (via `HasOne`, `BelongsTo`, etc...).
+  - **Hooks / callbacks** (`BeforeCreate`, `AfterUpdate`, etc.) that allow transparent enforcement of business logic such as quota checks, UUID generation, and timestamps directly at the ORM layer.
+  - **Transaction support** (`db.Transaction(...)`) so multi‑step operations (e.g. file upload + quota update) remain atomic.
+
+> ⚠️ **NOTE**: GORM’s `AutoMigrate()` is restricted to **development only**. In production, we will use a dedicated migration tool (e.g. `golang‑migrate`) to ensure reversible schema changes.
 
 ### Design Systen
 
