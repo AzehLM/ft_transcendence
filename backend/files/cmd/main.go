@@ -103,6 +103,11 @@ func main() {
 		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
 	}
 
+	err = files.InitMinioBucket(minioClient, "ostrom")
+	if err != nil {
+		log.Fatalf("[FATAL] ca degage: %v\n", err)
+	}
+
 	log.Printf("[INFO] minioClient: %#v\n", minioClient)
 	// log.Printf("[INFO] MinIO client initialized")
 
