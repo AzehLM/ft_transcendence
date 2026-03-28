@@ -41,6 +41,13 @@ dev: $(ENV_FILE)
 watch: $(ENV_FILE)
 	$(COMPOSE_DEV_CMD) up --build --watch --remove-orphans
 
+.PHONY: files
+files:
+	@docker compose -f infra/docker-compose.dev.yml stop files
+	@docker compose -f infra/docker-compose.dev.yml build files
+	@docker compose -f infra/docker-compose.dev.yml up -d files
+	@docker logs files
+
 .PHONY: stop
 stop:
 	$(COMPOSE_CMD) stop
