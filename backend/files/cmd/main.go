@@ -12,8 +12,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 )
 
@@ -85,8 +83,6 @@ func main() {
 		log.Fatalf("[FATAL], Failed to load configuration: %v", err)
 	}
 
-	log.Printf("[INFO] env values: %s | %s | %s\n", env.PostgresDBname, env.PostgresHost, env.PostgresPort)
-
 	minioUser, err := config.ReadSecret("minio_admin_user")
 	if err != nil {
 		log.Fatalf("[FATAL] Could not read MinIO user secret: %v", err)
@@ -97,21 +93,18 @@ func main() {
 		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
 	}
 
-	minioEndpoint := "minio:9000"
 	// true in prod ? (http vs https, to talk with the minio server)
 	// since the communication is always via the docker network, I'm not sure we need to make it true in prod but I'll have to check further is that is really a concern
 	useSSL := false
+	minioEndpoint := "minio:9000"
 
-	minioClient, err := minio.New(minioEndpoint, &minio.Options{
-		Creds: credentials.NewStaticV4(minioUser, minioPassword, ""),
-		Secure: useSSL,
-	})
-
+	minioClient, err := files.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
 	}
 
 	log.Printf("[INFO] minioClient: %#v\n", minioClient)
+	// log.Printf("[INFO] MinIO client initialized")
 
 	database := db.InitDB(env)
 
@@ -124,8 +117,8 @@ func main() {
 	}
 	log.Println("[INFO] DB connection OK")
 
-	repo := files.NewFileRepository(database)
-	runSmokeTest(database, repo)
+	// repo := files.NewFileRepository(database)
+	// runSmokeTest(database, repo)
 
 	app := fiber.New(fiber.Config{})
 
