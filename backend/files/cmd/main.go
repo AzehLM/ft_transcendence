@@ -11,6 +11,7 @@ import (
 	"backend/shared/db"
 	// "backend/shared/middleware"
 
+	// "github.com/redis/go-redis/v9"
 	"github.com/gofiber/fiber/v3"
 	// "github.com/gofiber/fiber/v3/middleware/limiter"
 )
@@ -31,6 +32,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
 	}
+
+	// redisClient used for the business logic
+	// redisClient := redis.NewClient(&redis.Options{
+	// 	Addr: "redis:6379",
+	// })
 
 	// true in prod ? (http vs https, to talk with the minio server)
 	// since the communication is always via the docker network, I'm not sure we need to make it true in prod but I'll have to check further is that is really a concern
