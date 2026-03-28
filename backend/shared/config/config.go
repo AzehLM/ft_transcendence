@@ -29,8 +29,8 @@ func LoadEnv() (*Env, error) {
 		JwtSecret:        os.Getenv("JWT_SECRET"),
 	}
 
-	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" {
-		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname")
+	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" {
+		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret")
 	}
 
 	return env, nil

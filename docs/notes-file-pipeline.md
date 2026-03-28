@@ -4,9 +4,9 @@
 - [x] requetes DB basiques (vérif documentation de lou-anne/pierrick) - insérer un fichier `PENDING`, le lire, l'update (`repository.go`)
   - [x] smoke test basique des requetes vers la DB
 - [x] démarrer un server Fiber qui se log a Postgres (`cmd/files/main.go`)
-- [ ] Une fois que ca tourne je peux mettre le client **SDK MinIO**
+- [x] Une fois que ca tourne je peux mettre le client **SDK MinIO**
   - [x] utiliser les secrets et pas l'env pour le co a minio, en root
-  - [ ] Initialisation au démarrage dans `main.go`
+  - [x] Initialisation au démarrage dans `main.go`
 - [ ] Tout connecter et implementer les routes: upload-url -> finalize -> downlowd -> delete -> move (déplacement/migration?) (`service.go`, `handler.go`)
 
 
