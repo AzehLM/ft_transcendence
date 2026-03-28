@@ -12,6 +12,8 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/gorm"
 )
 
@@ -78,6 +80,20 @@ func main() {
 		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
 	}
 
+	minioEndpoint := "minio:9000"
+	useSSL := true
+
+	minioClient, err := minio.New(minioEndpoint, &minio.Options{
+		Creds: credentials.NewStaticV4(minioUser, minioPassword, ""),
+		Secure: useSSL,
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Printf("[INFO] minioClient: %#v\n", minioClient)
+
 	log.Printf("[INFO] minio credentials: %s | %s\n", minioUser, minioPassword)
 
 	database := db.InitDB(env)
@@ -101,6 +117,13 @@ func main() {
 			log.Fatalf("[FATAL] Server error: %v", err)
 		}
 	}()
+
+
+	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
+	// minioClient := minio.New(...)
+	// repo := files.NewFileRepository(database) // I already have this a bit further up
+	// service := files.NewService(repo, minioClient)
+	// handler := files.NewFileHandler(service)
 
 	log.Println("[INFO] Files service started on :8083")
 
