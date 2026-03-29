@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"backend/files/internal"
+	"backend/files/internal/service"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -68,4 +69,26 @@ func runSmokeTest(db *gorm.DB, repo files.FileRepository) {
 	}
 	log.Println("[SMOKE] OK  DeleteFile")
 	log.Println("[SMOKE] All checks passed ✓")
+}
+
+func runServiceSmokeTest(db *gorm.DB, svc service.FileService) {
+	log.Println("[SMOKE-SVC] Starting service smoke test...")
+
+	db.Exec("SET session_replication_role = replica")
+	defer db.Exec("SET session_replication_role = DEFAULT")
+
+	userID := uuid.New()
+	presignedURL, objectID, err := svc.RequestUploadURL(userID, 1024, nil, nil)
+	if err != nil {
+		log.Printf("[SMOKE-SVC] FAIL RequestUploadURL: %v\n", err)
+		return
+	}
+	log.Printf("[SMOKE-SVC] OK RequestUploadURL → objectID=%s\n", objectID)
+	err = svc.FinalizeUpload(userID, objectID, "encrypted-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil)
+	if err != nil {
+		log.Printf("[SMOKE-SVC] FAIL FinalizeUpload: %v", err)
+		return
+	}
+	log.Println("[SMOKE-SVC] OK FinalizeUpload")
+	log.Printf("[SMOKE-SVC] OK presignedURL: %s\n", presignedURL)
 }

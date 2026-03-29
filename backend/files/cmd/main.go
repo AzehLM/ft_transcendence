@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"backend/files/internal"
+	"backend/files/internal/service"
 	"backend/shared/config"
 	"backend/shared/db"
 	// "backend/shared/middleware"
@@ -85,6 +86,9 @@ func main() {
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
 	// repo := files.NewFileRepository(database) // I already have this a bit further up
+	repo := files.NewFileRepository(database)
+	svc := service.NewFileService(repo, minioClient, nil) // nil pour redis pour l'instant
+	runServiceSmokeTest(database, svc)
 	// service := files.NewService(repo, minioClient)
 	// handler := files.NewFileHandler(service)
 
