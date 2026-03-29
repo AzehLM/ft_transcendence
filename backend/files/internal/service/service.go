@@ -22,7 +22,7 @@ type FileService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
-	// DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
+	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	// MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 }
 
@@ -140,4 +140,33 @@ func (s *fileService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presigne
 	presignedURL = rawURL.String()
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
+}
+
+func (s *fileService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
+
+	ctx := context.Background()
+	// recuperer le ficher en db -> si non trouvé ErrNotFound
+	file, err := s.repo.FindByID(fileID)
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+	// verifier les droits -> si pas les droits ErrForbidden
+	if file.OwnerUserID != userID {
+		return ErrForbidden
+	}
+	// supprimer en DB
+	if err := s.repo.DeleteFile(fileID); err != nil {
+		return err
+	}
+	// supprimer le fichier via le minioClient
+	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+		return err
+	}
+
+	// update de used_space -> later
+	// publier event file_deleted sur redis -> later
+
+	return nil
 }
