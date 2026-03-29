@@ -13,8 +13,13 @@ CREATE TABLE users (
     auth_hash VARCHAR(255) NOT NULL,
     used_space BIGINT NOT NULL DEFAULT 0,
     max_space BIGINT NOT NULL DEFAULT 5368709120,
+    refresh_token VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    -- username VARCHAR(50) UNIQUE
+    -- avatar
+    -- two_factor_secret VARCHAR(255)
+    -- two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- 2. ORGANIZATIONS

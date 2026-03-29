@@ -1,33 +1,27 @@
-# ==========================================
-# Stage 1: Builder
-# ==========================================
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git
 
-WORKDIR /app
+WORKDIR /app/backend/auth
 
-# Puisque le contexte est à la racine, go.mod est directement accessible
-COPY go.mod go.sum ./
+COPY ./backend/shared/go.mod ./backend/shared/go.sum /app/backend/shared/
+COPY ./backend/auth/go.mod ./backend/auth/go.sum ./
+
 RUN go mod download
 
-# On copie uniquement le dossier de ton service d'authentification
-COPY ./backend ./backend
+COPY ./backend/shared /app/backend/shared
+COPY ./backend/auth ./
 
-# On compile en pointant vers le bon chemin relatif
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_auth ./backend/cmd/auth
-# ==========================================
-# Stage 2: Runner (Production/Dev ready)
-# ==========================================
-FROM alpine:3.19
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_auth ./cmd/api
+
+
+FROM alpine:3.23.3
 
 WORKDIR /app
 
-RUN addgroup -S ftgroup && adduser -S ftuser -G ftgroup
-USER ftuser
 
-COPY --from=builder /app/ft_box_auth .
+COPY --from=builder /app/backend/auth/ft_box_auth .
 
-EXPOSE 3003
+EXPOSE 8081
 
 CMD ["./ft_box_auth"]

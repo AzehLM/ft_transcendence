@@ -1,0 +1,321 @@
+openapi: 3.0.3
+info:
+  title: Auth API
+  description: Microservice d'authentification
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080/api
+    description: test
+
+tags:
+  - name: Auth
+    description: Routes publiques d'authentification
+  - name: Users
+    description: Routes protégées de gestion des utilisateurs
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Inscription d'un nouvel utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Utilisateur créé avec succès (Définit le cookie refresh_token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          description: Erreur de validation (ex. paramètres manquants)
+        '409':
+          description: L'email existe déjà
+
+  /auth/salt:
+    post:
+      tags:
+        - Auth
+      summary: Récupération du sel client
+      description: Renvoie le sel de l'utilisateur ou un faux sel pour prévenir l'énumération.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: student@42lyon.fr
+      responses:
+        '200':
+          description: Sel récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salt:
+                    type: string
+                    example: a1b2c3d4e5f607080910111213141516
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Connexion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Connexion réussie (Définit le cookie refresh_token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccessResponse'
+        '401':
+          description: Identifiants invalides
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Rafraîchir l'Access Token
+      description: Génère un nouveau JWT en utilisant le cookie refresh_token.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Nouveau token généré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '401':
+          description: Refresh token manquant ou invalide
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Déconnexion
+      description: Détruit la session en base de données et supprime le cookie.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Déconnecté avec succès
+
+  /users/me:
+    delete:
+      tags:
+        - Users
+      summary: Supprimer le compte utilisateur
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Compte supprimé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: account_deleted_successfully
+        '401':
+          description: missing_or_invalid_token
+
+    get:
+      tags:
+        - Users
+      summary: Récupérer le profil utilisateur
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Informations de l'utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: JWT manquant ou expiré
+        '404':
+          description: Utilisateur introuvable en base
+
+  /users/password:
+    put:
+      tags:
+        - Users
+      summary: Changer le mot de passe utilisateur
+      description: Met à jour les secrets liés au mot de passe et invalide la session en cours.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: Mot de passe mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: password_updated_please_login_again
+        '400':
+          description: Payload invalide ou paramètres manquants
+        '401':
+          description: JWT manquant ou expiré
+        '403':
+          description: Ancien mot de passe invalide
+        '404':
+          description: Utilisateur introuvable
+        '500':
+          description: Erreur interne serveur
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Insérez votre Access Token (JWT) ici
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: Cookie HttpOnly géré par le navigateur
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - salt
+        - auth_hash
+        - public_key
+        - encrypted_private_key
+        - iv
+      properties:
+        email:
+          type: string
+          example: student@42lyon.fr
+        salt:
+          type: string
+          example: a1b2c3d4e5f607080910111213141516
+        auth_hash:
+          type: string
+          example: f1e2d3c4b5a697887766554433221100
+        public_key:
+          type: string
+          example: aabbccddeeff00112233445566778899
+        encrypted_private_key:
+          type: string
+          example: c3b2a1d4e5f60708091011121314151617181920
+        iv:
+          type: string
+          example: 1234567890abcdef12345678
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - auth_hash
+      properties:
+        email:
+          type: string
+          example: student@42lyon.fr
+        auth_hash:
+          type: string
+          example: f1e2d3c4b5a697887766554433221100
+
+    UpdatePasswordRequest:
+      type: object
+      required:
+        - old_auth_hash
+        - new_auth_hash
+        - new_client_salt
+        - new_encrypted_private_key
+        - new_iv
+      properties:
+        old_auth_hash:
+          type: string
+          example: f1e2d3c4b5a697887766554433221100
+        new_auth_hash:
+          type: string
+          example: aabbccddeeff00112233445566778899
+        new_client_salt:
+          type: string
+          example: a1b2c3d4e5f607080910111213141516
+        new_encrypted_private_key:
+          type: string
+          example: c3b2a1d4e5f60708091011121314151617181920
+        new_iv:
+          type: string
+          example: 1234567890abcdef12345678
+
+    AuthSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Action successful
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    LoginSuccessResponse:
+      allOf:
+        - $ref: '#/components/schemas/AuthSuccessResponse'
+        - type: object
+          properties:
+            encrypted_private_key:
+              type: string
+              example: c3b2a1d4e5f60708091011121314151617181920
+            iv:
+              type: string
+              example: 1234567890abcdef12345678
+            public_key:
+              type: string
+              example: aabbccddeeff00112233445566778899
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          example: student@42lyon.fr
+        used_space:
+          type: integer
+          format: int64
+          example: 2463129600
+        max_space:
+          type: integer
+          format: int64
+          example: 5368709120
+        created_at:
+          type: string
+          format: date-time
+          example: 2026-01-15T10:30:00Z
