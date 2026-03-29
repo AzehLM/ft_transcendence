@@ -23,7 +23,7 @@ type FileService interface {
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
-	// MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
+	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 }
 
 type fileService struct {
@@ -167,6 +167,26 @@ func (s *fileService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// update de used_space -> later
 	// publier event file_deleted sur redis -> later
+
+	return nil
+}
+
+func (s *fileService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error {
+
+	file, err := s.repo.FindByID(fileID)
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+
+	if file.OwnerUserID != userID {
+		return ErrForbidden
+	}
+
+	if err := s.repo.UpdateFileFolder(fileID, folderID); err != nil {
+		return err
+	}
 
 	return nil
 }
