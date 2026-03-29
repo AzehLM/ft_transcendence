@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-
-	// "log"
 	"time"
 
 	files "backend/storage/internal"
@@ -18,7 +16,7 @@ import (
 var ErrForbidden = fmt.Errorf("forbidden")
 var ErrNotFound = fmt.Errorf("not found")
 
-// contract pour la logique métier
+// business logic contract
 type StorageService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
@@ -41,26 +39,10 @@ func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, 
 	}
 }
 
-/*
-BODY
-
-	{
-	  "file_size": 2147483648,
-	  "folder_id": "<uuid_optional>",
-	  "org_id": "<uuid_optional>"
-	}
-
-RESPONSE 200
-
-	{
-	  "presigned_url": "https://minio.../bucket/object?X-Amz-...",
-	  "object_id": "<uuid>"
-	}
-*/
+/* interface methods*/
 func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
 
 	ctx := context.Background()
-
 	objectID = uuid.New()
 
 	// quota verification, a voir avec pierrick
@@ -83,21 +65,20 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	// default ctx for now, not sure it will change, ostrom as the root repository, will have to be modified depending on users path
+	// default ctx for now, ostrom as the root repository, will be be modified depending on users path ?
 	rawURL, err := s.minioClient.PresignedPutObject(ctx, "ostrom", objectID.String(), 15*time.Minute)
 	if err != nil {
 		return "", uuid.Nil, err
 	}
-	// log.Printf("[LOG] rawURL: %s\n", rawURL)
+
 	presignedURL = rawURL.String()
-	// log.Printf("[LOG] presignedURL: %s\n", presignedURL)
 
 	return presignedURL, objectID, err
 }
 
 func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
 
-	// verifier pending status
+	// verify pending status
 	file, err := s.repo.FindByObjectID(objectID)
 	if err == gorm.ErrRecordNotFound {
 		return ErrNotFound
@@ -117,14 +98,14 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	// increment used_space -> later
 	// publier l'event file_uploaded sur redis -> later
 
-	return nil // tout c'est bien passé
+	return nil
 }
 
 func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
 
 	ctx := context.Background()
 
-	// recuperer le ficher en db -> si non trouver ErrNotFound
+	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
 	if err == gorm.ErrRecordNotFound {
 		return "", nil, nil, "", ErrNotFound
@@ -140,6 +121,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	if err != nil {
 		return "", nil, nil, "", err
 	}
+
 	presignedURL = rawURL.String()
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
@@ -148,22 +130,26 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	ctx := context.Background()
-	// recuperer le ficher en db -> si non trouvé ErrNotFound
+
+	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
 	if err == gorm.ErrRecordNotFound {
 		return ErrNotFound
 	} else if err != nil {
 		return err
 	}
-	// verifier les droits -> si pas les droits ErrForbidden
+
+	// sort of right check (only owner for now, has to be updated for organizations)
 	if file.OwnerUserID != userID {
 		return ErrForbidden
 	}
-	// supprimer en DB
+
+	// suppress file metadata in DB
 	if err := s.repo.DeleteFile(fileID); err != nil {
 		return err
 	}
-	// supprimer le fichier via le minioClient
+
+	// suppress actual file in minio
 	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
 		return err
 	}
