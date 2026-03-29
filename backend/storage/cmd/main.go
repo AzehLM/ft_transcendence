@@ -6,10 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"backend/files/internal"
-	"backend/files/internal/service"
+	files "backend/storage/internal"
+
 	"backend/shared/config"
 	"backend/shared/db"
+	"backend/storage/internal/service"
+
 	// "backend/shared/middleware"
 
 	// "github.com/redis/go-redis/v9"
@@ -20,7 +22,7 @@ import (
 func main() {
 
 	env, err := config.LoadEnv()
-	if (err != nil) {
+	if err != nil {
 		log.Fatalf("[FATAL], Failed to load configuration: %v", err)
 	}
 
@@ -68,13 +70,12 @@ func main() {
 	}
 	log.Println("[INFO] DB connection OK")
 
-	// repo := files.NewFileRepository(database)
+	// repo := files.NewStorageRepository(database)
 	// runSmokeTest(database, repo)
 
 	app := fiber.New(fiber.Config{})
 
-
-	// app.Post("/files/upload-url", middleware.ProtectedRoute(env.JwtSecret), handler.UploadURL)
+	// app.Post("/storage/upload-url", middleware.ProtectedRoute(env.JwtSecret), handler.UploadURL)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
@@ -82,15 +83,14 @@ func main() {
 		}
 	}()
 
-
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
-	// repo := files.NewFileRepository(database) // I already have this a bit further up
-	repo := files.NewFileRepository(database)
-	svc := service.NewFileService(repo, minioClient, nil) // nil pour redis pour l'instant
+	// repo := files.NewStorageRepository(database) // I already have this a bit further up
+	repo := files.NewStorageRepository(database)
+	svc := service.NewStorageService(repo, minioClient, nil) // nil pour redis pour l'instant
 	runServiceSmokeTest(database, svc)
 	// service := files.NewService(repo, minioClient)
-	// handler := files.NewFileHandler(service)
+	// handler := files.NewStorageHandler(service)
 
 	log.Println("[INFO] Files service started on :8083")
 

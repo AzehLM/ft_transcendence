@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+
 	// "log"
 	"time"
 
-	files "backend/files/internal"
+	files "backend/storage/internal"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -18,7 +19,7 @@ var ErrForbidden = fmt.Errorf("forbidden")
 var ErrNotFound = fmt.Errorf("not found")
 
 // contract pour la logique métier
-type FileService interface {
+type StorageService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
@@ -26,36 +27,39 @@ type FileService interface {
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 }
 
-type fileService struct {
-	repo		files.FileRepository
-	minioClient	*minio.Client
-	redis		*redis.Client
+type storageService struct {
+	repo        files.StorageRepository
+	minioClient *minio.Client
+	redis       *redis.Client
 }
 
-func NewFileService(repo files.FileRepository, minioClient *minio.Client, redis *redis.Client) FileService {
-	return &fileService{
-		repo:			repo,
-		minioClient:	minioClient,
-		redis:			redis,
+func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client) StorageService {
+	return &storageService{
+		repo:        repo,
+		minioClient: minioClient,
+		redis:       redis,
 	}
 }
 
 /*
 BODY
-{
-  "file_size": 2147483648,
-  "folder_id": "<uuid_optional>",
-  "org_id": "<uuid_optional>"
-}
-RESPONSE 200
-{
-  "presigned_url": "https://minio.../bucket/object?X-Amz-...",
-  "object_id": "<uuid>"
-}
-*/
-func (s *fileService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
 
-    ctx := context.Background()
+	{
+	  "file_size": 2147483648,
+	  "folder_id": "<uuid_optional>",
+	  "org_id": "<uuid_optional>"
+	}
+
+RESPONSE 200
+
+	{
+	  "presigned_url": "https://minio.../bucket/object?X-Amz-...",
+	  "object_id": "<uuid>"
+	}
+*/
+func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
+
+	ctx := context.Background()
 
 	objectID = uuid.New()
 
@@ -63,16 +67,16 @@ func (s *fileService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderI
 	// if used_space + fileSize > max_space = return 413
 
 	newFile := &files.File{
-		ID:				uuid.New(),
-		OwnerUserID:	userID,
-		OrgID:			orgID,
-		FolderID:		folderID,
-		Name:			"",
-		FileSize:		fileSize,
-		MinioObjectKey:	objectID,
-		EncryptedDEK:	[]byte{},
-		IV:				[]byte{},
-		Status:			"PENDING",
+		ID:             uuid.New(),
+		OwnerUserID:    userID,
+		OrgID:          orgID,
+		FolderID:       folderID,
+		Name:           "",
+		FileSize:       fileSize,
+		MinioObjectKey: objectID,
+		EncryptedDEK:   []byte{},
+		IV:             []byte{},
+		Status:         "PENDING",
 	}
 
 	if err = s.repo.InsertPendingFile(newFile); err != nil {
@@ -91,8 +95,7 @@ func (s *fileService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderI
 	return presignedURL, objectID, err
 }
 
-
-func (s *fileService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
+func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
 
 	// verifier pending status
 	file, err := s.repo.FindByObjectID(objectID)
@@ -117,7 +120,7 @@ func (s *fileService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name 
 	return nil // tout c'est bien passé
 }
 
-func (s *fileService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
+func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
 
 	ctx := context.Background()
 
@@ -142,7 +145,7 @@ func (s *fileService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presigne
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
 
-func (s *fileService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
+func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	ctx := context.Background()
 	// recuperer le ficher en db -> si non trouvé ErrNotFound
@@ -171,7 +174,7 @@ func (s *fileService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 	return nil
 }
 
-func (s *fileService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error {
+func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error {
 
 	file, err := s.repo.FindByID(fileID)
 	if err == gorm.ErrRecordNotFound {

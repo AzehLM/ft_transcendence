@@ -3,14 +3,15 @@ package main
 import (
 	"log"
 
-	"backend/files/internal"
-	"backend/files/internal/service"
+	files "backend/storage/internal"
+
+	"backend/storage/internal/service"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func runSmokeTest(db *gorm.DB, repo files.FileRepository) {
+func runSmokeTest(db *gorm.DB, repo files.StorageRepository) {
 
 	log.Println("[SMOKE] Starting repository smoke test...")
 
@@ -71,7 +72,7 @@ func runSmokeTest(db *gorm.DB, repo files.FileRepository) {
 	log.Println("[SMOKE] All checks passed ✓")
 }
 
-func runServiceSmokeTest(db *gorm.DB, svc service.FileService) {
+func runServiceSmokeTest(db *gorm.DB, svc service.StorageService) {
 	log.Println("[SMOKE-SVC] Starting service smoke test...")
 
 	db.Exec("SET session_replication_role = replica")

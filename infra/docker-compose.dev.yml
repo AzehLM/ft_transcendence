@@ -164,11 +164,11 @@ services:
       postgres:
         condition: service_healthy
 
-  files:
-    container_name: files
+  storage:
+    container_name: storage
     build:
       context: ../
-      dockerfile: ./infra/services/files/Dockerfile
+      dockerfile: ./infra/services/storage/Dockerfile
     networks:
       - dev
     restart: unless-stopped
