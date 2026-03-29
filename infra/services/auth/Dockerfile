@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -15,12 +15,10 @@ COPY ./backend/auth ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_auth ./cmd/api
 
 
-FROM alpine:3.19
+FROM alpine:3.23.3
 
 WORKDIR /app
 
-RUN addgroup -S ftgroup && adduser -S ftuser -G ftgroup
-USER ftuser
 
 COPY --from=builder /app/backend/auth/ft_box_auth .
 
