@@ -21,7 +21,7 @@ var ErrNotFound = fmt.Errorf("not found")
 type FileService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
-	// DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
+	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	// DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	// MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 }
@@ -115,4 +115,29 @@ func (s *fileService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name 
 	// publier l'event file_uploaded sur redis -> later
 
 	return nil // tout c'est bien passé
+}
+
+func (s *fileService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
+
+	ctx := context.Background()
+
+	// recuperer le ficher en db -> si non trouver ErrNotFound
+	file, err := s.repo.FindByID(fileID)
+	if err == gorm.ErrRecordNotFound {
+		return "", nil, nil, "", ErrNotFound
+	} else if err != nil {
+		return "", nil, nil, "", err
+	}
+
+	// RBAC -> later
+
+	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
+	// generate presigned URL (GET)
+	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5*time.Minute, nil)
+	if err != nil {
+		return "", nil, nil, "", err
+	}
+	presignedURL = rawURL.String()
+
+	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
