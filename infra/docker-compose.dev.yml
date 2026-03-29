@@ -150,6 +150,20 @@ services:
       timeout: 5s
       retries: 3
 
+  auth:
+    container_name: auth
+    build:
+      context: ../
+      dockerfile: ./infra/services/auth/Dockerfile
+    networks:
+      - dev
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   files:
     container_name: files
     build:
@@ -164,6 +178,8 @@ services:
     env_file:
       - ../.env
     depends_on:
+      auth:
+        condition: service_started
       postgres:
         condition: service_healthy
       minio:
