@@ -90,8 +90,6 @@ func main() {
 	}
 	log.Println("[INFO] DB connection OK")
 
-	// repo := files.NewStorageRepository(database)
-	// runSmokeTest(database, repo)
 
 	app := fiber.New(fiber.Config{})
 
@@ -105,7 +103,6 @@ func main() {
 
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
-	// repo := files.NewStorageRepository(database) // I already have this a bit further up
 	repo := files.NewStorageRepository(database)
 	svc := service.NewStorageService(repo, minioClient, nil) // nil pour redis pour l'instant
 	runServiceSmokeTest(database, svc)
