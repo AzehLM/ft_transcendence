@@ -1,14 +1,36 @@
 import styles from "../styles/LoginPage.module.css"
 
 export function Button({ children, variant = "primary", className = "", type = "button" }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit" }) {
-    const variantStyles = variant === "primary"
-        ? "bg-[#de7356] text-white hover:bg-[#d16649]"
-        : "bg-[rgba(230,225,224,0.71)] text-[#2b1008] hover:bg-[rgba(230,225,224,0.9)]";
-
     const buttonClass = type === "submit" ? styles.submit_button : "";
 
+    const primaryStyles = {
+        backgroundColor: "var(--brand-primary)",
+        color: "white"
+    };
+
+    const secondaryStyles = {
+        backgroundColor: "var(--brand-light)",
+        color: "var(--brand-dark)"
+    };
+
+    const variantStyle = variant === "primary" ? primaryStyles : secondaryStyles;
+
     return (
-        <button type={type} className={`${buttonClass} ${variantStyles} ${className}`}>
+        <button
+            type={type}
+            className={`${buttonClass} ${className}`}
+            style={variantStyle}
+            onMouseEnter={(e) => {
+                if (variant === "primary") {
+                    e.currentTarget.style.backgroundColor = "var(--brand-primary-hover)";
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (variant === "primary") {
+                    e.currentTarget.style.backgroundColor = "var(--brand-primary)";
+                }
+            }}
+        >
             {children}
         </button>
     );

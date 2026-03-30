@@ -29,7 +29,7 @@ export default function LoginPage() {
                             ft_box
                         </span>
                     </div>
-                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "#2b1008", marginBottom: "12px" }}>
+                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
                         Welcome Back
                     </h1>
                     <p className={styles.logo_subtitle}>
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>
-                            <Shield className={`${styles.security_notice_icon} w-5 h-5 text-[#de7356]`} />
+                            <Shield className={`${styles.security_notice_icon} w-5 h-5`} style={{ color: "var(--brand-primary)" }} />
                             <p className={styles.security_notice_text}>
                                 <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
                             </p>

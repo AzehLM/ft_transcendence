@@ -1,5 +1,46 @@
 :root {
   --font-size: 16px;
+  /* Brand Colors */
+  --brand-primary: #de7356;
+  --brand-primary-hover: #d16649;
+  --brand-dark: #2b1008;
+  --brand-light: rgba(230, 225, 224, 0.71);
+
+  /* Spacing Tokens */
+  --spacing-xs: 6px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 64px;
+
+  /* Border Radius Tokens */
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+
+  /* Shadow Tokens */
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  /* Typography Tokens */
+  --text-sm: 14px;
+  --text-base: 18px;
+  --text-lg: 40px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Component Sizes */
+  --input-height: 60px;
+  --button-height: 60px;
+
+  /* Transitions */
+  --transition-base: all 0.3s ease;
+
+  /* Design System Colors */
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
