@@ -22,7 +22,15 @@ func NewOrgaHandler(db *gorm.DB) *OrgaHandler {
 }
 
 func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(400).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(400).SendString("invalid UUID for user")
+	}
 
 	var Orgas []models.Orga
 
@@ -37,12 +45,11 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 }
 
 
-func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
+func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	var body struct {
 		Name              string `json:"name" validate:"required"`
 		PublicKey         string `json:"public_key" validate:"required"`
 		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-		Email             string `json:"email"` // temporary to find the user
 	}
 
 	if len(c.Body()) == 0 {
@@ -78,32 +85,22 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	}
 
 	// to tranfer to repository
-	if err := db.Create(&orga).Error; err != nil {
+	if err := h.DB.Create(&orga).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create organization",
 		})
 	}
 
 	// create an orga member with role admin
-	// var userID uuid.UUID
-	// db.Table("users").Select("id").Where("email = ?", body.Email).
-	// Scan(&userID) // temporary
-
-	// temporary
-	var result struct {
-		ID uuid.UUID
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(400).SendString("invalid user_id type")
 	}
 
-	err := db.Table("users").
-		Select("id").
-		Where("email = ?", body.Email).
-		Take(&result).Error
-	if err != nil {
-		fmt.Println("error: no user found")
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(400).SendString("invalid UUID for user")
 	}
-
-	userID := result.ID
-	// temporary
 
 	orgaMember := models.OrgaMember{
 		OrgID:         orga.ID,
@@ -113,8 +110,8 @@ func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	}
 
 	// to transfer to repository
-	if err := db.Create(&orgaMember).Error; err != nil {
-		db.Delete(&models.Orga{}, orga.ID) // protect ?
+	if err := h.DB.Create(&orgaMember).Error; err != nil {
+		h.DB.Delete(&models.Orga{}, orga.ID) // protect ?
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create admin",
 		})
