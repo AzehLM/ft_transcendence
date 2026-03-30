@@ -21,14 +21,14 @@ export default function LoginPage() {
             <div className={styles.login_page_container} style={{ maxWidth: "448px" }}>
                 {/* Logo */}
                 <div className={styles.logo_section}>
-                    <div className={styles.logo_container}>
+                    <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
                         <div className={styles.logo_box}>
                             <Package className="w-11 h-11 text-white" strokeWidth={2} />
                         </div>
                         <span className={styles.logo_title}>
                             ft_box
                         </span>
-                    </div>
+                    </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
                         Welcome Back
                     </h1>
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
                     {/* Sign Up Link */}
                     <Link
-                        to="/signup"
+                        to="/register"
                         className={styles.signup_link}
                     >
                         Create Account
