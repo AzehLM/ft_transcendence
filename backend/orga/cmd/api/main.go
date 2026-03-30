@@ -60,8 +60,8 @@ func main() {
 
 	// Run
 	go func() {
-		log.Println("[INFO] Starting Fiber server on port 3000...")
-		if err := app.Listen(":3000"); err != nil {
+		log.Println("[INFO] Starting Fiber server on port 8082...")
+		if err := app.Listen(":8082"); err != nil {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()
