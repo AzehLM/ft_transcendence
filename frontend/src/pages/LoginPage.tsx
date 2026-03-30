@@ -2,56 +2,9 @@ import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "../styles/LoginPage.module.css"
+import { Button } from "../components/button";
+import { InputField } from "../components/input";
 
-function Button({ children, variant = "primary", className = "", type = "button" }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit" }) {
-    const variantStyles = variant === "primary"
-        ? "bg-[#de7356] text-white hover:bg-[#d16649]"
-        : "bg-[rgba(230,225,224,0.71)] text-[#2b1008] hover:bg-[rgba(230,225,224,0.9)]";
-
-    const buttonClass = type === "submit" ? styles.submit_button : "";
-
-    return (
-        <button type={type} className={`${buttonClass} ${variantStyles} ${className}`}>
-            {children}
-        </button>
-    );
-}
-
-function InputField({
-    label,
-    type = "text",
-    icon: Icon,
-    placeholder,
-    value,
-    onChange
-}: {
-    label: string;
-    type?: string;
-    icon: any;
-    placeholder: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-    return (
-        <div className={styles.input_field_wrapper}>
-            <label className={styles.input_label}>
-                {label}
-            </label>
-            <div className={styles.input_container}>
-                <div className={styles.input_icon}>
-                    <Icon className="w-6 h-6" />
-                </div>
-                <input
-                    type={type}
-                    placeholder={placeholder}
-                    value={value}
-                    onChange={onChange}
-                    className={styles.input_field}
-                />
-            </div>
-        </div>
-    );
-}
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -104,13 +57,6 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
-
-                        {/* Forgot Password Link */}
-                        <div className={styles.forgot_password}>
-                            <a href="#">
-                                Forgot password?
-                            </a>
-                        </div>
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>

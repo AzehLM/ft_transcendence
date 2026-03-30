@@ -141,23 +141,6 @@
     transform: scale(1.05);
 }
 
-/* ===== FORGOT PASSWORD LINK ===== */
-.forgot_password {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-}
-
-.forgot_password a {
-    font-size: 14px;
-    color: #de7356;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.forgot_password a:hover {
-    color: #d16649;
-}
 
 /* ===== SECURITY NOTICE ===== */
 .security_notice {
