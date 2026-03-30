@@ -32,10 +32,11 @@ func main() {
 	// Routes
 	app.Get("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.GetOrgas)
 	app.Post("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.CreateOrga)
+	app.Patch("/api/orgs/:org_id", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserIsAdmin(dbConn),
+		orgaHandler.ChangeOrgaName)
 	
-	app.Patch("/api/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
-		return handlers.ChangeOrgaName(c, dbConn)
-	})
 	app.Delete("/api/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.DeleteOrga(c, dbConn)
 	})
