@@ -28,32 +28,32 @@ func main() {
 	})
 
 	// Routes
-	app.Get("/api/orga/orgs", func(c fiber.Ctx) error {
+	app.Get("/api/orgs", func(c fiber.Ctx) error {
 		return handlers.GetOrgas(c, dbConn)
 	})
-	app.Post("/api/orga/orgs", func(c fiber.Ctx) error {
+	app.Post("/api/orgs", func(c fiber.Ctx) error {
 		return handlers.CreateOrga(c, dbConn)
 	})
-	app.Patch("/api/orga/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+	app.Patch("/api/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.ChangeOrgaName(c, dbConn)
 	})
-	app.Delete("/api/orga/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+	app.Delete("/api/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.DeleteOrga(c, dbConn)
 	})
 
-	app.Post("/api/orga/orgs/:org_id/members", func(c fiber.Ctx) error {
+	app.Post("/api/orgs/:org_id/members", func(c fiber.Ctx) error {
 		return handlers.CreateOrgaMember(c, dbConn)
 	})
-	app.Patch("/api/orga/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+	app.Patch("/api/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.ChangeRole(c, dbConn)
 	})
-	app.Delete("/api/orga/orgs/:org_id/members/me", func(c fiber.Ctx) error {
+	app.Delete("/api/orgs/:org_id/members/me", func(c fiber.Ctx) error {
 		return handlers.LeaveOrga(c, dbConn)
 	})
-	app.Delete("/api/orga/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
+	app.Delete("/api/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
 		return handlers.DeleteMember(c, dbConn)
 	})
-	app.Get("/api/orga/orgs/:org_id/members/", func(c fiber.Ctx) error {
+	app.Get("/api/orgs/:org_id/members/", func(c fiber.Ctx) error {
 		return handlers.GetMembers(c, dbConn)
 	})
 

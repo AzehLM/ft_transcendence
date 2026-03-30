@@ -146,8 +146,10 @@ localhost:443 {
 	handle /api/auth/* {
 		reverse_proxy auth:8081
 	}
-
-	handle /api/orga/* {
+	handle /api/orgs {
+		reverse_proxy orga:8082
+	}
+	handle /api/orgs/* {
 		reverse_proxy orga:8082
 	}
 }
