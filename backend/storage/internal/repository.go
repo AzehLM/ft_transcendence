@@ -1,16 +1,19 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+var ErrNotFound = fmt.Errorf("not found")
 
 // contract -> ce que chaque repo de fichier doit savoir faire
 type StorageRepository interface {
 	DeleteFile(fileID uuid.UUID) error                                                                    // DELETE /files/{file_id}
 	FindByObjectID(objectID uuid.UUID) (*File, error)                                                     // POST /files/finalize
 	InsertPendingFile(file *File) error                                                                   // POST /files/upload-url
-	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error // POST /files/finalize
+	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)                                                             // GET /downlowd and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error                                         // PATCH /files/{file_id}
 
@@ -51,18 +54,28 @@ func (r *storageRepository) FindByObjectID(objectID uuid.UUID) (*File, error) {
 }
 
 // Each map key represent a SQL column name
-func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
-	err := r.db.Model(&File{}).
-		Where("minio_object_key = ?", objectID).
-		Updates(map[string]interface{}{
-			"name":          name,
-			"encrypted_dek": encryptedDEK,
-			"iv":            iv,
-			"status":        "ACTIVE",
-			"org_id":        orgID,
-		}).Error
-	return err
+func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error {
+    result := r.db.Model(&File{}).
+        Where("minio_object_key = ? AND status = ? AND owner_user_id = ?", objectID, "PENDING", ownerID).
+        Updates(map[string]interface{}{
+            "name":          name,
+            "encrypted_dek": encryptedDEK,
+            "iv":            iv,
+            "status":        "ACTIVE",
+            "org_id":        orgID,
+        })
+
+    if result.Error != nil {
+        return result.Error
+    }
+
+    if result.RowsAffected == 0 {
+        return ErrNotFound
+    }
+
+    return nil
 }
+
 
 func (r *storageRepository) FindByID(fileID uuid.UUID) (*File, error) {
 	var file File

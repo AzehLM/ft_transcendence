@@ -105,6 +105,7 @@ func main() {
 	repo := files.NewStorageRepository(database)
 	svc := service.NewStorageService(repo, minioClient, nil) // nil pour redis pour l'instant
 	runServiceSmokeTest(database, svc)
+	runSmokeTest(database, repo)
 	// service := files.NewService(repo, minioClient)
 	// handler := files.NewStorageHandler(service)
 

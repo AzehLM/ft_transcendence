@@ -50,13 +50,19 @@ func runSmokeTest(db *gorm.DB, repo files.StorageRepository) {
 		log.Printf("[SMOKE] FAIL FindByID: %v", err)
 		return
 	}
-	log.Printf("[SMOKE] OK  FindByID → name=%s id=%s\n", found.Name, found.ID)
+	log.Printf("[SMOKE] OK  FindByID → name=%s id=%s\n", pending.Name, pending.ID)
 
-	if err := repo.ActivateFile(objectID, "real-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil); err != nil {
+	if err := repo.ActivateFile(objectID, "real-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil, ownerID); err != nil {
 		log.Printf("[SMOKE] FAIL ActivateFile: %v", err)
 		return
 	}
 	log.Println("[SMOKE] OK  ActivateFile")
+	activated, err := repo.FindByID(pending.ID)
+	if err != nil {
+		log.Printf("[SMOKE] FAIL FindByID after ActivateFile: %v", err)
+		return
+	}
+	log.Printf("[SMOKE] OK  ActivateFile verified → name=%s status=%s", activated.Name, activated.Status)
 
 	// needs a real test and not nil, I'm not sure how to do it atm
 	if err := repo.UpdateFileFolder(pending.ID, nil); err != nil {
