@@ -42,7 +42,7 @@ func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, 
 /* interface methods*/
 func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
 
-	ctx := context.Background()
+	ctx := context.TODO()
 	objectID = uuid.New()
 
 	// quota verification, a voir avec pierrick
@@ -103,7 +103,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 
 func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
 
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
@@ -129,7 +129,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 
 func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)

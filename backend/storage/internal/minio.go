@@ -18,7 +18,7 @@ func NewMinioClient(endpoint, user, password string, useSSL bool) (*minio.Client
 
 // creating a global bucket
 func InitMinioBucket(client *minio.Client, bucketName string) error {
-	ctx := context.Background()
+	ctx := context.TODO()
 	exists, err := client.BucketExists(ctx, bucketName)
 
 	if err != nil {

@@ -15,8 +15,8 @@ import (
 
 	// "backend/shared/middleware"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/gofiber/fiber/v3"
+	"github.com/redis/go-redis/v9"
 	// "github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
@@ -44,11 +44,11 @@ func main() {
 
 	// redisClient used for the business logic
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "redis:6379",
+		Addr:     "redis:6379",
 		Password: redisPassword,
 	})
 
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	err = redisClient.Set(ctx, "foo", "bar", 0).Err()
 	if err != nil {
@@ -89,7 +89,6 @@ func main() {
 		log.Fatalf("[FATAL] DB unreachable: %v", err)
 	}
 	log.Println("[INFO] DB connection OK")
-
 
 	app := fiber.New(fiber.Config{})
 
