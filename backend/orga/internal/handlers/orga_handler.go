@@ -11,54 +11,31 @@ import (
 	"fmt"
 )
 
-func GetOrgas(c fiber.Ctx, db *gorm.DB) error {
-	// queries := c.Queries()
-	// fmt.Println("All query params:", queries)
-	email := c.Query("email") // temporary
-	// fmt.Println("email = " + email)
-	if email == "" {
-		var Orgas []models.Orga
+type OrgaHandler struct {
+	DB  *gorm.DB
+}
 
-		Orgas, err := repository.GetAllOrgas(db)
-
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": err.Error(),
-			})
-		}
-
-		return c.JSON(Orgas)
-	} else {
-		// temporary
-		var result struct {
-			ID uuid.UUID
-		}
-
-		err := db.Table("users").
-			Select("id").
-			Where("email = ?", email).
-			Take(&result).Error
-		if err != nil {
-			fmt.Println("error: no user found")
-			return err
-		}
-
-		userID := result.ID
-		// temporary
-
-		var Orgas []models.Orga
-
-		Orgas, resErr := repository.GetMemberOrga(db, userID)
-		if resErr != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": resErr.Error(),
-			})
-		}
-		return c.JSON(Orgas)
-
+func NewOrgaHandler(db *gorm.DB) *OrgaHandler {
+	return &OrgaHandler{
+		DB:  db,
 	}
+}
+
+func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+
+	var Orgas []models.Orga
+
+	Orgas, resErr := repository.GetMemberOrga(h.DB, userID)
+	if resErr != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": resErr.Error(),
+		})
+	}
+	return c.JSON(Orgas)
 
 }
+
 
 func CreateOrga(c fiber.Ctx, db *gorm.DB) error {
 	var body struct {

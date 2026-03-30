@@ -27,10 +27,12 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
+	orgaHandler := handlers.NewOrgaHandler(dbConn)
+
 	// Routes
-	app.Get("/api/orgs", func(c fiber.Ctx) error {
-		return handlers.GetOrgas(c, dbConn)
-	})
+	app.Get("/api/orgs", middleware.ProtectedRoute(env.JwtSecret),orgaHandler.GetOrgas)
+
+	
 	app.Post("/api/orgs", func(c fiber.Ctx) error {
 		return handlers.CreateOrga(c, dbConn)
 	})
