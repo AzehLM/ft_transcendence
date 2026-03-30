@@ -1,7 +1,7 @@
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "../styles/LoginPage.module.css";
+import styles from "../styles/LoginPage.module.css"
 
 function Button({ children, variant = "primary", className = "", type = "button" }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit" }) {
     const variantStyles = variant === "primary"
