@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"backend/orga/internal/config"
-	"backend/orga/internal/db"
+	"backend/shared/config"
+	"backend/shared/db"
 	"backend/orga/internal/handlers"
 	"backend/shared/middleware"
 
