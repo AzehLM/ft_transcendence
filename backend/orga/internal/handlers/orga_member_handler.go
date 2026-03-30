@@ -52,19 +52,6 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	// fmt.Println("orga id = ", orgID)
-
-	// // check if orga exist
-	// var Orga models.Orga
-	// orgaResult := h.DB.Table("organizations").Where("id = ?", orgID).First(&Orga)
-	// // fmt.Println("orga result = ", orgaResult)
-	// if orgaResult.Error != nil {
-	// 	if errors.Is(orgaResult.Error, gorm.ErrRecordNotFound) {
-	// 		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
-	// 	}
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgaResult.Error.Error()})
-	// }
-
 	// check if added user exist
 	var User struct {
 		ID uuid.UUID
@@ -147,13 +134,6 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		})
 	}
 
-	// var orga models.Orga
-	// if err := db.First(&orga, "id = ?", orgID).Error; err != nil {
-    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-	// 		"error": "organization not found",
-	// 	})
-    // }
-
 	userIDParam := c.Params("user_id")
 	if userIDParam == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "user_id is required in path"})
@@ -215,32 +195,6 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 			"error": "invalid orga id format",
 		})
 	}
-
-	// var orga models.Orga
-	// if err := db.First(&orga, "id = ?", orgID).Error; err != nil {
-    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-	// 		"error": "organization not found",
-	// 	})
-    // }
-
-	// email := c.Query("email")
-	// if email == "" {
-	// 	return c.Status(401).JSON(fiber.Map{"error": "email is required in query"})
-	// }
-
-	// // temporary
-	// var user struct {
-	// 	ID uuid.UUID
-	// }
-
-	// userErr := db.Table("users").
-	// 	Select("id").
-	// 	Where("email = ?", email).
-	// 	Take(&user).Error
-	// if userErr != nil {
-	// 	fmt.Println("error: no user found")
-	// 	return userErr
-	// }
 
 	userIDLocals, errUser := c.Locals("user_id").(string)
 	if !errUser {
@@ -304,13 +258,6 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 			"error": "invalid orga id format",
 		})
 	}
-
-	// var orga models.Orga
-	// if err := h.DB.First(&orga, "id = ?", orgID).Error; err != nil {
-    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-	// 		"error": "organization not found",
-	// 	})
-    // }
 
 	userIDParam := c.Params("user_id")
 	if userIDParam == "" {
@@ -376,13 +323,6 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 			"error": "invalid orga id format",
 		})
 	}
-
-	// var orga models.Orga
-	// if err := h.DB.First(&orga, "id = ?", orgID).Error; err != nil {
-    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-	// 		"error": "organization not found",
-	// 	})
-    // }
 	
 	type OrgaMemberResponse struct {
 		UserID    	uuid.UUID   `json:"user_id"`
@@ -391,11 +331,6 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 	}
 	
 	var OrgaMembers []OrgaMemberResponse
-
-	// result := h.DB.Model(&models.OrgaMember{}).
-	// 	Select("user_id, role").
-	// 	Where("org_id = ?", orgID).
-	// 	Scan(&OrgaMembers)
 
 	result := h.DB.Model(&models.OrgaMember{}).
 		Select("org_members.user_id, org_members.role, users.email").
