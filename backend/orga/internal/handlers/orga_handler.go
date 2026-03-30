@@ -125,7 +125,7 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
-	orgID, _ := uuid.Parse(orgIDParam)
+	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 
     result := h.DB.
@@ -174,7 +174,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	}
 
 	orgIDParam := c.Params("org_id")
-	orgID, _ := uuid.Parse(orgIDParam)
+	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
     result := h.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("name", body.Name)
     if result.Error != nil {

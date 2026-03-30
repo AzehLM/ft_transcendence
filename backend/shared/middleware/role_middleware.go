@@ -6,8 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"gorm.io/gorm"
 
-	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -45,7 +43,7 @@ func CheckOrgaExist(db *gorm.DB) fiber.Handler {
 func CheckUserInOrga(db *gorm.DB) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		orgIDParam := c.Params("org_id")
-		orgID, _ := uuid.Parse(orgIDParam)
+		orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
@@ -78,7 +76,7 @@ func CheckUserInOrga(db *gorm.DB) fiber.Handler {
 func CheckUserIsMember(db *gorm.DB) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		orgIDParam := c.Params("org_id")
-		orgID, _ := uuid.Parse(orgIDParam)
+		orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
@@ -115,7 +113,7 @@ func CheckUserIsMember(db *gorm.DB) fiber.Handler {
 func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		orgIDParam := c.Params("org_id")
-		orgID, _ := uuid.Parse(orgIDParam)
+		orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
@@ -134,67 +132,6 @@ func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 		memberErr := db.Table("org_members").Where("user_id = ? AND org_id = ?", userID, orgID).Take(&Member).Error
 
 		if memberErr != nil {
-			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
-			}
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
-		}
-
-		if Member.Role == "admin" {
-			return c.Next()
-		}
-
-		return c.Status(403).JSON(fiber.Map{"error": "member does not have the rights"})
-	}
-}
-
-// temporary middleware to check user role in organization
-func CheckRoleAdmin(db *gorm.DB) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		email := c.Query("email")
-		if email == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "email is required in query"})
-		}
-
-		// temporary
-		var result struct {
-			ID uuid.UUID
-		}
-
-		err := db.Table("users").
-			Select("id").
-			Where("email = ?", email).
-			Take(&result).Error
-		if err != nil {
-			fmt.Println("error: no user found")
-			return err
-		}
-
-		userID := result.ID
-		// temporary
-
-		orgIDParam := c.Params("org_id")
-		if orgIDParam == "" {
-			return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
-		}
-
-		orgID, err := uuid.Parse(orgIDParam)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "invalid orga id format",
-			})
-		}
-
-		// check if organization exist ?
-
-		var Member struct {
-			ID uuid.UUID
-			Role string
-		}
-		memberErr := db.Table("org_members").Where("user_id = ? AND org_id = ?", userID, orgID).Take(&Member).Error
-
-		if memberErr != nil {
-			// fmt.Println("error is ", memberErr)
 			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
 				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
 			}

@@ -29,7 +29,7 @@ func main() {
 
 	orgaHandler := handlers.NewOrgaHandler(dbConn)
 
-	// Routes
+	// Orgs Routes
 	app.Get("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.GetOrgas)
 	app.Post("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.CreateOrga)
 	app.Patch("/api/orgs/:org_id", middleware.ProtectedRoute(env.JwtSecret), 
@@ -42,21 +42,31 @@ func main() {
 		middleware.CheckUserIsAdmin(dbConn),
 		orgaHandler.DeleteOrga)
 
-	app.Post("/api/orgs/:org_id/members", func(c fiber.Ctx) error {
-		return handlers.CreateOrgaMember(c, dbConn)
-	})
-	app.Patch("/api/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
-		return handlers.ChangeRole(c, dbConn)
-	})
-	app.Delete("/api/orgs/:org_id/members/me", func(c fiber.Ctx) error {
-		return handlers.LeaveOrga(c, dbConn)
-	})
-	app.Delete("/api/orgs/:org_id/members/:user_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
-		return handlers.DeleteMember(c, dbConn)
-	})
-	app.Get("/api/orgs/:org_id/members/", func(c fiber.Ctx) error {
-		return handlers.GetMembers(c, dbConn)
-	})
+	// Members Routes
+	app.Post("/api/orgs/:org_id/members", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserIsAdmin(dbConn),
+		orgaHandler.CreateOrgaMember)
+
+	app.Patch("/api/orgs/:org_id/members/:user_id", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserIsAdmin(dbConn),
+		orgaHandler.ChangeRole)
+
+	app.Delete("/api/orgs/:org_id/members/me", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserInOrga(dbConn),
+		orgaHandler.LeaveOrga)
+
+	app.Delete("/api/orgs/:org_id/members/:user_id", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserIsAdmin(dbConn),
+		orgaHandler.DeleteMember)
+
+	app.Get("/api/orgs/:org_id/members/", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserInOrga(dbConn),
+		orgaHandler.GetMembers)
 
 
 	// Run
