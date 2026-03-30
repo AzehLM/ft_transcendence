@@ -7,8 +7,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-
-	"fmt"
 )
 
 type OrgaHandler struct {
@@ -124,23 +122,13 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 
 }
 
-func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
-	fmt.Println("Entering delete function")
-
+func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
-	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
-	}
+	orgID, _ := uuid.Parse(orgIDParam)
 
-	orgID, err := uuid.Parse(orgIDParam)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid orga id format",
-		})
-	}
 
-    result := db.
+    result := h.DB.
         Table("organizations").
         Where("id = ?", orgID).
         Delete(nil)
@@ -155,7 +143,7 @@ func DeleteOrga(c fiber.Ctx, db *gorm.DB) error {
 
     if result.RowsAffected == 0 {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "orga not found",
+            "error": "orgnization not found",
         })
     }
 

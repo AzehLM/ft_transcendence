@@ -75,6 +75,41 @@ func CheckUserInOrga(db *gorm.DB) fiber.Handler {
 }
 
 // check user is member of organization
+func CheckUserIsMember(db *gorm.DB) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		orgIDParam := c.Params("org_id")
+		orgID, _ := uuid.Parse(orgIDParam)
+
+		userIDLocals, err := c.Locals("user_id").(string)
+		if !err {
+			return c.Status(400).SendString("invalid user_id type")
+		}
+
+		userID, errUser := uuid.Parse(userIDLocals)
+		if errUser != nil {
+			return c.Status(400).SendString("invalid UUID for user")
+		}
+
+		var Member struct {
+			ID uuid.UUID
+			Role string
+		}
+		memberErr := db.Table("org_members").Where("user_id = ? AND org_id = ?", userID, orgID).Take(&Member).Error
+
+		if memberErr != nil {
+			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
+				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
+			}
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
+		}
+
+		if Member.Role == "member" {
+			return c.Next()
+		}
+
+		return c.Status(403).JSON(fiber.Map{"error": "member does not have the rights"})
+	}
+}
 
 // check user is admin of organization
 func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {

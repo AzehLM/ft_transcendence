@@ -37,9 +37,10 @@ func main() {
 		middleware.CheckUserIsAdmin(dbConn),
 		orgaHandler.ChangeOrgaName)
 	
-	app.Delete("/api/orgs/:org_id", middleware.CheckRoleAdmin(dbConn), func(c fiber.Ctx) error {
-		return handlers.DeleteOrga(c, dbConn)
-	})
+	app.Delete("/api/orgs/:org_id", middleware.ProtectedRoute(env.JwtSecret), 
+		middleware.CheckOrgaExist(dbConn), 
+		middleware.CheckUserIsAdmin(dbConn),
+		orgaHandler.DeleteOrga)
 
 	app.Post("/api/orgs/:org_id/members", func(c fiber.Ctx) error {
 		return handlers.CreateOrgaMember(c, dbConn)
