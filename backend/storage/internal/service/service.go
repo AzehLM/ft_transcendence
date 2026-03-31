@@ -79,9 +79,9 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
 
 	// activer ficher en db
-    if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, orgID, userID); err != nil {
-        return err
-    }
+	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, orgID, userID); err != nil {
+		return err
+	}
 
 	// increment used_space -> later
 	// publier l'event file_uploaded sur redis -> later

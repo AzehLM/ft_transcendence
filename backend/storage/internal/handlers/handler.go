@@ -1,9 +1,27 @@
 package handlers
 
-func UploadURL(request string) error {
+import (
+	"backend/storage/internal/service"
+)
 
-	if request != "" {
-		return nil
-	}
-	return nil
+type StorageHandler struct {
+	svc service.StorageService
 }
+
+func NewStorageHandler (svc service.StorageService) *StorageHandler {
+	return &StorageHandler{
+		svc: svc,
+	}
+}
+
+type uploadURLRequest struct {
+
+}
+
+type finalizeRequest struct {
+
+}
+
+func (h *StorageHandler) extractUserID
+
+func (svc *StorageHandler)

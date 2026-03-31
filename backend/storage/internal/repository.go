@@ -55,25 +55,25 @@ func (r *storageRepository) FindByObjectID(objectID uuid.UUID) (*File, error) {
 
 // Each map key represent a SQL column name
 func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error {
-    result := r.db.Model(&File{}).
-        Where("minio_object_key = ? AND status = ? AND owner_user_id = ?", objectID, "PENDING", ownerID).
-        Updates(map[string]interface{}{
-            "name":          name,
-            "encrypted_dek": encryptedDEK,
-            "iv":            iv,
-            "status":        "ACTIVE",
-            "org_id":        orgID,
-        })
+	result := r.db.Model(&File{}).
+		Where("minio_object_key = ? AND status = ? AND owner_user_id = ?", objectID, "PENDING", ownerID).
+		Updates(map[string]interface{}{
+			"name":          name,
+			"encrypted_dek": encryptedDEK,
+			"iv":            iv,
+			"status":        "ACTIVE",
+			"org_id":        orgID,
+		})
 
-    if result.Error != nil {
-        return result.Error
-    }
+	if result.Error != nil {
+		return result.Error
+	}
 
-    if result.RowsAffected == 0 {
-        return ErrNotFound
-    }
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
 
-    return nil
+	return nil
 }
 
 
