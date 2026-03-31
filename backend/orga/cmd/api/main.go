@@ -63,7 +63,16 @@ func main() {
 		return handlers.GetMembers(c, dbConn)
 	})
 
-	app.Get("/ws/notifications", websocket.New(wsHub.GlobalWSHandler))
+	app.Get("/ws/notifications",
+		middleware.ProtectedRoute(env.JwtSecret),
+		func(c fiber.Ctx) error {
+			if c.IsWebSocket() {
+				return c.Next()
+			}
+			return fiber.ErrUpgradeRequired
+		},
+		websocket.New(wsHub.GlobalWSHandler),
+	)
 	// Run
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8082...")
