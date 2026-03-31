@@ -38,13 +38,12 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 		return
 	}
 
-	channels := make([]string, 0, len(orgas))
+	channels := make([]string, 0, len(orgas)+1)
+
+	channels = append(channels, "user_events:"+userID.String())
+
 	for _, org := range orgas {
 		channels = append(channels, "org_events:"+org.ID.String())
-	}
-	if len(channels) == 0 {
-		log.Printf("[WS] User %s has no organizations, closing websocket", userID)
-		return
 	}
 
 	ctx := context.Background()
