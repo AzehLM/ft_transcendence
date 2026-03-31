@@ -6,12 +6,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"backend/orga/internal/handlers"
+	"backend/orga/internal/ws"
 	"backend/shared/config"
 	"backend/shared/db"
-	"backend/orga/internal/handlers"
 	"backend/shared/middleware"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v3"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -20,10 +23,13 @@ func main() {
 		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
 	}
 
+	redisClient := redis.NewClient(&redis.Options{Addr: "redis:6379"})
+
 	dbConn := db.InitDB(env)
+	wsHub := ws.NewHub(redisClient, dbConn)
 
 	app := fiber.New(fiber.Config{
-		AppName: "ft_box_orga v1.0",
+		AppName:   "ft_box_orga v1.0",
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
@@ -58,6 +64,7 @@ func main() {
 	org.Get("/members", member, orgaHandler.GetMembers)
 	org.Get("/members/key", member, orgaHandler.GetMemberPrivateKey)
 
+	app.Get("/ws/notifications", websocket.New(wsHub.GlobalWSHandler))
 	// Run
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8082...")
@@ -65,7 +72,6 @@ func main() {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()
-
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
