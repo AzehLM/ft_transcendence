@@ -85,6 +85,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 
 	// increment used_space -> later
 	// publier l'event file_uploaded sur redis -> later
+	// incrementation en DB avec un UPDATE users SET used_space = used_space + ? WHERE id = ? pour évité les dataraces
 
 	return nil
 }
