@@ -152,4 +152,9 @@ localhost:443 {
 	handle /api/orgs/* {
 		reverse_proxy orga:8082
 	}
+
+    # --- WebSockets ---
+    handle /ws/* {
+        reverse_proxy orga:8082
+    }
 }
