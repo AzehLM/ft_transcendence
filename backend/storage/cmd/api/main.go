@@ -11,7 +11,7 @@ import (
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/storage/internal/service"
-	// "backend/storage/internal/handlers"
+	"backend/storage/internal/handlers"
 
 	"backend/shared/middleware"
 
@@ -70,12 +70,12 @@ func main() {
 
 	repo := files.NewStorageRepository(database)
 	service := service.NewStorageService(repo, minioClient, redisClient)
-	// handler := handlers.NewStorageHandler(service)
+	handler := handlers.NewStorageHandler(service)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
-	// api.Post("/files/upload-url",		handler.RequestUploadURL)
+	api.Post("/files/upload-url",		handler.RequestUploadURL)
 	// api.Post("/files/finalize",			handler.FinalizeUpload)
 	// api.Get("/files/:file_id/download", handler.DownloadFile)
 	// api.Patch("/files/:file_id",		handler.MoveFile)
