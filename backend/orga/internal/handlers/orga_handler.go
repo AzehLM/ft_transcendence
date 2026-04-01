@@ -31,8 +31,8 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	}
 
 	var Orgas []models.Orga
-
-	Orgas, resErr := repository.GetMemberOrga(h.DB, userID)
+	repo := repository.NewOrganizationRepository(h.DB)
+	Orgas, resErr := repo.GetMemberOrga(userID)
 	if resErr != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": resErr.Error(),
@@ -83,7 +83,8 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	}
 
 	// to tranfer to repository
-	if err := h.DB.Create(&orga).Error; err != nil {
+    repo := repository.NewOrganizationRepository(h.DB)
+    if err := repo.CreateNewOrga(&orga); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create organization",
 		})
@@ -107,9 +108,8 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 	}
 
-	// to transfer to repository
-	if err := h.DB.Create(&orgaMember).Error; err != nil {
-		h.DB.Delete(&models.Orga{}, orga.ID) // protect ?
+	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
+		repo.DeleteOrganization(orga.ID)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create admin",
 		})
@@ -127,24 +127,16 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
-
-	result := h.DB.
-		Where("id = ?", orgID).
-		Delete(&models.Orga{})
+	repo := repository.NewOrganizationRepository(h.DB)
+	deleted, err := repo.DeleteOrganization(orgID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !deleted {
+		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+	}
 
 	// delete all MinIO files
-
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "database error",
-        })
-    }
-
-    if result.RowsAffected == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "orgnization not found",
-        })
-    }
 
     return c.SendStatus(fiber.StatusNoContent)
 }
@@ -175,18 +167,14 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
-    result := h.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("name", body.Name)
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
-		})
-    }
-    if result.RowsAffected == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "organization not found",
-		})
-    }
-
+	repo := repository.NewOrganizationRepository(h.DB)
+	deleted, err := repo.UpdateOrgaName(orgID, body.Name)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !deleted {
+		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+	}
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "organization name updated",
 	})
