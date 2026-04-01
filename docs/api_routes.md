@@ -1,6 +1,6 @@
 # ft_box - API Routes
 
-Base URL : `/api/v1`
+Base URL : `/api`
 
 
 ---
