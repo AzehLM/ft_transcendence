@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"backend/orga/internal/models"
+	"backend/orga/internal/repository"
 	"errors"
 )
 
@@ -54,7 +55,8 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 	// check if added user exist
 	var user models.User
-	userErr := h.DB.Where("email = ?", body.Email).Take(&user).Error
+	repo := repository.NewOrganizationRepository(h.DB)
+	userErr := repo.GetUserByEmail(body.Email, &user)
 
 	if userErr != nil {
 		// fmt.Println("error is ", userErr)
@@ -66,7 +68,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 	// check if user already is part of orga
 	var member models.OrgaMember
-	memberErr := h.DB.Where("user_id = ? AND org_id = ?", user.ID, orgID).Take(&member).Error
+	memberErr := repo.GetOrgaMember(orgID, user.ID, &member)
 	if memberErr == nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user is already part of the organization"})
 	}
@@ -80,7 +82,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 	}
 
-	if err := h.DB.Create(&orgaMember).Error; err != nil {
+	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create member",
 		})
@@ -142,36 +144,28 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	var member models.OrgaMember
-	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
+	repo := repository.NewOrganizationRepository(h.DB)
+	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
     }
 
 	if member.Role == "admin" && body.Role != "admin" {
-        var count int64
-        h.DB.Model(&models.OrgaMember{}).
-            Where("org_id = ? AND role = ?", orgID, "admin").
-            Count(&count)
-
-        if count <= 1 {
+        if repo.CountAdmin(orgID) <= 1 {
             return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
                 "error": "cannot remove the last admin",
             })
         }
 	}
 
-    result := h.DB.Model(&models.OrgaMember{}).Where("user_id = ? AND org_id = ?",userID,  orgID).Update("role", body.Role)
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
-		})
-    }
-    if result.RowsAffected == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "organization not found",
-		})
-    }
+	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !updated {
+		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "role updated",
@@ -202,40 +196,29 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	var member models.OrgaMember
-	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
+	repo := repository.NewOrganizationRepository(h.DB)
+
+	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
     }
 
 	if member.Role == "admin" {
-        var count int64
-        h.DB.Model(&models.OrgaMember{}).
-            Where("org_id = ? AND role = ?", orgID, "admin").
-            Count(&count)
-
-        if count <= 1 {
+        if repo.CountAdmin(orgID) <= 1 {
             return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
                 "error": "cannot remove the last admin",
             })
-        }
+		}
 	}
 
-	result := h.DB.
-		Where("user_id = ? AND org_id = ?", userID, orgID).
-		Delete(&models.OrgaMember{})
-
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "database error",
-        })
-    }
-
-    if result.RowsAffected == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "member not found",
-        })
-    }
+	deleted, err := repo.DeleteOrgaMember(orgID, userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !deleted {
+		return c.Status(404).JSON(fiber.Map{"error": "member not found"})
+	}
 
     return c.SendStatus(fiber.StatusNoContent)
 }
@@ -265,41 +248,29 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 		})
 	}
 
+	repo := repository.NewOrganizationRepository(h.DB)
 	var member models.OrgaMember
-	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
+	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
     }
 
 	if member.Role == "admin" {
-        var count int64
-        h.DB.Model(&models.OrgaMember{}).
-            Where("org_id = ? AND role = ?", orgID, "admin").
-            Count(&count)
-
-        if count <= 1 {
+        if repo.CountAdmin(orgID) <= 1 {
             return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
                 "error": "cannot remove the last admin",
             })
-        }
+		}
 	}
 
-	result := h.DB.
-		Where("user_id = ? AND org_id = ?", userID, orgID).
-		Delete(&models.OrgaMember{})
-
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "database error",
-        })
-    }
-
-    if result.RowsAffected == 0 {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": "member not found",
-        })
-    }
+	deleted, err := repo.DeleteOrgaMember(orgID, userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !deleted {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
+	}
 
     return c.SendStatus(fiber.StatusNoContent)
 }
@@ -317,25 +288,16 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 		})
 	}
 	
-	type OrgaMemberResponse struct {
-		UserID    	uuid.UUID   `json:"user_id"`
-		Role  		string `json:"role"`
-		Email		string `json:"email"` // not sure
-	}
-	
-	var OrgaMembers []OrgaMemberResponse
+	var orgaMembers []models.OrgaMemberResponse
 
-	result := h.DB.Model(&models.OrgaMember{}).
-		Select("org_members.user_id, org_members.role, users.email").
-		Joins("JOIN users ON users.id = org_members.user_id").
-		Where("org_members.org_id = ?", orgID).
-		Scan(&OrgaMembers)
+	repo := repository.NewOrganizationRepository(h.DB)
+	orgaMembers, result := repo.GetAllMembersFromOrga(orgID)
 
-	if result.Error != nil {
+	if result != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "database error",
 		})
 	}
 
-	return c.Status(fiber.StatusAccepted).JSON(OrgaMembers)
+	return c.Status(fiber.StatusAccepted).JSON(orgaMembers)
 }

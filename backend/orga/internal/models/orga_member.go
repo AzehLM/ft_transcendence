@@ -16,3 +16,10 @@ type OrgaMember struct {
 func(OrgaMember) TableName() string {
 	return "org_members"
 }
+
+type OrgaMemberResponse struct {
+	UserID    	uuid.UUID   `json:"user_id"`
+	Role  		string `json:"role"`
+	Email		string `json:"email"` // not sure
+}
+	
