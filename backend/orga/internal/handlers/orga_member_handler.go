@@ -53,10 +53,8 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	// check if added user exist
-	var User struct {
-		ID uuid.UUID
-	}
-	userErr := h.DB.Table("users").Where("email = ?", body.Email).Take(&User).Error
+	var user models.User
+	userErr := h.DB.Where("email = ?", body.Email).Take(&user).Error
 
 	if userErr != nil {
 		// fmt.Println("error is ", userErr)
@@ -67,11 +65,8 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	// check if user already is part of orga
-	var Member struct {
-		ID uuid.UUID
-	}
-	memberErr := h.DB.Table("org_members").Where("user_id = ? AND org_id = ?", User.ID, orgID).Take(&Member).Error
-
+	var member models.OrgaMember
+	memberErr := h.DB.Where("user_id = ? AND org_id = ?", user.ID, orgID).Take(&member).Error
 	if memberErr == nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user is already part of the organization"})
 	}
@@ -79,7 +74,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	// create orga member
 	orgaMember := models.OrgaMember{
 		OrgID: orgID,
-		UserID: User.ID,
+		UserID: user.ID,
 		Role: "member",
 		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 
@@ -91,7 +86,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		// ???
+		"message": "member added to organization",
 	})
 }
 
@@ -147,7 +142,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	var member models.OrgaMember
-	if err := h.DB.First(&member, "user_id = ? AND org_id = ?", userID, orgID).Error; err != nil {
+	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
@@ -207,7 +202,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	var member models.OrgaMember
-	if err := h.DB.First(&member, "user_id = ? AND org_id = ?", userID, orgID).Error; err != nil {
+	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
@@ -226,10 +221,9 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
         }
 	}
 
-    result := h.DB.
-        Table("org_members").
-        Where("user_id = ? AND org_id = ?", userID, orgID).
-        Delete(nil)
+	result := h.DB.
+		Where("user_id = ? AND org_id = ?", userID, orgID).
+		Delete(&models.OrgaMember{})
 
     if result.Error != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -272,7 +266,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	}
 
 	var member models.OrgaMember
-	if err := h.DB.First(&member, "user_id = ? AND org_id = ?", userID, orgID).Error; err != nil {
+	if err := h.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&member).Error; err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
@@ -291,10 +285,9 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
         }
 	}
 
-    result := h.DB.
-        Table("org_members").
-        Where("user_id = ? AND org_id = ?", userID, orgID).
-        Delete(nil)
+	result := h.DB.
+		Where("user_id = ? AND org_id = ?", userID, orgID).
+		Delete(&models.OrgaMember{})
 
     if result.Error != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

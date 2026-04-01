@@ -128,10 +128,9 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 
-    result := h.DB.
-        Table("organizations").
-        Where("id = ?", orgID).
-        Delete(nil)
+	result := h.DB.
+		Where("id = ?", orgID).
+		Delete(&models.Orga{})
 
 	// delete all MinIO files
 
