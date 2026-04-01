@@ -17,7 +17,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	if len(c.Body()) == 0 {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Request body is empty",
 		})
 	}
@@ -43,7 +43,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	// fmt.Println("mail: ", body.Email, "and key: ", body.EncOrgaPrivateKey)
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	orgID, err := uuid.Parse(orgIDParam)
@@ -61,7 +61,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	if userErr != nil {
 		// fmt.Println("error is ", userErr)
 		if errors.Is(userErr, gorm.ErrRecordNotFound) {
-			return c.Status(404).JSON(fiber.Map{"error": "user not found"})
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": userErr.Error()})
 	}
@@ -98,7 +98,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	if len(c.Body()) == 0 {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Request body is empty",
 		})
 	}
@@ -121,7 +121,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	orgID, err := uuid.Parse(orgIDParam)
@@ -133,7 +133,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 
 	userIDParam := c.Params("user_id")
 	if userIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "user_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user_id is required in path"})
 	}
 
 	userID, err := uuid.Parse(userIDParam)
@@ -161,10 +161,10 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	if !updated {
-		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -175,7 +175,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	orgID, err := uuid.Parse(orgIDParam)
@@ -187,12 +187,12 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 
 	userIDLocals, errUser := c.Locals("user_id").(string)
 	if !errUser {
-		return c.Status(400).SendString("invalid user_id type")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 	}
 
 	userID, errUserID := uuid.Parse(userIDLocals)
 	if errUserID != nil {
-		return c.Status(400).SendString("invalid UUID for user")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
 	var member models.OrgaMember
@@ -214,10 +214,10 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	if !deleted {
-		return c.Status(404).JSON(fiber.Map{"error": "member not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
     return c.SendStatus(fiber.StatusNoContent)
@@ -226,7 +226,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	orgID, err := uuid.Parse(orgIDParam)
@@ -238,7 +238,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 
 	userIDParam := c.Params("user_id")
 	if userIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	userID, err := uuid.Parse(userIDParam)
@@ -278,7 +278,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 	}
 
 	orgID, err := uuid.Parse(orgIDParam)

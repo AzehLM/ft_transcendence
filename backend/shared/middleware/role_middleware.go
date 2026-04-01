@@ -14,7 +14,7 @@ func CheckOrgaExist(db *gorm.DB) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		orgIDParam := c.Params("org_id")
 		if orgIDParam == "" {
-			return c.Status(400).JSON(fiber.Map{"error": "org_id is required in path"})
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
 		}
 
 		orgID, err := uuid.Parse(orgIDParam)
@@ -30,7 +30,7 @@ func CheckOrgaExist(db *gorm.DB) fiber.Handler {
 		orgaResult := db.Table("organizations").Where("id = ?", orgID).Take(&orga)
 		if orgaResult.Error != nil {
 			if errors.Is(orgaResult.Error, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 			}
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgaResult.Error.Error()})
 		} else {
@@ -47,12 +47,12 @@ func CheckUserInOrga(db *gorm.DB) fiber.Handler {
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
-			return c.Status(400).SendString("invalid user_id type")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 		}
 
 		userID, errUser := uuid.Parse(userIDLocals)
 		if errUser != nil {
-			return c.Status(400).SendString("invalid UUID for user")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 		}
 
 		var Member struct {
@@ -63,7 +63,7 @@ func CheckUserInOrga(db *gorm.DB) fiber.Handler {
 
 		if memberErr != nil {
 			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found in this organization"})
 			}
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
 		}
@@ -80,12 +80,12 @@ func CheckUserIsMember(db *gorm.DB) fiber.Handler {
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
-			return c.Status(400).SendString("invalid user_id type")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 		}
 
 		userID, errUser := uuid.Parse(userIDLocals)
 		if errUser != nil {
-			return c.Status(400).SendString("invalid UUID for user")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 		}
 
 		var Member struct {
@@ -96,7 +96,7 @@ func CheckUserIsMember(db *gorm.DB) fiber.Handler {
 
 		if memberErr != nil {
 			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found in this organization"})
 			}
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
 		}
@@ -105,7 +105,7 @@ func CheckUserIsMember(db *gorm.DB) fiber.Handler {
 			return c.Next()
 		}
 
-		return c.Status(403).JSON(fiber.Map{"error": "member does not have the rights"})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "member does not have the rights"})
 	}
 }
 
@@ -117,12 +117,12 @@ func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 
 		userIDLocals, err := c.Locals("user_id").(string)
 		if !err {
-			return c.Status(400).SendString("invalid user_id type")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 		}
 
 		userID, errUser := uuid.Parse(userIDLocals)
 		if errUser != nil {
-			return c.Status(400).SendString("invalid UUID for user")
+			return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 		}
 
 		var Member struct {
@@ -133,7 +133,7 @@ func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 
 		if memberErr != nil {
 			if errors.Is(memberErr, gorm.ErrRecordNotFound) {
-				return c.Status(404).JSON(fiber.Map{"error": "member not found in this organization"})
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found in this organization"})
 			}
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": memberErr.Error()})
 		}
@@ -142,6 +142,6 @@ func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 			return c.Next()
 		}
 
-		return c.Status(403).JSON(fiber.Map{"error": "member does not have the rights"})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "member does not have the rights"})
 	}
 }

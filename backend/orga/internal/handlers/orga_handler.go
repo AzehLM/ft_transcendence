@@ -22,12 +22,12 @@ func NewOrgaHandler(db *gorm.DB) *OrgaHandler {
 func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
-		return c.Status(400).SendString("invalid user_id type")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 	}
 
 	userID, errUser := uuid.Parse(userIDLocals)
 	if errUser != nil {
-		return c.Status(400).SendString("invalid UUID for user")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
 	var orgas []models.Orga
@@ -51,7 +51,7 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	}
 
 	if len(c.Body()) == 0 {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Request body is empty",
 		})
 	}
@@ -93,12 +93,12 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	// create an orga member with role admin
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
-		return c.Status(400).SendString("invalid user_id type")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
 	}
 
 	userID, errUser := uuid.Parse(userIDLocals)
 	if errUser != nil {
-		return c.Status(400).SendString("invalid UUID for user")
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
 	orgaMember := models.OrgaMember{
@@ -130,10 +130,10 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	deleted, err := repo.DeleteOrganization(orgID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	if !deleted {
-		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
 	// delete all MinIO files
@@ -147,7 +147,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	}
 
 	if len(c.Body()) == 0 {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Request body is empty",
 		})
 	}
@@ -170,10 +170,10 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	updated, err := repo.UpdateOrgaName(orgID, body.Name)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	if !updated {
-		return c.Status(404).JSON(fiber.Map{"error": "organization not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "organization name updated",
