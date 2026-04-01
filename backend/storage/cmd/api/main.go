@@ -53,8 +53,7 @@ func main() {
 		Password: redisPassword,
 	})
 
-	// true in prod ? (http vs https, to talk with the minio server)
-	// since the communication is always via the docker network, I'm not sure we need to make it true in prod but I'll have to check further is that is really a concern
+	// internal Docker network — SSL not required
 	useSSL := false
 	minioEndpoint := "minio:9000"
 
@@ -65,7 +64,7 @@ func main() {
 
 	err = files.InitMinioBucket(minioClient, "ostrom")
 	if err != nil {
-		log.Fatalf("[FATAL] ca degage: %v\n", err)
+		log.Fatalf("[FATAL] Failed to initialize MinIO bucket: %v\n", err)
 	}
 
 	repo := files.NewStorageRepository(database)
@@ -81,30 +80,11 @@ func main() {
 	api.Patch("/files/:file_id",		handler.MoveFile)
 	api.Delete("/files/:file_id",		handler.DeleteFile)
 
-
-	// log.Printf("[INFO] MinIO client initialized")
-
-	// sqlDB, err := database.DB()
-	// if err != nil {
-	// 	log.Fatalf("[FATAL] Could not get underlying DB: %v", err)
-	// }
-	// if err := sqlDB.Ping(); err != nil {
-	// 	log.Fatalf("[FATAL] DB unreachable: %v", err)
-	// }
-	// log.Println("[INFO] DB connection OK")
-
-	// app.Post("/storage/upload-url", middleware.ProtectedRoute(env.JwtSecret), handler.UploadURL)
-
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
 			log.Fatalf("[FATAL] Server error: %v", err)
 		}
 	}()
-
-	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
-	// minioClient := minio.New(...)
-	// runServiceSmokeTest(database, service)
-	// runSmokeTest(database, repo)
 
 	log.Println("[INFO] Files service started on :8083")
 
