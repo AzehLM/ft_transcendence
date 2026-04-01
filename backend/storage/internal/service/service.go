@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	files "backend/storage/internal"
@@ -13,8 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrForbidden = fmt.Errorf("forbidden")
-var ErrNotFound = fmt.Errorf("not found")
+var ErrForbidden = errors.New("forbidden")
+var ErrNotFound = errors.New("not found")
+var ErrQuotaExceeded = errors.New("quota exceeded") // for when I'll be able to check quota
 
 // business logic contract
 type StorageService interface {

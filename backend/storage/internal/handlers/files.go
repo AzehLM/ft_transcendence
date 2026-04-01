@@ -1,30 +1,27 @@
 package handlers
 
 import (
+	"errors"
+
+	"backend/storage/internal/service"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )
 
 func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 
-	userIDStr, ok := c.Locals("user_id").(string)
-	if !ok || userIDStr == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "user_id missing or invalid",
-		})
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := h.extractUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "user_id is not a valid UUID",
+			"error": err.Error(),
 		})
 	}
 
 	var body struct {
-		FileSize int64     `json:"file_size" validate:"required"`
-		FolderID *uuid.UUID `json:"folder_id,omitempty"`
-		OrgID    *uuid.UUID `json:"org_id,omitempty"`
+		FileSize int64		`json:"file_size" validate:"required"`
+		FolderID *uuid.UUID	`json:"folder_id,omitempty"`
+		OrgID    *uuid.UUID	`json:"org_id,omitempty"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -45,9 +42,12 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 
 	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		switch {
+			case errors.Is(err, service.ErrQuotaExceeded): // for when quota will be implemented
+				return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
