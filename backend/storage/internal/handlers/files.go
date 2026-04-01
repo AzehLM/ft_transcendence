@@ -54,3 +54,41 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 		"object_id":		objectID,
 	})
 }
+
+
+func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing request body",
+		})
+	}
+
+	var req finalizeRequest
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := h.svc.FinalizeUpload(userID, req.ObjectID, req.EncryptedFilename, req.EncryptedDEK, req.IV, req.OrgID); err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
+	}
+
+	return c.SendStatus(fiber.StatusCreated)
+}
