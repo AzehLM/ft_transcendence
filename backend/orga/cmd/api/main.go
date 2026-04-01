@@ -29,45 +29,36 @@ func main() {
 
 	orgaHandler := handlers.NewOrgaHandler(dbConn)
 
-	// Orgs Routes
-	app.Get("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.GetOrgas)
-	app.Post("/api/orgs", middleware.ProtectedRoute(env.JwtSecret), orgaHandler.CreateOrga)
-	app.Patch("/api/orgs/:org_id", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserIsAdmin(dbConn),
-		orgaHandler.ChangeOrgaName)
-	
-	app.Delete("/api/orgs/:org_id", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserIsAdmin(dbConn),
-		orgaHandler.DeleteOrga)
+	// Middlewares
+	api := app.Group("/api")
+	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
-	// Members Routes
-	app.Post("/api/orgs/:org_id/members", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserIsAdmin(dbConn),
-		orgaHandler.CreateOrgaMember)
+	// routes without org_id
+	api.Get("/orgs", orgaHandler.GetOrgas)
+	api.Post("/orgs", orgaHandler.CreateOrga)
 
-	app.Patch("/api/orgs/:org_id/members/:user_id", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserIsAdmin(dbConn),
-		orgaHandler.ChangeRole)
+	// org
+	org := api.Group("/orgs/:org_id")
+	org.Use(middleware.CheckOrgaExist(dbConn))
 
-	app.Delete("/api/orgs/:org_id/members/me", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserInOrga(dbConn),
-		orgaHandler.LeaveOrga)
+	admin := middleware.CheckUserIsAdmin(dbConn)
+	member := middleware.CheckUserInOrga(dbConn)
 
-	app.Delete("/api/orgs/:org_id/members/:user_id", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserIsAdmin(dbConn),
-		orgaHandler.DeleteMember)
+	// org routes
+	org.Patch("/", orgaHandler.ChangeOrgaName)
+	org.Delete("/", orgaHandler.DeleteOrga)
+
+	// members
+	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
+	org.Patch("/members", admin, orgaHandler.ChangeRole)
+	org.Delete("/members/me", member, orgaHandler.LeaveOrga)
+	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
+	org.Get("/members", member, orgaHandler.GetMembers)
 
 	app.Get("/api/orgs/:org_id/members/", middleware.ProtectedRoute(env.JwtSecret), 
 		middleware.CheckOrgaExist(dbConn), 
 		middleware.CheckUserInOrga(dbConn),
 		orgaHandler.GetMembers)
-
 
 	// Run
 	go func() {
