@@ -299,7 +299,7 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 			"error": "invalid orga id format",
 		})
 	}
-	
+
 	var orgaMembers []models.OrgaMemberResponse
 
 	repo := repository.NewOrganizationRepository(h.DB)
