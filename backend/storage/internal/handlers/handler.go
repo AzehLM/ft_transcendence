@@ -21,7 +21,7 @@ func NewStorageHandler (svc service.StorageService) *StorageHandler {
 
 type finalizeRequest struct {
 	ObjectID			uuid.UUID	`json:"object_id"`
-	EncryptedFilename	[]byte		`json:"encrypted_filename"`
+	EncryptedFilename	string		`json:"encrypted_filename"`
 	EncryptedDEK		[]byte		`json:"encrypted_dek"`
 	IV					[]byte		`json:"iv"`
 	OrgID				*uuid.UUID	`json:"org_id"`
