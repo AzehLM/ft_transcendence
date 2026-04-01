@@ -77,7 +77,7 @@ func main() {
 
 	api.Post("/files/upload-url",		handler.RequestUploadURL)
 	api.Post("/files/finalize",			handler.FinalizeUpload)
-	// api.Get("/files/:file_id/download", handler.DownloadFile)
+	api.Get("/files/:file_id/download", handler.DownloadFile)
 	// api.Patch("/files/:file_id",		handler.MoveFile)
 	// api.Delete("/files/:file_id",		handler.DeleteFile)
 
