@@ -12,20 +12,26 @@ import (
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/storage/internal/service"
+	"backend/storage/internal/handlers"
 
-	// "backend/shared/middleware"
+	"backend/shared/middleware"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
-	// "github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
 func main() {
-
 	env, err := config.LoadEnv()
 	if err != nil {
 		log.Fatalf("[FATAL], Failed to load configuration: %v", err)
 	}
+
+	database := db.InitDB(env)
+
+	app := fiber.New(fiber.Config{
+		AppName: "ostrom_storage_service v1.0",
+		BodyLimit: 4 * 1024 * 1024, // 4 MB max per requests
+	})
 
 	minioUser, err := config.ReadSecret("minio_admin_user")
 	if err != nil {
@@ -48,19 +54,6 @@ func main() {
 		Password: redisPassword,
 	})
 
-	ctx := context.TODO()
-
-	err = redisClient.Set(ctx, "foo", "bar", 0).Err()
-	if err != nil {
-		panic(err)
-	}
-
-	val, err := redisClient.Get(ctx, "foo").Result()
-	if err != nil {
-		panic(err)
-	}
-	log.Println("[REDIS LOG] foo", val) // >>> foo bar
-
 	// true in prod ? (http vs https, to talk with the minio server)
 	// since the communication is always via the docker network, I'm not sure we need to make it true in prod but I'll have to check further is that is really a concern
 	useSSL := false
@@ -76,21 +69,30 @@ func main() {
 		log.Fatalf("[FATAL] ca degage: %v\n", err)
 	}
 
-	log.Printf("[INFO] minioClient: %#v\n", minioClient)
+	repo := files.NewStorageRepository(database)
+	service := service.NewStorageService(repo, minioClient, redisClient)
+	handler := handlers.NewStorageHandler(service)
+
+	api := app.Group("/api")
+	api.Use(middleware.ProtectedRoute(env.JwtSecret))
+
+	// api.Post("/files/upload-url",		handler.RequestUploadURL)
+	// api.Post("/files/finalize",			handler.FinalizeUpload)
+	// api.Get("/files/:file_id/download", handler.DownloadFile)
+	// api.Patch("/files/:file_id",		handler.MoveFile)
+	// api.Delete("/files/:file_id",		handler.DeleteFile)
+
+
 	// log.Printf("[INFO] MinIO client initialized")
 
-	database := db.InitDB(env)
-
-	sqlDB, err := database.DB()
-	if err != nil {
-		log.Fatalf("[FATAL] Could not get underlying DB: %v", err)
-	}
-	if err := sqlDB.Ping(); err != nil {
-		log.Fatalf("[FATAL] DB unreachable: %v", err)
-	}
-	log.Println("[INFO] DB connection OK")
-
-	app := fiber.New(fiber.Config{})
+	// sqlDB, err := database.DB()
+	// if err != nil {
+	// 	log.Fatalf("[FATAL] Could not get underlying DB: %v", err)
+	// }
+	// if err := sqlDB.Ping(); err != nil {
+	// 	log.Fatalf("[FATAL] DB unreachable: %v", err)
+	// }
+	// log.Println("[INFO] DB connection OK")
 
 	// app.Post("/storage/upload-url", middleware.ProtectedRoute(env.JwtSecret), handler.UploadURL)
 
@@ -102,12 +104,8 @@ func main() {
 
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
-	repo := files.NewStorageRepository(database)
-	svc := service.NewStorageService(repo, minioClient, nil) // nil pour redis pour l'instant
-	runServiceSmokeTest(database, svc)
+	runServiceSmokeTest(database, storageHandler)
 	runSmokeTest(database, repo)
-	// service := files.NewService(repo, minioClient)
-	// handler := files.NewStorageHandler(service)
 
 	log.Println("[INFO] Files service started on :8083")
 
