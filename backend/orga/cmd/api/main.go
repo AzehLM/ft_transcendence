@@ -45,8 +45,8 @@ func main() {
 	member := middleware.CheckUserInOrga(dbConn)
 
 	// org routes
-	org.Patch("/", orgaHandler.ChangeOrgaName)
-	org.Delete("/", orgaHandler.DeleteOrga)
+	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
+	org.Delete("/", admin, orgaHandler.DeleteOrga)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
