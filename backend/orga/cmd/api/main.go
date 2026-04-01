@@ -50,15 +50,10 @@ func main() {
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
-	org.Patch("/members", admin, orgaHandler.ChangeRole)
+	org.Patch("/members/:user_id", admin, orgaHandler.ChangeRole)
 	org.Delete("/members/me", member, orgaHandler.LeaveOrga)
 	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
 	org.Get("/members", member, orgaHandler.GetMembers)
-
-	app.Get("/api/orgs/:org_id/members/", middleware.ProtectedRoute(env.JwtSecret), 
-		middleware.CheckOrgaExist(dbConn), 
-		middleware.CheckUserInOrga(dbConn),
-		orgaHandler.GetMembers)
 
 	// Run
 	go func() {
