@@ -42,11 +42,10 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 
 	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID)
 	if err != nil {
-		switch {
-			case errors.Is(err, service.ErrQuotaExceeded): // for when quota will be implemented
-				return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
-			default:
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		if errors.Is(err, service.ErrQuotaExceeded) { // for when quota will be implemented
+			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
+		} else { // do we ever want to return a 500 ? hmmmm
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
 		}
 	}
 
