@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"gorm.io/gorm"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"encoding/base64"
 	"errors"
 )
 
@@ -300,4 +301,42 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusAccepted).JSON(orgaMembers)
+}
+
+func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
+	}
+
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+	userIDLocals, errUser := c.Locals("user_id").(string)
+	if !errUser {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUserID := uuid.Parse(userIDLocals)
+	if errUserID != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	var member models.OrgaMember
+	repo := repository.NewOrganizationRepository(h.DB)
+
+	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "member not found",
+		})
+    }
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
+		"enc_org_priv_key_brut": string(member.EncOrgPrivKey),
+	})
 }

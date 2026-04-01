@@ -54,6 +54,7 @@ func main() {
 	org.Delete("/members/me", member, orgaHandler.LeaveOrga)
 	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
 	org.Get("/members", member, orgaHandler.GetMembers)
+	org.Get("/members/key", member, orgaHandler.GetMemberPrivateKey)
 
 	// Run
 	go func() {
