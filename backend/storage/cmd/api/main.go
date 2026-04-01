@@ -11,7 +11,7 @@ import (
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/storage/internal/service"
-	"backend/storage/internal/handlers"
+	// "backend/storage/internal/handlers"
 
 	"backend/shared/middleware"
 
@@ -70,7 +70,7 @@ func main() {
 
 	repo := files.NewStorageRepository(database)
 	service := service.NewStorageService(repo, minioClient, redisClient)
-	handler := handlers.NewStorageHandler(service)
+	// handler := handlers.NewStorageHandler(service)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
@@ -103,7 +103,7 @@ func main() {
 
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
-	runServiceSmokeTest(database, storageHandler)
+	runServiceSmokeTest(database, service)
 	runSmokeTest(database, repo)
 
 	log.Println("[INFO] Files service started on :8083")
