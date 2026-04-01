@@ -516,7 +516,7 @@ Reponse : `200 OK`
 
 Supprime les metadonnees en DB + l'objet sur MinIO. Met a jour used_space.
 
-Reponse : `200 OK`
+Reponse : `204 No Content`
 
 
 ---
