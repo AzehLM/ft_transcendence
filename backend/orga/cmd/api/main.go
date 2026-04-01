@@ -12,7 +12,7 @@ import (
 	"backend/shared/db"
 	"backend/shared/middleware"
 
-	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
 )
@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{Addr: "redis:6379"})
+	redisClient := redis.NewClient(&redis.Options{Addr: "redis:6379", Password: env.RedisPassword})
 
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)
@@ -66,12 +66,17 @@ func main() {
 	app.Get("/ws/notifications",
 		middleware.ProtectedRoute(env.JwtSecret),
 		func(c fiber.Ctx) error {
-			if c.IsWebSocket() {
+			log.Println("[DEBUG WS] JWT Validé ! Demande d'Upgrade reçue...")
+			if websocket.IsWebSocketUpgrade(c) {
+				log.Println("[DEBUG WS] Headers corrects, lancement de l'Upgrader...")
 				return c.Next()
 			}
+			log.Println("[DEBUG WS] Rejeté: Pas de header d'upgrade")
 			return fiber.ErrUpgradeRequired
 		},
-		websocket.New(wsHub.GlobalWSHandler),
+		websocket.New(wsHub.GlobalWSHandler, websocket.Config{
+			Origins: []string{"*"},
+		}),
 	)
 	// Run
 	go func() {
