@@ -128,3 +128,33 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 		"encrypted_filename":	fileName,
 	})
 }
+
+func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	fileID, err := uuid.Parse(c.Params("file_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid file_id",
+		})
+	}
+
+	if err := h.svc.DeleteFile(userID, fileID); err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}

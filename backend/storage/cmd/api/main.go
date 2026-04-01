@@ -79,7 +79,7 @@ func main() {
 	api.Post("/files/finalize",			handler.FinalizeUpload)
 	api.Get("/files/:file_id/download", handler.DownloadFile)
 	// api.Patch("/files/:file_id",		handler.MoveFile)
-	// api.Delete("/files/:file_id",		handler.DeleteFile)
+	api.Delete("/files/:file_id",		handler.DeleteFile)
 
 
 	// log.Printf("[INFO] MinIO client initialized")
