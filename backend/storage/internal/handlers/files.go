@@ -71,15 +71,15 @@ func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
 		})
 	}
 
-	var req finalizeRequest
+	var body finalizeRequest
 
-	if err := c.Bind().Body(&req); err != nil {
+	if err := c.Bind().Body(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	if err := h.svc.FinalizeUpload(userID, req.ObjectID, req.EncryptedFilename, req.EncryptedDEK, req.IV, req.OrgID); err != nil {
+	if err := h.svc.FinalizeUpload(userID, body.ObjectID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID); err != nil {
 		switch {
 			case errors.Is(err, service.ErrNotFound):
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
@@ -157,4 +157,52 @@ func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *StorageHandler) MoveFile(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	fileID, err := uuid.Parse(c.Params("file_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid file_id",
+		})
+	}
+
+	// commented as the body could be empty, but that would mean we would ALWAYS move the file to the root of their space
+	// need to talk about that with everyone
+	// if len(c.Body()) == 0 {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "missing request body",
+	// 	})
+	// }
+
+	var body struct {
+		FolderID *uuid.UUID `json:"folder_id"`
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := h.svc.MoveFile(userID, fileID, body.FolderID); err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }

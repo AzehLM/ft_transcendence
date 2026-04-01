@@ -78,7 +78,7 @@ func main() {
 	api.Post("/files/upload-url",		handler.RequestUploadURL)
 	api.Post("/files/finalize",			handler.FinalizeUpload)
 	api.Get("/files/:file_id/download", handler.DownloadFile)
-	// api.Patch("/files/:file_id",		handler.MoveFile)
+	api.Patch("/files/:file_id",		handler.MoveFile)
 	api.Delete("/files/:file_id",		handler.DeleteFile)
 
 
@@ -103,8 +103,8 @@ func main() {
 
 	// to follow Lou-Anne comments on self-contained handlers (to keep routes definition clean):
 	// minioClient := minio.New(...)
-	runServiceSmokeTest(database, service)
-	runSmokeTest(database, repo)
+	// runServiceSmokeTest(database, service)
+	// runSmokeTest(database, repo)
 
 	log.Println("[INFO] Files service started on :8083")
 
