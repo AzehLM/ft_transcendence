@@ -14,7 +14,7 @@ type StorageRepository interface {
 	FindByObjectID(objectID uuid.UUID) (*File, error)                                                     // POST /files/finalize
 	InsertPendingFile(file *File) error                                                                   // POST /files/upload-url
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
-	FindByID(fileID uuid.UUID) (*File, error)                                                             // GET /downlowd and DELETE
+	FindByID(fileID uuid.UUID) (*File, error)                                                             // GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error                                         // PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
