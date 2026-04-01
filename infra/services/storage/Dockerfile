@@ -15,7 +15,7 @@ RUN go work sync
 COPY ./backend/storage ./storage/
 COPY ./backend/shared ./shared/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o storage-test ./storage/cmd/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o storage-test ./storage/cmd/api/
 
 FROM alpine:3.23.3
 
