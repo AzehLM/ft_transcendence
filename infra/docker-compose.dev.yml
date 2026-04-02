@@ -116,7 +116,6 @@ services:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
       MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
-      MINIO_SERVER_URL: "https://localhost:${PORT}/storage" # required for minio presignedurl generations
     ports: # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
