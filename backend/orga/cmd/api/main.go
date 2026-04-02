@@ -42,13 +42,13 @@ func main() {
 	org.Use(middleware.CheckOrgaExist(dbConn))
 
 	admin := middleware.RequireRole(dbConn, "admin")
-	member := middleware.CheckUserInOrga(dbConn)
+	member := middleware.RequireRole(dbConn, "admin", "member")
 
 	// org routes
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
 	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
-	org.Patch("/usedspace", admin, orgaHandler.PatchUsedSpace)
+	org.Patch("/usedspace", member, orgaHandler.PatchUsedSpace)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
