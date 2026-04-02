@@ -83,6 +83,26 @@ Oversees technical decisions and architecture.
   - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
   - **Monitoring Integration** - a Prometheus-compatible `/minio/health` endpoint and metrics that can be scraped by our monitoring stack (Prometheus/Grafana).
 
+#### Issue encountered: presignedURL inacessible from the browser
+
+- Context:
+  - The storage service generates MinIO presigned URLs so the frontend can upload/download files directly to MinIO, without going through the Go backend.
+- The core problem
+  - The MinIO Go SDK generated presigned URLs by signing the `host` header using the endpoint passed to `minio.New()`. In our Docker setup, the client is initialized with `minio:9000` - a hostname only resolvable **inside** the Docker network...
+  - Generated URLs look like `http://minio/9000/.../uuid?X-Amz-Signature=...` which the browser cannot resolve. This hostname is part of the **AWS Signature V4 canonical request**. Changing the hostname invalidates the signature (`SignatureDoesNotMatch`)
+
+The followings are solutions cannot be implemented:
+- **Naive URL rewrite**: `minio:9000` -> `localhost:9000` signature is computed on `host: minio:9000`, MinIO receives `host: localhost:9000` which mismatch
+- **Two MinIO clients**: one internal, one with a public endpoint. The public client canno reach `localhost:${PORT}` from inside a Docker container. `localhost` inside a container points to itself, not the host machine so this is not a solution either
+- `MINIO_SERVER_URL` **env variable**: only affects URLs MinIO generates internally and not those generated bu the Go SDK client.
+- `/etc/hosts` on the host machine to map `minio` -> `127.0.0.1`: requires sudo, not an option for our pedagogical setup.
+
+##### The solution: Caddy as a transparent proxy + host rewriter
+
+The Caddyfile uses `header_up` inside the `reverse_proxy` block of the `/storage` endpoint (which refers to minio) to force the `Host` header to what MinIO expects! Second fix is to rewrite the URL after generation to make it reachable from the browser
+
+> ⚠️ Those are fixes that works in dev mode, not sure about production yet
+
 ### ⚠️ Security tradeoff: client-side encryption vs server-side file scanning
 
 The core security guarantee of our project is that **uploaded files are never in plaintext within our infrastructure**. Encryption is performed client-side in the browser before transmission; the backend receives and stores **ciphertext**.
