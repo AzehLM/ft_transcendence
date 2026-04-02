@@ -32,8 +32,21 @@ func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.Orga,
     return orgas, result.Error
 }
 
-func (r *OrganizationRepository) CreateNewOrga(orga *models.Orga) error {
-    return r.DB.Create(orga).Error
+// func (r *OrganizationRepository) CreateNewOrga(orga *models.Orga) error {
+//     return r.DB.Create(orga).Error
+// }
+
+func (r *OrganizationRepository) CreateOrgWithAdmin(org *models.Orga, adminMember *models.OrgaMember) error {
+    return r.DB.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Create(org).Error; err != nil {
+            return err
+        }
+        adminMember.OrgID = org.ID
+        if err := tx.Create(adminMember).Error; err != nil {
+            return err
+        }
+        return nil
+    })
 }
 
 func (r *OrganizationRepository) CreateNewOrgaMember(orgaMember *models.OrgaMember) error {

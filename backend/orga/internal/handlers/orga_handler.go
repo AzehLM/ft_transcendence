@@ -83,14 +83,6 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		PublicKey: []byte(body.PublicKey),
 	}
 
-	// to tranfer to repository
-    repo := repository.NewOrganizationRepository(h.DB)
-    if err := repo.CreateNewOrga(&orga); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create organization",
-		})
-	}
-
 	// create an orga member with role admin
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
@@ -103,16 +95,16 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	}
 
 	orgaMember := models.OrgaMember{
-		OrgID:         orga.ID,
+		// OrgID:         orga.ID,
 		UserID:        userID,
 		Role:          "admin",
 		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 	}
 
-	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
-		repo.DeleteOrganization(orga.ID)
+    repo := repository.NewOrganizationRepository(h.DB)
+    if err := repo.CreateOrgWithAdmin(&orga, &orgaMember); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create admin",
+			"error": "could not create organization with admin",
 		})
 	}
 
