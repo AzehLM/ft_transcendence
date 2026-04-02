@@ -44,16 +44,29 @@ export default function RegisterPage() {
 
         setIsLoading(true);
         try {
-            console.log("Génération des données cryptographiques...");
+            console.log("🔐 Génération des données cryptographiques...");
             const registrationData = await generateRegistrationData(email, password);
 
-            console.log("Envoi au serveur...");
-            const response = await fetch("http://localhost:8000/api/v1/auth/register", {
+            console.log("📤 Envoi au serveur...");
+            const response = await fetch("https://localhost:8080/api/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(registrationData),
+            }).catch(err => {
+                // Si HTTPS auto-signé pose problème, on tente en HTTP en fallback
+                if (err.message.includes("certificate")) {
+                    console.warn("⚠️  HTTPS certificate error, falling back to HTTP...");
+                    return fetch("http://localhost:8080/api/auth/register", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(registrationData),
+                    });
+                }
+                throw err;
             });
 
             if (!response.ok) {
