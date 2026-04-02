@@ -145,3 +145,48 @@ func CheckUserIsAdmin(db *gorm.DB) fiber.Handler {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "member does not have the rights"})
 	}
 }
+
+func RequireRole(db *gorm.DB, roles ...string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		orgID, err := uuid.Parse(c.Params("org_id"))
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid org_id"})
+		}
+
+		userIDStr, ok := c.Locals("user_id").(string)
+		if !ok {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user_id"})
+		}
+
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user UUID"})
+		}
+
+		var member struct {
+			Role string
+		}
+
+		err = db.Table("org_members").
+			Select("role").
+			Where("user_id = ? AND org_id = ?", userID, orgID).
+			Take(&member).Error
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		for _, role := range roles {
+			if member.Role == role {
+				return c.Next()
+			}
+		}
+
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "insufficient permissions",
+		})
+	}
+}

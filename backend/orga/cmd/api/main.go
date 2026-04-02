@@ -41,7 +41,7 @@ func main() {
 	org := api.Group("/orgs/:org_id")
 	org.Use(middleware.CheckOrgaExist(dbConn))
 
-	admin := middleware.CheckUserIsAdmin(dbConn)
+	admin := middleware.RequireRole(dbConn, "admin")
 	member := middleware.CheckUserInOrga(dbConn)
 
 	// org routes
