@@ -91,11 +91,14 @@ func runServiceSmokeTest(db *gorm.DB, svc service.StorageService) {
 		return
 	}
 	log.Printf("[SMOKE-SVC] OK RequestUploadURL → objectID=%s\n", objectID)
-	err = svc.FinalizeUpload(userID, objectID, "encrypted-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil)
+
+	var fileID uuid.UUID
+
+	fileID, err = svc.FinalizeUpload(userID, objectID, "encrypted-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil)
 	if err != nil {
 		log.Printf("[SMOKE-SVC] FAIL FinalizeUpload: %v", err)
 		return
 	}
-	log.Println("[SMOKE-SVC] OK FinalizeUpload")
+	log.Println("[SMOKE-SVC] OK FinalizeUpload, file_id: %v", fileID)
 	log.Printf("[SMOKE-SVC] OK presignedURL: %s\n", presignedURL)
 }
