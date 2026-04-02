@@ -207,7 +207,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 		if errors.Is(orgErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 		}
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgErr.Error()})	
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})	
 	}
 
     if org.MaxSpace+body.Space > 21474836480 { // 20 giga
@@ -269,7 +269,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 		if errors.Is(orgErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 		}
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgErr.Error()})	
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})	
 	}
 
     if org.UsedSpace+body.Space > org.MaxSpace { 
