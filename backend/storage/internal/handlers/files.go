@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 
 	"backend/storage/internal/service"
 
