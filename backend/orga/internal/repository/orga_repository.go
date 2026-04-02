@@ -98,3 +98,17 @@ func (r *OrganizationRepository) GetAllMembersFromOrga(orgID uuid.UUID) ([]model
 
     return members, result.Error
 }
+
+func (r* OrganizationRepository) GetOrgaByID(orgID uuid.UUID) (models.Orga, error) {
+    var org models.Orga
+    err := r.DB.First(&org, orgID).Error
+    return org, err
+}
+
+func (r* OrganizationRepository) UpdateMaxSpace(space int64, orgID uuid.UUID) (bool, error) {
+    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("max_space", space)
+    if result.Error != nil {
+        return false, result.Error
+    }
+    return result.RowsAffected > 0, nil
+}

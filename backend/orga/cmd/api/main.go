@@ -47,6 +47,7 @@ func main() {
 	// org routes
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
+	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)

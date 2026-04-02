@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
 )
 
 type OrgaHandler struct {
@@ -177,5 +178,62 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	}
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "organization name updated",
+	})
+}
+
+func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
+	var body struct {
+		Space int64 `json:"space" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.Space <= 0 {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error" : "space must be positive",
+	// 	})
+	// }
+
+	orgIDParam := c.Params("org_id")
+	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
+	
+	var org models.Orga
+	repo := repository.NewOrganizationRepository(h.DB)
+	org, orgErr := repo.GetOrgaByID(orgID)
+	if (orgErr != nil) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})
+	}
+
+    if org.MaxSpace+body.Space > 21474836480 { // 20 giga
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "max space can't be over 20 giga",
+        })
+    }
+
+    if org.MaxSpace+body.Space < 5368709120 {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "max space can't be under 5 giga",
+        })
+    }
+	updated, err := repo.UpdateMaxSpace(org.MaxSpace+body.Space, orgID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !updated {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+	}
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"max_space": org.MaxSpace,
 	})
 }
