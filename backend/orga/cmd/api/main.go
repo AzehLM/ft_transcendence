@@ -48,6 +48,7 @@ func main() {
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
 	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
+	org.Patch("/usedspace", admin, orgaHandler.PatchUsedSpace)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)

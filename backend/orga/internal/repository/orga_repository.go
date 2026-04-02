@@ -105,8 +105,8 @@ func (r* OrganizationRepository) GetOrgaByID(orgID uuid.UUID) (models.Orga, erro
     return org, err
 }
 
-func (r* OrganizationRepository) UpdateMaxSpace(space int64, orgID uuid.UUID) (bool, error) {
-    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("max_space", space)
+func (r* OrganizationRepository) UpdateSpace(space int64, orgID uuid.UUID, update string) (bool, error) {
+    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update(update, space)
     if result.Error != nil {
         return false, result.Error
     }

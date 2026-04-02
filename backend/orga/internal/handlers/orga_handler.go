@@ -225,7 +225,9 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
             "error": "max space can't be under 5 giga",
         })
     }
-	updated, err := repo.UpdateMaxSpace(org.MaxSpace+body.Space, orgID)
+
+	newSpace := org.MaxSpace+body.Space
+	updated, err := repo.UpdateSpace(org.MaxSpace+body.Space, orgID, "max_space")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -234,6 +236,62 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 	}
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"max_space": org.MaxSpace,
+		"max_space": newSpace,
+	})
+}
+
+func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
+	var body struct {
+		Space int64 `json:"space" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.Space <= 0 {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error" : "space must be positive",
+	// 	})
+	// }
+
+	orgIDParam := c.Params("org_id")
+	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
+	
+	var org models.Orga
+	repo := repository.NewOrganizationRepository(h.DB)
+	org, orgErr := repo.GetOrgaByID(orgID)
+	if (orgErr != nil) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})
+	}
+
+    if org.UsedSpace+body.Space > org.MaxSpace { 
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "space limit exceeded",
+        })
+    }
+
+    if org.UsedSpace+body.Space < 0 {
+        body.Space = org.UsedSpace*-1
+    }
+	newSpace := org.UsedSpace+body.Space
+	updated, err := repo.UpdateSpace(org.UsedSpace+body.Space, orgID, "used_space")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	if !updated {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+	}
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"used_space": newSpace,
 	})
 }
