@@ -349,6 +349,11 @@ Body :
 ```
 
 Reponse : `201 Created`
+```json
+{
+  "message": "member added to organization",
+}
+```
 
 ---
 
@@ -359,6 +364,7 @@ Récupérer tous les membres d'une organisation.
 Reponse : `200 OK`
 ```json
 {
+  "user_id": "id",
   "user_email": "alice@42lyon.fr",
   "role": "admin"
 }
@@ -376,6 +382,11 @@ Body :
 ```
 
 Reponse : `200 OK`
+```json
+{
+  "message":  "role updated"
+}
+```
 
 ---
 
@@ -383,7 +394,7 @@ Reponse : `200 OK`
 
 Quitter l'orga. Interdit si dernier admin.
 
-Reponse : `200 OK`
+Reponse : `204 No content`
 
 ---
 
@@ -391,8 +402,21 @@ Reponse : `200 OK`
 
 Virer un membre. Admin only.
 
-Reponse : `200 OK`
+Reponse : `204 No content`
 
+---
+
+### `GET /orgs/{org_id}/members/key`
+
+Récupérer la clé privée encryptée
+
+Reponse : `200 OK`
+```json
+{
+		"enc_org_priv_key_b64": keyb64,
+		"enc_org_priv_key_brut": keybrut,
+}
+```
 
 ---
 
