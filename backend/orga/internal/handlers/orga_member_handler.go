@@ -14,7 +14,7 @@ import (
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
 		Email   string `json:"user_email" validate:"required"`
-		EncOrgaPrivateKey string `json:"encrypted_org_key" validate:"required"`
+		EncryptedOrgKey string `json:"encrypted_org_key" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -35,7 +35,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	if body.EncOrgaPrivateKey == "" {
+	if body.EncryptedOrgKey == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "encrypted org key required",
 		})
@@ -74,12 +74,16 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user is already part of the organization"})
 	}
 
+	if !errors.Is(memberErr, gorm.ErrRecordNotFound) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": memberErr.Error()})
+	}
+
 	// create orga member
 	orgaMember := models.OrgaMember{
 		OrgID: orgID,
 		UserID: user.ID,
 		Role: "member",
-		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
+		EncOrgPrivKey: []byte(body.EncryptedOrgKey),
 
 	}
 
@@ -165,7 +169,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	if !updated {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -239,7 +243,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 
 	userIDParam := c.Params("user_id")
 	if userIDParam == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user_id is required in path"})
 	}
 
 	userID, err := uuid.Parse(userIDParam)
@@ -300,7 +304,7 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusAccepted).JSON(orgaMembers)
+	return c.Status(fiber.StatusOK).JSON(orgaMembers)
 }
 
 func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
