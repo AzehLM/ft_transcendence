@@ -32,7 +32,7 @@ func CheckOrgaExist(db *gorm.DB) fiber.Handler {
 			if errors.Is(orgaResult.Error, gorm.ErrRecordNotFound) {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 			}
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": orgaResult.Error.Error()})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgaResult.Error.Error()})
 		} else {
 			return c.Next()
 		}

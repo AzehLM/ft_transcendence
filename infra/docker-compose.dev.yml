@@ -150,20 +150,6 @@ services:
       timeout: 5s
       retries: 3
 
-  orga:
-    container_name: orga
-    build:
-      context: ../
-      dockerfile: ./infra/services/orga/Dockerfile
-    networks:
-      - dev
-    restart: unless-stopped
-    env_file:
-      - ../.env
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   auth:
     container_name: auth
     build:
@@ -177,6 +163,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  orga:
+    container_name: orga
+    build:
+      context: ../
+      dockerfile: ./infra/services/orga/Dockerfile
+    networks:
+      - dev
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_started
 
 volumes:
   caddy_data:

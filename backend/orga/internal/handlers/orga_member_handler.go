@@ -339,7 +339,7 @@ func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
 		})
     }
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
 		"enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})

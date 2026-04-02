@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -15,7 +15,7 @@ COPY ./backend/orga ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ft_box_orga ./cmd/api
 
 
-FROM alpine:3.19
+FROM alpine:3.23.3
 
 WORKDIR /app
 

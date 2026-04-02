@@ -223,7 +223,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
     }
 
 	newSpace := org.MaxSpace+body.Space
-	updated, err := repo.UpdateSpace(org.MaxSpace+body.Space, orgID, "max_space")
+	updated, err := repo.UpdateMaxSpace(org.MaxSpace+body.Space, orgID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -282,7 +282,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
         body.Space = org.UsedSpace*-1
     }
 	newSpace := org.UsedSpace+body.Space
-	updated, err := repo.UpdateSpace(org.UsedSpace+body.Space, orgID, "used_space")
+	updated, err := repo.UpdateUsedSpace(org.UsedSpace+body.Space, orgID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

@@ -70,11 +70,11 @@ func (r *OrganizationRepository) UpdateOrgaName(orgID uuid.UUID, name string) (b
 }
 
 func (r *OrganizationRepository) GetUserByEmail(email string, user *models.User) error {
-    return r.DB.Where("email = ?", email).Take(&user).Error
+    return r.DB.Where("email = ?", email).Take(user).Error
 }
 
 func (r *OrganizationRepository) GetOrgaMember(orgID uuid.UUID, userID uuid.UUID, orgaMember *models.OrgaMember) error {
-    return r.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(&orgaMember).Error
+    return r.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Take(orgaMember).Error
 }
 
 func (r *OrganizationRepository) UpdateMemberRole(orgID uuid.UUID, userID uuid.UUID, role string) (bool, error) {
@@ -118,8 +118,16 @@ func (r* OrganizationRepository) GetOrgaByID(orgID uuid.UUID) (models.Orga, erro
     return org, err
 }
 
-func (r* OrganizationRepository) UpdateSpace(space int64, orgID uuid.UUID, update string) (bool, error) {
-    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update(update, space)
+func (r* OrganizationRepository) UpdateMaxSpace(space int64, orgID uuid.UUID) (bool, error) {
+    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("max_space", space)
+    if result.Error != nil {
+        return false, result.Error
+    }
+    return result.RowsAffected > 0, nil
+}
+
+func (r* OrganizationRepository) UpdateUsedSpace(space int64, orgID uuid.UUID) (bool, error) {
+    result := r.DB.Model(&models.Orga{}).Where("id = ?", orgID).Update("used_space", space)
     if result.Error != nil {
         return false, result.Error
     }
