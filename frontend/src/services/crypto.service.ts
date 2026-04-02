@@ -1,9 +1,5 @@
 /**
  * Service de Cryptographie pour l'Registration Zero-Knowledge
- * 
- * Ce fichier gère toute la magie cryptographique côté client
- * pour créer une authentification sécurisée sans que le serveur
- * ne voie jamais le mot de passe en clair.
  */
 
 // ============================================================================
@@ -14,8 +10,8 @@
 // Taille: 16 bytes = 128 bits (sécurisé pour PBKDF2)
 
 export function generateSalt(): Uint8Array {
-    const salt = new Uint8Array(16);
-    crypto.getRandomValues(salt);
+    const salt = new Uint8Array(16); // Un tableau d'entiers (de 16 cases) unsigned de 8 bits
+    crypto.getRandomValues(salt); // Elle prend le tableau salt et remplace chaque 0 par un nombre aléatoire entre 0-255
     return salt;
 }
 
@@ -37,15 +33,15 @@ export async function deriveMasterKey(
     salt: Uint8Array
 ): Promise<CryptoKey> {
     // 1. Convertir le mot de passe string en bytes
-    const passwordBuffer = new TextEncoder().encode(password);
+    const passwordBuffer = new TextEncoder().encode(password); // Les fonctions crypto travaillent avec du binaire, pas du texte.
 
-    // 2. Importer le mot de passe comme CryptoKey
+    // 2.  Transformer les bytes en un objet (une clé) que crypto.subtle peut utiliser pour PBKDF2
     const passwordKey = await crypto.subtle.importKey(
         "raw",
         passwordBuffer,
         { name: "PBKDF2" },
-        false, // non-extractable au début
-        ["deriveKey"]
+        false, // On peut PAS extraire cette clé (pour la sécurité)
+        ["deriveKey"] // Cette clé peut servir à dériver d'autres clés
     );
 
     // 3. Dériver la Master Key
@@ -53,11 +49,11 @@ export async function deriveMasterKey(
         {
             name: "PBKDF2",
             salt: salt,
-            iterations: 100000, // Standard OWASP 2023
-            hash: "SHA-256",
+            iterations: 100000, // Recos de OWASP 2023
+            hash: "SHA-256", // Utiliser SHA-256 pour les iterations
         },
         passwordKey,
-        { name: "AES-GCM", length: 256 }, // AES-256
+        { name: "AES-GCM", length: 256 }, // La clé résultante doit être utilisable pour AES-GCM
         true, // On la rend extractable pour la suite
         ["encrypt", "decrypt"]
     );
@@ -66,7 +62,7 @@ export async function deriveMasterKey(
 }
 
 // ============================================================================
-// ÉTAPE 3: Générer une paire de clés RSA-OAEP
+// ÉTAPE 3: Générer une paire de clés RSA-OAEP random
 // ============================================================================
 // Pourquoi RSA?
 // - Asymétrique = il y a une clé publique (on l'envoie au serveur)

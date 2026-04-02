@@ -163,7 +163,7 @@ const response = await api.get('/api/files')
 const data = response.data
 ```
 
-### **crypto-js** - Encryption
+### **Web crypto API** - Encryption
 Client-side encryption/decryption for sensitive files.
 
 ---
