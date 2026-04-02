@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	files "backend/storage/internal"
@@ -20,7 +21,7 @@ var ErrQuotaExceeded = errors.New("quota exceeded") // for when I'll be able to 
 // business logic contract
 type StorageService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
-	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error
+	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
@@ -73,22 +74,28 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	}
 
 	presignedURL = rawURL.String()
+	presignedURL = strings.Replace(presignedURL, "minio", "localhost", 1)
 
 	return presignedURL, objectID, err
 }
 
-func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) error {
+func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error) {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if err != nil {
+		return uuid.Nil, err
+	}
 
 	// activer ficher en db
 	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, orgID, userID); err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	// increment used_space -> later
 	// publier l'event file_uploaded sur redis -> later
 	// incrementation en DB avec un UPDATE users SET used_space = used_space + ? WHERE id = ? pour évité les dataraces
 
-	return nil
+	return file.ID, nil
 }
 
 func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
@@ -113,6 +120,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	}
 
 	presignedURL = rawURL.String()
+	presignedURL = strings.Replace(presignedURL, "minio", "localhost", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }

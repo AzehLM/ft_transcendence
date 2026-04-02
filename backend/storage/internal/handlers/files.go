@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 
 	"backend/storage/internal/service"
 
@@ -79,7 +80,10 @@ func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
 		})
 	}
 
-	if err := h.svc.FinalizeUpload(userID, body.ObjectID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID); err != nil {
+	var fileID uuid.UUID
+
+	fileID, err = h.svc.FinalizeUpload(userID, body.ObjectID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID)
+	if err != nil {
 		switch {
 			case errors.Is(err, service.ErrNotFound):
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
@@ -90,7 +94,9 @@ func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
 		}
 	}
 
-	return c.SendStatus(fiber.StatusCreated)
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"file_id": fileID,
+	})
 }
 
 func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
