@@ -132,7 +132,9 @@ localhost:443 {
 			respond 204
 		}
 
-		reverse_proxy minio:9000
+        reverse_proxy minio:9000 {
+            header_up Host minio:9000
+        }
 	}
 
     # SPA fallback

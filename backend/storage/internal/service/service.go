@@ -73,8 +73,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	presignedURL = rawURL.String()
-	presignedURL = strings.Replace(presignedURL, "minio", "localhost", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
 
 	return presignedURL, objectID, err
 }
@@ -119,8 +118,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 		return "", nil, nil, "", err
 	}
 
-	presignedURL = rawURL.String()
-	presignedURL = strings.Replace(presignedURL, "minio", "localhost", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
