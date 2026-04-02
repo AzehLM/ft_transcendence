@@ -292,6 +292,45 @@ Reponse (200) :
   "name": "new_name"
 }
 ```
+---
+
+### `PATCH /orgs/{org_id}/maxspace`
+
+Modifier l'espace max de l'organisation. Admin only.
+
+Body :
+```json
+{
+  "space": int
+}
+```
+
+Reponse (200) :
+```json
+{
+  "max_pace": newMaxSpace
+}
+```
+
+---
+
+### `PATCH /orgs/{org_id}/usedspace`
+
+Modifier l'espace utilisé de l'organisation.
+
+Body :
+```json
+{
+  "space": int
+}
+```
+
+Reponse (200) :
+```json
+{
+  "used_space": newUsedSpace
+}
+```
 
 ---
 
