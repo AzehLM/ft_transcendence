@@ -529,7 +529,7 @@ Reponse (200) :
 
 ### `POST /files/finalize`
 
-Apres l'upload MinIO reussi, stocke les metadonnees crypto en DB.
+Apres l'upload MinIO reussi, stocke les metadonnees crypto en DB et retourne l'ID du fichier créé.
 
 Body :
 ```json
@@ -542,8 +542,12 @@ Body :
 }
 ```
 
-Reponse : `201 Created`
-
+Reponse (201) :
+```json
+{
+  "file_id": "<uuid>",
+}
+```
 ---
 
 ### `GET /files/{file_id}/download`
