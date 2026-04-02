@@ -1,6 +1,6 @@
 import styles from "../styles/LoginPage.module.css"
 
-export function Button({ children, variant = "primary", className = "", type = "button" }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit" }) {
+export function Button({ children, variant = "primary", className = "", type = "button", disabled = false }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit"; disabled?: boolean }) {
     const buttonClass = type === "submit" ? styles.submit_button : "";
 
     const primaryStyles = {
@@ -20,13 +20,14 @@ export function Button({ children, variant = "primary", className = "", type = "
             type={type}
             className={`${buttonClass} ${className}`}
             style={variantStyle}
+            disabled={disabled}
             onMouseEnter={(e) => {
-                if (variant === "primary") {
+                if (variant === "primary" && !disabled) {
                     e.currentTarget.style.backgroundColor = "var(--brand-primary-hover)";
                 }
             }}
             onMouseLeave={(e) => {
-                if (variant === "primary") {
+                if (variant === "primary" && !disabled) {
                     e.currentTarget.style.backgroundColor = "var(--brand-primary)";
                 }
             }}

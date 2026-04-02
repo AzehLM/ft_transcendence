@@ -208,7 +208,7 @@ export async function exportPublicKey(
 // Base64 = encodage binaire en caractères texte
 
 export function uint8ArrayToBase64(arr: Uint8Array): string {
-    return btoa(String.fromCharCode.apply(null, Array.from(arr)));
+    return btoa(String.fromCharCode(...Array.from(arr)));
 }
 
 export function base64ToUint8Array(str: string): Uint8Array {
@@ -263,11 +263,12 @@ export async function generateRegistrationData(
     const registrationData = {
         email,
         salt_1: uint8ArrayToBase64(salt),
+        auth_hash: uint8ArrayToBase64(authHash),
         public_key: uint8ArrayToBase64(publicKey),
         encrypted_private_key: uint8ArrayToBase64(wrappedPrivateKey.encryptedPrivateKey),
         iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
         tag: uint8ArrayToBase64(wrappedPrivateKey.tag),
-        auth_hash: uint8ArrayToBase64(authHash),
+        
     };
 
     console.log("✅ Données de registration générées:", registrationData);

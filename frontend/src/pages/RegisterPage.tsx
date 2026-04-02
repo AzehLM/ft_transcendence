@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+import { generateRegistrationData } from "../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,15 +12,65 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle registration logic here
-        if (password !== confirmPassword) {
-            alert("Passwords do not match!");
+        setError("");  // Réinitialise les erreurs précédentes
+
+        if (!email || !password || !confirmPassword) {
+            setError("All fields are required!");
             return;
         }
-        console.log("Register:", { email, password, confirmPassword });
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("Please enter a valid email!");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match!");
+            return;
+        }
+
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters!");
+            return;
+        }
+
+
+        setIsLoading(true);
+        try {
+            console.log("Génération des données cryptographiques...");
+            const registrationData = await generateRegistrationData(email, password);
+
+            console.log("Envoi au serveur...");
+            const response = await fetch("http://localhost:8000/api/v1/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(registrationData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.message || "Registration failed!");
+                setIsLoading(false);
+                return;
+            }
+
+            console.log("✅ Enregistrement réussi!");
+            navigate("/login");
+
+        } catch (err: any) {
+            console.error("❌ Erreur:", err);
+            setError(err.message || "An error occurred during registration!");
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -80,8 +132,15 @@ export default function RegisterPage() {
                             </p>
                         </div>
 
-                        <Button type="submit" variant="primary">
-                            Create Account
+                        {/* Error Message */}
+                        {error && (
+                            <div className={styles.error_message}>
+                                {error}
+                            </div>
+                        )}
+
+                        <Button type="submit" variant="primary" disabled={isLoading}>
+                            {isLoading ? "Creating Account..." : "Create Account"}
                             <ArrowRight className="inline-block ml-2 w-5 h-5" />
                         </Button>
                     </form>

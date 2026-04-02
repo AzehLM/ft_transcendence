@@ -241,3 +241,28 @@
 .back_home_link:hover {
     opacity: 1;
 }
+
+/* ===== ERROR MESSAGE ===== */
+.error_message {
+    background-color: #ffcccc;
+    color: #cc0000;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--text-sm);
+    text-align: center;
+    border: 1px solid #ff9999;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
