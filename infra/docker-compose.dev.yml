@@ -116,6 +116,8 @@ services:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
       MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
+      MINIO_BROWSER_REDIRECT_URL: https://ostrom.cloud/minio/ # URLs internes vivent sous /minio/
+      MINIO_SERVER_URL: http://minio:9000 # passe par l'API S3 (Caddy port 9000 actuellement)
     ports: # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
@@ -188,6 +190,18 @@ services:
       redis:
         condition: service_healthy
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflare_tunnel_token
+    secrets:
+      - cloudflare_tunnel_token
+    networks:
+      - dev
+    restart: unless-stopped
+    depends_on:
+      caddy:
+        condition: service_healthy
+
 volumes:
   caddy_data:
   caddy_config:
@@ -223,3 +237,5 @@ secrets:
     file: ../secrets/minio/minio_admin_pwd.txt
   redis_pwd:
     file: ../secrets/redis/redis_pwd.txt
+  cloudflare_tunnel_token:
+    file: ../secrets/cloudflare_tunnel_token
