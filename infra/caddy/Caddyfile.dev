@@ -14,42 +14,24 @@
 {
     debug # for development mode only as it is very verbose
 
-
-
     # might want to hide that via CADDY_ADMIN environment variable: https://caddyserver.com/docs/api
     # documentation exposes API endpoint we might want/have to use
     # this will be set to off for production unless we really use the admin rights which I doubt
     # admin has to be turned off to make config reload possible, I found a bypass for that but its not clean so this is a reminder to change back the service docker config for production
     admin 0.0.0.0:2019
 
-
-
-
     servers {
         metrics
     }
-
-    # Enable Prometheus metrics at /metrics (custom path)
-    # metrics /metrics
-
-    # Logs (structured JSON, to stdout for Docker)
 
     # for local development, there might be a cleaner way to have an automatic https server
 	local_certs
 }
 
-
-# Refer to the Caddy docs for more information:
-# https://caddyserver.com/docs/caddyfile
-
-
-
-# Listen on :443 (HTTPS only), accessible externally via host:${PORT} proxy
-localhost:443 {
-
-	tls internal
-
-    log test_1 {
+# Shared configuration snippet — all routes and headers live here once.
+# Imported by both localhost (TLS internal) and ostrom.cloud (HTTP for Cloudflare Tunnel).
+(app) {
+    log {
         output stdout
         format json
     }
@@ -103,58 +85,90 @@ localhost:443 {
 	@grafana path /grafana /grafana/*
 	handle @grafana {
         header X-Frame-Options "SAMEORIGIN"
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'self';"
 		reverse_proxy grafana:3000
 	}
 
 	# Started with --web.external-url=/prometheus/ so all its
 	# internal links and redirects are prefix-aware.
-	@prometheus path /prometheus /prometheus/*
-	handle @prometheus {
+    @prometheus path /prometheus /prometheus/*
+    handle @prometheus {
         uri strip_prefix /prometheus
-		reverse_proxy prometheus:9090
-	}
+        reverse_proxy prometheus:9090
+    }
 
-	@storage path /storage /storage/*
-	handle @storage {
-		uri strip_prefix /storage
+    # doesn't work yet I'll need to find another solution
+    @minio-exact path /minio
+    handle @minio-exact {
+        redir /minio/ permanent
+    }
 
-		# CORS headers for presigned URL PUT/GET from the browser
+    # minio needs the last trailing / to be accessible rn
+    @minio-console path /minio/ /minio/*
+    handle @minio-console {
+        uri strip_prefix /minio
+        reverse_proxy minio:9001 {
+            header_up X-Forwarded-Prefix "/minio"
+            header_up Connection {http.request.header.Connection}
+            header_up Upgrade {http.request.header.Upgrade}
+        }
+    }
+
+    # MinIO presigned URL proxy
+    @storage path /storage /storage/*
+    handle @storage {
+        uri strip_prefix /storage
+
+        # CORS headers for presigned URL PUT/GET from the browser
         # useless if the presigned URL goes throught https://localhost:4242/storage/... (because it will be the same origin and the browser does not triggers CORS)
-		header Access-Control-Allow-Origin "{http.request.header.Origin}"
-		header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
+        header Access-Control-Allow-Origin "{http.request.header.Origin}"
+        header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
         header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-date, x-amz-content-sha256, x-amz-security-token, x-amz-*"
-		header Access-Control-Expose-Headers "ETag"
-		header Access-Control-Max-Age "3600"
+        header Access-Control-Expose-Headers "ETag"
+        header Access-Control-Max-Age "3600"
 
 		# Handle preflight OPTIONS requests
-		@preflight method OPTIONS
-		handle @preflight {
-			respond 204
-		}
+        @preflight method OPTIONS
+        handle @preflight {
+            respond 204
+        }
 
         reverse_proxy minio:9000 {
             header_up Host minio:9000
         }
-	}
+    }
+
+
+    # API routes
+    @auth path /api/auth /api/auth/*
+    handle @auth {
+        reverse_proxy auth:8081
+    }
+    @orga path /api/orgs /api/orgs/*
+    handle @orga {
+        reverse_proxy orga:8082
+    }
+    @storage-api path /api/files /api/files/* /api/folder /api/folder/*
+    handle @storage-api {
+        reverse_proxy storage:8083
+    }
 
     # SPA fallback
     handle {
-        root * /usr/share/caddy  # Your SPA build
+        root * /usr/share/caddy
         try_files {path} {path}/ /index.html
         file_server
     }
+}
 
-    # --- API Backend (Fiber) ---
-	@auth path /api/auth /api/auth/*
-	handle @auth {
-		reverse_proxy auth:8081
-	}
-	@orga path /api/orgs /api/orgs/*
-	handle @orga {
-		reverse_proxy orga:8082
-	}
-	@storage-api path /api/files /api/files/* /api/folder /api/folder/*
-	handle @storage-api {
-		reverse_proxy storage:8083
-	}
+# Listen on :443 (HTTPS only), accessible externally via host:${PORT} proxy
+# Local development — self-signed cert
+localhost:443 {
+    tls internal
+    import app
+}
+
+# Cloudflare Tunnel entry point — HTTP only (Cloudflare handles HTTPS for visitors)
+http://ostrom.cloud {
+    import app
 }
