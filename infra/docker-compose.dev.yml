@@ -57,6 +57,7 @@ services:
     image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
+      - dev
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
