@@ -58,7 +58,7 @@ services:
     image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
-      - dev
+      # - dev
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
@@ -213,9 +213,9 @@ services:
     init: true
     read_only: true
     cap_drop:
-      - ALL
+      - ALL # suppress linux capabilities (chown, setuid...)
     security_opt:
-      - no-new-privileges:true
+      - no-new-privileges:true # suppress proccessus to acquire new privilegies (setuid, setgid...)
     networks:
       - tunnel
     restart: unless-stopped
