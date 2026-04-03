@@ -190,6 +190,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  orga:
+    container_name: orga
+    build:
+      context: ../
+      dockerfile: ./infra/services/orga/Dockerfile
+    networks:
+      - dev
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_started
 
   cloudflared:
     image: cloudflare/cloudflared:latest
