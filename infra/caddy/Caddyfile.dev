@@ -143,8 +143,13 @@ localhost:443 {
     }
 
     # --- API Backend (Fiber) ---
-	@api path /api/*
-	handle @api {
+	handle /api/auth/* {
 		reverse_proxy auth:8081
+	}
+	handle /api/orgs {
+		reverse_proxy orga:8082
+	}
+	handle /api/orgs/* {
+		reverse_proxy orga:8082
 	}
 }
