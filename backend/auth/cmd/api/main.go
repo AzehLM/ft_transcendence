@@ -55,9 +55,9 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
-	api.Get("/users/me", authHandler.GetInfo)
-	api.Delete("/users/me", authHandler.DeleteUser)
-	api.Put("/users/password", authHandler.UpdatePassword)
+	api.Get("/auth/me", authHandler.GetInfo)
+	api.Delete("/auth/me", authHandler.DeleteUser)
+	api.Put("/auth/password", authHandler.UpdatePassword)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8081...")
