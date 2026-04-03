@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"errors"
+	"encoding/base64"
 
 )
 
@@ -79,9 +80,17 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		})
 	}
 
+    decodedPublicKey, errPublicKey := base64.StdEncoding.DecodeString(body.PublicKey)
+    if errPublicKey != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 publicKey",
+		})
+    }
+
 	orga := models.Orga{
 		Name:      body.Name,
-		PublicKey: []byte(body.PublicKey),
+		PublicKey: decodedPublicKey,
+		// PublicKey: []byte(body.PublicKey),
 	}
 
 	// create an orga member with role admin
@@ -95,11 +104,19 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
+    decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
+    if errKey != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 encrypted private key",
+		})
+    }
+
 	orgaMember := models.OrgaMember{
 		// OrgID:         orga.ID,
 		UserID:        userID,
 		Role:          "admin",
-		EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
+		EncOrgPrivKey: decodedKey,
+		// EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 	}
 
     repo := repository.NewOrganizationRepository(h.DB)

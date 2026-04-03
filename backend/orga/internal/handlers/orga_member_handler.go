@@ -78,12 +78,19 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": memberErr.Error()})
 	}
 
+    decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncryptedOrgKey)
+    if errKey != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 encrypted private key",
+		})
+    }
+
 	// create orga member
 	orgaMember := models.OrgaMember{
 		OrgID: orgID,
 		UserID: user.ID,
 		Role: "member",
-		EncOrgPrivKey: []byte(body.EncryptedOrgKey),
+		EncOrgPrivKey: decodedKey,
 
 	}
 
@@ -341,6 +348,6 @@ func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
-		"enc_org_priv_key_brut": string(member.EncOrgPrivKey),
+		// "enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})
 }
