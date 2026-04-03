@@ -97,11 +97,13 @@
         reverse_proxy prometheus:9090
     }
 
+    # doesn't work yet I'll need to find another solution
     @minio-exact path /minio
     handle @minio-exact {
         redir /minio/ permanent
     }
 
+    # minio needs the last trailing / to be accessible rn
     @minio-console path /minio/ /minio/*
     handle @minio-console {
         uri strip_prefix /minio
