@@ -32,7 +32,8 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 
 	log.Printf("[WS] New user: %s", userID)
 
-	orgas, err := repository.GetMemberOrga(h.DB, userID)
+	repo := repository.NewOrganizationRepository(h.DB)
+	orgas, err := repo.GetMemberOrga(userID)
 	if err != nil {
 		log.Println("[WS] Error fetching organizations:", err)
 		return
@@ -58,14 +59,33 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 
 	ch := pubsub.Channel()
 
-	log.Printf("[WS] User %s listening to %d organizations", userID, len(channels))
+	done := make(chan struct{}) // "Kill switch"
 
-	for msg := range ch {
+	go func() {
+		defer close(done)
 
-		err := c.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
-		if err != nil {
-			log.Printf("[WS] Lost connection with %s: %v", userID, err)
-			break
+		for {
+			// If the user closes the tab, ReadMessage will return an error!
+			_, _, err := c.ReadMessage()
+			if err != nil {
+				log.Printf("[WS] Disconnection or signal loss for user %s", userID)
+				break
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-done:
+			log.Printf("[WS] Cleanup of session for %s completed.", userID)
+			return // defer (c.Close() and pubsub.Close())
+
+		case msg := <-ch:
+			err := c.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
+			if err != nil {
+				log.Printf("[WS] Error writing to %s: %v", userID, err)
+				return
+			}
 		}
 	}
 }
