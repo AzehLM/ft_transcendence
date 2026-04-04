@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"backend/orga/internal/ws"
 	"backend/orga/internal/handlers"
+	"backend/orga/internal/ws"
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/shared/middleware"
@@ -25,7 +25,6 @@ func main() {
 
 	redisClient := redis.NewClient(&redis.Options{Addr: "redis:6379", Password: env.RedisPassword})
 
-
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)
 
@@ -34,9 +33,7 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
-
-	orgaHandler := handlers.NewOrgaHandler(dbConn)
-
+	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub)
 	// Middlewares
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
