@@ -1,17 +1,24 @@
 # ft_box - API Routes
 
-Base URL : `/api`
+Base URL : `/api/v1`
 
 
 ---
 
 ## Auth
 
-### `GET /auth/salt?email=xxx`
+### `POST /auth/salt`
 
 Recup le salt d'un user pour pouvoir deriver la KEK cote client.
 
-Reponse :
+Body :
+```json
+{
+  "email": "student@42lyon.fr"
+}
+```
+
+Reponse (200) :
 ```json
 { "salt": "<base64>" }
 ```
@@ -37,6 +44,7 @@ Body :
 Reponse (201) :
 ```json
 {
+  "message": "User successfully registered",
   "access_token": "<jwt>"
 }
 ```
@@ -91,11 +99,16 @@ Reponse (200) :
 
 Supprime le refresh token + clear le cookie.
 
-Reponse : `200 OK`
+Reponse (200) :
+```json
+{
+  "message": "logged_out_successfully"
+}
+```
 
 ---
 
-### `PUT /auth/password`
+### `PUT /users/password`
 
 Change le mdp. Faut re-wrapper la PrivKey avec la nouvelle KEK.
 
@@ -104,13 +117,18 @@ Body :
 {
   "old_auth_hash": "<base64>",
   "new_auth_hash": "<base64>",
-  "new_salt": "<base64>",
+  "new_client_salt": "<base64>",
   "new_encrypted_private_key": "<base64>",
   "new_iv": "<base64>"
 }
 ```
 
-Reponse : `200 OK`
+Reponse (200) :
+```json
+{
+  "message": "password_updated_please_login_again"
+}
+```
 
 Invalide les refresh tokens des autres sessions.
 
@@ -211,12 +229,12 @@ Reponse (200) :
 
 Supprime le compte. Refuse si le user est dernier admin d'une orga.
 
-Body :
+Reponse (200) :
 ```json
-{ "auth_hash": "<base64>" }
+{
+  "message": "account_deleted_successfully"
+}
 ```
-
-Reponse : `200 OK`
 
 Supprime : fichiers perso sur MinIO, entries DB (cascade), refresh tokens, ferme la WS.
 
