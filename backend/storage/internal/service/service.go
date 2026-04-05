@@ -31,13 +31,15 @@ type storageService struct {
 	repo        files.StorageRepository
 	minioClient *minio.Client
 	redis       *redis.Client
+	db			*gorm.DB
 }
 
-func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client) StorageService {
+func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client, db *gorm.DB) StorageService {
 	return &storageService{
-		repo:        repo,
-		minioClient: minioClient,
-		redis:       redis,
+		repo:        	repo,
+		minioClient:	minioClient,
+		redis:			redis,
+		db:				db,
 	}
 }
 
@@ -110,6 +112,9 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	}
 
 	// RBAC -> later
+	if file.OwnerUserID != userID {
+		return "", nil, nil, "", ErrForbidden
+	}
 
 	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
 	// generate presigned URL (GET)

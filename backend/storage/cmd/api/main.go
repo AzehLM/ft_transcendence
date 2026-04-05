@@ -68,7 +68,7 @@ func main() {
 	}
 
 	repo := files.NewStorageRepository(database)
-	service := service.NewStorageService(repo, minioClient, redisClient)
+	service := service.NewStorageService(repo, minioClient, redisClient, database)
 	handler := handlers.NewStorageHandler(service)
 
 	api := app.Group("/api")
