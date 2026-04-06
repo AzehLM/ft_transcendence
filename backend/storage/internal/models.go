@@ -28,3 +28,16 @@ type File struct {
 func (File) TableName() string {
 	return "files"
 }
+
+type Folder struct {
+	ID			uuid.UUID	`gorm:"type:uuid;primaryKey" json:"id"`
+	OwnerUserID	uuid.UUID	`gorm:"type:uuid;not null" json:"owner_user_id"`
+	OrgID		*uuid.UUID	`gorm:"type:uuid" json:"org_id"`
+	ParentID	*uuid.UUID	`gorm:"type:uuid" json:"parent_id"`
+	Name		string		`gorm:"size:100;not null" json:"name"`
+	CreatedAt	time.Time	`gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+}
+
+func (Folder) TableName() string {
+	return "folders"
+}
