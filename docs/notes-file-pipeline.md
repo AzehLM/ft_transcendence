@@ -97,3 +97,21 @@ Current file roles:
 
 **Extra note**
 Where do I introduce/use Redis in all this ?
+
+---
+
+# Not in documentation but could be useful (or mandatory):
+
+> not ordered by priority
+
+- Quota checker + updater (used_space):
+  - Requete user service (ou directement en db) pour lire used_space et max_space si il y a puis
+    - `UPDATE users SET used_space += file_size` apres un FinalizeUpload
+    - `UPDATE users SET used_space -= file_size` apres un DeleteFile
+- Redis event:
+  - event pour: `file_upload`, `file_delete`, `folder_created`, `folder_delete` (et d'autres que j'ai pas en tete encore)
+  - `redis.Publish(ctx, "event", payload)` aux endroits ou il y a creation/suppression
+- Nettoyage des fichiers `PENDING` orphelins avec un cron ou une goroutine si on veut check toutes les X minutes ou un subcriber Redis sur `user_deleted` qui delete les fichiers des utilisateurs supprimés (mais avec un cron/goroutine au moins on purge aussi les orphelins sans event (dans le cas ou ca arrive))
+- ⚠️ une route `GET /files/{file_id}` qui retourne les metadata, pour le frontend ca va etre obligatoire pour avoir les détails des fichiers (`FindByID` + ownership check avec un retour JSON des metadata dont le front a besoin)
+- une route `GET /files?folder_id=xxx` ? au cas ou j'arrive pas a faire la route `GET /folders?parent_id=xxx` qui renvoie les fichiers dans dossier(s) + fichier sans dossier (donc a la racine)
+- Un truc qui valide l'existence d'un dossier cible pour `MoveFile` et `RequestUploadURL`, pour l'instant il y a pas de check sur `folder_id` aillant un random UUID, actuellement ca renvoie une 500
