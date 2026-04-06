@@ -104,6 +104,6 @@ func runServiceSmokeTest(db *gorm.DB, svc service.StorageService) {
 		log.Printf("[SMOKE-SVC] FAIL FinalizeUpload: %v", err)
 		return
 	}
-	log.Println("[SMOKE-SVC] OK FinalizeUpload, file_id: %v", fileID)
+	log.Printf("[SMOKE-SVC] OK FinalizeUpload, file_id: %v\n", fileID)
 	log.Printf("[SMOKE-SVC] OK presignedURL: %s\n", presignedURL)
 }
