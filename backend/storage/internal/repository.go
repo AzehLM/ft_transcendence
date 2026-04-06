@@ -10,6 +10,7 @@ var ErrNotFound = fmt.Errorf("not found")
 
 // contract -> ce que chaque repo de fichier doit savoir faire
 type StorageRepository interface {
+	// File part
 	DeleteFile(fileID uuid.UUID) error                                                                    // DELETE /files/{file_id}
 	FindByObjectID(objectID uuid.UUID) (*File, error)                                                     // POST /files/finalize
 	InsertPendingFile(file *File) error                                                                   // POST /files/upload-url
@@ -18,6 +19,9 @@ type StorageRepository interface {
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error                                         // PATCH /files/{file_id}
 
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
+
+	// Folder part
+	CreateFolder(folder *Folder) error
 }
 
 // ⚠️​ no Majuscule veut dire private, propre au package
@@ -76,7 +80,6 @@ func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryp
 	return nil
 }
 
-
 func (r *storageRepository) FindByID(fileID uuid.UUID) (*File, error) {
 	var file File
 	err := r.db.First(&file, fileID).Error
@@ -99,4 +102,8 @@ func (r *storageRepository) UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UU
 			"folder_id": folderID,
 		}).Error
 	return err
+}
+
+func (r *storageRepository) CreateFolder(folder *Folder) error {
+	return r.db.Create(folder).Error
 }

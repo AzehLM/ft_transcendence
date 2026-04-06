@@ -20,11 +20,14 @@ var ErrQuotaExceeded = errors.New("quota exceeded") // for when I'll be able to 
 
 // business logic contract
 type StorageService interface {
+	// File part
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
+
+	// Folder part
 }
 
 type storageService struct {
