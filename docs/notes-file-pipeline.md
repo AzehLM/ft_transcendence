@@ -115,3 +115,25 @@ Where do I introduce/use Redis in all this ?
 - ⚠️ une route `GET /files/{file_id}` qui retourne les metadata, pour le frontend ca va etre obligatoire pour avoir les détails des fichiers (`FindByID` + ownership check avec un retour JSON des metadata dont le front a besoin)
 - une route `GET /files?folder_id=xxx` ? au cas ou j'arrive pas a faire la route `GET /folders?parent_id=xxx` qui renvoie les fichiers dans dossier(s) + fichier sans dossier (donc a la racine)
 - Un truc qui valide l'existence d'un dossier cible pour `MoveFile` et `RequestUploadURL`, pour l'instant il y a pas de check sur `folder_id` aillant un random UUID, actuellement ca renvoie une 500
+
+
+## Redis
+
+Coté du service storage, on est uniquement publisher, pas subscriber (ou stream mais je pars du principe que non)
+
+diff pub/sub - stream:
+- pub/sub (`PUBLISH`/`SUBSCRIBE`): Si personne est sur une page ou on a pub un event, le message est perdu mais on s'en moque parce qu'au load de la page on aura un fetch des fichiers/dossiers
+- streams (`XADD`/`XREAD`): En gros on log puis on consume les logs, ca veut dire on traite toutes les infos qui ont été add par le/les publishers (l'avantage c'est si le ws broker crash on peut récup les logs et mettre a jour sans avoir a refresh a la mano)
+
+- events: `file_upload`, `file_delete`, `folder_created`, `folder_delete`, `folder_renamed`, `folder_moved`, `file_moved`, `file_renamed`
+
+- [quel mode de fonctionnement entre 2](https://oneuptime.com/blog/post/2026-01-21-redis-streams-vs-pubsub/view#:~:text=For%20most%20production%20systems%20requiring,time%20delivery%20and%20message%20durability.)
+  - Pour le coup pub/sub suffit IMO
+- Quels type de channel de publication ?
+  - un channel global par event ? `file_uploaded`, `file_deleted` -> le broker subscribe a tout et filtre
+  - un channel par user ? `user:{user_id}:events` -> le broker subscribe quand un user est co au ws
+  - un channel par score ? (chennel user + channel orga) `events:personal:{user_id}`, `events:org:{org_id}` -> le ws broker gere a la main les perms
+
+- Format payload:
+  - thin: just les IDs (`file_id`, `folder_id`, `owner_id`)
+  - fat: tous les champs utiles (`name`, `file_size`, `created_at` etc) ⚠️ il faudrat bien faire attention a ne pas inclure dans le payload `DEK`, `IV` etc.
