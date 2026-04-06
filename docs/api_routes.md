@@ -515,7 +515,7 @@ Reponse : `200 OK`
 
 Faut que le dossier soit vide (ON DELETE RESTRICT sur les fichiers).
 
-Reponse : `200 OK`
+Reponse : `204 No Content`
 
 
 ---
