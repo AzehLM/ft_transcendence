@@ -177,8 +177,13 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrForbidden
 	}
 
-	if err := s.repo.UpdateFileFolder(fileID, folderID); err != nil {
+	rows, err := s.repo.UpdateFileFolder(fileID, folderID)
+	if err != nil {
 		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
 	}
 
 	return nil
