@@ -108,7 +108,6 @@ export async function wrapPrivateKey(
 ): Promise<{
     encryptedPrivateKey: Uint8Array;
     iv: Uint8Array;
-    tag: Uint8Array;
 }> {
     // 1. Exporter la clé privée en raw binary (PKCS8)
     const privateKeyBuffer = await crypto.subtle.exportKey(
@@ -129,16 +128,12 @@ export async function wrapPrivateKey(
         privateKeyBuffer
     );
 
-    // 4. Récupérer le tag d'authentification (derniers 16 bytes)
-    // Le tag prouve que les données n'ont pas été modifiées
-    const encryptedArray = new Uint8Array(encryptedData);
-    const tag = encryptedArray.slice(-16); // Derniers 16 bytes
-    const encryptedPrivateKey = encryptedArray.slice(0, -16); // Tout sauf le tag
+    // 4. Convertir en Uint8Array (le tag est inclus à l'intérieur)
+    const encryptedPrivateKey = new Uint8Array(encryptedData);
 
     return {
         encryptedPrivateKey,
         iv,
-        tag,
     };
 }
 
@@ -267,8 +262,6 @@ export async function generateRegistrationData(
         public_key: uint8ArrayToBase64(publicKey),
         encrypted_private_key: uint8ArrayToBase64(wrappedPrivateKey.encryptedPrivateKey),
         iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
-        tag: uint8ArrayToBase64(wrappedPrivateKey.tag),
-
     };
 
     console.log("✅ Données de registration générées:", registrationData);
