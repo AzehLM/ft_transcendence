@@ -268,3 +268,58 @@ export async function generateRegistrationData(
 
     return registrationData;
 }
+
+// ============================================================================
+// FONCTION LOGIN: Récupérer le salt et générer l'AuthHash pour la connexion
+// ============================================================================
+// Processus:
+// 1. Envoyer l'email au serveur pour récupérer le salt
+// 2. Dériver la Master Key avec le password + salt
+// 3. Générer l'AuthHash
+// 4. Envoyer l'AuthHash pour vérification
+
+export async function generateLoginData(email: string, password: string) {
+    console.log("🔐 Démarrage du processus de connexion cryptographique...");
+
+    // ÉTAPE 1: Récupérer le salt du serveur
+    console.log("1️⃣ Récupération du salt depuis le serveur...");
+    let saltResponse;
+    try {
+        saltResponse = await fetch("https://localhost:8080/api/auth/get-salt", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!saltResponse.ok) {
+            const errorData = await saltResponse.json();
+            throw new Error(errorData.message || "Failed to retrieve salt");
+        }
+    } catch (err: any) {
+        console.error("❌ Erreur lors de la récupération du salt:", err);
+        throw err;
+    }
+
+    const saltData = await saltResponse.json();
+    const salt = base64ToUint8Array(saltData.salt_1);
+
+    // ÉTAPE 2: Dériver Master Key
+    console.log("2️⃣ Dérivation de la Master Key...");
+    const masterKey = await deriveMasterKey(password, salt);
+
+    // ÉTAPE 3: Générer AuthHash
+    console.log("3️⃣ Génération de l'AuthHash...");
+    const authHash = await generateAuthHash(masterKey);
+
+    // Créer l'objet à envoyer au serveur
+    const loginData = {
+        email,
+        auth_hash: uint8ArrayToBase64(authHash),
+    };
+
+    console.log("✅ Données de connexion générées:", loginData);
+
+    return loginData;
+}

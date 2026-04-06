@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+import { generateLoginData } from "../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -9,11 +11,59 @@ import { InputField } from "../components/input";
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log("Login:", { email, password });
+        setError("");
+
+        if (!email || !password) {
+            setError("All fields are required!");
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("Please enter a valid email!");
+            return;
+        }
+
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters!");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            console.log("🔐 Génération des données cryptographiques pour la connexion...");
+            const loginData = await generateLoginData(email, password);
+
+            console.log("📤 Envoi au serveur...");
+            const response = await fetch("https://localhost:8080/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(loginData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.message || "Login failed!");
+                setIsLoading(false);
+                return;
+            }
+
+            console.log("✅ Connexion réussie!");
+            navigate("/dashboard");
+
+        } catch (err: any) {
+            console.error("❌ Erreur:", err);
+            setError(err.message || "An error occurred during login!");
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -66,8 +116,15 @@ export default function LoginPage() {
                             </p>
                         </div>
 
-                        <Button type="submit" variant="primary">
-                            Log In
+                        {/* Error Message */}
+                        {error && (
+                            <div className={styles.error_message}>
+                                {error}
+                            </div>
+                        )}
+
+                        <Button type="submit" variant="primary" disabled={isLoading}>
+                            {isLoading ? "Logging In..." : "Log In"}
                             <ArrowRight className="inline-block ml-2 w-5 h-5" />
                         </Button>
                     </form>

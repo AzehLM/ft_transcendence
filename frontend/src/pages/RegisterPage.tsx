@@ -54,19 +54,6 @@ export default function RegisterPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(registrationData),
-            }).catch(err => {
-                // Si HTTPS auto-signé pose problème, on tente en HTTP en fallback
-                if (err.message.includes("certificate")) {
-                    console.warn("⚠️  HTTPS certificate error, falling back to HTTP...");
-                    return fetch("http://localhost:8080/api/auth/register", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(registrationData),
-                    });
-                }
-                throw err;
             });
 
             if (!response.ok) {
