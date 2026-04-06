@@ -2,11 +2,14 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 var ErrNotFound = fmt.Errorf("not found")
+var ErrEmpty = fmt.Errorf("cannot be empty")
 
 // contract -> ce que chaque repo de fichier doit savoir faire
 type StorageRepository interface {
@@ -17,7 +20,7 @@ type StorageRepository interface {
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)                                                             // GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error                                         // PATCH /files/{file_id}
-
+	UpdateFileName(fileID uuid.UUID, name string) error													  // pas encore decidé, a voir avec la methode de dessus...
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	// Folder part
@@ -96,12 +99,40 @@ func (r *storageRepository) DeleteFile(fileID uuid.UUID) error {
 
 // updates a file folder, folderID is a pointer because it can be nil (case where the file is not in a folder, its at the root of the user storage space)
 func (r *storageRepository) UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) error {
-	err := r.db.Model(&File{}).
+	result := r.db.Model(&File{}).
 		Where("id = ?", fileID).
-		Updates(map[string]interface{}{
-			"folder_id": folderID,
-		}).Error
-	return err
+		Update("folder_id", folderID)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ErrEmpty
+	}
+
+	result := r.db.Model(&File{}).
+		Where("id = ?", fileID).
+		Update("name", name)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *storageRepository) CreateFolder(folder *Folder) error {
