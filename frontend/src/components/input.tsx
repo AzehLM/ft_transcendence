@@ -1,4 +1,4 @@
-import styles from "../styles/LoginPage.module.css"
+import styles from "../styles/auth.module.css"
 
 export function InputField({
     label,

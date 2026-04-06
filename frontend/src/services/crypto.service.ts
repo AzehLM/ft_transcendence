@@ -48,7 +48,7 @@ export async function deriveMasterKey(
     const masterKey = await crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
-            salt: salt,
+            salt: salt as BufferSource,
             iterations: 100000, // Recos de OWASP 2023
             hash: "SHA-256", // Utiliser SHA-256 pour les iterations
         },
@@ -268,7 +268,7 @@ export async function generateRegistrationData(
         encrypted_private_key: uint8ArrayToBase64(wrappedPrivateKey.encryptedPrivateKey),
         iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
         tag: uint8ArrayToBase64(wrappedPrivateKey.tag),
-        
+
     };
 
     console.log("✅ Données de registration générées:", registrationData);

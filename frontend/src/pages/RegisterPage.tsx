@@ -3,7 +3,7 @@ import { generateRegistrationData } from "../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "../styles/LoginPage.module.css"
+import styles from "../styles/auth.module.css"
 import { Button } from "../components/button";
 import { InputField } from "../components/input";
 

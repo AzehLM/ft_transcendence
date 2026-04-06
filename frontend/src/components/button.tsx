@@ -1,4 +1,4 @@
-import styles from "../styles/LoginPage.module.css"
+import styles from "../styles/auth.module.css"
 
 export function Button({ children, variant = "primary", className = "", type = "button", disabled = false }: { children: React.ReactNode; variant?: "primary" | "secondary"; className?: string; type?: "button" | "submit"; disabled?: boolean }) {
     const buttonClass = type === "submit" ? styles.submit_button : "";
