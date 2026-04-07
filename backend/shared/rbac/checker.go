@@ -40,8 +40,7 @@ func NewDBChecker(db *gorm.DB) Checker {
 type folderRow struct {
 	ID			uuid.UUID
 	OwnerUserID	uuid.UUID
-	folderID	*uuid.UUID
-	orgID		*uuid.UUID
+	OrgID		*uuid.UUID
 }
 
 func (folderRow) TableName() string { return "folders" }
