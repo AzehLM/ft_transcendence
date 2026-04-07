@@ -24,6 +24,11 @@ type StorageRepository interface {
 
 	// Folder part
 	CreateFolder(folder *Folder) error
+
+	// Space utils
+	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
+	TryIncrementUserUsedSpace(userID uuid.UUID, delta int64) (bool, error)
+	DecrementUserUsedSpace(userID uuid.UUID, delta int64) error
 }
 
 // ⚠️​ no Majuscule veut dire private, propre au package
@@ -115,4 +120,49 @@ func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64
 
 func (r *storageRepository) CreateFolder(folder *Folder) error {
 	return r.db.Create(folder).Error
+}
+
+
+// Space utils
+// The following methods depends on the `users` table and more specificaly on the:
+// - id			UUID
+// - used_space	BIGINT
+// - max_space	BIGINT
+// that are own by the auth service.
+// These read/write directly via db.Table("users") to avoid coupling the storage service to the auth's User struct (no duplication).
+// For maintainability, any update on the User struct requires cross-service coordination
+func (r *storageRepository) GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error) {
+
+	var result struct {
+		UsedSpace int64
+		MaxSpace  int64
+	}
+
+	err = r.db.Table("users").
+		Select("used_space, max_space").
+		Where("id = ?", userID).
+		Take(&result).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.UsedSpace, result.MaxSpace, nil
+}
+
+// Try because this version is an atomic check-and-set (a single query SQL).
+// Postgres evaluates used_space + ? <= max_space and UPDATE it in the same transaction to avoid TOCTOU issues (Time-of-check to time-of-use)
+func (r *storageRepository) TryIncrementUserUsedSpace(userID uuid.UUID, delta int64) (bool, error) {
+	result := r.db.Table("users").
+		Where("id = ? AND used_space + ? <= max_space", userID, delta).
+		UpdateColumn("used_space", gorm.Expr("used_space + ?", delta))
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
+}
+
+func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64) error {
+	return r.db.Table("users").
+		Where("id = ?", userID).
+		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
 }
