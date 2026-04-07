@@ -42,7 +42,7 @@ func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, 
 		repo:        	repo,
 		minioClient:	minioClient,
 		redis:			redis,
-		db:				db,
+		db:				db, // pour l'instant je garde mais pas sur que j'utilise
 	}
 }
 
@@ -52,8 +52,15 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	ctx := context.TODO()
 	objectID = uuid.New()
 
-	// quota verification, a voir avec pierrick
-	// if used_space + fileSize > max_space = return 413
+	var used, max int64
+	used, max, err = s.repo.GetUserSpace(userID)
+	if err != nil {
+		return "", uuid.Nil, err
+	}
+
+	if used + fileSize > max {
+		return "", uuid.Nil, ErrQuotaExceeded
+	}
 
 	newFile := &files.File{
 		ID:             uuid.New(),
@@ -95,9 +102,21 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, err
 	}
 
-	// increment used_space -> later
-	// publier l'event file_uploaded sur redis -> later
+
 	// incrementation en DB avec un UPDATE users SET used_space = used_space + ? WHERE id = ? pour évité les dataraces
+	var ok bool
+	ok, err = s.repo.TryIncrementUserUsedSpace(userID, file.FileSize)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if !ok {
+		// TODO(redis): `file_orphaned` event with {object_key, file_id} (stream)
+		// so the cleanup worker removes the MinIO blob and the PENDING row
+		// Until the event bus is wired, quota-rejected uploads leave an orphan blob + PENDING row
+		return uuid.Nil, ErrQuotaExceeded
+	}
+	// TODO(redis): event with file_uploaded (pub/sub)
 
 	return file.ID, nil
 }
@@ -158,8 +177,10 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	// update de used_space -> later
-	// publier event file_deleted sur redis -> later
+	if err := s.repo.DecrementUserUsedSpace(userID, file.FileSize); err != nil {
+		return err
+	}
+	// publier event file_deleted sur redis -> later (pub/sub)
 
 	return nil
 }
