@@ -1,9 +1,13 @@
 package rbac
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+var ErrForbidden = errors.New("forbidden")
 
 // not passing *File so this interface is a stand-alone and has no dependencies to the storage package
 // I'll extract the data needed from file calling the checker
@@ -41,3 +45,29 @@ type folderRow struct {
 }
 
 func (folderRow) TableName() string { return "folders" }
+
+func (c *DBChecker) CanReadFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error {
+
+	if orgID == nil {
+		if userID != ownerUserID {
+			return ErrForbidden
+		}
+		return nil
+	}
+
+	var count int64 // maybe its too much lol ?
+	err := c.db.Table("org_members"). // not checking role here since it doesn't matter, everyone have the same rights
+		Where("org_id = ? AND user_id = ?", *orgID, userID).
+		Count(&count).Error // count instead of First
+
+	if err != nil {
+		return err
+	}
+
+	// 0 means the user is not in the organization
+	if count == 0 {
+		return ErrForbidden
+	}
+
+	return nil
+}
