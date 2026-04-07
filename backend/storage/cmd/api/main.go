@@ -14,6 +14,7 @@ import (
 	"backend/storage/internal/handlers"
 
 	"backend/shared/middleware"
+	"backend/shared/rbac"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
@@ -67,8 +68,10 @@ func main() {
 		log.Fatalf("[FATAL] Failed to initialize MinIO bucket: %v\n", err)
 	}
 
+	checker := rbac.NewDBChecker(database)
+
 	repo := files.NewStorageRepository(database)
-	service := service.NewStorageService(repo, minioClient, redisClient, database)
+	service := service.NewStorageService(repo, minioClient, redisClient, checker)
 	handler := handlers.NewStorageHandler(service)
 
 	api := app.Group("/api")

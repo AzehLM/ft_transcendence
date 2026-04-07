@@ -8,6 +8,8 @@ import (
 
 	files "backend/storage/internal"
 
+	"backend/shared/rbac"
+
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/redis/go-redis/v9"
@@ -33,23 +35,33 @@ type StorageService interface {
 }
 
 type storageService struct {
-	repo        files.StorageRepository
-	minioClient *minio.Client
-	redis       *redis.Client
-	db			*gorm.DB
+	repo		files.StorageRepository
+	minioClient	*minio.Client
+	redis		*redis.Client
+	rbac		rbac.Checker
 }
 
-func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client, db *gorm.DB) StorageService {
+func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client, checker rbac.Checker) StorageService {
 	return &storageService{
-		repo:        	repo,
+		repo:			repo,
 		minioClient:	minioClient,
 		redis:			redis,
-		db:				db, // pour l'instant je garde mais pas sur que j'utilise
+		rbac:			checker,
 	}
 }
 
 /* interface methods*/
 func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
+
+	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return "", uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return "", uuid.Nil, ErrNotFound
+		}
+		return "", uuid.Nil, err
+	}
 
 	ctx := context.TODO()
 	objectID = uuid.New()
@@ -135,9 +147,11 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 		return "", nil, nil, "", err
 	}
 
-	// RBAC -> later
-	if file.OwnerUserID != userID {
-		return "", nil, nil, "", ErrForbidden
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return "", nil, nil, "", ErrForbidden
+		}
+		return "", nil, nil, "", err
 	}
 
 	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
@@ -164,9 +178,11 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	// sort of right check (only owner for now, has to be updated for organizations)
-	if file.OwnerUserID != userID {
-		return ErrForbidden
+	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
 	}
 
 	// suppress file metadata in DB
@@ -196,8 +212,21 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return err
 	}
 
-	if file.OwnerUserID != userID {
-		return ErrForbidden
+	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, folderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
 	}
 
 	rows, err := s.repo.UpdateFileFolder(fileID, folderID)
@@ -223,6 +252,13 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 
 	if file.OwnerUserID != userID {
 		return nil, ErrForbidden
+	}
+
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
 	}
 
 	return file, nil
