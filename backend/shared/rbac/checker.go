@@ -7,7 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrForbidden = errors.New("forbidden")
+var (
+	ErrForbidden = errors.New("forbidden")
+	ErrNotFound  = errors.New("not found")
+)
 
 // not passing *File so this interface is a stand-alone and has no dependencies to the storage package
 // I'll extract the data needed from file calling the checker
@@ -108,4 +111,21 @@ func (c *DBChecker) CanWriteFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID 
 	}
 
 	return ErrForbidden
+}
+
+func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, orgID *uuid.UUID) error {
+
+	// personal space + root
+	if folderID == nil && orgID == nil{
+		return nil
+	}
+
+	// orga space + root
+
+	// orga space + specific folder
+
+	//
+
+
+
 }
