@@ -26,7 +26,7 @@ type StorageService interface {
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
-	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (fileSize int64, createdAt time.Time, name string, err error)
+	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error)
 	// Folder part
 }
 
@@ -127,7 +127,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", nil, nil, "", ErrNotFound
 	} else if err != nil {
 		return "", nil, nil, "", err
@@ -156,7 +156,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrNotFound
 	} else if err != nil {
 		return err
@@ -188,7 +188,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error {
 
 	file, err := s.repo.FindByID(fileID)
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrNotFound
 	} else if err != nil {
 		return err
@@ -210,18 +210,18 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 	return nil
 }
 
-func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (fileSize int64, createdAt time.Time, name string, err error) {
+func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error) {
 
-	file, err := s.repo.FindByID(fileID)
-	if err == gorm.ErrRecordNotFound {
-		return 0, time.Time{}, "", ErrNotFound
+	file, err = s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
 	} else if err != nil {
-		return 0, time.Time{}, "", err
+		return nil, err
 	}
 
 	if file.OwnerUserID != userID {
-		return 0, time.Time{}, "", ErrForbidden
+		return nil, ErrForbidden
 	}
 
-	return file.FileSize, file.CreatedAt, file.Name, nil
+	return file, nil
 }
