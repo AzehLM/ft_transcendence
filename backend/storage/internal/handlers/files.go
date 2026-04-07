@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 
+	files "backend/storage/internal"
 	"backend/storage/internal/service"
 
 	"github.com/gofiber/fiber/v3"
@@ -134,41 +135,6 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 	})
 }
 
-func (h *StorageHandler) GetFileInfo(c fiber.Ctx) error {
-
-	userID, err := h.extractUserID(c)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	fileID, err := uuid.Parse(c.Params("file_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid file_id",
-		})
-	}
-
-	fileSize, createdAt, fileName, err := h.svc.GetFileInfo(userID, fileID)
-	if err != nil {
-		switch {
-			case errors.Is(err, service.ErrNotFound):
-				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
-			case errors.Is(err, service.ErrForbidden):
-				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
-			default:
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
-		}
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"file_size":			fileSize,
-		"created_at":			createdAt,
-		"encrypted_filename":	fileName,
-	})
-}
-
 func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
 
 	userID, err := h.extractUserID(c)
@@ -245,4 +211,41 @@ func (h *StorageHandler) MoveFile(c fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+// call to GetFileInfo from service returns a File so I can modulate the return value depending on needs
+func (h *StorageHandler) GetFileInfo(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	fileID, err := uuid.Parse(c.Params("file_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid file_id",
+		})
+	}
+
+	var file *files.File
+	file, err = h.svc.GetFileInfo(userID, fileID)
+	if err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"file_size":			file.FileSize,
+		"created_at":			file.CreatedAt,
+		"encrypted_filename":	file.Name,
+	})
 }
