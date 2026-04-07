@@ -42,7 +42,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 
 	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID)
 	if err != nil {
-		if errors.Is(err, service.ErrQuotaExceeded) { // for when quota will be implemented
+		if errors.Is(err, service.ErrQuotaExceeded) {
 			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
 		} else { // do we ever want to return a 500 ? hmmmm
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
@@ -117,12 +117,12 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(userID, fileID)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrNotFound):
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
-		case errors.Is(err, service.ErrForbidden):
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
-		default:
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
 		}
 	}
 
@@ -130,6 +130,41 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 		"presigned_url":		presignedURL,
 		"encrypted_dek":		encryptedDEK,
 		"iv":					iv,
+		"encrypted_filename":	fileName,
+	})
+}
+
+func (h *StorageHandler) GetFileInfo(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	fileID, err := uuid.Parse(c.Params("file_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid file_id",
+		})
+	}
+
+	fileSize, createdAt, fileName, err := h.svc.GetFileInfo(userID, fileID)
+	if err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"file_size":			fileSize,
+		"created_at":			createdAt,
 		"encrypted_filename":	fileName,
 	})
 }
@@ -152,12 +187,12 @@ func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
 
 	if err := h.svc.DeleteFile(userID, fileID); err != nil {
 		switch {
-		case errors.Is(err, service.ErrNotFound):
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
-		case errors.Is(err, service.ErrForbidden):
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
-		default:
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not_found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_error"})
 		}
 	}
 

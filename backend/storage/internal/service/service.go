@@ -26,7 +26,7 @@ type StorageService interface {
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
-
+	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (fileSize int64, createdAt time.Time, name string, err error)
 	// Folder part
 }
 
@@ -208,4 +208,20 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 	}
 
 	return nil
+}
+
+func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (fileSize int64, createdAt time.Time, name string, err error) {
+
+	file, err := s.repo.FindByID(fileID)
+	if err == gorm.ErrRecordNotFound {
+		return 0, time.Time{}, "", ErrNotFound
+	} else if err != nil {
+		return 0, time.Time{}, "", err
+	}
+
+	if file.OwnerUserID != userID {
+		return 0, time.Time{}, "", ErrForbidden
+	}
+
+	return file.FileSize, file.CreatedAt, file.Name, nil
 }
