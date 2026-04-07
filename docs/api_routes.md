@@ -522,6 +522,8 @@ Reponse : `204 No Content`
 
 ## Files
 
+> Les routes fichiers n'operent que sur les fichiers en statut ACTIVE. Les fichiers PENDING sont un etat transitoire interne et ne sont jamais exposes via l'API.
+
 ### `POST /files/upload-url`
 
 Demande une presigned URL pour upload direct vers MinIO. Check le quota.
@@ -566,6 +568,22 @@ Reponse (201) :
   "file_id": "<uuid>",
 }
 ```
+
+---
+
+### `GET /files/{file_id}`
+
+Recupere les metadonnees d'un fichier sans declencher de download. Check RBAC. Ne retourne que les fichiers ACTIVE. (metadonnées a update si besoin)
+
+Reponse (200) :
+```json
+{
+  "file_size": 1048576,
+  "created_at": "2026-01-21T09:00:00Z",
+  "encrypted_filename": "<base64>"
+}
+```
+
 ---
 
 ### `GET /files/{file_id}/download`
