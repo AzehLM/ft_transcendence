@@ -14,9 +14,10 @@
 
 > la base est faite, les choses importantes a mettre en place sont les suivantes:
 
-- [ ] implementation de redis dans files
-- [ ] quota verification dans files
+- [x] quota verification dans files
 - [ ] trouver une solution pour mettre en place le RBAC
+- [ ] implementation de redis dans files
+  - [ ] pleins de trucs a faire je détaillerai plus tard
 - [ ] ...
 
 
