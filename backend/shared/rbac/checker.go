@@ -121,11 +121,54 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 	}
 
 	// orga space + root
+	if folderID == nil && orgID != nil {
+		var count int64
+		err := c.db.Table("org_members").
+			Where("org_id = ? AND user_id = ?", orgID, userID).
+			Count(&count).Error
+
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			return ErrForbidden
+		}
+
+		return nil
+	}
 
 	// orga space + specific folder
+	var folder folderRow
+	err := c.db.Where("id = ?", *folderID).First(&folder).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
 
-	//
+	// personnal folder
+	if folder.OrgID == nil {
+		if folder.OwnerUserID != userID {
+			return ErrForbidden
+		}
+		return nil
+	}
 
+	// Orga folder: any member can create
+	var count int64
+	err = c.db.Table("org_members").
+		Where("org_id = ? AND user_id = ?", folder.OrgID, userID).
+		Count(&count).Error
 
+	if err != nil {
+		return err
+	}
 
+	if count == 0 {
+		return ErrForbidden
+	}
+
+	return nil
 }
