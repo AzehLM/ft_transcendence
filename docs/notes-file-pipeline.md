@@ -7,10 +7,18 @@
 - [x] Une fois que ca tourne je peux mettre le client **SDK MinIO**
   - [x] utiliser les secrets et pas l'env pour le co a minio, en root
   - [x] Initialisation au démarrage dans `main.go`
-- [ ] Tout connecter et implementer les routes: upload-url -> finalize -> downlowd -> delete -> move (déplacement/migration?) (`service.go`, `handler.go`)
+- [x] Tout connecter et implementer les routes: upload-url -> finalize -> downlowd -> delete -> move (déplacement/migration?) (`service.go`, `handler.go`)
   - [x] `service.go` done for file management(temporarily since I'll need more informations from the other services to finish)
-  - [ ] `service.go` done for folders business logic
-  - [ ] `handler.go` done
+  - [x] `service.go` done for folders business logic
+  - [x] `handler.go` done
+
+> la base est faite, les choses importantes a mettre en place sont les suivantes:
+
+- [ ] implementation de redis dans files
+- [ ] quota verification dans files
+- [ ] trouver une solution pour mettre en place le RBAC
+- [ ] ...
+
 
 
 # links
@@ -133,7 +141,7 @@ events: `file_upload`, `file_delete`, `folder_created`, `folder_delete`, `folder
 Quels type de channel de publication ?
   - un channel global par event ? `file_uploaded`, `file_deleted` -> le broker subscribe a tout et filtre
   - un channel par user ? `user:{user_id}:events` -> le broker subscribe quand un user est co au ws
-  - un channel par score ? (chennel user + channel orga) `events:personal:{user_id}`, `events:org:{org_id}` -> le ws broker gere a la main les perms
+  - un channel par score ? (channel user + channel orga) `events:personal:{user_id}`, `events:org:{org_id}` -> le ws broker gere a la main les perms
 
 Format payload:
   - thin: just les IDs (`file_id`, `folder_id`, `owner_id`)
