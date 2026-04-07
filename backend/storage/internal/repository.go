@@ -87,9 +87,10 @@ func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryp
 	return nil
 }
 
+// only returns ACTIVE files!
 func (r *storageRepository) FindByID(fileID uuid.UUID) (*File, error) {
 	var file File
-	err := r.db.First(&file, fileID).Error
+	err := r.db.Where("id = ? AND status = ?", fileID, "ACTIVE").First(&file).Error
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +133,6 @@ func (r *storageRepository) CreateFolder(folder *Folder) error {
 // These read/write directly via db.Table("users") to avoid coupling the storage service to the auth's User struct (no duplication).
 // For maintainability, any update on the User struct requires cross-service coordination
 func (r *storageRepository) GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error) {
-
 	var result struct {
 		UsedSpace int64
 		MaxSpace  int64
