@@ -71,3 +71,42 @@ func (c *DBChecker) CanReadFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *
 
 	return nil
 }
+
+func (c *DBChecker) CanWriteFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error {
+
+	if orgID == nil {
+		if userID != ownerUserID {
+			return ErrForbidden
+		}
+		return nil
+	}
+
+	// using a struct so I can use gorm.ErrRecordNotFound (in the err check below the query) and not import a sql package since gorm doesn't have ErrNoRows in its errors
+	type memberRole struct {
+		Role string
+	}
+
+	var role memberRole
+	err := c.db.Table("org_members").
+		Select("role").
+		Where("org_id = ? AND user_id = ?", *orgID, userID).
+		Row().Scan(&role)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	if role.Role == "admin" {
+		return nil
+	}
+
+	// if we get there then the check on role="member" is not necessary
+	if userID == ownerUserID {
+		return nil
+	}
+
+	return ErrForbidden
+}
