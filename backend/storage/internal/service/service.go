@@ -14,9 +14,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrForbidden = errors.New("forbidden")
-var ErrNotFound = errors.New("not found")
-var ErrQuotaExceeded = errors.New("quota exceeded") // for when I'll be able to check quota
+var (
+	ErrForbidden = errors.New("forbidden")
+	ErrNotFound = errors.New("not found")
+	ErrQuotaExceeded = errors.New("quota exceeded")
+)
 
 // business logic contract
 type StorageService interface {
