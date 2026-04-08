@@ -150,9 +150,19 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	event := ws.WSEvent{
+		Type:    "ORGA_DELETED",
+		OrgID:   orgID.String(),
+		Message: "Organization has been permanently deleted",
+	}
+	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
+	}
+
 	// delete all MinIO files
 
 	return c.SendStatus(fiber.StatusNoContent)
+
 }
 
 func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
