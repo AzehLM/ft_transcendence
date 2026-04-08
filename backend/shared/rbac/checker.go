@@ -122,20 +122,7 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 
 	// orga space + root
 	if folderID == nil && orgID != nil {
-		var count int64
-		err := c.db.Table("org_members").
-			Where("org_id = ? AND user_id = ?", *orgID, userID).
-			Count(&count).Error
-
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			return ErrForbidden
-		}
-
-		return nil
+		return c.checkOrgMembership(userID, *orgID)
 	}
 
 	// orga space + specific folder
@@ -148,6 +135,11 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 		return err
 	}
 
+	// same scope between folder and orga
+	if !sameOrg(folder.OrgID, orgID) {
+		return ErrForbidden
+	}
+
 	// personnal folder
 	if folder.OrgID == nil {
 		if folder.OwnerUserID != userID {
@@ -157,9 +149,15 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 	}
 
 	// Orga folder: any member can create
+	return c.checkOrgMembership(userID, *folder.OrgID)
+}
+
+
+// private helpers
+func (c *DBChecker) checkOrgMembership(userID, orgID uuid.UUID) error {
 	var count int64
-	err = c.db.Table("org_members").
-		Where("org_id = ? AND user_id = ?", folder.OrgID, userID).
+	err := c.db.Table("org_members").
+		Where("org_id = ? AND user_id = ?", orgID, userID).
 		Count(&count).Error
 
 	if err != nil {
@@ -171,4 +169,14 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 	}
 
 	return nil
+}
+
+func sameOrg(firstOrga *uuid.UUID, secondOrga *uuid.UUID) bool {
+	if firstOrga == nil && secondOrga == nil {
+		return true
+	}
+	if firstOrga == nil || secondOrga == nil {
+		return false
+	}
+	return *firstOrga == *secondOrga
 }
