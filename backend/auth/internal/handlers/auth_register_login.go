@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"log"
 	"time"
+	"encoding/base64"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -66,9 +67,9 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"access_token":          accessToken,
-		"encrypted_private_key": hex.EncodeToString(user.EncryptedPrivateKey),
-		"iv":                    hex.EncodeToString(user.IV),
-		"public_key":            hex.EncodeToString(user.PublicKey),
+		"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+		"iv":                    base64.StdEncoding.EncodeToString(user.IV),
+		"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
 	})
 }
 
@@ -93,27 +94,27 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	clientSalt, err := hex.DecodeString(req.ClientSalt)
+	clientSalt, err := base64.StdEncoding.DecodeString(req.ClientSalt)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_client_salt_format"})
 	}
 
-	iv, err := hex.DecodeString(req.Iv)
+	iv, err := base64.StdEncoding.DecodeString(req.Iv)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_iv_format"})
 	}
 
-	pubKey, err := hex.DecodeString(req.PublicKey)
+	pubKey, err := base64.StdEncoding.DecodeString(req.PublicKey)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_public_key_format"})
 	}
 
-	privKey, err := hex.DecodeString(req.EncryptedPrivateKey)
+	privKey, err := base64.StdEncoding.DecodeString(req.EncryptedPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_private_key_format"})
 	}
 
-	serverSalt, _ := hex.DecodeString(serverSaltHex)
+	serverSalt, _ := base64.StdEncoding.DecodeString(serverSaltHex)
 
 	rtBytes := make([]byte, 32)
 	if _, err := rand.Read(rtBytes); err != nil {
@@ -180,10 +181,10 @@ func (h *AuthHandler) GetClientSalt(c fiber.Ctx) error {
 		hasher := sha256.New()
 		hasher.Write([]byte(req.Email + h.Env.JwtSecret))
 		fakeSalt := hasher.Sum(nil)[:16]
-		saltHex = hex.EncodeToString(fakeSalt)
+		saltHex = base64.StdEncoding.EncodeToString(fakeSalt)
 
 	} else {
-		saltHex = hex.EncodeToString(user.ClientSalt)
+		saltHex = base64.StdEncoding.EncodeToString(user.ClientSalt)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

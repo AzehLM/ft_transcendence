@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
-	"encoding/hex"
+	"encoding/base64"
 	"log"
 
 	"github.com/gofiber/fiber/v3"
@@ -75,22 +75,22 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-	newClientSalt, err := hex.DecodeString(req.NewClientSalt)
+	newClientSalt, err := base64.StdEncoding.DecodeString(req.NewClientSalt)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_client_salt_format"})
 	}
 
-	newIV, err := hex.DecodeString(req.NewIv)
+	newIV, err := base64.StdEncoding.DecodeString(req.NewIv)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_iv_format"})
 	}
 
-	newPrivKey, err := hex.DecodeString(req.NewEncryptedPrivKey)
+	newPrivKey, err := base64.StdEncoding.DecodeString(req.NewEncryptedPrivKey)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_private_key_format"})
 	}
 
-	newServerSalt, _ := hex.DecodeString(newServerSaltHex)
+	newServerSalt, _ := base64.StdEncoding.DecodeString(newServerSaltHex)
 
 	err = h.DB.Model(&user).Updates(map[string]interface{}{
 		"auth_hash":             newServerHash,
