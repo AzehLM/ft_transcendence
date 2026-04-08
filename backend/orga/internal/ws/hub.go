@@ -50,3 +50,11 @@ func (h *Hub) PublishToOrga(ctx context.Context, orgID string, event WSEvent) er
 
 	return nil
 }
+
+func (h *Hub) PublishToUser(ctx context.Context, userID string, event WSEvent) error {
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	return h.Redis.Publish(ctx, "user_events:"+userID, payload).Err()
+}
