@@ -124,7 +124,7 @@ func (c *DBChecker) CanCreateInFolder(userID uuid.UUID, folderID *uuid.UUID, org
 	if folderID == nil && orgID != nil {
 		var count int64
 		err := c.db.Table("org_members").
-			Where("org_id = ? AND user_id = ?", orgID, userID).
+			Where("org_id = ? AND user_id = ?", *orgID, userID).
 			Count(&count).Error
 
 		if err != nil {
