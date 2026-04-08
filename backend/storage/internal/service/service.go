@@ -250,8 +250,11 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 		return nil, err
 	}
 
-	if file.OwnerUserID != userID {
-		return nil, ErrForbidden
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
 	}
 
 	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
