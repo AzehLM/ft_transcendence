@@ -38,8 +38,6 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
 	}
 
-	//TODO: delete files ect check if not last admin in org
-
 	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] User %s deleted their account", userID)
