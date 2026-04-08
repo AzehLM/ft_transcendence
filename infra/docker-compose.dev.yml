@@ -164,6 +164,14 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    container_name: frontend
+    build: 
+      context: ../
+      dockerfile: ./infra/services/frontend/Dockerfile
+    networks:
+      - dev
+
 volumes:
   caddy_data:
   caddy_config:

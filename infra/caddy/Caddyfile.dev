@@ -135,24 +135,9 @@ localhost:443 {
 		reverse_proxy minio:9000
 	}
 
-    # SPA fallback
-    handle {
-        root * /usr/share/caddy  # Your SPA build
-        try_files {path} {path}/ /index.html
-        file_server
-    }
     
-    # Gérer OPTIONS preflight -> when front communicate with back it first send an option request to check the communication is possible
-    @options {
-        method OPTIONS
-        path /api/*
-    }
-    handle @options {
-        header Access-Control-Allow-Origin "http://localhost:3000"
-        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
-        header Access-Control-Allow-Credentials "true"
-        respond 204
+    handle {
+        reverse_proxy frontend:80
     }
 
     # --- API Backend (Fiber) ---
@@ -161,15 +146,10 @@ localhost:443 {
 		reverse_proxy auth:8081
 	}
 
-    @frontend {
-        header Origin http://localhost:3000
+    # SPA fallback
+    handle {
+        root * /usr/share/caddy  # Your SPA build
+        try_files {path} {path}/ /index.html
+        file_server
     }
-
-    header @frontend Access-Control-Allow-Origin "http://localhost:3000"
-    header @frontend Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    header @frontend Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
-    header @frontend Access-Control-Allow-Credentials "true"
-
-
-
 }

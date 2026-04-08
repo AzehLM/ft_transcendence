@@ -15,7 +15,7 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
 
     if (response.status === 401) {
         const refreshResponse = await fetch("https://localhost:8080/api/auth/refresh", {
-            method: "GET",
+            method: "POST",
             credentials: "include", // cookie HttpOnly
         });
 
@@ -35,8 +35,7 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
             throw new Error("Session Expired, cannot refresh token");
         }
 
-        const refreshData = await refreshResponse.json();
-        token = refreshData.token;
+        token = data.access_token;
 
         localStorage.setItem("token", token);
 
@@ -54,39 +53,12 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
 
 export default function ProfilePage() {
 
-    // try {
-    //     const userInfo = await fetch("https://localhost:8080/api/auth/me", {
-    //         method: "GET",
-    //         credentials: "include",
-    //     });
-    //     const data = await userInfo.json();
-    
-    //     if (!userInfo.ok) {
-    //         console.error("User not found");
-    //         return;
-    //     }
-    
-    //     console.log("Utilisateur:", data);
-    // }
-
     const [user, setUser] = useState(null);
 
     useEffect(() => {
         const fetchUser = async () => {
-            // const token = localStorage.getItem("token");
-            // if (!token) {
-            //     console.error("No token available");
-            //     return;
-            // }
-            try { // what if token has expired ?
+            try {
                 const response = await fetchWithRefresh("https://localhost:8080/api/users/me");
-                // const response = await fetch("https://localhost:8080/api/users/me", {
-                //     method: "GET",
-                //     headers: {
-                //         "Content-Type": "application/json",
-                //         "Authorization": `Bearer ${token}`,
-                //     },
-                // });
 
                 let data: any;
                 try {
