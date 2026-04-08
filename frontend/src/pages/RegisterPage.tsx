@@ -46,16 +46,17 @@ export default function RegisterPage() {
         try {
             console.log("🔐 Génération des données cryptographiques...");
             const registrationData = await generateRegistrationData(email, password);
-
+            
             console.log("📤 Envoi au serveur...");
             const response = await fetch("https://localhost:8080/api/auth/register", {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(registrationData),
             });
-
+            
             if (!response.ok) {
                 const errorData = await response.json();
                 setError(errorData.message || "Registration failed!");
