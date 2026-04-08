@@ -94,11 +94,34 @@ fclean: clean
 
 # --------------------------------- CI/CD ------------------------------------
 
-# only runs golangci-lint in the backend directory yet, might have to be updated depending on future architecture
-.PHONY: lint-back
-lint-back:
-	@if [ -n "$$(find backend -name '*.go' 2>/dev/null)" ]; then \
+.PHONY: lint-storage
+lint-storage:
+	@if [ -n "$$(find backend/storage -name '*.go' 2>/dev/null)" ]; then \
 		cd backend/storage && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-auth
+lint-auth:
+	@if [ -n "$$(find backend/auth -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/auth && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-orga
+lint-orga:
+	@if [ -n "$$(find backend/orga -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/orga && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-shared
+lint-shared:
+	@if [ -n "$$(find backend/shared -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/shared && golangci-lint run ./...; \
 	else \
 		echo "No Go files found, skipping lint." && exit 0; \
 	fi

@@ -45,13 +45,6 @@ func runSmokeTest(db *gorm.DB, repo files.StorageRepository) {
 	}
 	log.Printf("[SMOKE] OK  FindByObjectID → name=%s status=%s", found.Name, found.Status)
 
-	found, err = repo.FindByID(pending.ID)
-	if err != nil {
-		log.Printf("[SMOKE] FAIL FindByID: %v", err)
-		return
-	}
-	log.Printf("[SMOKE] OK  FindByID → name=%s id=%s\n", pending.Name, pending.ID)
-
 	if err := repo.ActivateFile(objectID, "real-name.enc", []byte("real-dek"), []byte("real-iv-16bytes!"), nil, ownerID); err != nil {
 		log.Printf("[SMOKE] FAIL ActivateFile: %v", err)
 		return

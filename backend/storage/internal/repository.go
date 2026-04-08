@@ -6,9 +6,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-var ErrNotFound = fmt.Errorf("not found")
-var ErrEmpty = fmt.Errorf("cannot be empty")
+var (
+	ErrNotFound = fmt.Errorf("not found")
+	ErrEmpty = fmt.Errorf("cannot be empty")
+)
 
 // contract -> ce que chaque repo de fichier doit savoir faire
 type StorageRepository interface {
