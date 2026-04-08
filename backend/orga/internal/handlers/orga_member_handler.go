@@ -128,7 +128,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	if errPublish != nil {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
 	}
-	
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "member added to organization",
 	})
@@ -262,6 +262,21 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
+	orgaEvent := ws.WSEvent{
+		Type:    "MEMBER_REMOVED",
+		OrgID:   orgID.String(),
+		Message: "A member has left the organization",
+		Data:    fiber.Map{"user_id": userID.String()},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+
+	userEvent := ws.WSEvent{
+		Type:    "REMOVED_FROM_ORGA",
+		Message: "You have been removed from the organization",
+		Data:    fiber.Map{"org_id": orgID.String()},
+	}
+	h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
@@ -313,6 +328,21 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	if !deleted {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
+
+	orgaEvent := ws.WSEvent{
+		Type:    "MEMBER_REMOVED",
+		OrgID:   orgID.String(),
+		Message: "A member has left the organization",
+		Data:    fiber.Map{"user_id": userID.String()},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+
+	userEvent := ws.WSEvent{
+		Type:    "REMOVED_FROM_ORGA",
+		Message: "You have been removed from the organization",
+		Data:    fiber.Map{"org_id": orgID.String()},
+	}
+	h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
