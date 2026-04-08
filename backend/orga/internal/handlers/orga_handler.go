@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"log"
 
 	"backend/orga/internal/ws"
 	"encoding/base64"
@@ -188,6 +189,19 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
+
+	event := ws.WSEvent{
+		Type:    "ORGA_RENAMED",
+		OrgID:   orgID.String(),
+		Message: "Organization name updated",
+		Data: fiber.Map{
+			"new_name": body.Name,
+		},
+	}
+	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+		log.Printf("[WS] Non-blocking error: failed to publish ORGA_RENAMED: %v", errPublish)
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "organization name updated",
 	})
