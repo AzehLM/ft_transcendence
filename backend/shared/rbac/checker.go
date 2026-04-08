@@ -92,7 +92,7 @@ func (c *DBChecker) CanWriteFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID 
 	err := c.db.Table("org_members").
 		Select("role").
 		Where("org_id = ? AND user_id = ?", *orgID, userID).
-		Row().Scan(&role)
+		Take(&role).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
