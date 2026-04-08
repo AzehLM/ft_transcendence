@@ -4,9 +4,9 @@ import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
 
+	"backend/orga/internal/ws"
 	"encoding/base64"
 	"errors"
-	"backend/orga/internal/ws"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -14,7 +14,7 @@ import (
 )
 
 type OrgaHandler struct {
-	DB *gorm.DB
+	DB  *gorm.DB
 	Hub *ws.Hub
 }
 
@@ -250,6 +250,16 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	event := ws.WSEvent{
+		Type:    "QUOTA_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "Organization space usage updated",
+		Data: fiber.Map{
+			"used_space": newSpace,
+		},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"max_space": newSpace,
 	})
@@ -308,6 +318,16 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
+
+	event := ws.WSEvent{
+		Type:    "QUOTA_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "Organization space usage updated",
+		Data: fiber.Map{
+			"used_space": newSpace,
+		},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"used_space": newSpace,
