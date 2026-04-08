@@ -57,7 +57,10 @@ export default function LoginPage() {
             }
 
             console.log("✅ Connexion réussie!");
-            navigate("/dashboard");
+            const data = await response.json()
+            localStorage.setItem("token", data.access_token);
+            // navigate("/dashboard");
+            navigate("/profile");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);

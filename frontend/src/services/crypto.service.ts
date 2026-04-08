@@ -257,7 +257,7 @@ export async function generateRegistrationData(
     // Créer l'objet à envoyer au serveur
     const registrationData = {
         email,
-        salt_1: uint8ArrayToBase64(salt),
+        salt: uint8ArrayToBase64(salt),
         auth_hash: uint8ArrayToBase64(authHash),
         public_key: uint8ArrayToBase64(publicKey),
         encrypted_private_key: uint8ArrayToBase64(wrappedPrivateKey.encryptedPrivateKey),
@@ -285,7 +285,7 @@ export async function generateLoginData(email: string, password: string) {
     console.log("1️⃣ Récupération du salt depuis le serveur...");
     let saltResponse;
     try {
-        saltResponse = await fetch("https://localhost:8080/api/auth/get-salt", {
+        saltResponse = await fetch("https://localhost:8080/api/auth/salt", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -303,7 +303,7 @@ export async function generateLoginData(email: string, password: string) {
     }
 
     const saltData = await saltResponse.json();
-    const salt = base64ToUint8Array(saltData.salt_1);
+    const salt = base64ToUint8Array(saltData.salt);
 
     // ÉTAPE 2: Dériver Master Key
     console.log("2️⃣ Dérivation de la Master Key...");
