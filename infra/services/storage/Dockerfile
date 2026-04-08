@@ -6,11 +6,10 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY ./backend/go.work ./backend/go.work.sum ./
 COPY ./backend/storage/go.mod ./backend/storage/go.sum ./storage/
 COPY ./backend/shared/go.mod ./backend/shared/go.sum ./shared/
 
-RUN go work sync
+RUN go work init ./shared ./storage && go work sync
 
 COPY ./backend/storage ./storage/
 COPY ./backend/shared ./shared/
