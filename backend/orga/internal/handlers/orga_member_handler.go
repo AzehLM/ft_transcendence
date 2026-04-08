@@ -209,6 +209,17 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
+	event := ws.WSEvent{
+		Type:    "ROLE_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "A member's role has been updated",
+		Data: fiber.Map{
+			"user_id": userID.String(),
+			"role":    body.Role,
+		},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "role updated",
 	})
