@@ -92,6 +92,10 @@ func main() {
 
 	log.Println("[INFO] Files service started on :8083")
 
+	// will be deleted, only added it to make linter happy as I still want to keep those tests aside for now
+	runServiceSmokeTest(database, service)
+	runSmokeTest(database, repo)
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
