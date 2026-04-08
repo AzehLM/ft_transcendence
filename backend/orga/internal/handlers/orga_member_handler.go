@@ -116,6 +116,19 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
 	}
 
+	userEvent := ws.WSEvent{
+		Type:    "ADDED_TO_NEW_ORGA",
+		Message: "You have been added to a new organization",
+		Data: fiber.Map{
+			"org_id": orgID.String(),
+		},
+	}
+
+	errPublish = h.Hub.PublishToUser(c.Context(), user.ID.String(), userEvent)
+	if errPublish != nil {
+		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
+	}
+	
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "member added to organization",
 	})
