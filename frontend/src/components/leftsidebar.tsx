@@ -1,5 +1,5 @@
 import { ChevronDown, Folder, Trash2, Files, Package} from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 export function LeftSidebar({ foldersExpanded, setFoldersExpanded }: { foldersExpanded: boolean; setFoldersExpanded: (expanded: boolean) => void }) {
     return (
