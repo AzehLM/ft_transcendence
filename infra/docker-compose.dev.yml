@@ -2,9 +2,10 @@ services:
   caddy:
     container_name: caddy
     build:
-      context: ./caddy
+      context: ../
+      dockerfile: ./infra/caddy/Dockerfile
       args:
-        - CADDY_CONFIG=Caddyfile.dev
+        - CADDY_CONFIG=./infra/caddy/Caddyfile.dev
     image: caddy
     networks:
       - dev
@@ -15,7 +16,6 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      - frontend_dist:/usr/share/caddy
     # develop:
     #   watch:
     #     - path: ./caddy/Caddyfile.dev
@@ -165,17 +165,6 @@ services:
       postgres:
         condition: service_healthy
 
-  frontend:
-    container_name: frontend
-    build: 
-      context: ../
-      dockerfile: ./infra/services/frontend/Dockerfile
-    networks:
-      - dev
-    volumes:
-      - frontend_dist:/app/dist/
-    command: tail -f /dev/null
-
 volumes:
   caddy_data:
   caddy_config:
@@ -184,8 +173,6 @@ volumes:
   postgres_data:
   minio_data:
   redis_data:
-  frontend_dist:
-
 
 networks:
   dev:
