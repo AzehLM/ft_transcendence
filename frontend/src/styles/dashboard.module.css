@@ -1,5 +1,5 @@
 .page {
-    background-color: #f2f2f2;
+    background-color: #f5f5f5;
     position: relative;
     min-height: 100vh;
     width: 100%;
@@ -13,21 +13,27 @@
 }
 
 .searchBox {
-    background-color: #f3f3f3;
-    border: 2px solid rgba(73, 69, 79, 0.65);
-    height: 66px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 2px 0px rgba(0, 0, 0, 0.25);
+    background-color: #ffffff;
+    border: 2px solid #bbb;
+    height: 60px;
+    border-radius: 12px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 20px;
     gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.searchBox:focus-within {
+    border-color: #bbb;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .searchIcon {
-    width: 32px;
-    height: 32px;
-    color: rgba(73, 69, 79, 0.82);
+    width: 24px;
+    height: 24px;
+    color: #bbb;
     flex-shrink: 0;
 }
 
@@ -35,23 +41,23 @@
     background: transparent;
     flex: 1;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 26px;
-    color: rgba(73, 69, 79, 0.82);
-    letter-spacing: 0.5px;
+    font-size: 18px;
+    color: #bbb;
+    letter-spacing: 0px;
     border: none;
     outline: none;
 }
 
 .searchInput::placeholder {
-    color: rgba(73, 69, 79, 0.82);
+    color: #bbb;
 }
 
 .profileButton {
     position: absolute;
-    right: 32px;
+    right: 16px;
     top: 33px;
-    width: 75px;
-    height: 75px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: rgba(230, 225, 224, 0.71);
     display: flex;
@@ -59,52 +65,53 @@
     justify-content: center;
     border: none;
     cursor: pointer;
-    transition: opacity 0.2s ease;
-    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .profileButton:hover {
-    opacity: 0.8;
+    background-color: rgba(230, 225, 224, 0.85);
+    transform: scale(1.05);
 }
 
 .profileIcon {
-    width: 40px;
-    height: 40px;
-    color: #d54f2a;
+    width: 32px;
+    height: 32px;
+    color: #de7356;
 }
 
 .contentArea {
     position: absolute;
     left: 288px;
-    top: 220px;
+    top: 300px;
     right: 48px;
 }
 
 .title {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: bold;
-    font-size: 35px;
+    font-weight: 700;
+    font-size: 40px;
     color: #2b1008;
-    letter-spacing: 0.5px;
-    margin-bottom: 24px;
+    letter-spacing: 0px;
+    margin-bottom: 16px;
     margin-top: 0;
 }
 
 .subtitle {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 600;
-    font-size: 32px;
-    color: #2b1008;
-    letter-spacing: 0.5px;
-    margin-bottom: 32px;
+    font-weight: 500;
+    font-size: 28px;
+    color: #888;
+    letter-spacing: 0px;
+    margin-bottom: 48px;
     margin-top: 0;
 }
 
 .fileGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    column-gap: 31px;
-    row-gap: 50px;
+    column-gap: 12px;
+    row-gap: 20px;
     padding-bottom: 48px;
 }
 
