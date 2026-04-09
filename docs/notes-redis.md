@@ -43,12 +43,28 @@ Format payload:
 - [dev 1 - refresh token/logout](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-1--auth--s%C3%A9curit%C3%A9-backend)
 - [dev 2 - finalize/delete file](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-2--fichiers--stockage-backend)
 - [global (c'est dans dev 3 btw)](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-3--organisations-websocket--redis-backend)
--
-
-
-
 
 
 # notes
 
 - si orga delete, alors delete tout les fichiers/dossiers ? ou est-ce qu'on fait ca ? Est-ce que c'est mon backend qui subscribe a un event `orga_delete` ? Est-ce que c'est le front qui est subscribe et qui fais les requetes aux back pour delete on_cascade ?
+
+
+
+---
+
+On a plusieurs types d'événements, plusieurs "producteurs" et plusieurs "consommateurs" également (j'utiliserai respectivement producer et consumer a partir de maintenant), avec des besoins différents.
+
+## Famille d'événements 1 - Events "UI realtime"
+
+> TODO: liste EXAUSTIVE des events, tout services confondus (mettre a jour doc ci dessous en meme temps)
+- `file_uploaded`, `file_deleted`, `file_moved`, `folder_created`, ...
+- C'est le service `storage` qui les produits (producer)
+- Le consumer c'est la websocket (via Redis directement ? je ne sais pas) qui broadcast ces events au front (tous les navigateurs connectés)
+- On peut utilisé le systeme de publication/subscription pour ces events car c'est OK si ils sont pas "catch" par le navigateur. Les événements ne sont publish qu'apres réalisation des actions voulus donc un reload (F5) suffit pour l'actualisation en cas de perte des events redis. On parle d'event **fire-and-forget**.
+- Mécanisme Redis utilisé: `PUBLISH`/`SUBSCRIBE` - pub/sub classique
+
+
+## Famille d'événements 2 - Events "cleanup / cross-service side effects"
+
+> TODO: liste EXAUSTIVE des events, tout services confondus + link entre eux (mettre a jour doc ci-dessous en meme temps)
