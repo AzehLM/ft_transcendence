@@ -203,7 +203,15 @@ export async function exportPublicKey(
 // Base64 = encodage binaire en caractères texte
 
 export function uint8ArrayToBase64(arr: Uint8Array): string {
-    return btoa(String.fromCharCode(...Array.from(arr)));
+    const chunkSize = 8192; // Process 8KB at a time
+    let binaryString = '';
+
+    for (let i = 0; i < arr.length; i += chunkSize) {
+        const chunk = arr.slice(i, i + chunkSize);
+        binaryString += String.fromCharCode(...chunk);
+    }
+
+    return btoa(binaryString);
 }
 
 export function base64ToUint8Array(str: string): Uint8Array {
