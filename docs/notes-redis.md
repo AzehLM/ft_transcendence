@@ -73,3 +73,11 @@ On a plusieurs types d'événements, plusieurs "producteurs" et plusieurs "conso
 - **Consumer**: Des workers, soit créer spécialement pour, soit en utilisant les routes de nos services qui sont déjà en place.
 - C'est ici que c'est vraiment important, **aucun events ne doit etre perdu!**. Si on delete pas correctement les infos utilisateurs (metadata, raw data) on va saturer nos espaces de stockage a un moment donné.
 - Mécanisme Redis utilisé: `Streams` mais pas de pub/sub car a nouveau, on **DOIT** consume tous les events sans exception
+
+
+La différence entre les deux c'est la sémantique, pub/sub n'a pas de garantie de lecture/consommation.
+Imaginons qu'on ai une orga qui soit delete alors qu'elle contenait 30Go de data, c'est potentiellement 30Go qui restent dans un bucket MinIO.
+
+
+## Architecture (je sais pas comment appelé ca mieux pour l'instant)
+

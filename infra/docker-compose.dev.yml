@@ -215,7 +215,7 @@ services:
     cap_drop:
       - ALL # suppress linux capabilities (chown, setuid...)
     security_opt:
-      - no-new-privileges:true # suppress proccessus to acquire new privilegies (setuid, setgid...)
+      - no-new-privileges:true # suppress proccess to acquire new privilegies (setuid, setgid...)
     networks:
       - tunnel
     restart: unless-stopped
