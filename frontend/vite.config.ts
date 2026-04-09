@@ -7,9 +7,9 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // Go backend
+        target: 'https://localhost:443', // Caddy reverse proxy
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false // Allow self-signed certs in dev
       }
     }
   },
