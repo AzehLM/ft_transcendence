@@ -48,7 +48,7 @@ export default function DashboardPage() {
             {/* Main content area */}
             <div className={styles.contentArea}>
                 <h1 className={styles.title}>
-                    Personnal space
+                    Personal space
                 </h1>
                 <h2 className={styles.subtitle}>
                     All files
