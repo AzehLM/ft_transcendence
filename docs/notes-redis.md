@@ -51,5 +51,4 @@ Format payload:
 
 # notes
 
-- si orga delete, alors delete tout les fichiers/dossiers ?
--
+- si orga delete, alors delete tout les fichiers/dossiers ? ou est-ce qu'on fait ca ? Est-ce que c'est mon backend qui subscribe a un event `orga_delete` ? Est-ce que c'est le front qui est subscribe et qui fais les requetes aux back pour delete on_cascade ?
