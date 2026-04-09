@@ -31,11 +31,11 @@ Format payload:
 - [file suppression](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#7-suppression-de-fichier)
 - [changement de role dans orga](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#8-changement-de-role-dans-une-orga)
 - [Suppression de compte](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#8-changement-de-role-dans-une-orga)
-- [logout](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#8-changement-de-role-dans-une-orga)
+- [logout](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#12-logout)
 
 #### api_routes.md
 
-- [websocket](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/work.md#8-changement-de-role-dans-une-orga)
+- [websocket](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#websocket)
 
 
 #### mission_dev.md
@@ -43,4 +43,13 @@ Format payload:
 - [dev 1 - refresh token/logout](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-1--auth--s%C3%A9curit%C3%A9-backend)
 - [dev 2 - finalize/delete file](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-2--fichiers--stockage-backend)
 - [global (c'est dans dev 3 btw)](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-3--organisations-websocket--redis-backend)
-- 
+-
+
+
+
+
+
+# notes
+
+- si orga delete, alors delete tout les fichiers/dossiers ?
+-
