@@ -59,8 +59,8 @@ On a plusieurs types d'événements, plusieurs "producteurs" et plusieurs "conso
 
 > TODO: liste EXAUSTIVE des events, tout services confondus (mettre a jour doc ci dessous en meme temps)
 - `file_uploaded`, `file_deleted`, `file_moved`, `folder_created`, ...
-- C'est le service `storage` qui les produits (producer)
-- Le consumer c'est la websocket (via Redis directement ? je ne sais pas) qui broadcast ces events au front (tous les navigateurs connectés)
+- **Producer**: le service `storage` les produits
+- **Consumer**: la websocket (via Redis directement ? je ne sais pas encore, a discuté avec Pierrick) qui broadcast ces events au front (tous les navigateurs connectés)
 - On peut utilisé le systeme de publication/subscription pour ces events car c'est OK si ils sont pas "catch" par le navigateur. Les événements ne sont publish qu'apres réalisation des actions voulus donc un reload (F5) suffit pour l'actualisation en cas de perte des events redis. On parle d'event **fire-and-forget**.
 - Mécanisme Redis utilisé: `PUBLISH`/`SUBSCRIBE` - pub/sub classique
 
@@ -68,3 +68,8 @@ On a plusieurs types d'événements, plusieurs "producteurs" et plusieurs "conso
 ## Famille d'événements 2 - Events "cleanup / cross-service side effects"
 
 > TODO: liste EXAUSTIVE des events, tout services confondus + link entre eux (mettre a jour doc ci-dessous en meme temps)
+- `user_delete` (cleanup de ses fichiers), `file_orphaned` (cleanup minio), `orga_deleted` (cleanup de ses fichiers)
+- **Producer**: c'est variable, auth pour `user_deleted`, storage pour `file_orphaned`, etc (a mettre a jour en meme temps que le TODO)
+- **Consumer**: Des workers, soit créer spécialement pour, soit en utilisant les routes de nos services qui sont déjà en place.
+- C'est ici que c'est vraiment important, **aucun events ne doit etre perdu!**. Si on delete pas correctement les infos utilisateurs (metadata, raw data) on va saturer nos espaces de stockage a un moment donné.
+- Mécanisme Redis utilisé: `Streams` mais pas de pub/sub car a nouveau, on **DOIT** consume tous les events sans exception
