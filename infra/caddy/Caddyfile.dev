@@ -134,10 +134,12 @@ localhost:443 {
 
 		reverse_proxy minio:9000
 	}
-
     
+        # SPA fallback
     handle {
-        reverse_proxy frontend:80
+        root * /usr/share/caddy  # Your SPA build
+        try_files {path} {path}/ /index.html
+        file_server
     }
 
     # --- API Backend (Fiber) ---
@@ -145,11 +147,4 @@ localhost:443 {
 	handle @api {
 		reverse_proxy auth:8081
 	}
-
-    # SPA fallback
-    handle {
-        root * /usr/share/caddy  # Your SPA build
-        try_files {path} {path}/ /index.html
-        file_server
-    }
 }

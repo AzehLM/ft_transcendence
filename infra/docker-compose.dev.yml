@@ -15,6 +15,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - frontend_dist:/usr/share/caddy
     # develop:
     #   watch:
     #     - path: ./caddy/Caddyfile.dev
@@ -171,6 +172,9 @@ services:
       dockerfile: ./infra/services/frontend/Dockerfile
     networks:
       - dev
+    volumes:
+      - frontend_dist:/app/dist/
+    command: tail -f /dev/null
 
 volumes:
   caddy_data:
@@ -180,6 +184,7 @@ volumes:
   postgres_data:
   minio_data:
   redis_data:
+  frontend_dist:
 
 
 networks:
@@ -190,6 +195,7 @@ networks:
     driver: bridge
     name: monitoring-network
     internal: true
+
 
 secrets:
   grafana_admin_user:
