@@ -14,7 +14,7 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     let response = await fetch(url, { ...options, headers });
 
     if (response.status === 401) {
-        const refreshResponse = await fetch("https://localhost:8080/api/auth/refresh", {
+        const refreshResponse = await fetch("/api/auth/refresh", {
             method: "POST",
             credentials: "include", // cookie HttpOnly
         });
@@ -58,7 +58,7 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetchWithRefresh("https://localhost:8080/api/users/me");
+                const response = await fetchWithRefresh("/api/users/me");
 
                 let data: any;
                 try {

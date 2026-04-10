@@ -272,7 +272,7 @@ export async function generateRegistrationData(
         iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
     };
 
-    console.log("✅ Données de registration générées:", registrationData);
+    console.log("✅ Données de registration générées");
 
     return registrationData;
 }
@@ -293,7 +293,7 @@ export async function generateLoginData(email: string, password: string) {
     console.log("1️⃣ Récupération du salt depuis le serveur...");
     let saltResponse;
     try {
-        saltResponse = await fetch("https://localhost:8080/api/auth/salt", {
+        saltResponse = await fetch("/api/auth/salt", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

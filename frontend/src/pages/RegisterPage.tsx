@@ -48,7 +48,7 @@ export default function RegisterPage() {
             const registrationData = await generateRegistrationData(email, password);
             
             console.log("📤 Envoi au serveur...");
-            const response = await fetch("https://localhost:8080/api/auth/register", {
+            const response = await fetch("/api/auth/register", {
                 method: "POST",
                 credentials: "include",
                 headers: {
