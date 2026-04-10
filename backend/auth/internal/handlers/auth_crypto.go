@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/hex"
+	"encoding/base64"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -23,7 +23,7 @@ func hashWithArgon2id(clientAuthHash string) (string, string, error) {
 
 	hash := argon2.IDKey([]byte(clientAuthHash), serverSalt, timeCost, memory, threads, keyLen)
 
-	return hex.EncodeToString(hash), hex.EncodeToString(serverSalt), nil
+	return base64.StdEncoding.EncodeToString(hash), base64.StdEncoding.EncodeToString(serverSalt), nil
 }
 
 func verifyArgon2idHash(clientAuthHash string, serverSalt []byte, storedHashHex string) bool {
@@ -33,12 +33,12 @@ func verifyArgon2idHash(clientAuthHash string, serverSalt []byte, storedHashHex 
 	var keyLen uint32 = 32
 
 	computedHash := argon2.IDKey([]byte(clientAuthHash), serverSalt, timeCost, memory, threads, keyLen)
-	computedHashHex := hex.EncodeToString(computedHash)
+	computedHashHex := base64.StdEncoding.EncodeToString(computedHash)
 
 	return subtle.ConstantTimeCompare([]byte(computedHashHex), []byte(storedHashHex)) == 1
 }
 
 func hashToken(rawToken string) string {
 	hash := sha256.Sum256([]byte(rawToken))
-	return hex.EncodeToString(hash[:])
+	return base64.StdEncoding.EncodeToString(hash[:])
 }

@@ -17,6 +17,8 @@ func setRefreshTokenCookie(c fiber.Ctx, token string) {
 		HTTPOnly: true,
 		Secure:   true, // test avec caddy
 		SameSite: "Strict",
+		// SameSite: "None",
+		Path: "/",
 	})
 }
 
