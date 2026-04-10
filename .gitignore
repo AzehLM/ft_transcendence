@@ -44,3 +44,9 @@ secrets
 # build
 .build/
 .obj/
+
+# Frontend (Node.js)
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo

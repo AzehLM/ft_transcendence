@@ -2,9 +2,10 @@ services:
   caddy:
     container_name: caddy
     build:
-      context: ./caddy
+      context: ../
+      dockerfile: ./infra/caddy/Dockerfile
       args:
-        - CADDY_CONFIG=Caddyfile.dev
+        - CADDY_CONFIG=./infra/caddy/Caddyfile.dev
     image: caddy
     networks:
       - dev
@@ -47,7 +48,7 @@ services:
       caddy:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9090/-/ready" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -95,7 +96,7 @@ services:
       - POSTGRES_USER_FILE=/run/secrets/postgres_user
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_pwd
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)"]
+      test: [ "CMD-SHELL", "pg_isready -U $(cat /run/secrets/postgres_user) -d $(cat /run/secrets/postgres_db)" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -124,7 +125,7 @@ services:
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -146,10 +147,9 @@ services:
     ports:
       - "127.0.0.1:9002:6379" # to test with the CLI in dev mode only, will be deleted in prod
     command: >
-      sh -c "redis-server /etc/redis/redis.conf
-      --requirepass $$(cat /run/secrets/redis_pwd)"
+      sh -c "redis-server /etc/redis/redis.conf --requirepass $$(cat /run/secrets/redis_pwd)"
     healthcheck:
-      test: ["CMD-SHELL", "REDISCLI_AUTH=$$(cat /run/secrets/redis_pwd) redis-cli ping | grep -q PONG"]
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=$$(cat /run/secrets/redis_pwd) redis-cli ping | grep -q PONG" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -191,6 +191,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
   orga:
     container_name: orga
     build:
@@ -246,6 +247,7 @@ networks:
   tunnel:
     driver: bridge
     name: tunnel-network
+
 
 secrets:
   grafana_admin_user:

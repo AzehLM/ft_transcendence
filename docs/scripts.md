@@ -23,4 +23,46 @@ go version    # go1.26.0
 golangci-cli --version # v2.10.1
 ```
 
-# next script details if any (to delete)
+# npm install for frontend
+
+## What is npm?
+
+**npm** = Node Package Manager. It's a repository of reusable code libraries that the JavaScript community creates and shares. 
+`npm install` reads your `package.json` and downloads all the libraries your React project needs (React, TypeScript, Vite, Zustand, Axios, etc).
+
+## install npm once :
+
+```sh
+# Using fnm (Fast Node Manager) - no sudo needed
+curl -fsSL https://fnm.io/install | bash
+source ~/.zshrc
+
+# Install Node.js
+fnm install --latest
+fnm use latest
+```
+
+Verify installation:
+```sh
+node --version
+npm --version
+```
+
+Navigate to the frontend folder and run:
+
+```sh
+cd frontend
+npm install
+```
+
+This will:
+1. Read `package.json` 
+2. Download all required libraries
+3. Create `node_modules/` folder (is not being pushed to Git btw)
+
+**You only run `npm install` ONCE per machine.** After that, all your npm scripts work:
+- `npm run dev` - Start development server
+- `npm run build` - Create production build
+- `npm run lint` - Check code quality 
+
+
