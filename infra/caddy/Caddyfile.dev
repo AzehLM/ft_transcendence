@@ -134,8 +134,8 @@ localhost:443 {
 
 		reverse_proxy minio:9000
 	}
-
-    # SPA fallback
+    
+        # SPA fallback
     handle {
         root * /usr/share/caddy  # Your SPA build
         try_files {path} {path}/ /index.html
