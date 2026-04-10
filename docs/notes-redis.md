@@ -81,3 +81,139 @@ Imaginons qu'on ai une orga qui soit delete alors qu'elle contenait 30Go de data
 
 ## Architecture (je sais pas comment appelé ca mieux pour l'instant)
 
+### Besoins
+
+- un consumer websocket pour re-broadcast en temps réels (je sais pas ou le mettre)
+- un consumer "storage cleanup" (cleanup `file_orphaned` dans minio, les PENDING orphelins en DB également) (**propre au service storage**)
+- un consumer `user_deleted` pour que storage supprimer les fichiers de l'utilisateur + object Minio, meme chose pour `orga_deleted` (**également propre au service storage**)
+
+### Nouveau package worker
+
+> path: `backend/storage/internal/workers/`
+
+```go
+// HTTP server
+go app.Listen(":8083")
+
+// Background workers
+eventWorker := workers.NewEventConsumer(service, redisClient)
+go eventWorker.ConsumeUserDeleted(ctx)
+go eventWorker.ConsumeFileOrphaned(ctx)
+go eventWorker.PeriodicSweep(ctx, 15*time.Minute) // wrapper des autres consumer, il execute tout périodiquement "au cas ou" (15min pour pas que ca prenne trop de ressources c'est FINE imo)
+```
+
+### Deux channels différents
+
+- `events:ui:*` pub/sub
+- `events:domain:*` stream
+
+
+> Je sais pas encore comment faire le lien avec ce que t'as déjà mis en place Pierrick. On est Vendredi je trouverai bien une solution avant Lundi.
+
+## WebSocket
+
+### Connexion : `wss://api.../ws`
+Auth via Access JWT (query param ou header).
+
+---
+
+### Events UI realtime (serveur → client via Redis pub/sub broker)
+
+> Mécanisme: Redis `PUBLISH`/`SUBSCRIBE` sur `events:ui:*`
+> Sémantique: fire-and-forget, perte acceptable (le frontend re-fetch au reload)
+
+#### Files
+
+```json
+{ "event": "file_uploaded", "data": { "file_id": "<uuid>", "folder_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "name": "rapport.pdf", "file_size": 1048576 } }
+```
+
+```json
+{ "event": "file_deleted", "data": { "file_id": "<uuid>", "folder_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>" } }
+```
+
+```json
+{ "event": "file_moved", "data": { "file_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "old_folder_id": "<uuid>", "new_folder_id": "<uuid>" } }
+```
+
+```json
+{ "event": "file_renamed", "data": { "file_id": "<uuid>", "folder_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "new_name": "rapport_v2.pdf" } }
+```
+
+#### Folders
+
+```json
+{ "event": "folder_created", "data": { "folder_id": "<uuid>", "parent_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "name": "photos" } }
+```
+
+```json
+{ "event": "folder_deleted", "data": { "folder_id": "<uuid>", "parent_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>" } }
+```
+
+```json
+{ "event": "folder_moved", "data": { "folder_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "old_parent_id": "<uuid>", "new_parent_id": "<uuid>" } }
+```
+
+```json
+{ "event": "folder_renamed", "data": { "folder_id": "<uuid>", "parent_id": "<uuid>", "owner_id": "<uuid>", "org_id": "<uuid>", "new_name": "archives_2025" } }
+```
+
+#### Organizations
+
+```json
+{ "event": "org_created", "data": { "org_id": "<uuid>", "name": "42_Projects" } }
+```
+
+```json
+{ "event": "org_deleted", "data": { "org_id": "<uuid>" } }
+```
+
+```json
+{ "event": "org_renamed", "data": { "org_id": "<uuid>", "new_name": "42_Projects_2026" } }
+```
+
+#### Organization members
+
+```json
+{ "event": "member_invited", "data": { "org_id": "<uuid>", "user_id": "<uuid>" } }
+```
+
+```json
+{ "event": "member_joined", "data": { "org_id": "<uuid>", "user_id": "<uuid>", "role": "member" } }
+```
+
+```json
+{ "event": "member_removed", "data": { "org_id": "<uuid>", "user_id": "<uuid>" } } // si affichage des membres d'une orga
+```
+
+```json
+{ "event": "member_role_updated", "data": { "org_id": "<uuid>", "user_id": "<uuid>", "new_role": "admin" } }
+```
+
+#### Users
+
+```json
+{ "event": "user_logged_out", "data": { "user_id": "<uuid>" } } // ferme les sessions websocket des autres onglets du meme user
+```
+
+---
+
+### Events domain (cross-service via Redis Streams)
+
+> Mécanisme: Redis `XADD`/`XREAD` avec consumer groups sur `events:domain:*`
+> Sémantique: garantie de livraison, idempotence requise côté consumer
+> Ces events ne sont **pas** broadcastés au frontend, ils déclenchent du nettoyage cross-service
+
+#### Cleanup
+
+```json
+{ "event": "user_deleted", "data": { "user_id": "<uuid>", "deleted_at": "<timestamp>" } }
+```
+
+```json
+{ "event": "org_deleted", "data": { "org_id": "<uuid>", "deleted_at": "<timestamp>" } } // ⚠️ meme nom, pas le meme channel
+```
+
+```json
+{ "event": "file_orphaned", "data": { "file_id": "<uuid>", "minio_object_key": "<uuid>", "owner_id": "<uuid>" } }
+```
