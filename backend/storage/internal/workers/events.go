@@ -14,8 +14,14 @@ var (
 	EventFolderDeleted = "folder_deleted"
 	EventFolderMoved = "folder_moved"
 	EventFolderRenamed = "folder_renamed"
+
+	// channels
+	channelUserEvents = "user_events:"
+	channelOrgEvents = "org_events:"
 )
 
+
+// TODO: mettre en shared ?
 type WSEvent struct {
 	Type    string      `json:"type"` // ex: MEMBER_ADDED, FILE_UPLOADED
 	OrgID   string      `json:"org_id,omitempty"`
