@@ -20,6 +20,10 @@ var (
 	ErrForbidden = errors.New("forbidden")
 	ErrNotFound = errors.New("not found")
 	ErrQuotaExceeded = errors.New("quota exceeded")
+
+	ErrFolderNotEmpty = errors.New("folder not empty")
+	ErrCyclicMove = errors.New("cannot move folder into itself or one of its descendants")
+	ErrInvalidParent = errors.New("invalid parent")
 )
 
 // business logic contract
