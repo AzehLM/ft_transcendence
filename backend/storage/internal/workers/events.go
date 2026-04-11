@@ -1,5 +1,7 @@
 package workers
 
+import "github.com/google/uuid"
+
 const (
 	// file
 	EventFileUploaded = "file_uploaded"
@@ -29,4 +31,15 @@ type WSEvent struct {
 	OrgID   string      `json:"org_id,omitempty"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+// struct to avoid run-time errors, this makes it type-safe
+// the compiler will tell if there is a missmatched name
+type FileUploadedPayload struct {
+	FileID		uuid.UUID	`json:"file_id"`
+	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+	Name		string		`json:"name"`
+	FileSize	int64		`json:"file_size"`
 }
