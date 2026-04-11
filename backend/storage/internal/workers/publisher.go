@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
+	files "backend/storage/internal"
+
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
@@ -37,3 +39,23 @@ func (p *EventPublisher) publish(ctx context.Context, ownerID uuid.UUID, orgID *
 
 	return nil
 }
+
+func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.File) error {
+
+	payload := FileUploadedPayload{
+		FileID:		file.ID,
+		FolderID:	file.FolderID,
+		OwnerID:	file.OwnerUserID,
+		OrgID:		file.OrgID,
+		Name:		file.Name,
+		FileSize:	file.FileSize,
+	}
+
+	event := WSEvent{
+		Type:	EventFileUploaded,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
+}
+
