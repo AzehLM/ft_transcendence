@@ -59,3 +59,20 @@ func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.Fi
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
+func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.File) error {
+
+	payload := FileDeletedPayload{
+		FileID:		file.ID,
+		FolderID:	file.FolderID,
+		OwnerID:	file.OwnerUserID,
+		OrgID:		file.OrgID,
+	}
+
+	event := WSEvent{
+		Type:	EventFileDeleted,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
+}
+

@@ -43,3 +43,10 @@ type FileUploadedPayload struct {
 	Name		string		`json:"name"`
 	FileSize	int64		`json:"file_size"`
 }
+
+type FileDeletedPayload struct {
+	FileID		uuid.UUID	`json:"file_id"`
+	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+}
