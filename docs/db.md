@@ -54,8 +54,8 @@
 |-----------------|----------------|--------------------------------------------------|---------------------|
 | `id`            | `UUID`         | `PRIMARY KEY`                                    | `gen_random_uuid()` |
 | `owner_user_id` | `UUID`         | `NOT NULL` · `FK → users(id) ON DELETE CASCADE`  |                     |
-| `org_id`        | `UUID`         | `FK → organizations(id) ON DELETE CASCADE`        |                     |
-| `parent_id`     | `UUID`         | `FK → folders(id) ON DELETE CASCADE`              |                     |
+| `org_id`        | `UUID`         | `FK → organizations(id) ON DELETE CASCADE`       |                     |
+| `parent_id`     | `UUID`         | `FK → folders(id) ON DELETE RESTRICT`            |                     |
 | `name`          | `VARCHAR(100)` | `NOT NULL`                                       |                     |
 | `created_at`    | `TIMESTAMPTZ`  | `NOT NULL`                                       | `CURRENT_TIMESTAMP` |
 
