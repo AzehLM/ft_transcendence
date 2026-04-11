@@ -130,7 +130,13 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		// Until the event bus is wired, quota-rejected uploads leave an orphan blob + PENDING row
 		return uuid.Nil, ErrQuotaExceeded
 	}
-	// TODO(redis): event with file_uploaded (pub/sub)
+
+	// update of file here so the event does't return an empty name = ""
+	file, err = s.repo.FindByID(file.ID) // calling FindByID and not FindByObjectID because the file is not PENDING anymore
+	if err != nil {
+		return uuid.Nil, err
+	}
+
 	// _ because we ignore the return value of this call (fire-and-forget event)
 	_ = s.publisher.PublishFileUploaded(context.TODO(), file)
 
