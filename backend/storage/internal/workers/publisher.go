@@ -76,18 +76,36 @@ func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.Fil
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File, NewFolderID uuid.UUID) error {
+func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File, newFolderID *uuid.UUID) error {
 
 	payload := FileMovedPayload{
 		FileID:			file.ID,
 		OwnerID:		file.OwnerUserID,
 		OrgID:			file.OrgID,
 		OldFolderID:	file.FolderID,
-		NewFolderID:	NewFolderID,
+		NewFolderID:	newFolderID,
 	}
 
 	event := WSEvent{
-		Type:	EventFileDeleted,
+		Type:	EventFileMoved,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
+}
+
+func (p *EventPublisher) PublishFileRenamed(ctx context.Context, file *files.File) error {
+
+	payload := FileRenamedPayload{
+		FileID:		file.ID,
+		FolderID:	file.FolderID,
+		OwnerID:	file.OwnerUserID,
+		OrgID:		file.OrgID,
+		NewName:	file.Name,
+	}
+
+	event := WSEvent{
+		Type:	EventFileRenamed,
 		Data:	payload,
 	}
 

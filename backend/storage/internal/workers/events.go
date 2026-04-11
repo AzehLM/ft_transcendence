@@ -55,6 +55,14 @@ type FileMovedPayload struct {
 	FileID		uuid.UUID	`json:"file_id"`
 	OwnerID		uuid.UUID	`json:"owner_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
-	OldFolderID	*uuid.UUID	`json:"old_folder_id"`
-	NewFolderID	uuid.UUID	`json:"new_folder_id"`
+	OldFolderID	*uuid.UUID	`json:"old_folder_id,omitempty"`
+	NewFolderID	*uuid.UUID	`json:"new_folder_id,omitempty"`
+}
+
+type FileRenamedPayload struct {
+	FileID		uuid.UUID	`json:"file_id"`
+	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+	NewName		string		`json:"new_name"`
 }
