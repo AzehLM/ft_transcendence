@@ -131,6 +131,8 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, ErrQuotaExceeded
 	}
 	// TODO(redis): event with file_uploaded (pub/sub)
+	// _ because we ignore the return value of this call (fire-and-forget event)
+	_ = s.publisher.PublishFileUploaded(context.TODO(), file)
 
 	return file.ID, nil
 }
@@ -198,7 +200,9 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 	if err := s.repo.DecrementUserUsedSpace(userID, file.FileSize); err != nil {
 		return err
 	}
+
 	// publier event file_deleted sur redis -> later (pub/sub)
+	_ = s.publisher.PublishFileDeleted(context.TODO(), file)
 
 	return nil
 }
@@ -211,6 +215,8 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 	} else if err != nil {
 		return err
 	}
+
+	oldFolderID := file.FolderID
 
 	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
@@ -237,6 +243,8 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 	if rows == 0 {
 		return ErrNotFound
 	}
+
+	_ = s.publisher.PublishFileMoved(context.TODO(), file, oldFolderID)
 
 	return nil
 }

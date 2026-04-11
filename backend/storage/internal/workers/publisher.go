@@ -76,6 +76,8 @@ func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.Fil
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
+
+// expects file.FolderID to still hold the OldFolderID at call time
 func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File, newFolderID *uuid.UUID) error {
 
 	payload := FileMovedPayload{
