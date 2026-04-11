@@ -1,12 +1,13 @@
 package workers
 
-
-var (
+const (
 	// file
 	EventFileUploaded = "file_uploaded"
-	EventFileDeleted = "file_delete"
+	EventFileDeleted = "file_deleted"
 	EventFileMoved = "file_moved"
 	EventFileRenamed = "file_renamed" // on a dit on fait pas ? je sais plus je regarde apres
+
+	// Redis streams, cross-service cleanup
 	EventFileOrphaned = "file_orphaned"
 
 	// folder
@@ -14,12 +15,13 @@ var (
 	EventFolderDeleted = "folder_deleted"
 	EventFolderMoved = "folder_moved"
 	EventFolderRenamed = "folder_renamed"
+)
 
+const (
 	// channels
 	channelUserEvents = "user_events:"
 	channelOrgEvents = "org_events:"
 )
-
 
 // TODO: mettre en shared ?
 type WSEvent struct {
