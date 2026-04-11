@@ -8,11 +8,11 @@ import (
 
 	files "backend/storage/internal"
 
+	"backend/storage/internal/workers"
 	"backend/shared/rbac"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -37,15 +37,15 @@ type StorageService interface {
 type storageService struct {
 	repo		files.StorageRepository
 	minioClient	*minio.Client
-	redis		*redis.Client
+	publisher	*workers.EventPublisher
 	rbac		rbac.Checker
 }
 
-func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, redis *redis.Client, checker rbac.Checker) StorageService {
+func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker) StorageService {
 	return &storageService{
 		repo:			repo,
 		minioClient:	minioClient,
-		redis:			redis,
+		publisher:		publisher,
 		rbac:			checker,
 	}
 }

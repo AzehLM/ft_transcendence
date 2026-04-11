@@ -10,6 +10,7 @@ import (
 
 	"backend/shared/config"
 	"backend/shared/db"
+	"backend/storage/internal/workers"
 	"backend/storage/internal/service"
 	"backend/storage/internal/handlers"
 
@@ -54,6 +55,8 @@ func main() {
 		Password: redisPassword,
 	})
 
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
 	// internal Docker network — SSL not required
 	useSSL := false
 	minioEndpoint := "minio:9000"
@@ -71,7 +74,7 @@ func main() {
 	checker := rbac.NewDBChecker(database)
 
 	repo := files.NewStorageRepository(database)
-	service := service.NewStorageService(repo, minioClient, redisClient, checker)
+	service := service.NewStorageService(repo, minioClient, eventPublisher, checker)
 	handler := handlers.NewStorageHandler(service)
 
 	api := app.Group("/api")
