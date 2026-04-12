@@ -221,8 +221,8 @@ func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]
 	return nil
 }
 
-// methode recursive
-func (r *storageRepository) IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error) {
+// CTE SQL recursive to ascend into ancestor folders in one request
+func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUID) (bool, error) {
 
 	// doit checker si parent est plus haut que folderID
 	// si oui on peux pas deplacer parent dans folderID (Cycle loop)
@@ -232,5 +232,30 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, parent uuid.UUID) (
 	// https://learnsql.fr/blog/qu-est-ce-qu-un-cte-recursif-en-sql/
 	// https://learnsql.fr/blog/qu-est-ce-qu-une-cte/
 
-	return false, nil
+	var isDesc bool
+	// there is no gorm extensible api to execute recursive CTE so I'll have to leave it like that until I can test it
+	// this create an ancestors temporary table used for the recursive.
+	// f is a shorcut for folder, a for ancestors
+
+
+	// things to test:
+	// root folder to different root folder -> false
+	// folder to its own id -> true
+	// child folder to direct parent -? true
+	// deep child folder to high ancestor (several folders aboves) -> true
+	err := r.db.Raw(`
+		WITH RECURSIVE ancestors AS (
+			SELECT id, parent_id FROM folders WHERE id = ?
+			UNION ALL
+			SELECT f.id, f.parent_id FROM folders f
+			INNER JOIN ancestors a ON f.id = a.parent_id
+		)
+		SELECT EXISTS(SELECT 1 FROM ancestors WHERE id = ?)
+	`, folderID, ancestorID).Scan(&isDesc).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return isDesc, nil
 }
