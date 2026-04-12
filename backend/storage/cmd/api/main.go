@@ -80,12 +80,18 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
+	// file
 	api.Post("/files/upload-url",		handler.RequestUploadURL)
 	api.Post("/files/finalize",			handler.FinalizeUpload)
 	api.Get("/files/:file_id/download", handler.DownloadFile)
 	api.Get("/files/:file_id",			handler.GetFileInfo)
 	api.Patch("/files/:file_id",		handler.MoveFile)
 	api.Delete("/files/:file_id",		handler.DeleteFile)
+
+	// folder
+	api.Post("/folders",				handler.CreateFolder)
+	api.Patch("/folders/:folder_id",	handler.UpdateFolder)
+	api.Delete("/folders/:folder_id",	handler.DeleteFolder)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
