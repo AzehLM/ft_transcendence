@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	files "backend/storage/internal"
 
@@ -20,6 +21,11 @@ var (
 	ErrForbidden = errors.New("forbidden")
 	ErrNotFound = errors.New("not found")
 	ErrQuotaExceeded = errors.New("quota exceeded")
+
+	ErrFolderNotEmpty = errors.New("folder not empty")
+	ErrCyclicMove = errors.New("cannot move folder into itself or one of its descendants")
+	ErrInvalidParent = errors.New("invalid parent")
+	ErrInvalidName = errors.New("invalid folder name")
 )
 
 // business logic contract
@@ -31,7 +37,11 @@ type StorageService interface {
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error)
+
 	// Folder part
+	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
+	DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error
+	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
 }
 
 type storageService struct {
@@ -186,7 +196,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
 			return ErrForbidden
 		}
@@ -224,7 +234,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 
 	oldFolderID := file.FolderID
 
-	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
 			return ErrForbidden
 		}
@@ -271,12 +281,147 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 		return nil, err
 	}
 
-	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
-		if errors.Is(err, rbac.ErrForbidden) {
-			return nil, ErrForbidden
-		}
-		return nil, err
+	return file, nil
+}
+
+// folders
+func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error) {
+
+	if name == "" || utf8.RuneCountInString(name) > 100 {
+		return uuid.Nil, ErrInvalidName
 	}
 
-	return file, nil
+	if err := s.rbac.CanCreateInFolder(userID, parentID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrInvalidParent
+		}
+		return uuid.Nil, err
+	}
+
+	folder := files.Folder{
+		ID:				uuid.New(),
+		OwnerUserID:	userID,
+		OrgID:			orgID,
+		ParentID:		parentID,
+		Name:			name,
+	}
+
+	if err := s.repo.CreateFolder(&folder); err != nil {
+		return uuid.Nil, err
+	}
+
+	return folder.ID, nil
+}
+
+func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	empty, err := s.repo.IsFolderEmpty(folderID)
+	if err != nil {
+		return err
+	}
+
+	if !empty {
+		return ErrFolderNotEmpty
+	}
+
+	if err := s.repo.DeleteFolder(folderID); err != nil {
+		return err
+	}
+
+	// TODO: redis event PublishDeletedFolder
+	return nil
+}
+
+func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	updates := make(map[string]interface{})
+
+	if newName != nil {
+		if *newName == "" || utf8.RuneCountInString(*newName) > 100 {
+			return ErrInvalidName
+		}
+		updates["name"] = *newName
+	}
+
+	if newParentID != nil {
+		target := *newParentID // can be nil (move to root)
+
+		if target != nil {
+			newParent, err := s.repo.FindFolderByID(*target)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrInvalidParent
+			}
+
+			if err != nil {
+				return err
+			}
+
+			sameScope := false
+			if folder.OrgID == nil && newParent.OrgID == nil {
+				sameScope = folder.OwnerUserID == newParent.OwnerUserID
+			} else if folder.OrgID != nil && newParent.OrgID != nil {
+				sameScope = *folder.OrgID == *newParent.OrgID
+			}
+
+			if !sameScope {
+				return ErrInvalidParent
+			}
+
+			isDescendant, err := s.repo.IsDescendant(*target, folderID)
+			if err != nil {
+				return err
+			}
+
+			if isDescendant {
+				return ErrCyclicMove
+			}
+		}
+
+		updates["parent_id"] = target
+	}
+
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	if err := s.repo.UpdateFolder(folderID, updates); err != nil {
+		return err
+	}
+
+	// TODO: redis event PublishFolderRenamed / PublishFolderMoved
+	return nil
 }

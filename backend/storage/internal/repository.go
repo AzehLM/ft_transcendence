@@ -24,7 +24,12 @@ type StorageRepository interface {
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	// Folder part
-	CreateFolder(folder *Folder) error
+	CreateFolder(folder *Folder) error											// POST /folders
+	FindFolderByID(folderID uuid.UUID) (*Folder, error)							// GET /folders?parent_id=xxx and GET /orgs/{org_id}/folders/{folder_id}/contents
+	IsFolderEmpty(folderID uuid.UUID) (bool, error)								// DELETE /folders/{folder_id}
+	DeleteFolder(folderID uuid.UUID) error										// DELETE /folders/{folder_id}
+	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error		// PATCH /folders/{folder_id}
+	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -120,11 +125,6 @@ func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64
 	return result.RowsAffected, result.Error
 }
 
-func (r *storageRepository) CreateFolder(folder *Folder) error {
-	return r.db.Create(folder).Error
-}
-
-
 // Space utils
 // The following methods depends on the `users` table and more specificaly on the:
 // - id			UUID
@@ -166,4 +166,96 @@ func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64
 	return r.db.Table("users").
 		Where("id = ?", userID).
 		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
+}
+
+
+
+// Folders
+func (r *storageRepository) CreateFolder(folder *Folder) error {
+	return r.db.Create(folder).Error
+}
+
+func (r *storageRepository) FindFolderByID(folderID uuid.UUID) (*Folder, error) {
+	var folder Folder
+	if err := r.db.First(&folder, "id = ?", folderID).Error; err != nil {
+		return nil, err
+	}
+	return &folder, nil
+}
+
+// doesn't check if the folderID exists, a call to FindFolderByID needs to be done prior to IsFolderEmpty
+func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
+	var folderCount int64
+	if err := r.db.Model(&Folder{}).Where("parent_id = ?", folderID).Limit(1).Count(&folderCount).Error; err != nil {
+		return false, err
+	}
+
+	if folderCount > 0 {
+		return false, nil
+	}
+
+	var fileCount int64
+	if err := r.db.Model(&File{}).Where("folder_id = ?", folderID).Limit(1).Count(&fileCount).Error; err != nil {
+		return false, err
+	}
+
+	if fileCount > 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// doesn't check if folderID exists as well, FindFolderByID and IsFolderEmpty needs to be called prior to this
+func (r *storageRepository) DeleteFolder(folderID uuid.UUID) error {
+	return r.db.Delete(&Folder{}, "id = ?", folderID).Error
+}
+
+// same here doesn't check if folderID exists
+// updates is filled by the handler and may contain the folder name and/or parent_id.
+func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error {
+	result := r.db.Model(&Folder{}).Where("id = ?", folderID).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+// CTE SQL recursive to ascend into ancestor folders in one request
+func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUID) (bool, error) {
+
+	// doit checker si parent est plus haut que folderID
+	// si oui on peux pas deplacer parent dans folderID (Cycle loop)
+	// parent doit egalement etre different (on peut pas déplacer un folder dans lui-même)
+
+	// CTE (common table expression) récusrive: on part de folderID et on remonte de parent en parent jusqu'a parent_id == nil, si on croise le uuid parent, c'est pas bon
+	// https://learnsql.fr/blog/qu-est-ce-qu-un-cte-recursif-en-sql/
+	// https://learnsql.fr/blog/qu-est-ce-qu-une-cte/
+
+	var isDesc bool
+	// there is no gorm extensible api to execute recursive CTE so I'll have to leave it like that until I can test it
+	// this create an ancestors temporary table used for the recursive.
+	// f is a shorcut for folder, a for ancestors
+
+
+	// things to test:
+	// root folder to different root folder -> false
+	// folder to its own id -> true
+	// child folder to direct parent -? true
+	// deep child folder to high ancestor (several folders aboves) -> true
+	err := r.db.Raw(`
+		WITH RECURSIVE ancestors AS (
+			SELECT id, parent_id FROM folders WHERE id = ?
+			UNION
+			SELECT f.id, f.parent_id FROM folders f
+			INNER JOIN ancestors a ON f.id = a.parent_id
+		)
+		SELECT EXISTS(SELECT 1 FROM ancestors WHERE id = ?)
+	`, folderID, ancestorID).Scan(&isDesc).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return isDesc, nil
 }
