@@ -29,6 +29,7 @@ type StorageRepository interface {
 	IsFolderEmpty(folderID uuid.UUID) (bool, error)								// DELETE /folders/{folder_id}
 	DeleteFolder(folderID uuid.UUID) error										// DELETE /folders/{folder_id}
 	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error		// PATCH /folders/{folder_id}
+	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -218,4 +219,18 @@ func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]
 		return result.Error
 	}
 	return nil
+}
+
+// methode recursive
+func (r *storageRepository) IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error) {
+
+	// doit checker si parent est plus haut que folderID
+	// si oui on peux pas deplacer parent dans folderID (Cycle loop)
+	// parent doit egalement etre different (on peut pas déplacer un folder dans lui-même)
+
+	// CTE (common table expression) récusrive: on part de folderID et on remonte de parent en parent jusqu'a parent_id == nil, si on croise le uuid parent, c'est pas bon
+	// https://learnsql.fr/blog/qu-est-ce-qu-un-cte-recursif-en-sql/
+	// https://learnsql.fr/blog/qu-est-ce-qu-une-cte/
+
+	return false, nil
 }
