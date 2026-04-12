@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	files "backend/storage/internal"
 
@@ -24,6 +25,7 @@ var (
 	ErrFolderNotEmpty = errors.New("folder not empty")
 	ErrCyclicMove = errors.New("cannot move folder into itself or one of its descendants")
 	ErrInvalidParent = errors.New("invalid parent")
+	ErrInvalidName = errors.New("invalid folder name")
 )
 
 // business logic contract
@@ -35,7 +37,10 @@ type StorageService interface {
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error)
+
 	// Folder part
+	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
+
 }
 
 type storageService struct {
@@ -276,4 +281,57 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 	}
 
 	return file, nil
+}
+
+// folders
+func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error) {
+
+	if name == "" || utf8.RuneCountInString(name) > 100 {
+		return uuid.Nil, ErrInvalidName
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, parentID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	if parentID != nil {
+		parentFolder, err := s.repo.FindFolderByID(*parentID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, ErrInvalidParent
+		}
+
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		if orgID == nil {
+			if parentFolder.OrgID != nil || parentFolder.OwnerUserID != userID {
+				return uuid.Nil, ErrInvalidParent
+			}
+		} else {
+			if parentFolder.OrgID == nil || *parentFolder.OrgID != *orgID {
+				return uuid.Nil, ErrInvalidParent
+			}
+		}
+	}
+
+	folder:= files.Folder{
+		ID:				uuid.New(),
+		OwnerUserID:	userID,
+		OrgID:			orgID,
+		ParentID:		parentID,
+		Name:			name,
+	}
+
+	if err := s.repo.CreateFolder(&folder); err != nil {
+		return uuid.Nil, err
+	}
+
+	return folder.ID, nil
 }
