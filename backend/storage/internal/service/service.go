@@ -313,6 +313,7 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 		return uuid.Nil, err
 	}
 
+	_ = s.publisher.PublishFolderCreated(context.TODO(), &folder)
 	return folder.ID, nil
 }
 
@@ -346,7 +347,7 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 		return err
 	}
 
-	// TODO: redis event PublishDeletedFolder
+	_ = s.publisher.PublishFolderDeleted(context.TODO(), folder)
 	return nil
 }
 
@@ -366,6 +367,9 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 		}
 		return err
 	}
+
+	oldName := folder.Name
+	oldParentID := folder.ParentID
 
 	updates := make(map[string]interface{})
 
@@ -422,6 +426,35 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 		return err
 	}
 
-	// TODO: redis event PublishFolderRenamed / PublishFolderMoved
+	if newName != nil {
+		folder.Name = *newName
+	}
+
+	if newParentID != nil {
+		folder.ParentID = *newParentID
+	}
+
+	if newName != nil && *newName != oldName {
+		_ = s.publisher.PublishFolderRenamed(context.TODO(), folder)
+	}
+
+	if newParentID != nil {
+		if !uuidPtrEqual(oldParentID, *newParentID) {
+			_ = s.publisher.PublishFolderMoved(context.TODO(), folder, oldParentID, *newParentID)
+		}
+	}
+
 	return nil
+}
+
+func uuidPtrEqual(oldParentID *uuid.UUID, newParentID *uuid.UUID) bool {
+	if oldParentID == nil && newParentID == nil {
+		return true
+	}
+
+	if oldParentID == nil || newParentID == nil {
+		return false
+	}
+
+	return *oldParentID == *newParentID
 }
