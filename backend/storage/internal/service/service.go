@@ -41,6 +41,7 @@ type StorageService interface {
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
 	DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error
+	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
 }
 
 type storageService struct {
@@ -367,5 +368,81 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 	}
 
 	// TODO: redis event PublishDeletedFolder
+	return nil
+}
+
+func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	updates := make(map[string]interface{})
+
+	if newName != nil {
+		if *newName == "" || utf8.RuneCountInString(*newName) > 100 {
+			return ErrInvalidName
+		}
+		updates["name"] = *newName
+	}
+
+	if newParentID != nil {
+		target := *newParentID // can be nil (move to root)
+
+		if target != nil {
+			newParent, err := s.repo.FindFolderByID(*target)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrInvalidParent
+			}
+
+			if err != nil {
+				return err
+			}
+
+			sameScope := false
+			if folder.OrgID == nil && newParent.OrgID == nil {
+				sameScope = folder.OwnerUserID == newParent.OwnerUserID
+			} else if folder.OrgID != nil && newParent.OrgID != nil {
+				sameScope = *folder.OrgID == *newParent.OrgID
+			}
+
+			if !sameScope {
+				return ErrInvalidParent
+			}
+
+			isDescendant, err := s.repo.IsDescendant(*target, folderID)
+			if err != nil {
+				return err
+			}
+
+			if isDescendant {
+				return ErrCyclicMove
+			}
+		}
+
+		updates["parent_id"] = target
+	}
+
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	if err := s.repo.UpdateFolder(folderID, updates); err != nil {
+		return err
+	}
+
+	// TODO: redis event PublishFolderRenamed / PublishFolderMoved
 	return nil
 }
