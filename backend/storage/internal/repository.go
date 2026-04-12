@@ -212,7 +212,7 @@ func (r *storageRepository) DeleteFolder(folderID uuid.UUID) error {
 }
 
 // same here doesn't check if folderID exists
-// updates is a map that container name and parent_id, it is being filled by the handler
+// updates is filled by the handler and may contain the folder name and/or parent_id.
 func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error {
 	result := r.db.Model(&Folder{}).Where("id = ?", folderID).Updates(updates)
 	if result.Error != nil {
