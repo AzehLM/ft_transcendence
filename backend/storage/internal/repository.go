@@ -25,6 +25,7 @@ type StorageRepository interface {
 
 	// Folder part
 	CreateFolder(folder *Folder) error
+	FindFolderByID(folderID uuid.UUID) (*Folder, error)
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -120,11 +121,6 @@ func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64
 	return result.RowsAffected, result.Error
 }
 
-func (r *storageRepository) CreateFolder(folder *Folder) error {
-	return r.db.Create(folder).Error
-}
-
-
 // Space utils
 // The following methods depends on the `users` table and more specificaly on the:
 // - id			UUID
@@ -166,4 +162,19 @@ func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64
 	return r.db.Table("users").
 		Where("id = ?", userID).
 		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
+}
+
+
+
+// Folders
+func (r *storageRepository) CreateFolder(folder *Folder) error {
+	return r.db.Create(folder).Error
+}
+
+func (r *storageRepository) FindFolderByID(folderID uuid.UUID) (*Folder, error) {
+	var folder Folder
+	if err := r.db.First(&folder, "id = ?", folderID).Error; err != nil {
+		return nil, err
+	}
+	return &folder, nil
 }
