@@ -246,7 +246,7 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 	err := r.db.Raw(`
 		WITH RECURSIVE ancestors AS (
 			SELECT id, parent_id FROM folders WHERE id = ?
-			UNION ALL
+			UNION
 			SELECT f.id, f.parent_id FROM folders f
 			INNER JOIN ancestors a ON f.id = a.parent_id
 		)
