@@ -24,7 +24,7 @@ type Checker interface {
 	// write: delete + move
 	// personal space: owner only
 	// orga: admin or owner
-	CanWriteFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error
+	CanWrite(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error
 
 	// context: upload
 	// personal space: owner only (folderID needs to be owned by user as well if not nil)
@@ -74,7 +74,7 @@ func (c *DBChecker) CanReadFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *
 	return nil
 }
 
-func (c *DBChecker) CanWriteFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error {
+func (c *DBChecker) CanWrite(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uuid.UUID) error {
 
 	if orgID == nil {
 		if userID != ownerUserID {

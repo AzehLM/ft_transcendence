@@ -40,7 +40,7 @@ type StorageService interface {
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
-
+	DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error
 }
 
 type storageService struct {
@@ -195,7 +195,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
 			return ErrForbidden
 		}
@@ -233,7 +233,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 
 	oldFolderID := file.FolderID
 
-	if err := s.rbac.CanWriteFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
 			return ErrForbidden
 		}
@@ -334,4 +334,38 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 	}
 
 	return folder.ID, nil
+}
+
+func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	empty, err := s.repo.IsFolderEmpty(folderID)
+	if err != nil {
+		return err
+	}
+
+	if !empty {
+		return ErrFolderNotEmpty
+	}
+
+	if err := s.repo.DeleteFolder(folderID); err != nil {
+		return err
+	}
+
+	// TODO: redis event PublishDeletedFolder
+	return nil
 }
