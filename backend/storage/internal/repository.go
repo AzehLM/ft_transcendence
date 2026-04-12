@@ -28,6 +28,7 @@ type StorageRepository interface {
 	FindFolderByID(folderID uuid.UUID) (*Folder, error)
 	IsFolderEmpty(folderID uuid.UUID) (bool, error)
 	DeleteFolder(folderID uuid.UUID) error
+	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -204,8 +205,17 @@ func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
 	return true, nil
 }
 
-
 // doesn't check if folderID exists as well, FindFolderByID and IsFolderEmpty needs to be called prior to this
 func (r *storageRepository) DeleteFolder(folderID uuid.UUID) error {
 	return r.db.Delete(&Folder{}, "id = ?", folderID).Error
+}
+
+// same here doesn't check if folderID exists
+// updates is a map that container name and parent_id, it is being filled by the handler
+func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error {
+	result := r.db.Model(&Folder{}).Where("id = ?", folderID).Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
