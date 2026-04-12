@@ -27,6 +27,7 @@ type StorageRepository interface {
 	CreateFolder(folder *Folder) error
 	FindFolderByID(folderID uuid.UUID) (*Folder, error)
 	IsFolderEmpty(folderID uuid.UUID) (bool, error)
+	DeleteFolder(folderID uuid.UUID) error
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -201,4 +202,10 @@ func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
 	}
 
 	return true, nil
+}
+
+
+// doesn't check if folderID exists as well, FindFolderByID and IsFolderEmpty needs to be called prior to this
+func (r *storageRepository) DeleteFolder(folderID uuid.UUID) error {
+	return r.db.Delete(&Folder{}, "id = ?", folderID).Error
 }
