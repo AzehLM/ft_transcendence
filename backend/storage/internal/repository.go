@@ -24,11 +24,11 @@ type StorageRepository interface {
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	// Folder part
-	CreateFolder(folder *Folder) error
-	FindFolderByID(folderID uuid.UUID) (*Folder, error)
-	IsFolderEmpty(folderID uuid.UUID) (bool, error)
-	DeleteFolder(folderID uuid.UUID) error
-	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error
+	CreateFolder(folder *Folder) error											// POST /folders
+	FindFolderByID(folderID uuid.UUID) (*Folder, error)							// GET /folders?parend_id=xxx and GET /orgs/{org_id}/folders/{folder_id}/contents
+	IsFolderEmpty(folderID uuid.UUID) (bool, error)								// DELETE /folders/{folder_id}
+	DeleteFolder(folderID uuid.UUID) error										// DELETE /folders/{folder_id}
+	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error		// PATCH /folders/{folder_id}
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
