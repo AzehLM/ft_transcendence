@@ -296,33 +296,12 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 			return uuid.Nil, ErrForbidden
 		}
 		if errors.Is(err, rbac.ErrNotFound) {
-			return uuid.Nil, ErrNotFound
+			return uuid.Nil, ErrInvalidParent
 		}
 		return uuid.Nil, err
 	}
 
-	if parentID != nil {
-		parentFolder, err := s.repo.FindFolderByID(*parentID)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return uuid.Nil, ErrInvalidParent
-		}
-
-		if err != nil {
-			return uuid.Nil, err
-		}
-
-		if orgID == nil {
-			if parentFolder.OrgID != nil || parentFolder.OwnerUserID != userID {
-				return uuid.Nil, ErrInvalidParent
-			}
-		} else {
-			if parentFolder.OrgID == nil || *parentFolder.OrgID != *orgID {
-				return uuid.Nil, ErrInvalidParent
-			}
-		}
-	}
-
-	folder:= files.Folder{
+	folder := files.Folder{
 		ID:				uuid.New(),
 		OwnerUserID:	userID,
 		OrgID:			orgID,
