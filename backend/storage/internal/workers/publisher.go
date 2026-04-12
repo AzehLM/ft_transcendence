@@ -113,3 +113,74 @@ func (p *EventPublisher) PublishFileRenamed(ctx context.Context, file *files.Fil
 
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
+
+func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files.Folder) error {
+
+	payload := FolderCreatedPayload{
+		FolderID:	folder.ID,
+		ParentID:	folder.ParentID,
+		OwnerID:	folder.OwnerUserID,
+		OrgID:		folder.OrgID,
+		Name:		folder.Name,
+	}
+
+	event := WSEvent{
+		Type:	EventFolderCreated,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+}
+
+func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files.Folder) error {
+
+	payload := FolderDeletedPayload{
+		FolderID:	folder.ID,
+		ParentID:	folder.ParentID,
+		OwnerID:	folder.OwnerUserID,
+		OrgID:		folder.OrgID,
+	}
+
+	event := WSEvent{
+		Type:	EventFolderDeleted,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+}
+
+func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.Folder, oldParentID *uuid.UUID, newParentID *uuid.UUID) error {
+
+	payload := FolderMovedPayload{
+		FolderID:		folder.ID,
+		OwnerID:		folder.OwnerUserID,
+		OrgID:			folder.OrgID,
+		OldParentID:	oldParentID,
+		NewParentID:	newParentID,
+	}
+
+	event := WSEvent{
+		Type:	EventFolderMoved,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+}
+
+func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder) error {
+
+	payload := FolderRenamedPayload{
+		FolderID:		folder.ID,
+		ParentID:		folder.ParentID,
+		OwnerID:		folder.OwnerUserID,
+		OrgID:			folder.OrgID,
+		NewName:		folder.Name,
+	}
+
+	event := WSEvent{
+		Type:	EventFolderRenamed,
+		Data:	payload,
+	}
+
+	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+}

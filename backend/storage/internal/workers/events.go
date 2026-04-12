@@ -66,3 +66,34 @@ type FileRenamedPayload struct {
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	NewName		string		`json:"new_name"`
 }
+
+type FolderCreatedPayload struct {
+	FolderID	uuid.UUID	`json:"folder_id"`
+	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+	Name		string		`json:"name"`
+}
+
+type FolderDeletedPayload struct {
+	FolderID	uuid.UUID	`json:"folder_id"`
+	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+}
+
+type FolderMovedPayload struct {
+	FolderID	uuid.UUID	`json:"folder_id"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+	OldParentID	*uuid.UUID	`json:"old_parent_id,omitempty"`
+	NewParentID	*uuid.UUID	`json:"new_parent_id,omitempty"`
+}
+
+type FolderRenamedPayload struct {
+	FolderID	uuid.UUID	`json:"folder_id"`
+	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
+	OwnerID		uuid.UUID	`json:"owner_id"`
+	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+	NewName		string		`json:"new_name"`
+}
