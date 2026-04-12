@@ -26,6 +26,7 @@ type StorageRepository interface {
 	// Folder part
 	CreateFolder(folder *Folder) error
 	FindFolderByID(folderID uuid.UUID) (*Folder, error)
+	IsFolderEmpty(folderID uuid.UUID) (bool, error)
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -177,4 +178,27 @@ func (r *storageRepository) FindFolderByID(folderID uuid.UUID) (*Folder, error) 
 		return nil, err
 	}
 	return &folder, nil
+}
+
+// doesn't check if the folderID exists, a call to FindFolderByID needs to be done prior to IsFolderEmpty
+func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
+	var folderCount int64
+	if err := r.db.Model(&Folder{}).Where("parent_id = ?", folderID).Limit(1).Count(&folderCount).Error; err != nil {
+		return false, err
+	}
+
+	if folderCount > 0 {
+		return false, nil
+	}
+
+	var fileCount int64
+	if err := r.db.Model(&File{}).Where("folder_id = ?", folderID).Limit(1).Count(&fileCount).Error; err != nil {
+		return false, err
+	}
+
+	if fileCount > 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
