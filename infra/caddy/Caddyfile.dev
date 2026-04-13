@@ -141,13 +141,14 @@
     handle @auth {
         reverse_proxy auth:8081
     }
+    # super strict on the /api/orgs/*** path since I didn't find a better name for it
+    @storage-api path /api/files /api/files/* /api/folders /api/folders/* /api/orgs/*/folders/*/contents
+    handle @storage-api {
+        reverse_proxy storage:8083
+    }
     @orga path /api/orgs /api/orgs/*
     handle @orga {
         reverse_proxy orga:8082
-    }
-    @storage-api path /api/files /api/files/* /api/folders /api/folders/*
-    handle @storage-api {
-        reverse_proxy storage:8083
     }
 
     # SPA fallback
