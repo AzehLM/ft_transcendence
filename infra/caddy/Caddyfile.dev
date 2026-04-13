@@ -145,7 +145,7 @@
     handle @orga {
         reverse_proxy orga:8082
     }
-    @storage-api path /api/files /api/files/* /api/folder /api/folder/*
+    @storage-api path /api/files /api/files/* /api/folders /api/folders/*
     handle @storage-api {
         reverse_proxy storage:8083
     }
