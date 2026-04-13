@@ -92,6 +92,13 @@ fclean: clean
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 
+.PHONY: reset-db
+reset-db:
+	@echo "[reset-db] Truncating files and folders..."
+	@docker exec postgres psql -U test -d db-test -c "TRUNCATE files, folders CASCADE;" >/dev/null
+	@echo "[reset-db] Done. Current counts:"
+	@docker exec postgres psql -U test -d db-test -c "SELECT 'folders' AS table, COUNT(*) FROM folders UNION ALL SELECT 'files', COUNT(*) FROM files;"
+
 # --------------------------------- CI/CD ------------------------------------
 
 .PHONY: lint-storage
