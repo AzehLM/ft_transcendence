@@ -8,7 +8,7 @@ export function ActionButtons() {
       <button className={`${styles.actionButton} ${styles.createFilesButton}`}>
         <FilePlus className={styles.actionButtonIcon} />
         <span className={styles.actionButtonText}>
-          Create<br />files
+          Create file
         </span>
       </button>
 
@@ -16,7 +16,7 @@ export function ActionButtons() {
       <button className={`${styles.actionButton} ${styles.createFolderButton}`}>
         <FolderPlus className={styles.actionButtonIcon} />
         <span className={styles.actionButtonText}>
-          Create<br />folder
+          Create folder
         </span>
       </button>
 
