@@ -31,6 +31,9 @@ type StorageRepository interface {
 	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error		// PATCH /folders/{folder_id}
 	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
+	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error)	// GET /folders?parent_id=xxx
+
+
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
 	TryIncrementUserUsedSpace(userID uuid.UUID, delta int64) (bool, error)
@@ -258,4 +261,35 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 	}
 
 	return isDesc, nil
+}
+
+func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error) {
+	// 2 queries to fill folders then files
+	var folders	[]Folder
+	var files	[]File
+
+	folderQuery := r.db.Where("owner_user_id = ?", ownerID)
+	if parentID == nil {
+		folderQuery = folderQuery.Where("parent_id IS NULL")
+	} else {
+		folderQuery = folderQuery.Where("parent_id = ?", *parentID)
+	}
+	// filling folders
+	if err := folderQuery.Find(&folders).Error; err != nil {
+		return nil, nil, err
+	}
+
+	// ACTIVE files only
+	fileQuery := r.db.Where("owner_user_id = ? AND status = ?", ownerID, "ACTIVE")
+	if parentID == nil {
+		fileQuery = fileQuery.Where("folder_id IS NULL")
+	} else {
+		fileQuery = fileQuery.Where("folder_id = ?", *parentID)
+	}
+	// filling files
+	if err := fileQuery.Find(&files).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
 }
