@@ -85,4 +85,55 @@
             - `DecryptSK(encrypted_SK, KEK_session)`
             - `DecryptDEK(encrypted_DEK, SK)`
 
+#### Conclusion
+- Not a good solution as the backend store a key that can be used to decrypt other keys -> lose the principle of zero knowledge
+
+## New Solutions
+### Ask for password after F5
+- not what we want but well
+- or we set up a PIN (more research to do on this side if we chose that)
+### Local encrypted cache
+- when login we still have
+    - Kek -> KEK = KDF(password, salt)
+    - generation session key
+        - SK = random(32 bytes)
+    - local encryption 
+        - encrypted_DEK = encrypt(DEK, SK)
+        - encrypted_SK = encrypt(SK, KEK) -> store in DB ?
+- in local cache, we add 
+    - local_key = generate non-extractable key
+- then: encrypted_SK_local = encrypt(SK, local_key)
+    - store in IndexedDB
+- after F5
+    - if cache
+        - local_key → decrypt SK
+        - SK → decrypt DEK
+    - if no cache
+        - user password → KEK
+        - KEK → decrypt SK
+        - SK → decrypt DEK
+### User PIN
+- at login
+    - enter password + PIN
+        - password + salt → KEK = KDF(password)
+        - PIN + local_salt → local_key = KDF(PIN)
+    - generate DEK and SK + encryption
+        - encrypted_DEK = encrypt(DEK, SK)
+        - encrypted_SK_server = encrypt(SK, KEK)
+        - encrypted_SK_local = encrypt(SK, local_key)
+    - store in DB
+        - encrypted_SK_server
+        - encrypted_DEK
+        - salt
+    - store in IndexedDB
+        - encrypted_SK_local
+        - local_salt
+- after F5
+    - user enter PIN
+        - PIN → local_key = KDF(PIN, local_salt)
+    - decryption
+        - SK = decrypt(encrypted_SK_local, local_key)
+        - DEK = decrypt(encrypted_DEK, SK)
+- if user loses PIN or lost cash
+    - ask for password
 
