@@ -92,6 +92,7 @@ func main() {
 	api.Post("/folders",				handler.CreateFolder)
 	api.Patch("/folders/:folder_id",	handler.UpdateFolder)
 	api.Delete("/folders/:folder_id",	handler.DeleteFolder)
+	// api.Get("folders?parent_id=:id",	handler.GetFoldersInfo)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
