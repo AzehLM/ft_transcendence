@@ -2,7 +2,8 @@ import { FileCard } from "../components/filecard"
 import { ActionButtons } from "../components/actionbuttons"
 import { ProfileDropdown } from "../components/profiledropdown"
 import { LeftSidebar } from "../components/leftsidebar";
-import { Search, User } from "lucide-react";
+import { SearchBar } from "../components/searchbar";
+import { UserProfileButton } from "../components/userprofilebutton";
 import { useState } from "react";
 import styles from "../styles/dashboard.module.css";
 
@@ -21,25 +22,12 @@ export default function DashboardPage() {
         <div className={styles.page}>
             <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
 
-            {/* Search bar */}
-            <div className={styles.searchContainer}>
-                <div className={styles.searchBox}>
-                    <Search className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className={styles.searchInput}
-                    />
-                </div>
-            </div>
+            <SearchBar />
 
-            {/* User's profile image */}
-            <button
+            <UserProfileButton
+                isOpen={profileDropdownOpen}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className={styles.profileButton}
-            >
-                <User className={styles.profileIcon} strokeWidth={2.5} />
-            </button>
+            />
 
             <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
 

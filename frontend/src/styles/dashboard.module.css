@@ -52,29 +52,60 @@
     color: #bbb;
 }
 
-.profileButton {
+.profileButtonContainer {
     position: absolute;
-    right: 16px;
+    right: 100px;
     top: 33px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.profileButton {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: rgba(230, 225, 224, 0.71);
+    background-color: rgba(230, 225, 224, 0.684);
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.139);
 }
 
 .profileButton:hover {
-    background-color: rgba(230, 225, 224, 0.85);
+    background-color: rgba(230, 225, 224, 0.819);
     transform: scale(1.05);
 }
 
+.profileButtonOpen {
+    background-color: rgba(230, 225, 224, 0.819);
+}
+
 .profileIcon {
+    width: 30px;
+    height: 30px;
+    color: #de7356;
+}
+
+.settingsIconButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.settingsIconButton:hover {
+    transform: scale(1.1);
+}
+
+.settingsIconOnly {
     width: 32px;
     height: 32px;
     color: #de7356;
