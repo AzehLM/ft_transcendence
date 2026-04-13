@@ -68,7 +68,7 @@
 .fileCard {
     position: relative;
     width: 100%;
-    max-width: 360px;
+    max-width: 430px;
     height: 230px;
     cursor: pointer;
     transition: transform 0.3s ease;
@@ -89,19 +89,21 @@
     position: absolute;
     background: #f7dcd4;
     filter: blur(14.5px);
-    height: 182px;
+    height: 192px;
     left: 19px;
     top: 8px;
-    width: 280px;
+    width: 400px;
 }
 
 .fileCardName {
     position: absolute;
-    bottom: 24px;
+    bottom: 20px;
     left: 19px;
     right: 19px;
+    max-width: 50%;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 20px;
+    font-weight: 500;
     color: #2b1008;
     letter-spacing: 0.5px;
     overflow: hidden;

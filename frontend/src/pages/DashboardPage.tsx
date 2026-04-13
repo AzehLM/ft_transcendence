@@ -15,7 +15,7 @@ export default function DashboardPage() {
         { id: 1, name: "January invoice" },
         { id: 2, name: "February report" },
         { id: 3, name: "March invoice" },
-        { id: 4, name: "March report" },
+        { id: 4, name: "March report and invoice from Vic" },
     ];
 
     return (
