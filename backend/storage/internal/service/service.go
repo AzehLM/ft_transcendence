@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	files "backend/storage/internal"
+	"backend/storage/internal"
 
 	"backend/storage/internal/workers"
 	"backend/shared/rbac"
@@ -36,22 +36,24 @@ type StorageService interface {
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
-	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error)
+	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
 	DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error
 	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
+
+	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 }
 
 type storageService struct {
-	repo		files.StorageRepository
+	repo		storage.StorageRepository
 	minioClient	*minio.Client
 	publisher	*workers.EventPublisher
 	rbac		rbac.Checker
 }
 
-func NewStorageService(repo files.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker) StorageService {
+func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker) StorageService {
 	return &storageService{
 		repo:			repo,
 		minioClient:	minioClient,
@@ -86,7 +88,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, ErrQuotaExceeded
 	}
 
-	newFile := &files.File{
+	newFile := &storage.File{
 		ID:             uuid.New(),
 		OwnerUserID:    userID,
 		OrgID:          orgID,
@@ -265,7 +267,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 	return nil
 }
 
-func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *files.File, err error) {
+func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error) {
 
 	file, err = s.repo.FindByID(fileID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -301,7 +303,7 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 		return uuid.Nil, err
 	}
 
-	folder := files.Folder{
+	folder := storage.Folder{
 		ID:				uuid.New(),
 		OwnerUserID:	userID,
 		OrgID:			orgID,
@@ -457,4 +459,9 @@ func uuidPtrEqual(oldParentID *uuid.UUID, newParentID *uuid.UUID) bool {
 	}
 
 	return *oldParentID == *newParentID
+}
+
+func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
+
+	return nil, nil, nil
 }
