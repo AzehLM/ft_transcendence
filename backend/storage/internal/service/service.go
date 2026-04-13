@@ -463,5 +463,26 @@ func uuidPtrEqual(oldParentID *uuid.UUID, newParentID *uuid.UUID) bool {
 
 func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
 
-	return nil, nil, nil
+	if parentID != nil {
+		folder, err := s.repo.FindFolderByID(*parentID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrNotFound
+		}
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// check OrgID != nil so we are sure it belongs to someone and not an organization
+		if folder.OwnerUserID != userID || folder.OrgID != nil {
+			return nil, nil, ErrForbidden
+		}
+	}
+
+	folders, files, err := s.repo.ListFolderContents(userID, parentID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
 }
