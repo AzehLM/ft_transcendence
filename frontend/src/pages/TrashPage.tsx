@@ -1,6 +1,8 @@
+import { FileCard } from "../components/filecard"
+import { ProfileDropdown } from "../components/profiledropdown"
 import { LeftSidebar } from "../components/leftsidebar";
-import { ProfileDropdown } from "../components/profiledropdown";
-import { Search, User } from "lucide-react";
+import { SearchBar } from "../components/searchbar";
+import { UserProfileButton } from "../components/userprofilebutton";
 import { useState } from "react";
 import styles from "../styles/dashboard.module.css";
 
@@ -17,30 +19,17 @@ export default function TrashPage() {
         <div className={styles.page}>
             <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
 
-            {/* Search bar */}
-            <div className={styles.searchContainer}>
-                <div className={styles.searchBox}>
-                    <Search className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className={styles.searchInput}
-                    />
-                </div>
-            </div>
+            <SearchBar />
 
-            {/* User's profile image */}
-            <button
+            <UserProfileButton
+                isOpen={profileDropdownOpen}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className={styles.profileButton}
-            >
-                <User className={styles.profileIcon} strokeWidth={2.5} />
-            </button>
+            />
 
             <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
 
-            {/* Main content area */}
-            <div className={styles.contentArea}>
+            {/* Main content area - positioned higher without action buttons */}
+            <div className={styles.contentAreaNoButtons}>
                 <h1 className={styles.title}>
                     Trash
                 </h1>
@@ -51,9 +40,7 @@ export default function TrashPage() {
                 {/* Files grid */}
                 <div className={styles.fileGrid}>
                     {trashedFiles.map((file) => (
-                        <div key={file.id} style={{ padding: "20px", backgroundColor: "#fff", borderRadius: "12px", textAlign: "center" }}>
-                            {file.name}
-                        </div>
+                        <FileCard key={file.id} name={file.name} />
                     ))}
                 </div>
             </div>

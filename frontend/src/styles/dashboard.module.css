@@ -118,6 +118,13 @@
     right: 48px;
 }
 
+.contentAreaNoButtons {
+    position: absolute;
+    left: 288px;
+    top: 150px;
+    right: 48px;
+}
+
 .title {
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 700;
