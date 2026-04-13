@@ -35,22 +35,19 @@
 #### Workflow
 - user login
     - password → KEK = KDF(password, salt)
+- create session secret and KEK_session
+    - session_secret = random()
+        - must be generated after login (back side ?)
+    - KEK_session = KDF(session_secret, salt)
 - generation session key
     - SK = random(32 bytes)
 - local encryption 
     - encrypted_DEK = encrypt(DEK, SK)
-    - encrypted_SK = encrypt(SK, KEK)
-- create sessin secret
-    - session_secret = random()
-    - encrypted_session_secret = encrypt(session_secret, KEK)
+    - encrypted_SK = encrypt(SK, KEK_session)
+
+- ??? = encrypted_session_secret = encrypt(session_secret, KEK) - maybe not needed as it will no be possible to uncrypt it after an F5 without the KEK → stored session secret directly in DB ?
 - in IndexedDB
-    - ```{
-  "encryptedDEK": "...",
-  "encryptedSK": "...",
-  "encrypted_session_secret": "...",
-  "salt": "...",
-  "kdfParams": {...}
-}```
+    - ```{"encryptedDEK": "...", "encryptedSK": "...", "encrypted_session_secret": "...", "salt": "...","kdfParams": {...} }```
 - after f5
     - JWT cookie (valid session)
     - IndexedDB (everything crypted)
@@ -61,3 +58,31 @@
         - uncrypt
             - SK = decrypt(encrypted_SK, KEK_session)
             - DEK = decrypt(encrypted_DEK, SK)
+
+- if we want to encrypt `session_secret` in backend
+    - in `.env`, master key:
+        - `MASTER_KEY=32_bytes_random_base64`
+        - used as the root secret to protect all session secrets
+    - encryption of `session_secret` (at login)
+        - generate `session_secret`
+            - `GenerateSessionSecret()`
+        - encrypt it with server master key
+            - `EncryptSessionSecret(session_secret, MASTER_KEY)`
+        - store in database:
+            - `encrypted_session_secret`
+            - `IV`
+    - return plain session_secret to client (via HTTPS)
+        - used immediately to derive `KEK_session`
+    - after F5 (session restore)
+        - client sends request with session (JWT cookie)
+        - backend retrieves encrypted session data
+            - `GetSessionFromDB(session_id)`
+        - backend decrypts session_secret
+            - `DecryptSessionSecret(encrypted_session_secret, nonce, MASTER_KEY)`
+        - backend returns `session_secret` to authenticated client
+        - client rebuilds crypto context
+            - `DeriveKEKSession(session_secret, salt)`
+            - `DecryptSK(encrypted_SK, KEK_session)`
+            - `DecryptDEK(encrypted_DEK, SK)`
+
+
