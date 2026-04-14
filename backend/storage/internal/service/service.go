@@ -521,7 +521,7 @@ func (s * storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, fol
 		return nil, nil, err
 	}
 
-	if folder.OrgID == nil && *folder.OrgID != orgID {
+	if folder.OrgID == nil || *folder.OrgID != orgID {
 		return nil, nil, ErrNotFound
 	}
 
