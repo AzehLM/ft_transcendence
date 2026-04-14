@@ -6,6 +6,15 @@
   --brand-dark: #2b1008;
   --brand-light: rgba(230, 225, 224, 0.71);
 
+  /* UI Colors */
+  --color-white: #ffffff;
+  --color-sidebar-text: #0a0909;
+  --color-primary-overlay: rgba(222, 115, 86, 0.2);
+  --color-dark-shadow: rgba(0, 0, 0, 0.25);
+  --color-light-shadow: rgba(0, 0, 0, 0.08);
+  --color-white-overlay: rgba(255, 255, 255, 0.9);
+  --color-dark-overlay: rgba(0, 0, 0, 0.5);
+
   /* Spacing Tokens */
   --spacing-xs: 6px;
   --spacing-sm: 8px;

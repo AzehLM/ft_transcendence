@@ -13,11 +13,11 @@
 }
 
 .searchBox {
-    background-color: #ffffff;
+    background-color: var(--color-white);
     border: 2px solid #bbb;
     height: 60px;
     border-radius: 12px;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 2px 8px var(--color-light-shadow);
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -27,7 +27,7 @@
 
 .searchBox:focus-within {
     border-color: #bbb;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 2px 8px var(--color-light-shadow);
 }
 
 .searchIcon {
@@ -87,7 +87,7 @@
 .profileIcon {
     width: 30px;
     height: 30px;
-    color: #de7356;
+    color: var(--brand-primary);
 }
 
 .settingsIconButton {
@@ -108,7 +108,7 @@
 .settingsIconOnly {
     width: 32px;
     height: 32px;
-    color: #de7356;
+    color: var(--brand-primary);
 }
 
 .contentArea {
@@ -129,7 +129,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 700;
     font-size: 40px;
-    color: #2b1008;
+    color: var(--brand-dark);
     letter-spacing: 0px;
     margin-bottom: 16px;
     margin-top: 0;
@@ -139,7 +139,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 500;
     font-size: 28px;
-    color: #2b1008;
+    color: var(--brand-dark);
     letter-spacing: 0px;
     margin-bottom: 48px;
     margin-top: 0;

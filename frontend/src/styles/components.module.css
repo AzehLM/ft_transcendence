@@ -13,7 +13,7 @@
 .actionButton {
     height: 100px;
     border-radius: 17px;
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
     width: 210px;
     display: flex;
     align-items: center;
@@ -25,7 +25,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 500;
     font-size: 18px;
-    color: #2b1008;
+    color: var(--brand-dark);
     padding: 0;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .createFilesButton {
-    background-color: #de7356;
+    background-color: var(--brand-primary);
 }
 
 .createFolderButton {
@@ -53,7 +53,7 @@
 .actionButtonIcon {
     width: 32px;
     height: 32px;
-    color: #2b1008;
+    color: var(--brand-dark);
     flex-shrink: 0;
 }
 
@@ -81,7 +81,7 @@
 
 .fileCardBackground {
     position: absolute;
-    background: rgba(230, 225, 224, 0.71);
+    background: var(--brand-light);
     border-radius: 17px;
     inset: 0;
 }
@@ -105,7 +105,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 20px;
     font-weight: 500;
-    color: #2b1008;
+    color: var(--brand-dark);
     letter-spacing: 0.5px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -118,7 +118,7 @@
     right: 12px;
     width: 40px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--color-white-overlay);
     border: none;
     border-radius: 8px;
     display: flex;
@@ -129,14 +129,14 @@
 }
 
 .fileCardDeleteButton:hover {
-    background: rgba(222, 115, 86, 0.2);
+    background: var(--color-primary-overlay);
     transform: scale(1.1);
 }
 
 .fileCardDeleteIcon {
     width: 24px;
     height: 24px;
-    color: #de7356;
+    color: var(--brand-primary);
 }
 
 .fileCardMenuContainer {
@@ -149,7 +149,7 @@
     right: 12px;
     width: 40px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--color-white-overlay);
     border: none;
     border-radius: 8px;
     display: flex;
@@ -160,21 +160,21 @@
 }
 
 .fileCardMenuButton:hover {
-    background: rgba(222, 115, 86, 0.2);
+    background: var(--color-primary-overlay);
     transform: scale(1.1);
 }
 
 .fileCardMenuIcon {
     width: 24px;
     height: 24px;
-    color: #de7356;
+    color: var(--brand-primary);
 }
 
 .fileCardMenu {
     position: absolute;
     top: 50px;
     right: 0;
-    background: #ffffff;
+    background: var(--color-white);
     border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
@@ -192,7 +192,7 @@
     text-align: left;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 14px;
-    color: #2b1008;
+    color: var(--brand-dark);
     cursor: pointer;
     transition: background-color 0.2s ease;
     border-bottom: 1px solid #f0f0f0;
@@ -207,7 +207,7 @@
 }
 
 .fileCardMenuItemDelete {
-    color: #de7356;
+    color: var(--brand-primary);
 }
 
 .fileCardMenuItemDelete:hover {
@@ -221,7 +221,7 @@
 .modalOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-dark-overlay);
     z-index: 100;
 }
 
@@ -230,10 +230,10 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #ffffff;
+    background: var(--color-white);
     border-radius: 17px;
     padding: 32px;
-    box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.25);
+    box-shadow: 0px 10px 40px var(--color-dark-shadow);
     z-index: 101;
     max-width: 400px;
     width: 90%;
@@ -243,7 +243,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 700;
     font-size: 24px;
-    color: #2b1008;
+    color: var(--brand-dark);
     margin: 0 0 16px 0;
 }
 
@@ -280,19 +280,19 @@
 
 .modalButtonDelete {
     padding: 12px 24px;
-    background: #de7356;
+    background: var(--brand-primary);
     border: none;
     border-radius: 10px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 16px;
     font-weight: 500;
-    color: #ffffff;
+    color: var(--color-white);
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
 .modalButtonDelete:hover {
-    background: #d16649;
+    background: var(--brand-primary-hover);
 }
 
 /* ============================================================================
@@ -305,8 +305,8 @@
     left: 0;
     top: 0;
     width: 260px;
-    background: rgba(230, 225, 224, 0.71);
-    box-shadow: inset -4px 0px 3.5px rgba(0, 0, 0, 0.25);
+    background: var(--brand-light);
+    box-shadow: inset -4px 0px 3.5px var(--color-dark-shadow);
 }
 
 .sidebarLogo {
@@ -350,7 +350,7 @@
 .sidebarButtonLabel {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 24px;
-    color: #0a0909;
+    color: var(--color-sidebar-text);
     letter-spacing: 0px;
     font-weight: 500;
 }
@@ -358,14 +358,14 @@
 .sidebarIcon {
     width: 28px;
     height: 28px;
-    color: #0a0909;
+    color: var(--color-sidebar-text);
     flex-shrink: 0;
 }
 
 .sidebarChevron {
     width: 28px;
     height: 28px;
-    color: #2b1008;
+    color: var(--brand-dark);
     transition: transform 0.2s ease;
 }
 
@@ -415,14 +415,14 @@
 .sidebarFolderIcon {
     width: 28px;
     height: 28px;
-    color: #0a0909;
+    color: var(--color-sidebar-text);
     flex-shrink: 0;
 }
 
 .sidebarTrashIcon {
     width: 28px;
     height: 28px;
-    color: #0a0909;
+    color: var(--color-sidebar-text);
     flex-shrink: 0;
 }
 
@@ -461,7 +461,7 @@
 
 .dropdownMenu {
     position: absolute;
-    background: rgba(230, 225, 224, 0.71);
+    background: var(--brand-light);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -469,7 +469,7 @@
     top: 120px;
     padding: 8px;
     border-radius: 17px;
-    box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: 0px 2px 6px 0px var(--color-dark-shadow);
     width: 180px;
     z-index: 50;
 }
@@ -477,7 +477,7 @@
 .dropdownItem {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 16px;
-    color: #2b1008;
+    color: var(--brand-dark);
     letter-spacing: 0.3px;
     padding: 8px 12px;
     border-radius: 10px;
@@ -487,5 +487,5 @@
 }
 
 .dropdownItem:hover {
-    background-color: rgba(222, 115, 86, 0.2);
+    background-color: var(--color-primary-overlay);
 }
