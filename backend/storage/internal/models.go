@@ -41,3 +41,16 @@ type Folder struct {
 func (Folder) TableName() string {
 	return "folders"
 }
+
+type FolderItem struct {
+	ID			uuid.UUID	`json:"id"`
+	Name		string		`json:"name"`
+	CreatedAt	time.Time	`json:"created_at"`
+}
+
+type FilesItem struct {
+	ID			uuid.UUID	`json:"id"`
+	Name		string		`json:"name"`
+	FileSize	int64		`json:"file_size"`
+	CreatedAt	time.Time	`json:"created_at"`
+}

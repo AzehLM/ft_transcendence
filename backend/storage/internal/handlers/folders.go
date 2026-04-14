@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
+	storage "backend/storage/internal"
 	"backend/storage/internal/service"
 
 	"github.com/gofiber/fiber/v3"
@@ -193,27 +193,17 @@ func (h *StorageHandler) ListPersonalContents(c fiber.Ctx) error {
 		}
 	}
 
-	type folderItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
+	var	folderItems	[]storage.FolderItem
+	var	filesItems	[]storage.FilesItem
 
-	type filesItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		FileSize	int64		`json:"file_size"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
-
-	folderItems := make([]folderItem, len(folders))
+	folderItems = make([]storage.FolderItem, len(folders))
 	for i, f := range folders {
-		folderItems[i] = folderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
+		folderItems[i] = storage.FolderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
 	}
 
-	filesItems := make([]filesItem, len(files))
+	filesItems = make([]storage.FilesItem, len(files))
 	for i, f := range files {
-		filesItems[i] = filesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -250,27 +240,17 @@ func (h *StorageHandler) ListFolderContents(c fiber.Ctx) error {
 		}
 	}
 
-	type folderItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
+	var folderItems	[]storage.FolderItem
+	var filesItems	[]storage.FilesItem
 
-	type filesItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		FileSize	int64		`json:"file_size"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
-
-	folderItems := make([]folderItem, len(folders))
+	folderItems = make([]storage.FolderItem, len(folders))
 	for i, f := range folders {
-		folderItems[i] = folderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
+		folderItems[i] = storage.FolderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
 	}
 
-	filesItems := make([]filesItem, len(files))
+	filesItems = make([]storage.FilesItem, len(files))
 	for i, f := range files {
-		filesItems[i] = filesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -278,7 +258,6 @@ func (h *StorageHandler) ListFolderContents(c fiber.Ctx) error {
 		"files":	filesItems,
 	})
 }
-
 
 func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 	userID, err := h.extractUserID(c)
@@ -314,31 +293,21 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 		}
 	}
 
-	type folderItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
+	var folderItems	[]storage.FolderItem
+	var filesItems	[]storage.FilesItem
 
-	type filesItem struct {
-		ID			uuid.UUID	`json:"id"`
-		Name		string		`json:"name"`
-		FileSize	int64		`json:"file_size"`
-		CreatedAt	time.Time	`json:"created_at"`
-	}
-
-	folderItems := make([]folderItem, len(folders))
+	folderItems = make([]storage.FolderItem, len(folders))
 	for i, f := range folders {
-		folderItems[i] = folderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
+		folderItems[i] = storage.FolderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
 	}
 
-	fileItems := make([]filesItem, len(files))
+	filesItems = make([]storage.FilesItem, len(files))
 	for i, f := range files {
-		fileItems[i] = filesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"folders":	folderItems,
-		"files":	fileItems,
+		"files":	filesItems,
 	})
 }
