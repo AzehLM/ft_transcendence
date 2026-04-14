@@ -44,6 +44,7 @@ type StorageService interface {
 	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
 
 	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
+	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
 }
 
 type storageService struct {
@@ -479,6 +480,35 @@ func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.U
 	}
 
 	folders, files, err := s.repo.ListFolderContents(userID, parentID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+func (s * storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error) {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil, ErrNotFound
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if folder.OrgID == nil && *folder.OrgID != orgID {
+		return nil, nil, ErrNotFound
+	}
+
+	if err := s.rbac.CanReadFile(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, nil, ErrForbidden
+		}
+		return nil, nil, err
+	}
+
+	folders, files, err := s.repo.ListOrgFolderContents(orgID, folderID)
 	if err != nil {
 		return nil, nil, err
 	}
