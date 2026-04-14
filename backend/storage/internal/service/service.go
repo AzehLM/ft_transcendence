@@ -44,6 +44,7 @@ type StorageService interface {
 	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
 
 	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
+	ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
 }
 
@@ -481,6 +482,28 @@ func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.U
 	}
 
 	folders, files, err := s.repo.ListFolderContents(userID, parentID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+func (s *storageService) ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
+	folder, err := s.repo.FindFolderByID(*folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil, ErrNotFound
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if folder.OwnerUserID != userID || folder.OrgID != nil {
+		return nil, nil, ErrForbidden
+	}
+
+	folders, files, err := s.repo.ListFolderContents(userID, folderID)
 	if err != nil {
 		return nil, nil, err
 	}
