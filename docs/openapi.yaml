@@ -116,7 +116,6 @@ paths:
         '200':
           description: Déconnecté avec succès
 
-  # 🚀 ROUTES MISES À JOUR ICI : /auth/me au lieu de /users/me
   /auth/me:
     delete:
       tags:
@@ -156,7 +155,6 @@ paths:
         '404':
           description: Utilisateur introuvable en base
 
-  # 🚀 ROUTE MISE À JOUR ICI : /auth/password au lieu de /users/password
   /auth/password:
     put:
       tags:
