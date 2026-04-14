@@ -1,26 +1,25 @@
 import { useNavigate } from "react-router-dom";
-import { generateRegistrationData } from "../services/crypto.service";
+import { generateLoginData } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "../styles/auth.module.css"
-import { Button } from "../components/button";
-import { InputField } from "../components/input";
+import styles from "../../styles/auth.module.css"
+import { Button } from "../../components/Button";
+import { InputField } from "../../components/Input";
 
 
-export default function RegisterPage() {
+export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");  // Réinitialise les erreurs précédentes
+        setError("");
 
-        if (!email || !password || !confirmPassword) {
+        if (!email || !password) {
             setError("All fields are required!");
             return;
         }
@@ -31,45 +30,41 @@ export default function RegisterPage() {
             return;
         }
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match!");
-            return;
-        }
-
         if (password.length < 8) {
             setError("Password must be at least 8 characters!");
             return;
         }
 
-
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques...");
-            const registrationData = await generateRegistrationData(email, password);
-            
+            console.log("🔐 Génération des données cryptographiques pour la connexion...");
+            const loginData = await generateLoginData(email, password);
+
             console.log("📤 Envoi au serveur...");
-            const response = await fetch("/api/auth/register", {
+            const response = await fetch("/api/auth/login", {
                 method: "POST",
-                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(registrationData),
+                body: JSON.stringify(loginData),
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
-                setError(errorData.message || "Registration failed!");
+                setError(errorData.message || "Login failed!");
                 setIsLoading(false);
                 return;
             }
 
-            console.log("✅ Enregistrement réussi!");
-            navigate("/login");
+            console.log("✅ Connexion réussie!");
+            const data = await response.json()
+            localStorage.setItem("token", data.access_token);
+            // navigate("/dashboard");
+            navigate("/profile");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
-            setError(err.message || "An error occurred during registration!");
+            setError(err.message || "An error occurred during login!");
             setIsLoading(false);
         }
     };
@@ -88,14 +83,14 @@ export default function RegisterPage() {
                         </span>
                     </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
-                        Create Your Account
+                        Welcome Back
                     </h1>
                     <p className={styles.logo_subtitle}>
-                        Start protecting your files with zero-knowledge encryption
+                        Log in to access your secure files
                     </p>
                 </div>
 
-                {/* Registration Form */}
+                {/* Login Form */}
                 <div className={styles.login_form}>
                     <form className={styles.login_form_inner} onSubmit={handleSubmit}>
                         <InputField
@@ -111,25 +106,16 @@ export default function RegisterPage() {
                             label="Password"
                             type="password"
                             icon={Lock}
-                            placeholder="Create a strong password"
+                            placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                        />
-
-                        <InputField
-                            label="Confirm Password"
-                            type="password"
-                            icon={Lock}
-                            placeholder="Confirm your password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
                         />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>
                             <Shield className={`${styles.security_notice_icon} w-5 h-5`} style={{ color: "var(--brand-primary)" }} />
                             <p className={styles.security_notice_text}>
-                                <span className={styles.security_notice_title}>Important:</span> Your password cannot be recovered. Make sure to store it securely—we cannot reset it for you due to our zero-knowledge architecture.
+                                <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
                             </p>
                         </div>
 
@@ -141,7 +127,7 @@ export default function RegisterPage() {
                         )}
 
                         <Button type="submit" variant="primary" disabled={isLoading}>
-                            {isLoading ? "Creating Account..." : "Create Account"}
+                            {isLoading ? "Logging In..." : "Log In"}
                             <ArrowRight className="inline-block ml-2 w-5 h-5" />
                         </Button>
                     </form>
@@ -153,42 +139,28 @@ export default function RegisterPage() {
                         </div>
                         <div className={styles.divider_text_container}>
                             <span className={styles.divider_text}>
-                                Already have an account?
+                                Don't have an account?
                             </span>
                         </div>
                     </div>
 
-                    {/* Login Link */}
+                    {/* Sign Up Link */}
                     <Link
-                        to="/login"
+                        to="/register"
                         className={styles.signup_link}
                     >
-                        Log In
+                        Create Account
                     </Link>
                 </div>
 
-                {/* Terms and Privacy */}
-                <div style={{ marginTop: "32px", textAlign: "center" }}>
-                    <p style={{ fontSize: "14px", color: "var(--brand-dark)", opacity: 0.7, lineHeight: 1.6 }}>
-                        By signing up, you agree to our{" "}
-                        <Link
-                            to="/terms"
-                            style={{ color: "var(--brand-primary)", textDecoration: "none" }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
-                        >
-                            Terms of Service
-                        </Link>
-                        {" "}and{" "}
-                        <Link
-                            to="/privacy"
-                            style={{ color: "var(--brand-primary)", textDecoration: "none" }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
-                        >
-                            Privacy Policy
-                        </Link>
-                    </p>
+                {/* Back to Home */}
+                <div className={styles.back_home_container}>
+                    <Link
+                        to="/"
+                        className={styles.back_home_link}
+                    >
+                        ← Back to Home
+                    </Link>
                 </div>
             </div>
         </div>

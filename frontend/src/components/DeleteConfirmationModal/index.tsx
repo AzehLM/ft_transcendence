@@ -1,4 +1,4 @@
-import styles from "../styles/components.module.css";
+import styles from "./DeleteConfirmationModal.module.css";
 
 interface DeleteConfirmationModalProps {
     isOpen: boolean;
@@ -25,15 +25,15 @@ export function DeleteConfirmationModal({
 
     return (
         <>
-            <div className={styles.modalOverlay} onClick={onCancel} />
+            <div className={styles.modal__overlay} onClick={onCancel} />
             <div className={styles.modal}>
-                <h2 className={styles.modalTitle}>{title}</h2>
-                {message && <p className={styles.modalMessage}>{message}</p>}
-                <div className={styles.modalActions}>
-                    <button className={styles.modalButtonCancel} onClick={onCancel}>
+                <h2 className={styles.modal__title}>{title}</h2>
+                {message && <p className={styles.modal__message}>{message}</p>}
+                <div className={styles.modal__actions}>
+                    <button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} onClick={onCancel}>
                         Cancel
                     </button>
-                    <button className={styles.modalButtonDelete} onClick={onConfirm}>
+                    <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={onConfirm}>
                         {buttonText}
                     </button>
                 </div>
@@ -41,3 +41,4 @@ export function DeleteConfirmationModal({
         </>
     );
 }
+

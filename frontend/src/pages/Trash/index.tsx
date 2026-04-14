@@ -1,11 +1,11 @@
-import { FileCard } from "../components/filecard"
-import { ProfileDropdown } from "../components/profiledropdown"
-import { LeftSidebar } from "../components/leftsidebar";
-import { SearchBar } from "../components/searchbar";
-import { UserProfileButton } from "../components/userprofilebutton";
+import { FileCard } from "../../components/FileCard"
+import { ProfileDropdown } from "../../components/ProfileDropdown"
+import { LeftSidebar } from "../../components/LeftSidebar";
+import { SearchBar } from "../../components/SearchBar";
+import { UserProfileButton } from "../../components/UserProfileButton";
 import { useState, useEffect } from "react";
-import styles from "../styles/dashboard.module.css";
-import { FilesService, FileItem } from "../services/files.service";
+import styles from "../Dashboard/Dashboard.module.css";
+import { FilesService, FileItem } from "../../services/files.service";
 
 export default function TrashPage() {
     const [foldersExpanded, setFoldersExpanded] = useState(true);

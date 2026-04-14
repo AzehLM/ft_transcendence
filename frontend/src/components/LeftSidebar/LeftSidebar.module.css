@@ -1,0 +1,136 @@
+/* ============================================================================
+   LEFT SIDEBAR COMPONENT
+   ============================================================================ */
+
+.sidebar {
+    position: absolute;
+    height: 100%;
+    left: 0;
+    top: 0;
+    width: 260px;
+    background: var(--brand-light);
+    box-shadow: inset -4px 0px 3.5px var(--color-dark-shadow);
+}
+
+.sidebar__logo {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: #d54f2a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    padding: 16px 20px;
+}
+
+.sidebar__button {
+    position: absolute;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    padding: 8px 0;
+}
+
+.sidebar__button:hover {
+    opacity: 0.8;
+}
+
+.sidebar__button--active {
+    opacity: 0.7;
+}
+
+.sidebar__button__label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    color: var(--color-sidebar-text);
+    letter-spacing: 0px;
+    font-weight: 500;
+}
+
+.sidebar__button__icon {
+    width: 28px;
+    height: 28px;
+    color: var(--color-sidebar-text);
+    flex-shrink: 0;
+}
+
+.sidebar__chevron {
+    width: 28px;
+    height: 28px;
+    color: var(--brand-dark);
+    transition: transform 0.2s ease;
+}
+
+.sidebar__chevron__rotated {
+    transform: rotate(-90deg);
+}
+
+.sidebar__folder {
+    position: absolute;
+    left: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    height: auto;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar__folder:hover {
+    opacity: 0.8;
+}
+
+.sidebar__folder--active {
+    opacity: 0.7;
+}
+
+.sidebar__folder__icon {
+    width: 28px;
+    height: 28px;
+    color: var(--color-sidebar-text);
+    flex-shrink: 0;
+}
+
+.sidebar__trash__button {
+    position: absolute;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    padding: 8px 0;
+}
+
+.sidebar__trash__button:hover {
+    opacity: 0.8;
+}
+
+.sidebar__trash__button--active {
+    opacity: 0.7;
+}
+
+.sidebar__trash__button__icon {
+    width: 28px;
+    height: 28px;
+    color: var(--color-sidebar-text);
+    flex-shrink: 0;
+}

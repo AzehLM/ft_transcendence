@@ -1,7 +1,7 @@
 import { MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import styles from "../styles/components.module.css";
-import { DeleteConfirmationModal } from "./deleteconfirmationmodal";
+import styles from "./FileCard.module.css";
+import { DeleteConfirmationModal } from "../DeleteConfirmationModal";
 
 interface FileCardProps {
   name: string;
@@ -65,36 +65,36 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
   return (
     <>
       <div className={styles.fileCard}>
-        <div className={styles.fileCardBackground} />
-        <div className={styles.fileCardBlur} />
-        <div className={styles.fileCardName}>
+        <div className={styles.fileCard__background} />
+        <div className={styles.fileCard__blur} />
+        <div className={styles.fileCard__name}>
           {name}
         </div>
-        <div className={styles.fileCardMenuContainer} ref={menuRef}>
+        <div className={styles.fileCard__menu} ref={menuRef}>
           <button
             onClick={handleMenuClick}
-            className={styles.fileCardMenuButton}
+            className={styles.fileCard__menu__button}
             aria-label="File options"
           >
-            <MoreVertical className={styles.fileCardMenuIcon} strokeWidth={2} />
+            <MoreVertical className={styles.fileCard__menu__button__icon} strokeWidth={2} />
           </button>
           {showMenu && (
-            <div className={styles.fileCardMenu}>
+            <div className={styles.fileCard__menu__dropdown}>
               <button
                 onClick={handleAddToFolder}
-                className={styles.fileCardMenuItem}
+                className={styles.fileCard__menu__item}
               >
                 Add to Folder
               </button>
               <button
                 onClick={handleCreateFolder}
-                className={styles.fileCardMenuItem}
+                className={styles.fileCard__menu__item}
               >
                 Create Folder
               </button>
               <button
                 onClick={handleDelete}
-                className={`${styles.fileCardMenuItem} ${styles.fileCardMenuItemDelete}`}
+                className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}
               >
                 Delete
               </button>

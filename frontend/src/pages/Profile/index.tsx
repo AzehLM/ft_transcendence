@@ -1,6 +1,6 @@
-import styles from "../styles/auth.module.css"
+import styles from "../../styles/auth.module.css"
 import { Link } from "react-router-dom";
-import { Package} from "lucide-react";
+import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
 
 async function fetchWithRefresh(url: string, options: RequestInit = {}) {
@@ -19,17 +19,17 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
             credentials: "include", // cookie HttpOnly
         });
 
-                let data: any;
-                try {
-                    data = await refreshResponse.json();
-                } catch {
-                    const text = await refreshResponse.text();
-                    data = { error: text || "Invalid JSON" };
-                }
+        let data: any;
+        try {
+            data = await refreshResponse.json();
+        } catch {
+            const text = await refreshResponse.text();
+            data = { error: text || "Invalid JSON" };
+        }
 
-                if (!refreshResponse.ok) {
-                    console.error("Error backend:", data);
-                }
+        if (!refreshResponse.ok) {
+            console.error("Error backend:", data);
+        }
 
         if (!refreshResponse.ok) {
             throw new Error("Session Expired, cannot refresh token");

@@ -1,0 +1,62 @@
+/* ============================================================================
+   ACTION BUTTONS COMPONENT
+   ============================================================================ */
+
+.container {
+    position: absolute;
+    left: 288px;
+    top: 150px;
+    display: flex;
+    gap: 24px;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 210px;
+    height: 100px;
+    padding: 0;
+    gap: 12px;
+    border: none;
+    border-radius: 17px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--brand-dark);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+}
+
+.button:hover {
+    opacity: 0.9;
+}
+
+.button:active {
+    opacity: 0.8;
+}
+
+.button--create-files {
+    background-color: var(--brand-primary);
+}
+
+.button--create-folder {
+    background-color: #e6957f;
+}
+
+.button--upload {
+    background-color: #eeb9aa;
+}
+
+.button__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    color: var(--brand-dark);
+}
+
+.button__text {
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+}

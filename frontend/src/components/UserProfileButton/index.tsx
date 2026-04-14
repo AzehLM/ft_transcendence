@@ -1,6 +1,6 @@
 import { User, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import styles from "../styles/dashboard.module.css";
+import styles from "./UserProfileButton.module.css";
 
 interface UserProfileButtonProps {
     isOpen?: boolean;

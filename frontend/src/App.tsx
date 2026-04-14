@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import HomePage from './pages/HomePage'
-import PrivacyPage from './pages/PrivacyPage'
-import TermsPage from './pages/TermsPage'
-import ProfilePage from './pages/ProfilePage'
-import DashboardPage from './pages/DashboardPage'
-import TrashPage from './pages/TrashPage'
+import LoginPage from './pages/Login'
+import RegisterPage from './pages/Register'
+import HomePage from './pages/Home'
+import PrivacyPage from './pages/Privacy'
+import TermsPage from './pages/Terms'
+import ProfilePage from './pages/Profile'
+import DashboardPage from './pages/Dashboard'
+import TrashPage from './pages/Trash'
 
 function App() {
     return (

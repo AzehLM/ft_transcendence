@@ -1,0 +1,62 @@
+/* ============================================================================
+   USER PROFILE BUTTON COMPONENT
+   ============================================================================ */
+
+.profileButtonContainer {
+    position: absolute;
+    right: 100px;
+    top: 33px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.profileButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(230, 225, 224, 0.684);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.139);
+}
+
+.profileButton:hover {
+    background-color: rgba(230, 225, 224, 0.819);
+    transform: scale(1.05);
+}
+
+.profileButtonOpen {
+    background-color: rgba(230, 225, 224, 0.819);
+}
+
+.profileIcon {
+    width: 30px;
+    height: 30px;
+    color: var(--brand-primary);
+}
+
+.settingsIconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settingsIconButton:hover {
+    transform: scale(1.1);
+}
+
+.settingsIconOnly {
+    width: 32px;
+    height: 32px;
+    color: var(--brand-primary);
+}

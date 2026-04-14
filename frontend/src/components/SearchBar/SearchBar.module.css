@@ -1,0 +1,50 @@
+/* ============================================================================
+   SEARCH BAR COMPONENT
+   ============================================================================ */
+
+.searchContainer {
+    position: absolute;
+    left: 284px;
+    top: 33px;
+    width: 806px;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    height: 60px;
+    padding: 0 20px;
+    gap: 12px;
+    background-color: var(--color-white);
+    border: 2px solid #bbb;
+    border-radius: 12px;
+    box-shadow: 0px 2px 8px var(--color-light-shadow);
+    transition: all 0.2s ease;
+}
+
+.searchBox:focus-within {
+    border-color: #bbb;
+    box-shadow: 0px 2px 8px var(--color-light-shadow);
+}
+
+.searchIcon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: #bbb;
+}
+
+.searchInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 18px;
+    color: #bbb;
+    letter-spacing: 0px;
+}
+
+.searchInput::placeholder {
+    color: #bbb;
+}

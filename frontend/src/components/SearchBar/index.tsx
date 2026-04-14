@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import styles from "../styles/dashboard.module.css";
+import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
     placeholder?: string;
