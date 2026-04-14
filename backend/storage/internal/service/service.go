@@ -112,6 +112,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
+	// replace hardcoded values with env var ?
 	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
 
 	return presignedURL, objectID, err
@@ -182,6 +183,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 		return "", nil, nil, "", err
 	}
 
+	// replace hardcoded values with env var ?
 	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
@@ -220,7 +222,6 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	// publier event file_deleted sur redis -> later (pub/sub)
 	_ = s.publisher.PublishFileDeleted(context.TODO(), file)
 
 	return nil
@@ -263,7 +264,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrNotFound
 	}
 
-	_ = s.publisher.PublishFileMoved(context.TODO(), file, oldFolderID)
+	_ = s.publisher.PublishFileMoved(context.TODO(), file, oldFolderID) // need to test if oldFolderID is right or if we want folderID instead
 
 	return nil
 }
