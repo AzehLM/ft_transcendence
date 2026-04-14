@@ -151,7 +151,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "ORGA_DELETED",
+		Event:    "ORGA_DELETED",
 		OrgID:   orgID.String(),
 		Message: "Organization has been permanently deleted",
 	}
@@ -201,7 +201,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "ORGA_RENAMED",
+		Event:    "ORGA_RENAMED",
 		OrgID:   orgID.String(),
 		Message: "Organization name updated",
 		Data: fiber.Map{
@@ -275,7 +275,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "QUOTA_UPDATED",
+		Event:    "QUOTA_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "Organization space usage updated",
 		Data: fiber.Map{
@@ -344,7 +344,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "QUOTA_UPDATED",
+		Event:    "QUOTA_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "Organization space usage updated",
 		Data: fiber.Map{

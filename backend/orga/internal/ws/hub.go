@@ -28,7 +28,7 @@ func NewHub(redisClient *redis.Client, db *gorm.DB) *Hub {
 }
 
 type WSEvent struct {
-	Type    string      `json:"type"` // ex: MEMBER_ADDED, FILE_UPLOADED
+	Event    string      `json:"event"` // ex: MEMBER_ADDED, FILE_UPLOADED
 	OrgID   string      `json:"org_id,omitempty"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`

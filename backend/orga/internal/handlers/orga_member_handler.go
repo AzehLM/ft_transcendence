@@ -102,7 +102,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "MEMBER_ADDED",
+		Event:    "MEMBER_ADDED",
 		OrgID:   orgID.String(),
 		Message: "New member add to the org",
 		Data: fiber.Map{
@@ -117,7 +117,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	userEvent := ws.WSEvent{
-		Type:    "ADDED_TO_NEW_ORGA",
+		Event:    "ADDED_TO_NEW_ORGA",
 		Message: "You have been added to a new organization",
 		Data: fiber.Map{
 			"org_id": orgID.String(),
@@ -210,7 +210,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Type:    "ROLE_UPDATED",
+		Event:    "ROLE_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "A member's role has been updated",
 		Data: fiber.Map{
@@ -274,7 +274,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	orgaEvent := ws.WSEvent{
-		Type:    "MEMBER_REMOVED",
+		Event:    "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
 		Message: "A member has left the organization",
 		Data:    fiber.Map{"user_id": userID.String()},
@@ -282,7 +282,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
-		Type:    "REMOVED_FROM_ORGA",
+		Event:    "REMOVED_FROM_ORGA",
 		Message: "You have been removed from the organization",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
@@ -341,7 +341,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	}
 
 	orgaEvent := ws.WSEvent{
-		Type:    "MEMBER_REMOVED",
+		Event:    "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
 		Message: "A member has left the organization",
 		Data:    fiber.Map{"user_id": userID.String()},
@@ -349,7 +349,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
-		Type:    "REMOVED_FROM_ORGA",
+		Event:    "REMOVED_FROM_ORGA",
 		Message: "You have been removed from the organization",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
