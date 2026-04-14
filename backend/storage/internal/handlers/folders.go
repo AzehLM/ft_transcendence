@@ -237,9 +237,7 @@ func (h *StorageHandler) ListFolderContents(c fiber.Ctx) error {
 		})
 	}
 
-	var ptrFolderID *uuid.UUID // making it obvious its a pointer for lisibility
-	ptrFolderID = &folderID
-
+	ptrFolderID := &folderID
 	folders, files, err := h.svc.ListFolderContents(userID, ptrFolderID)
 	if err != nil {
 		switch {
