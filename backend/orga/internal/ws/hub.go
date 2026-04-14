@@ -1,34 +1,28 @@
 package ws
 
 import (
-	"sync"
-
 	"context"
 	"encoding/json"
 	"log"
 
-	"github.com/gofiber/contrib/websocket"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type Hub struct {
-	Redis   *redis.Client
-	DB      *gorm.DB
-	Clients map[*websocket.Conn]string
-	Mu      sync.RWMutex
+	Redis *redis.Client
+	DB    *gorm.DB
 }
 
 func NewHub(redisClient *redis.Client, db *gorm.DB) *Hub {
 	return &Hub{
-		Redis:   redisClient,
-		DB:      db,
-		Clients: make(map[*websocket.Conn]string),
+		Redis: redisClient,
+		DB:    db,
 	}
 }
 
 type WSEvent struct {
-	Event    string      `json:"event"` // ex: MEMBER_ADDED, FILE_UPLOADED
+	Event   string      `json:"event"` // ex: MEMBER_ADDED, FILE_UPLOADED
 	OrgID   string      `json:"org_id,omitempty"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
