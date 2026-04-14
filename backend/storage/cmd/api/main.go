@@ -95,6 +95,7 @@ func main() {
 
 	// folder info retrievial
 	api.Get("/folders",										handler.ListPersonalContents) // can have a query string
+	api.Get("/folders/:folder_id/contents",					handler.ListFolderContents)
 	api.Get("/orgs/:org_id/folders/:folder_id/contents",	handler.ListOrgContents)
 
 	go func() {

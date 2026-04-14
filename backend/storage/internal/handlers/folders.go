@@ -222,18 +222,11 @@ func (h *StorageHandler) ListPersonalContents(c fiber.Ctx) error {
 	})
 }
 
-func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
+func (h *StorageHandler) ListFolderContents(c fiber.Ctx) error {
 	userID, err := h.extractUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": err.Error(),
-		})
-	}
-
-	orgID, err := uuid.Parse(c.Params("org_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid org_id",
 		})
 	}
 
@@ -244,7 +237,10 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 		})
 	}
 
-	folders, fileList, err := h.svc.ListOrgContents(userID, orgID, folderID)
+	var ptrFolderID *uuid.UUID // making it obvious its a pointer for lisibility
+	ptrFolderID = &folderID
+
+	folders, files, err := h.svc.ListFolderContents(userID, ptrFolderID)
 	if err != nil {
 		switch {
 			case errors.Is(err, service.ErrNotFound):
@@ -274,8 +270,72 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 		folderItems[i] = folderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
 	}
 
-	fileItems := make([]filesItem, len(fileList))
-	for i, f := range fileList {
+	filesItems := make([]filesItem, len(files))
+	for i, f := range files {
+		filesItems[i] = filesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"folders":	folderItems,
+		"files":	filesItems,
+	})
+}
+
+
+func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	orgID, err := uuid.Parse(c.Params("org_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid org_id",
+		})
+	}
+
+	folderID, err := uuid.Parse(c.Params("folder_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid folder_id",
+		})
+	}
+
+	folders, files, err := h.svc.ListOrgContents(userID, orgID, folderID)
+	if err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	type folderItem struct {
+		ID			uuid.UUID	`json:"id"`
+		Name		string		`json:"name"`
+		CreatedAt	time.Time	`json:"created_at"`
+	}
+
+	type filesItem struct {
+		ID			uuid.UUID	`json:"id"`
+		Name		string		`json:"name"`
+		FileSize	int64		`json:"file_size"`
+		CreatedAt	time.Time	`json:"created_at"`
+	}
+
+	folderItems := make([]folderItem, len(folders))
+	for i, f := range folders {
+		folderItems[i] = folderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
+	}
+
+	fileItems := make([]filesItem, len(files))
+	for i, f := range files {
 		fileItems[i] = filesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
 	}
 
