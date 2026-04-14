@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -23,7 +24,8 @@ func main() {
 		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{Addr: "redis:6379", Password: env.RedisPassword})
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr, Password: env.RedisPassword})
 
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)
@@ -72,7 +74,7 @@ func main() {
 			return fiber.ErrUpgradeRequired
 		},
 		websocket.New(wsHub.GlobalWSHandler, websocket.Config{
-			Origins: []string{"*"},
+			Origins: []string{"*"}, //TODO: set les url who can create ws
 		}),
 	)
 	// Run
