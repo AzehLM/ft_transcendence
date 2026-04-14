@@ -84,10 +84,14 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 			log.Printf("[WS] Cleanup of session for %s completed.", userID)
 			return // defer (c.Close() and pubsub.Close())
 
-		case msg := <-ch:
+		case msg, ok := <-ch:
+			if !ok || msg == nil {
+				log.Printf("[WS]  Redis PubSub close for user %s.", userID)
+				return
+			}
+
 			err := c.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
 			if err != nil {
-				log.Printf("[WS] Error writing to %s: %v", userID, err)
 				return
 			}
 		case <-ticker.C:
