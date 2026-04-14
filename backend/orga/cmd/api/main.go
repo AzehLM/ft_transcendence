@@ -66,12 +66,9 @@ func main() {
 	app.Get("/ws/notifications",
 		middleware.ProtectedRoute(env.JwtSecret),
 		func(c fiber.Ctx) error {
-			log.Println("[DEBUG WS] JWT Validé ! Demande d'Upgrade reçue...")
 			if websocket.IsWebSocketUpgrade(c) {
-				log.Println("[DEBUG WS] Headers corrects, lancement de l'Upgrader...")
 				return c.Next()
 			}
-			log.Println("[DEBUG WS] Rejeté: Pas de header d'upgrade")
 			return fiber.ErrUpgradeRequired
 		},
 		websocket.New(wsHub.GlobalWSHandler, websocket.Config{

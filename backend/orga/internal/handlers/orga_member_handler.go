@@ -102,12 +102,13 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "MEMBER_ADDED",
+		Event:   "MEMBER_ADDED",
 		OrgID:   orgID.String(),
-		Message: "New member add to the org",
+		Message: "New member added to the org",
 		Data: fiber.Map{
-			"email": body.Email,
-			"role":  "member",
+			"email":   body.Email,
+			"role":    "member",
+			"user_id": user.ID.String(),
 		},
 	}
 
@@ -117,7 +118,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	userEvent := ws.WSEvent{
-		Event:    "ADDED_TO_NEW_ORGA",
+		Event:   "ADDED_TO_NEW_ORGA",
 		Message: "You have been added to a new organization",
 		Data: fiber.Map{
 			"org_id": orgID.String(),
@@ -210,7 +211,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "ROLE_UPDATED",
+		Event:   "ROLE_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "A member's role has been updated",
 		Data: fiber.Map{
@@ -274,7 +275,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	orgaEvent := ws.WSEvent{
-		Event:    "MEMBER_REMOVED",
+		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
 		Message: "A member has left the organization",
 		Data:    fiber.Map{"user_id": userID.String()},
@@ -282,7 +283,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
-		Event:    "REMOVED_FROM_ORGA",
+		Event:   "REMOVED_FROM_ORGA",
 		Message: "You have been removed from the organization",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
@@ -341,7 +342,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	}
 
 	orgaEvent := ws.WSEvent{
-		Event:    "MEMBER_REMOVED",
+		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
 		Message: "A member has left the organization",
 		Data:    fiber.Map{"user_id": userID.String()},
@@ -349,7 +350,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
-		Event:    "REMOVED_FROM_ORGA",
+		Event:   "REMOVED_FROM_ORGA",
 		Message: "You have been removed from the organization",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
