@@ -32,7 +32,7 @@ type StorageRepository interface {
 	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
 	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error)	// GET /folders?parent_id=xxx
-
+	ListOrgFolderContents(orgID uuid.UUID, folderID uuid.UUID) ([]Folder, []File, error)	// GET /orgs/{org_id}/folders/{folder_id}/contents
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -287,6 +287,25 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 		fileQuery = fileQuery.Where("folder_id = ?", *parentID)
 	}
 	// filling files
+	if err := fileQuery.Find(&files).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+func (r *storageRepository) ListOrgFolderContents(orgID uuid.UUID, folderID uuid.UUID) ([]Folder, []File, error) {
+	var folders	[]Folder
+	var files	[]File
+
+	folderQuery := r.db.Where("org_id = ? AND parent_id = ?", orgID, folderID)
+
+	if err := folderQuery.Find(&folders).Error; err != nil {
+		return nil, nil, err
+	}
+
+	fileQuery := r.db.Where("org_id = ? AND folder_id = ? AND status = ?", orgID, folderID, "ACTIVE")
+
 	if err := fileQuery.Find(&files).Error; err != nil {
 		return nil, nil, err
 	}
