@@ -94,7 +94,8 @@ func main() {
 	api.Delete("/folders/:folder_id",	handler.DeleteFolder)
 
 	// folder info retrievial
-	api.Get("/folders",	handler.ListPersonalContents) // can have a query string
+	api.Get("/folders",										handler.ListPersonalContents) // can have a query string
+	api.Get("/orgs/:org_id/folders/:folder_id/contents",	handler.ListOrgContents)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
