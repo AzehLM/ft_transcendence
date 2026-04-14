@@ -16,11 +16,18 @@ func ProtectedRoute(jwtSecret string) fiber.Handler {
 			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
 		}
 
+		isWebSocketUpgrade := strings.Contains(strings.ToLower(c.Get("Connection")), "upgrade") &&
+			strings.EqualFold(c.Get("Upgrade"), "websocket")
 
-		if tokenString == "" {
+		if tokenString == "" && isWebSocketUpgrade {
 			tokenString = c.Query("token")
 		}
 
+		if tokenString == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "missing_or_invalid_token",
+			})
+		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
