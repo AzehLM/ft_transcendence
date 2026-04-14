@@ -5,12 +5,13 @@ import { DeleteConfirmationModal } from "./deleteconfirmationmodal";
 
 interface FileCardProps {
   name: string;
+  isTrash?: boolean;
   onDelete?: (name: string) => void;
   onAddToFolder?: (fileName: string, folderName: string) => void;
   onCreateFolder?: (fileName: string, folderName: string) => void;
 }
 
-export function FileCard({ name, onDelete, onAddToFolder, onCreateFolder }: FileCardProps) {
+export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCreateFolder }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -106,6 +107,7 @@ export function FileCard({ name, onDelete, onAddToFolder, onCreateFolder }: File
         fileName={name}
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteConfirm(false)}
+        isTrash={isTrash}
       />
     </>
   );

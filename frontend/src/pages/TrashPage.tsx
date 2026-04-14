@@ -9,11 +9,16 @@ import styles from "../styles/dashboard.module.css";
 export default function TrashPage() {
     const [foldersExpanded, setFoldersExpanded] = useState(true);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-    const trashedFiles = [
+    const [trashedFiles, setTrashedFiles] = useState([
         { id: 1, name: "Deleted document" },
         { id: 2, name: "Old report" },
-    ];
+    ]);
+
+    const handlePermanentDelete = (fileName: string) => {
+        // Permanently delete file from trash
+        setTrashedFiles(trashedFiles.filter(file => file.name !== fileName));
+        // TODO: When DB is linked, permanently delete file from the database
+    };
 
     return (
         <div className={styles.page}>
@@ -40,7 +45,7 @@ export default function TrashPage() {
                 {/* Files grid */}
                 <div className={styles.fileGrid}>
                     {trashedFiles.map((file) => (
-                        <FileCard key={file.id} name={file.name} />
+                        <FileCard key={file.id} name={file.name} isTrash={true} onDelete={handlePermanentDelete} />
                     ))}
                 </div>
             </div>
