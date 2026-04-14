@@ -219,7 +219,9 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 			"role":    body.Role,
 		},
 	}
-	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
+		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), userID.String(), err)
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "role updated",

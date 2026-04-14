@@ -277,9 +277,9 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 	event := ws.WSEvent{
 		Event:    "QUOTA_UPDATED",
 		OrgID:   orgID.String(),
-		Message: "Organization space usage updated",
+		Message: "Organization max space updated",
 		Data: fiber.Map{
-			"used_space": newSpace,
+			"max space": newSpace,
 		},
 	}
 	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
