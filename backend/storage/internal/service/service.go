@@ -133,11 +133,14 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, err
 	}
 
-	// activates file in DB
-	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, orgID, userID); err != nil {
-		return uuid.Nil, err
+	if !uuidPtrEqual(file.OrgID, orgID) {
+		return uuid.Nil, ErrForbidden
 	}
 
+	// activates file in DB
+	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		return uuid.Nil, err
+	}
 
 	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
