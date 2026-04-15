@@ -488,6 +488,12 @@ func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.U
 }
 
 func (s *storageService) ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
+
+	// guard for the dereference coming after
+	if folderID == nil {
+		return nil, nil, ErrNotFound
+	}
+
 	folder, err := s.repo.FindFolderByID(*folderID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil, ErrNotFound
