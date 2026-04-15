@@ -89,11 +89,9 @@ func main() {
 	api.Delete("/files/:file_id",		handler.DeleteFile)
 
 	// folder
-	api.Post("/folders",				handler.CreateFolder)
-	api.Patch("/folders/:folder_id",	handler.UpdateFolder)
-	api.Delete("/folders/:folder_id",	handler.DeleteFolder)
-
-	// folder info retrievial
+	api.Post("/folders",									handler.CreateFolder)
+	api.Patch("/folders/:folder_id",						handler.UpdateFolder)
+	api.Delete("/folders/:folder_id",						handler.DeleteFolder)
 	api.Get("/folders",										handler.ListPersonalContents) // can have a query string
 	api.Get("/folders/:folder_id/contents",					handler.ListFolderContents)
 	api.Get("/orgs/:org_id/folders/:folder_id/contents",	handler.ListOrgContents)
