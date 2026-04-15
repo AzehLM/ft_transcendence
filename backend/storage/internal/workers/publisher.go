@@ -52,8 +52,9 @@ func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.Fi
 	}
 
 	event := WSEvent{
-		Type:	EventFileUploaded,
-		Data:	payload,
+		Type:		EventFileUploaded,
+		Message:	"file uploaded",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
@@ -69,8 +70,9 @@ func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.Fil
 	}
 
 	event := WSEvent{
-		Type:	EventFileDeleted,
-		Data:	payload,
+		Type:		EventFileDeleted,
+		Message:	"file deleted",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
@@ -89,8 +91,9 @@ func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File,
 	}
 
 	event := WSEvent{
-		Type:	EventFileMoved,
-		Data:	payload,
+		Type:		EventFileMoved,
+		Message:	"file moved",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
@@ -107,8 +110,9 @@ func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files
 	}
 
 	event := WSEvent{
-		Type:	EventFolderCreated,
-		Data:	payload,
+		Type:		EventFolderCreated,
+		Message:	"folder created",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
@@ -124,8 +128,9 @@ func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files
 	}
 
 	event := WSEvent{
-		Type:	EventFolderDeleted,
-		Data:	payload,
+		Type:		EventFolderDeleted,
+		Message:	"folder deleted",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
@@ -142,8 +147,9 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 	}
 
 	event := WSEvent{
-		Type:	EventFolderMoved,
-		Data:	payload,
+		Type:		EventFolderMoved,
+		Message:	"folder moved",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
@@ -160,8 +166,9 @@ func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files
 	}
 
 	event := WSEvent{
-		Type:	EventFolderRenamed,
-		Data:	payload,
+		Type:		EventFolderRenamed,
+		Message:	"folder renamed",
+		Data:		payload,
 	}
 
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
