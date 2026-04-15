@@ -26,7 +26,7 @@ func main() {
 	dbConn := db.InitDB(env)
 
 	app := fiber.New(fiber.Config{
-		AppName:   "ft_box_auth v1.0",
+		AppName:   "ostrom_auth v1.0",
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
 	})
 

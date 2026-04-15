@@ -33,7 +33,7 @@ func main() {
 	wsHub := ws.NewHub(redisClient, dbConn)
 
 	app := fiber.New(fiber.Config{
-		AppName:   "ft_box_orga v1.0",
+		AppName:   "ostrom_orga v1.0",
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
