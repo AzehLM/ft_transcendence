@@ -26,6 +26,7 @@ func main() {
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr, Password: env.RedisPassword})
+	defer redisClient.Close()
 
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)

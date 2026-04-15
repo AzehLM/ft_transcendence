@@ -80,4 +80,15 @@ localhost:443 {
 	handle @api {
 		reverse_proxy auth:8081
 	}
+
+    @orga path /api/orgs /api/orgs/*
+    handle @orga {
+        reverse_proxy orga:8082
+    }
+
+    # --- WebSockets ---
+    @ws path /ws/*
+    handle @ws {
+        reverse_proxy orga:8082
+    }
 }
