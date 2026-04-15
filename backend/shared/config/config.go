@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -37,4 +38,13 @@ func LoadEnv() (*Env, error) {
 	}
 
 	return env, nil
+}
+
+
+func ReadSecret(name string) (string, error) {
+	data, err := os.ReadFile("/run/secrets/" + name)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(data)) , nil
 }

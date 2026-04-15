@@ -10,6 +10,7 @@ services:
     networks:
       - dev
       - monitoring
+      - tunnel
     restart: unless-stopped
     ports:
       - "127.0.0.1:${PORT}:443"
@@ -24,8 +25,8 @@ services:
     #       exec:
     #         command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
     healthcheck:
-      test: [ "CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile" ]
-      interval: 10s
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 5s # the shorter the better, 10s is too long in dev mode
       timeout: 10s
       retries: 3
 
@@ -58,6 +59,7 @@ services:
     image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
+      # - dev
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
@@ -99,6 +101,18 @@ services:
       timeout: 5s
       retries: 3
 
+  adminer:
+    container_name: adminer
+    image: adminer@sha256:3a1582df310cf49a3c9cad2882496eed4596563f8d33250703f8b26e538cef7d
+    networks:
+      - dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # https://images.chainguard.dev/directory/image/minio/overview
   # minio is not maintained anymore so I choose to go for the chainguard community maintenance
   minio:
@@ -117,8 +131,9 @@ services:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_admin_user
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_admin_pwd
       MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
-    ports:
-      # temporary
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9001}
+      MINIO_SERVER_URL: http://minio:9000 # passe par l'API S3 (Caddy port 9000 actuellement)
+    ports: # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
     healthcheck:
@@ -165,6 +180,30 @@ services:
       postgres:
         condition: service_healthy
 
+  storage:
+    container_name: storage
+    build:
+      context: ../
+      dockerfile: ./infra/services/storage/Dockerfile
+    networks:
+      - dev
+    restart: unless-stopped
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd
+      - redis_pwd
+    env_file:
+      - ../.env
+    depends_on:
+      auth:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   orga:
     container_name: orga
     build:
@@ -180,6 +219,25 @@ services:
         condition: service_healthy
       auth:
         condition: service_started
+
+  cloudflared:
+    container_name: cloudflared
+    image: cloudflare/cloudflared:1826-d2a87e9b9345@sha256:6b599ca3e974349ead3286d178da61d291961182ec3fe9c505e1dd02c8ac31b0
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL # suppress linux capabilities (chown, setuid...)
+    security_opt:
+      - no-new-privileges:true # suppress proccess to acquire new privilegies (setuid, setgid...)
+    networks:
+      - tunnel
+    restart: unless-stopped
+    secrets:
+      - cloudflare_tunnel_token
+    depends_on:
+      caddy:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflare_tunnel_token
 
 volumes:
   caddy_data:
@@ -198,6 +256,9 @@ networks:
     driver: bridge
     name: monitoring-network
     internal: true
+  tunnel:
+    driver: bridge
+    name: tunnel-network
 
 
 secrets:
@@ -217,3 +278,5 @@ secrets:
     file: ../secrets/minio/minio_admin_pwd.txt
   redis_pwd:
     file: ../secrets/redis/redis_pwd.txt
+  cloudflare_tunnel_token:
+    file: ../secrets/cloudflare_tunnel_token

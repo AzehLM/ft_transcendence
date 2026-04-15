@@ -35,7 +35,11 @@ up: $(ENV_FILE)
 # to be defined
 .PHONY: dev
 dev: $(ENV_FILE)
-	$(COMPOSE_DEV_CMD) up -d --build
+	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
+
+.PHONY: watch
+watch: $(ENV_FILE)
+	$(COMPOSE_DEV_CMD) up --build --watch --remove-orphans
 
 .PHONY: stop
 stop:
@@ -81,13 +85,43 @@ fclean: clean
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 
+.PHONY: reset-db
+reset-db:
+	@echo "[reset-db] Truncating files and folders..."
+	@docker exec postgres psql -U test -d db-test -c "TRUNCATE files, folders CASCADE;" >/dev/null
+	@echo "[reset-db] Done. Current counts:"
+	@docker exec postgres psql -U test -d db-test -c "SELECT 'folders' AS table, COUNT(*) FROM folders UNION ALL SELECT 'files', COUNT(*) FROM files;"
+
 # --------------------------------- CI/CD ------------------------------------
 
-# only runs golangci-lint in the backend directory yet, might have to be updated depending on future architecture
-.PHONY: lint-back
-lint-back:
-	@if [ -n "$$(find backend -name '*.go' 2>/dev/null)" ]; then \
-		cd backend && golangci-lint run ./...; \
+.PHONY: lint-storage
+lint-storage:
+	@if [ -n "$$(find backend/storage -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/storage && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-auth
+lint-auth:
+	@if [ -n "$$(find backend/auth -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/auth && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-orga
+lint-orga:
+	@if [ -n "$$(find backend/orga -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/orga && golangci-lint run ./...; \
+	else \
+		echo "No Go files found, skipping lint." && exit 0; \
+	fi
+
+.PHONY: lint-shared
+lint-shared:
+	@if [ -n "$$(find backend/shared -name '*.go' 2>/dev/null)" ]; then \
+		cd backend/shared && golangci-lint run ./...; \
 	else \
 		echo "No Go files found, skipping lint." && exit 0; \
 	fi

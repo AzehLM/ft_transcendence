@@ -21,7 +21,8 @@ import (
 func main() {
 	env, err := config.LoadEnv()
 	if err != nil {
-		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
+		fmt.Fprintf(os.Stderr, "[FATAL] Failed to load configuration: %v\n", err)
+		os.Exit(1)
 	}
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
@@ -80,9 +81,10 @@ func main() {
 	)
 	// Run
 	go func() {
-		log.Println("[INFO] Starting Fiber server on port 8082...")
+		fmt.Println("[INFO] Starting Fiber server on port 8082...")
 		if err := app.Listen(":8082"); err != nil {
-			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
+			fmt.Fprintf(os.Stderr, "[FATAL] Critical Fiber server error: %v\n", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -91,10 +93,11 @@ func main() {
 
 	// The main thread blocks here and waits for a signal in the channel
 	<-quit
-	log.Println("[INFO] System interrupt signal received (SIGINT/SIGTERM)")
+	fmt.Println("[INFO] System interrupt signal received (SIGINT/SIGTERM)")
 
 	if err := app.Shutdown(); err != nil {
-		log.Fatalf("[ERROR] Failed to shutdown Fiber: %v", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to shutdown Fiber: %v\n", err)
+		os.Exit(1)
 	}
 
 	log.Println("[INFO] Server stopped successfully.")
