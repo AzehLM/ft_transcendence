@@ -138,6 +138,4 @@ These are acknowledged as bypassable by a motivated attacker, and are not presen
 
 ### Design Systen
 
-> Custom design system built with Material-UI (MUI) to ensure consistent UI.
-
-- **MUI** is a React component library
+> Custom design system built with X to ensure consistent UI.

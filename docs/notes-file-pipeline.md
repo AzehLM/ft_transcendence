@@ -1,50 +1,4 @@
-# order
-
-- [x] definir la struct File qui mappe ma table. (`model.go`)
-- [x] requetes DB basiques (vérif documentation de lou-anne/pierrick) - insérer un fichier `PENDING`, le lire, l'update (`repository.go`)
-  - [x] smoke test basique des requetes vers la DB
-- [x] démarrer un server Fiber qui se log a Postgres (`cmd/storage/main.go`)
-- [x] Une fois que ca tourne je peux mettre le client **SDK MinIO**
-  - [x] utiliser les secrets et pas l'env pour le co a minio, en root
-  - [x] Initialisation au démarrage dans `main.go`
-- [x] Tout connecter et implementer les routes: upload-url -> finalize -> downlowd -> delete -> move (déplacement/migration?) (`service.go`, `handler.go`)
-  - [x] `service.go` done for file management(temporarily since I'll need more informations from the other services to finish)
-  - [x] `service.go` done for folders business logic
-  - [x] `handler.go` done
-
-> la base est faite, les choses importantes a mettre en place sont les suivantes:
-
-- [x] quota verification dans files
-- [ ] trouver une solution pour mettre en place le RBAC
-- [ ] implementation de redis dans files
-  - [ ] pleins de trucs a faire je détaillerai plus tard
-- [ ] ...
-
-
-
-# links
-
-- [minio-go-client](https://pkg.go.dev/github.com/minio/minio-go/v7#section-readme)
-- [dev 2 mission](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/MISSION_DEV.md#dev-2--fichiers--stockage-backend)
-- [api routes files](https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files)
-
-# notes to make sure I understood the tasks I need to do
-
-3 differents layers to do:
-- DB (Postgres via GORM)
-  - Creation and stockage of files metadata
-    - file ownership, name (encrypted ?), DEK encrypted key, IV, size...
-  - The file is never in the DB
-- MinIO
-  - Stockage of encrypted bytes.
-    - the SDK Go client generated presigned URLs (returned to the frontend), can also remove objects
-    - The backend doesn't touch the content, only generates a signed URL that the browser uses to PUT/GET to MinIO.
-- HTTP routes (Fiber) - entrypoint
-  - This is what the front calls. Each routes orchestrate the 2 above layers. Ex:
-    - `POST /files/upload-url` generates an UUID, creates the presigned URL via Minio SDK client, insert the `PENDING` in DB and returns both informations to the client
-
-
-### graph of an upload
+## graph of an upload
 
 ```
 Browser                    Fiber                  MinIO         Postgres
@@ -64,9 +18,7 @@ Browser                    Fiber                  MinIO         Postgres
   ```
 
 
-## Details
-
-### DB Layer (Postgres via GORM)
+## DB Layer (Postgres via GORM)
 
 Metadata stockage. It handles:
 - `InsertPendingFile`: reserves an `object_id` UUID before a file upload. `status = 'PENDING'` is a logical lock (if the frontend crashes - or if a client leave the application or w/e other reason - after we `PUT` a file to MinIO but before the `/finalize` route, the entry stays `PENDING`)
@@ -77,7 +29,7 @@ Metadata stockage. It handles:
 - `UpdateFileFolder`: for the `PATCH` routes, maybe I want to separate in 2 functions ? Need to think of inheritance of informations for folders as well as circular folders (folder A in itself)
 
 
-### MinIO Layer (SDK Go client)
+## MinIO Layer (SDK Go client)
 
 MinIO communicates throught the S3 protocole. What it means is I'm never going to read/write bytes from the backend. MinIO will generate signed URLs that the browser will directly use.
 
@@ -87,7 +39,7 @@ MinIO communicates throught the S3 protocole. What it means is I'm never going t
   - Being generated in `/download` (**After I checked the RBAC rights**) The frontend receives the URL + the `encrypted_dek` + the `IV`, then decrypts in the browser
 - `RemoveObject`: `/delete` route called from the backend, it directly executes on MinIO, no need to go back the the frontend.
 
-### HTTP Layer (Fiber routes)
+## HTTP Layer (Fiber routes)
 
 The orchestrator. Each handler always follow the same pattern:
 - Extract and valide inputs (JWT, body, params if any)
