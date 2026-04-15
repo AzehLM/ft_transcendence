@@ -94,6 +94,8 @@ func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 			case errors.Is(err, service.ErrForbidden):
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			case errors.Is(err, service.ErrQuotaExceeded):
+				return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
 			default:
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
 		}
