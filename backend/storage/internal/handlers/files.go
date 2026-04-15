@@ -37,7 +37,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 	}
 	if body.FileSize <= 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "fileSize is required",
+			"error": "file_size must be greater than 0",
 		})
 	}
 
