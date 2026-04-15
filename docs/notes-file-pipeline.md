@@ -37,7 +37,7 @@
   - The file is never in the DB
 - MinIO
   - Stockage of encrypted bytes.
-    - the SDK Go client generated persigned URLs (returned to the frontend), can also remove objects
+    - the SDK Go client generated presigned URLs (returned to the frontend), can also remove objects
     - The backend doesn't touch the content, only generates a signed URL that the browser uses to PUT/GET to MinIO.
 - HTTP routes (Fiber) - entrypoint
   - This is what the front calls. Each routes orchestrate the 2 above layers. Ex:
@@ -66,7 +66,7 @@ Browser                    Fiber                  MinIO         Postgres
 
 ## Details
 
-### DB Layer (Postgres via GORN)
+### DB Layer (Postgres via GORM)
 
 Metadata stockage. It handles:
 - `InsertPendingFile`: reserves an `object_id` UUID before a file upload. `status = 'PENDING'` is a logical lock (if the frontend crashes - or if a client leave the application or w/e other reason - after we `PUT` a file to MinIO but before the `/finalize` route, the entry stays `PENDING`)
@@ -124,8 +124,3 @@ Where do I introduce/use Redis in all this ?
 - ⚠️ une route `GET /files/{file_id}` qui retourne les metadata, pour le frontend ca va etre obligatoire pour avoir les détails des fichiers (`FindByID` + ownership check avec un retour JSON des metadata dont le front a besoin)
 - une route `GET /files?folder_id=xxx` ? au cas ou j'arrive pas a faire la route `GET /folders?parent_id=xxx` qui renvoie les fichiers dans dossier(s) + fichier sans dossier (donc a la racine)
 - Un truc qui valide l'existence d'un dossier cible pour `MoveFile` et `RequestUploadURL`, pour l'instant il y a pas de check sur `folder_id` aillant un random UUID, actuellement ca renvoie une 500
-
-
-
-
-
