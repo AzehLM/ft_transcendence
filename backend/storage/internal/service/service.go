@@ -222,6 +222,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// suppress file metadata in DB
 	if err := s.repo.DeleteFile(fileID); err != nil {
+		// if this fails, need to publish a `file_orphaned` event before returning
 		return err
 	}
 
@@ -230,7 +231,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.repo.DecrementUserUsedSpace(userID, file.FileSize); err != nil {
+	if err := s.repo.DecrementUserUsedSpace(userID /* file.OwnerUserID */, file.FileSize); err != nil {
 		return err
 	}
 
