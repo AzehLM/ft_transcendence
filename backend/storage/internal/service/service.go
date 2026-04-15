@@ -237,8 +237,6 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return err
 	}
 
-	oldFolderID := file.FolderID
-
 	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
 			return ErrForbidden
@@ -265,7 +263,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrNotFound
 	}
 
-	_ = s.publisher.PublishFileMoved(context.TODO(), file, oldFolderID) // need to test if oldFolderID is right or if we want folderID instead
+	_ = s.publisher.PublishFileMoved(context.TODO(), file, folderID)
 
 	return nil
 }
