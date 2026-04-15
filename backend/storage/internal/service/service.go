@@ -129,7 +129,9 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error) {
 
 	file, err := s.repo.FindByObjectID(objectID)
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return uuid.Nil, ErrNotFound
+	} else if err != nil {
 		return uuid.Nil, err
 	}
 
@@ -139,6 +141,9 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 
 	// activates file in DB
 	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
 		return uuid.Nil, err
 	}
 
