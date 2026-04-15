@@ -7,7 +7,7 @@ const (
 	EventFileUploaded = "file_uploaded"
 	EventFileDeleted = "file_deleted"
 	EventFileMoved = "file_moved"
-	EventFileRenamed = "file_renamed" // on a dit on fait pas ? je sais plus je regarde apres
+	EventFileRenamed = "file_renamed" // on a dit on fait pas ?
 
 	// Redis streams, cross-service cleanup
 	EventFileOrphaned = "file_orphaned"
@@ -33,8 +33,9 @@ type WSEvent struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-// struct to avoid run-time errors, this makes it type-safe
+// structs to avoid run-time errors, this makes it type-safe
 // the compiler will tell if there is a missmatched name
+
 type FileUploadedPayload struct {
 	FileID		uuid.UUID	`json:"file_id"`
 	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
