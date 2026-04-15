@@ -20,7 +20,6 @@ type StorageRepository interface {
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)									// GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)		// PATCH /files/{file_id}
-	UpdateFileName(fileID uuid.UUID, name string) (int64, error)
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	// Folder part
@@ -110,15 +109,6 @@ func (r *storageRepository) UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UU
 	result := r.db.Model(&File{}).
 		Where("id = ?", fileID).
 		Update("folder_id", folderID)
-
-	return result.RowsAffected, result.Error
-}
-
-// delete ?
-func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64, error) {
-	result := r.db.Model(&File{}).
-		Where("id = ?", fileID).
-		Update("name", name)
 
 	return result.RowsAffected, result.Error
 }

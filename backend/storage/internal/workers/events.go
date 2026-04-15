@@ -7,7 +7,6 @@ const (
 	EventFileUploaded = "file_uploaded"
 	EventFileDeleted = "file_deleted"
 	EventFileMoved = "file_moved"
-	EventFileRenamed = "file_renamed" // on a dit on fait pas ?
 
 	// Redis streams, cross-service cleanup
 	EventFileOrphaned = "file_orphaned"

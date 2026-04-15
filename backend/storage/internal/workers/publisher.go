@@ -96,24 +96,6 @@ func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File,
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFileRenamed(ctx context.Context, file *files.File) error {
-
-	payload := FileRenamedPayload{
-		FileID:		file.ID,
-		FolderID:	file.FolderID,
-		OwnerID:	file.OwnerUserID,
-		OrgID:		file.OrgID,
-		NewName:	file.Name,
-	}
-
-	event := WSEvent{
-		Type:	EventFileRenamed,
-		Data:	payload,
-	}
-
-	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
-}
-
 func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files.Folder) error {
 
 	payload := FolderCreatedPayload{
