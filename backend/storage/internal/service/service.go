@@ -65,6 +65,10 @@ func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client
 }
 
 /* interface methods*/
+
+// RequestUploadURL requests a presignedURL to the minio client and returns it.
+// File requested for upload are in a PENDING state until it has been fully uploaded to the minio storage service, where it then updates this status to ACTIVE via FinalizeUpload
+// The quota check is done via GetUserSpace so between a RequestUploadURL call and a FinalizeUpload call, it is possible that users have no storage space left
 func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
 
 	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
@@ -119,6 +123,9 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	return presignedURL, objectID, err
 }
 
+
+// FinalizeUpload activates an object uploaded to the minio storage service and updates the user used space
+// It fetches twice the data of the objectID as we need updated data to publish the correct values to the redis client
 func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error) {
 
 	file, err := s.repo.FindByObjectID(objectID)
@@ -126,13 +133,13 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, err
 	}
 
-	// activer ficher en db
+	// activates file in DB
 	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, orgID, userID); err != nil {
 		return uuid.Nil, err
 	}
 
 
-	// incrementation en DB avec un UPDATE users SET used_space = used_space + ? WHERE id = ? pour évité les dataraces
+	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
 	ok, err = s.repo.TryIncrementUserUsedSpace(userID, file.FileSize)
 	if err != nil {
@@ -179,7 +186,8 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 
 	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
 	// generate presigned URL (GET)
-	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5*time.Minute, nil)
+	// leaving comments for now until it works with the front
+	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5 * time.Minute, nil)
 	if err != nil {
 		return "", nil, nil, "", err
 	}
@@ -287,7 +295,10 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 	return file, nil
 }
 
+
+
 // folders
+
 func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error) {
 
 	if name == "" || utf8.RuneCountInString(name) > 100 {
@@ -354,6 +365,8 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 	return nil
 }
 
+// UpdateFolder takes a **uuid.UUID for the newParentID to identify an explicit null vs not supplied newParentID
+// There is a logic to allow users to rename their folder (published redis event as well) but you tell me if we delete it or not
 func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error {
 	folder, err := s.repo.FindFolderByID(folderID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -450,6 +463,7 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 	return nil
 }
 
+// utilitary function
 func uuidPtrEqual(oldParentID *uuid.UUID, newParentID *uuid.UUID) bool {
 	if oldParentID == nil && newParentID == nil {
 		return true
@@ -489,7 +503,7 @@ func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.U
 
 func (s *storageService) ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
 
-	// guard for the dereference coming after
+	// guards for the dereference coming after
 	if folderID == nil {
 		return nil, nil, ErrNotFound
 	}
