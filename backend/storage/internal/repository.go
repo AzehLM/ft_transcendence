@@ -11,7 +11,7 @@ var (
 	ErrEmpty = fmt.Errorf("cannot be empty")
 )
 
-// contract -> ce que chaque repo de fichier doit savoir faire
+// db contract -> these methods represents what each file/folder repository have to be able to do
 type StorageRepository interface {
 	// File part
 	DeleteFile(fileID uuid.UUID) error											// DELETE /files/{file_id}
@@ -20,7 +20,7 @@ type StorageRepository interface {
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)									// GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)		// PATCH /files/{file_id}
-	UpdateFileName(fileID uuid.UUID, name string) (int64, error)				// pas encore decidé, a voir avec la methode de dessus...
+	UpdateFileName(fileID uuid.UUID, name string) (int64, error)
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	// Folder part
@@ -40,30 +40,25 @@ type StorageRepository interface {
 	DecrementUserUsedSpace(userID uuid.UUID, delta int64) error
 }
 
-// ⚠️​ no Majuscule veut dire private, propre au package
 type storageRepository struct {
 	db *gorm.DB
 }
 
-// Creates a new implementation of StorageRepository (interface) with initialized db
-// Whoever uses the returned StorageRepository ony sees the contract, not the implementation (gorm, private structure)
+// NewStorageRepository creates a new implementation of StorageRepository (interface) with initialized db
+// Whoever uses the returned StorageRepository only sees the contract, not the implementation (gorm, private structure)
 // This basicaly is a factory of repository (ref: https://refactoring.guru/fr/design-patterns/factory-method/go/example)
-// I can return a storageRepository and not a StorageRepository because storageRepository is a StorageRepository (let's say it like that, just like the inheritance in cpp)
 func NewStorageRepository(db *gorm.DB) StorageRepository {
 	return &storageRepository{db: db}
 }
 
-// comprendre ce que c'est une interface Go (contract)
-// https://research.swtch.com/interfaces
-
-// pointeur vers File et pas référence pour que GORM puisse le modifier directement en mémoire (remplir les champs)
-// pas d'exceptions en go alors .Error extrait l'erreur si il y a (nil si tout va bien)
+// InsertPendingFile has a pointer to File and not a reference so GORM can change it in memory (fill the fields)
+// No exceptions in go so we return .Error and the calling method will extract its value (nil if all good)
 // this function creates a file, we do that when a user asks for a presigned URL to reserve created object ID
 func (r *storageRepository) InsertPendingFile(file *File) error {
 	return r.db.Create(file).Error
 }
 
-// Looks for the First element that has this ID as we should never have 2 same minio_object_key
+// FindByObjectID looks for the First element that has this ID as we should never have 2 same minio_object_key
 func (r *storageRepository) FindByObjectID(objectID uuid.UUID) (*File, error) {
 	var file File
 	err := r.db.Where("minio_object_key = ? AND status = ?", objectID, "PENDING").First(&file).Error
@@ -73,7 +68,6 @@ func (r *storageRepository) FindByObjectID(objectID uuid.UUID) (*File, error) {
 	return &file, nil
 }
 
-// Each map key represent a SQL column name
 func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error {
 	result := r.db.Model(&File{}).
 		Where("minio_object_key = ? AND status = ? AND owner_user_id = ?", objectID, "PENDING", ownerID).
@@ -96,7 +90,7 @@ func (r *storageRepository) ActivateFile(objectID uuid.UUID, name string, encryp
 	return nil
 }
 
-// only returns ACTIVE files!
+// FindByID only returns ACTIVE files!
 func (r *storageRepository) FindByID(fileID uuid.UUID) (*File, error) {
 	var file File
 	err := r.db.Where("id = ? AND status = ?", fileID, "ACTIVE").First(&file).Error
@@ -106,7 +100,7 @@ func (r *storageRepository) FindByID(fileID uuid.UUID) (*File, error) {
 	return &file, nil
 }
 
-// needs to be called before removing a real MinIO object
+// DeleteFile needs to be called before removing a real MinIO object
 func (r *storageRepository) DeleteFile(fileID uuid.UUID) error {
 	return r.db.Delete(&File{}, fileID).Error
 }
@@ -120,6 +114,7 @@ func (r *storageRepository) UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UU
 	return result.RowsAffected, result.Error
 }
 
+// delete ?
 func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64, error) {
 	result := r.db.Model(&File{}).
 		Where("id = ?", fileID).
@@ -128,6 +123,7 @@ func (r *storageRepository) UpdateFileName(fileID uuid.UUID, name string) (int64
 	return result.RowsAffected, result.Error
 }
 
+// GetUserSpace
 // Space utils
 // The following methods depends on the `users` table and more specificaly on the:
 // - id			UUID
@@ -153,7 +149,7 @@ func (r *storageRepository) GetUserSpace(userID uuid.UUID) (usedSpace int64, max
 	return result.UsedSpace, result.MaxSpace, nil
 }
 
-// Try because this version is an atomic check-and-set (a single query SQL).
+// TryIncrementUserUsedSpace "Try" because this version is an atomic check-and-set (a single query SQL).
 // Postgres evaluates used_space + ? <= max_space and UPDATE it in the same transaction to avoid TOCTOU issues (Time-of-check to time-of-use)
 func (r *storageRepository) TryIncrementUserUsedSpace(userID uuid.UUID, delta int64) (bool, error) {
 	result := r.db.Table("users").
@@ -174,6 +170,7 @@ func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64
 
 
 // Folders
+
 func (r *storageRepository) CreateFolder(folder *Folder) error {
 	return r.db.Create(folder).Error
 }
@@ -186,7 +183,7 @@ func (r *storageRepository) FindFolderByID(folderID uuid.UUID) (*Folder, error) 
 	return &folder, nil
 }
 
-// doesn't check if the folderID exists, a call to FindFolderByID needs to be done prior to IsFolderEmpty
+// IsFolderEmpty doesn't check if the folderID exists, a call to FindFolderByID needs to be done prior to IsFolderEmpty
 func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
 	var folderCount int64
 	if err := r.db.Model(&Folder{}).Where("parent_id = ?", folderID).Limit(1).Count(&folderCount).Error; err != nil {
@@ -209,12 +206,12 @@ func (r *storageRepository) IsFolderEmpty(folderID uuid.UUID) (bool, error) {
 	return true, nil
 }
 
-// doesn't check if folderID exists as well, FindFolderByID and IsFolderEmpty needs to be called prior to this
+// DeleteFolder doesn't check if folderID exists as well, FindFolderByID and IsFolderEmpty needs to be called prior to this
 func (r *storageRepository) DeleteFolder(folderID uuid.UUID) error {
 	return r.db.Delete(&Folder{}, "id = ?", folderID).Error
 }
 
-// same here doesn't check if folderID exists
+// UpdateFolder, same here, doesn't check if folderID exists
 // updates is filled by the handler and may contain the folder name and/or parent_id.
 func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error {
 	result := r.db.Model(&Folder{}).Where("id = ?", folderID).Updates(updates)
@@ -224,14 +221,12 @@ func (r *storageRepository) UpdateFolder(folderID uuid.UUID, updates map[string]
 	return nil
 }
 
-// CTE SQL recursive to ascend into ancestor folders in one request
+// IsDescendant uses CTE SQL recursive to ascend into ancestor folders in one request
 func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUID) (bool, error) {
 
-	// doit checker si parent est plus haut que folderID
-	// si oui on peux pas deplacer parent dans folderID (Cycle loop)
-	// parent doit egalement etre different (on peut pas déplacer un folder dans lui-même)
-
-	// CTE (common table expression) récusrive: on part de folderID et on remonte de parent en parent jusqu'a parent_id == nil, si on croise le uuid parent, c'est pas bon
+	// recursive CTE (common table expression): starting from folderID and going up in the folder tree until parent_id == nil
+	// if we find the parent uuid then we're done as we're looking for the first ancestor on the way up
+	// french doc if I ever need to go back and modify it (TODO: delete links)
 	// https://learnsql.fr/blog/qu-est-ce-qu-un-cte-recursif-en-sql/
 	// https://learnsql.fr/blog/qu-est-ce-qu-une-cte/
 
