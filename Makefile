@@ -41,13 +41,6 @@ dev: $(ENV_FILE)
 watch: $(ENV_FILE)
 	$(COMPOSE_DEV_CMD) up --build --watch --remove-orphans
 
-.PHONY: storage
-storage:
-	@docker compose -f infra/docker-compose.dev.yml stop storage
-	@docker compose -f infra/docker-compose.dev.yml build storage
-	@docker compose -f infra/docker-compose.dev.yml up -d storage
-	@docker logs storage
-
 .PHONY: stop
 stop:
 	$(COMPOSE_CMD) stop
