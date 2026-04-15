@@ -34,7 +34,7 @@ func (p *EventPublisher) publish(ctx context.Context, ownerID uuid.UUID, orgID *
 	}
 
 	if err := p.redis.Publish(ctx, channel, payload).Err(); err != nil {
-		log.Printf("[EventPublisher] Failed to publish on %s: %v", channel, err) // pas de remonté d'erreur ici c'est OK si ca fail
+		log.Printf("[WS] Failed to publish on %s: %v", channel, err) // only loging as it is not a critical error
 	}
 
 	return nil
