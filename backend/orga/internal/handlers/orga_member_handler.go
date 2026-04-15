@@ -7,13 +7,15 @@ import (
 
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"backend/orga/internal/ws"
 	"encoding/base64"
 	"errors"
+	"log"
 )
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
-		Email   string `json:"user_email" validate:"required"`
+		Email           string `json:"user_email" validate:"required"`
 		EncryptedOrgKey string `json:"encrypted_org_key" validate:"required"`
 	}
 
@@ -78,20 +80,19 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": memberErr.Error()})
 	}
 
-    decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncryptedOrgKey)
-    if errKey != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncryptedOrgKey)
+	if errKey != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 encrypted private key",
 		})
-    }
+	}
 
 	// create orga member
 	orgaMember := models.OrgaMember{
-		OrgID: orgID,
-		UserID: user.ID,
-		Role: "member",
+		OrgID:         orgID,
+		UserID:        user.ID,
+		Role:          "member",
 		EncOrgPrivKey: decodedKey,
-
 	}
 
 	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
@@ -99,6 +100,36 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 			"error": "could not create member",
 		})
 	}
+
+	event := ws.WSEvent{
+		Event:   "MEMBER_ADDED",
+		OrgID:   orgID.String(),
+		Message: "New member added to the org",
+		Data: fiber.Map{
+			"email":   body.Email,
+			"role":    "member",
+			"user_id": user.ID.String(),
+		},
+	}
+
+	errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	if errPublish != nil {
+		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
+	}
+
+	userEvent := ws.WSEvent{
+		Event:   "ADDED_TO_NEW_ORGA",
+		Message: "You have been added to a new organization",
+		Data: fiber.Map{
+			"org_id": orgID.String(),
+		},
+	}
+
+	errPublish = h.Hub.PublishToUser(c.Context(), user.ID.String(), userEvent)
+	if errPublish != nil {
+		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
+	}
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "member added to organization",
 	})
@@ -106,7 +137,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	var body struct {
-		Role	string `json:"role" validate:"required"`
+		Role string `json:"role" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -158,17 +189,17 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	var member models.OrgaMember
 	repo := repository.NewOrganizationRepository(h.DB)
 	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
-    }
+	}
 
 	if member.Role == "admin" && body.Role != "admin" {
-        if repo.CountAdmin(orgID) <= 1 {
-            return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-                "error": "cannot remove the last admin",
-            })
-        }
+		if repo.CountAdmin(orgID) <= 1 {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "cannot remove the last admin",
+			})
+		}
 	}
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
@@ -177,6 +208,19 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
+	}
+
+	event := ws.WSEvent{
+		Event:   "ROLE_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "A member's role has been updated",
+		Data: fiber.Map{
+			"user_id": userID.String(),
+			"role":    body.Role,
+		},
+	}
+	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
+		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), userID.String(), err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -211,16 +255,16 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 
 	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
-    }
+	}
 
 	if member.Role == "admin" {
-        if repo.CountAdmin(orgID) <= 1 {
-            return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-                "error": "cannot remove the last admin",
-            })
+		if repo.CountAdmin(orgID) <= 1 {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "cannot remove the last admin",
+			})
 		}
 	}
 
@@ -232,7 +276,22 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
-    return c.SendStatus(fiber.StatusNoContent)
+	orgaEvent := ws.WSEvent{
+		Event:   "MEMBER_REMOVED",
+		OrgID:   orgID.String(),
+		Message: "A member has left the organization",
+		Data:    fiber.Map{"user_id": userID.String()},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+
+	userEvent := ws.WSEvent{
+		Event:   "REMOVED_FROM_ORGA",
+		Message: "You have been removed from the organization",
+		Data:    fiber.Map{"org_id": orgID.String()},
+	}
+	h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
@@ -263,16 +322,16 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	var member models.OrgaMember
 	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
-    }
+	}
 
 	if member.Role == "admin" {
-        if repo.CountAdmin(orgID) <= 1 {
-            return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-                "error": "cannot remove the last admin",
-            })
+		if repo.CountAdmin(orgID) <= 1 {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "cannot remove the last admin",
+			})
 		}
 	}
 
@@ -284,7 +343,22 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
-    return c.SendStatus(fiber.StatusNoContent)
+	orgaEvent := ws.WSEvent{
+		Event:   "MEMBER_REMOVED",
+		OrgID:   orgID.String(),
+		Message: "A member has left the organization",
+		Data:    fiber.Map{"user_id": userID.String()},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+
+	userEvent := ws.WSEvent{
+		Event:   "REMOVED_FROM_ORGA",
+		Message: "You have been removed from the organization",
+		Data:    fiber.Map{"org_id": orgID.String()},
+	}
+	h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
@@ -299,7 +373,7 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 			"error": "invalid orga id format",
 		})
 	}
-	
+
 	var orgaMembers []models.OrgaMemberResponse
 
 	repo := repository.NewOrganizationRepository(h.DB)
@@ -341,10 +415,10 @@ func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 
 	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
 		})
-    }
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),

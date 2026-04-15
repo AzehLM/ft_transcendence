@@ -151,6 +151,12 @@
         reverse_proxy orga:8082
     }
 
+# --- WebSockets ---
+    @ws path /ws/*
+    handle @ws {
+        reverse_proxy orga:8082
+    }
+
     # SPA fallback
     handle {
         root * /usr/share/caddy

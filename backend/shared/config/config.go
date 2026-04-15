@@ -15,6 +15,8 @@ type Env struct {
 	PostgresPassword string
 	PostgresDBname   string
 	JwtSecret        string
+	RedisPassword    string
+	RedisPort        string
 }
 
 func LoadEnv() (*Env, error) {
@@ -27,6 +29,8 @@ func LoadEnv() (*Env, error) {
 		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
 		PostgresDBname:   os.Getenv("POSTGRES_DB_NAME"),
 		JwtSecret:        os.Getenv("JWT_SECRET"),
+		RedisPassword:    os.Getenv("REDIS_PASSWORD"),
+		RedisPort:        os.Getenv("REDIS_PORT"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" {
