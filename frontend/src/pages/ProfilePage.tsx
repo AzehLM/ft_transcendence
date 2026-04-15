@@ -19,11 +19,11 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
             credentials: "include", // cookie HttpOnly
         });
 
+                const text = await refreshResponse.text();
                 let data: any;
                 try {
-                    data = await refreshResponse.json();
+                    data = JSON.parse(text);
                 } catch {
-                    const text = await refreshResponse.text();
                     data = { error: text || "Invalid JSON" };
                 }
 
@@ -58,13 +58,12 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetchWithRefresh("/api/users/me");
-
+                const response = await fetchWithRefresh("/api/auth/me");
+                const text = await response.text();
                 let data: any;
                 try {
-                    data = await response.json();
+                    data = JSON.parse(text);
                 } catch {
-                    const text = await response.text();
                     data = { error: text || "Invalid JSON" };
                 }
 

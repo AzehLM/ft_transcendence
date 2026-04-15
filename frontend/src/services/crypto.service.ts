@@ -131,10 +131,53 @@ export async function wrapPrivateKey(
     // 4. Convertir en Uint8Array (le tag est inclus à l'intérieur)
     const encryptedPrivateKey = new Uint8Array(encryptedData);
 
+    console.log("IV BEFORE STORE:", Array.from(iv)); // delete
+    console.log("ENCRYPTED BEFORE STORE:", Array.from(encryptedPrivateKey)); // delete
+
     return {
         encryptedPrivateKey,
         iv,
     };
+}
+
+// unwrap private key
+function toArrayBuffer(data: Uint8Array | ArrayBuffer | number[] | object): ArrayBuffer {
+    if (data instanceof ArrayBuffer) return data;
+    
+    if (data instanceof Uint8Array) {
+        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    }
+        const values = Object.values(data) as number[];
+    return new Uint8Array(values).buffer;
+}
+
+export async function unwrapPrivateKey(
+    encryptedPrivateKey: Uint8Array,
+    masterKey: CryptoKey,
+    iv: Uint8Array
+): Promise<CryptoKey> {
+
+    console.log("IV AFTER REBUILD:", Array.from(iv)); // delete
+    console.log("ENCRYPTED AFTER REBUILD:", Array.from(encryptedPrivateKey)); //delete
+    
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        masterKey,
+        toArrayBuffer(encryptedPrivateKey)
+    );
+
+    const privateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        decryptedBuffer,
+        {
+            name: "RSA-OAEP",
+            hash: "SHA-256",
+        },
+        true,
+        ["decrypt"]
+    );
+
+    return privateKey;
 }
 
 // ============================================================================
@@ -229,6 +272,14 @@ export function base64ToUint8Array(str: string): Uint8Array {
 // C'est la fonction qu'on appellera depuis RegisterPage.tsx
 // Elle fait les étapes 1-5 dans le bon ordre
 
+export async function debugKey(label: string, key: CryptoKey) {
+    const exported = await crypto.subtle.exportKey("raw", key);
+    const hex = Array.from(new Uint8Array(exported))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+    console.log(`${label}:`, hex);
+}
+
 export async function generateRegistrationData(
     email: string,
     password: string
@@ -242,6 +293,7 @@ export async function generateRegistrationData(
     // ÉTAPE 2: Dériver Master Key
     console.log("2️⃣ Dérivation de la Master Key...");
     const masterKey = await deriveMasterKey(password, salt);
+    await debugKey("MASTER KEY REGISTER", masterKey)
 
     // ÉTAPE 3: Générer paire RSA
     console.log("3️⃣ Génération de la paire RSA-OAEP...");
@@ -273,6 +325,7 @@ export async function generateRegistrationData(
     };
 
     console.log("✅ Données de registration générées");
+    console.log("PRIVATE AFTER REGISTER KEY IS = ", keyPair) // delete
 
     return registrationData;
 }
@@ -329,5 +382,5 @@ export async function generateLoginData(email: string, password: string) {
 
     console.log("✅ Données de connexion générées:", loginData);
 
-    return loginData;
+    return {masterKey, loginData};
 }
