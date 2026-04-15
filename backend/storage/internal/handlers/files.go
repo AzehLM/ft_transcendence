@@ -188,13 +188,11 @@ func (h *StorageHandler) MoveFile(c fiber.Ctx) error {
 		})
 	}
 
-	// commented as the body could be empty, but that would mean we would ALWAYS move the file to the root of their space
-	// need to talk about that with everyone
-	// if len(c.Body()) == 0 {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "missing request body",
-	// 	})
-	// }
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing request body",
+		})
+	}
 
 	var body struct {
 		FolderID *uuid.UUID `json:"folder_id"`
