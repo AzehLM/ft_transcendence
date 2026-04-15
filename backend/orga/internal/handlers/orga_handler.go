@@ -3,22 +3,26 @@ package handlers
 import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"log"
+
+	"backend/orga/internal/ws"
+	"encoding/base64"
+	"errors"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"errors"
-	"encoding/base64"
-
 )
 
 type OrgaHandler struct {
 	DB  *gorm.DB
+	Hub *ws.Hub
 }
 
-func NewOrgaHandler(db *gorm.DB) *OrgaHandler {
+func NewOrgaHandler(db *gorm.DB, hub *ws.Hub) *OrgaHandler {
 	return &OrgaHandler{
 		DB:  db,
+		Hub: hub,
 	}
 }
 
@@ -44,7 +48,6 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	return c.JSON(orgas)
 
 }
-
 
 func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	var body struct {
@@ -80,12 +83,12 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		})
 	}
 
-    decodedPublicKey, errPublicKey := base64.StdEncoding.DecodeString(body.PublicKey)
-    if errPublicKey != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	decodedPublicKey, errPublicKey := base64.StdEncoding.DecodeString(body.PublicKey)
+	if errPublicKey != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 publicKey",
 		})
-    }
+	}
 
 	orga := models.Orga{
 		Name:      body.Name,
@@ -104,12 +107,12 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
-    decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
-    if errKey != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
+	if errKey != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 encrypted private key",
 		})
-    }
+	}
 
 	orgaMember := models.OrgaMember{
 		// OrgID:         orga.ID,
@@ -119,8 +122,8 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		// EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
 	}
 
-    repo := repository.NewOrganizationRepository(h.DB)
-    if err := repo.CreateOrgWithAdmin(&orga, &orgaMember); err != nil {
+	repo := repository.NewOrganizationRepository(h.DB)
+	if err := repo.CreateOrgWithAdmin(&orga, &orgaMember); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create organization with admin",
 		})
@@ -147,9 +150,19 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	event := ws.WSEvent{
+		Event:    "ORGA_DELETED",
+		OrgID:   orgID.String(),
+		Message: "Organization has been permanently deleted",
+	}
+	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
+	}
+
 	// delete all MinIO files
 
-    return c.SendStatus(fiber.StatusNoContent)
+	return c.SendStatus(fiber.StatusNoContent)
+
 }
 
 func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
@@ -171,7 +184,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 
 	if body.Name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error" : "name required",
+			"error": "name required",
 		})
 	}
 
@@ -186,7 +199,20 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+
+	event := ws.WSEvent{
+		Event:    "ORGA_RENAMED",
+		OrgID:   orgID.String(),
+		Message: "Organization name updated",
+		Data: fiber.Map{
+			"new_name": body.Name,
+		},
+	}
+	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+		log.Printf("[WS] Non-blocking error: failed to publish ORGA_RENAMED: %v", errPublish)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "organization name updated",
 	})
 }
@@ -216,30 +242,30 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
-	
+
 	var org models.Orga
 	repo := repository.NewOrganizationRepository(h.DB)
 	org, orgErr := repo.GetOrgaByID(orgID)
-	if (orgErr != nil) {
+	if orgErr != nil {
 		if errors.Is(orgErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})	
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})
 	}
 
-    if org.MaxSpace+body.Space > 21474836480 { // 20 giga
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "max space can't be over 20 giga",
-        })
-    }
+	if org.MaxSpace+body.Space > 21474836480 { // 20 giga
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "max space can't be over 20 giga",
+		})
+	}
 
-    if org.MaxSpace+body.Space < 5368709120 {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "max space can't be under 5 giga",
-        })
-    }
+	if org.MaxSpace+body.Space < 5368709120 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "max space can't be under 5 giga",
+		})
+	}
 
-	newSpace := org.MaxSpace+body.Space
+	newSpace := org.MaxSpace + body.Space
 	updated, err := repo.UpdateMaxSpace(org.MaxSpace+body.Space, orgID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -248,7 +274,17 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	event := ws.WSEvent{
+		Event:    "QUOTA_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "Organization max space updated",
+		Data: fiber.Map{
+			"max space": newSpace,
+		},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"max_space": newSpace,
 	})
 }
@@ -278,27 +314,27 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
-	
+
 	var org models.Orga
 	repo := repository.NewOrganizationRepository(h.DB)
 	org, orgErr := repo.GetOrgaByID(orgID)
-	if (orgErr != nil) {
+	if orgErr != nil {
 		if errors.Is(orgErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})	
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": orgErr.Error()})
 	}
 
-    if org.UsedSpace+body.Space > org.MaxSpace { 
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "space limit exceeded",
-        })
-    }
+	if org.UsedSpace+body.Space > org.MaxSpace {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "space limit exceeded",
+		})
+	}
 
-    if org.UsedSpace+body.Space < 0 {
-        body.Space = org.UsedSpace*-1
-    }
-	newSpace := org.UsedSpace+body.Space
+	if org.UsedSpace+body.Space < 0 {
+		body.Space = org.UsedSpace * -1
+	}
+	newSpace := org.UsedSpace + body.Space
 	updated, err := repo.UpdateUsedSpace(org.UsedSpace+body.Space, orgID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -307,7 +343,17 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	event := ws.WSEvent{
+		Event:    "QUOTA_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "Organization space usage updated",
+		Data: fiber.Map{
+			"used_space": newSpace,
+		},
+	}
+	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"used_space": newSpace,
 	})
 }

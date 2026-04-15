@@ -9,15 +9,25 @@ import (
 
 func ProtectedRoute(jwtSecret string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		authHeader := c.Get("Authorization")
+		var tokenString string
 
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		authHeader := c.Get("Authorization")
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+
+		isWebSocketUpgrade := strings.Contains(strings.ToLower(c.Get("Connection")), "upgrade") &&
+			strings.EqualFold(c.Get("Upgrade"), "websocket")
+
+		if tokenString == "" && isWebSocketUpgrade {
+			tokenString = c.Query("token")
+		}
+
+		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "missing_or_invalid_token",
 			})
 		}
-
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

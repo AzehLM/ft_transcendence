@@ -116,7 +116,7 @@ paths:
         '200':
           description: Déconnecté avec succès
 
-  /users/me:
+  /auth/me:
     delete:
       tags:
         - Users
@@ -155,7 +155,7 @@ paths:
         '404':
           description: Utilisateur introuvable en base
 
-  /users/password:
+  /auth/password:
     put:
       tags:
         - Users

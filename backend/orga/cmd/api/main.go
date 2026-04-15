@@ -1,17 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"backend/orga/internal/handlers"
+	"backend/orga/internal/ws"
 	"backend/shared/config"
 	"backend/shared/db"
-	"backend/orga/internal/handlers"
 	"backend/shared/middleware"
 
+	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -20,15 +24,19 @@ func main() {
 		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
 	}
 
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr, Password: env.RedisPassword})
+	defer redisClient.Close()
+
 	dbConn := db.InitDB(env)
+	wsHub := ws.NewHub(redisClient, dbConn)
 
 	app := fiber.New(fiber.Config{
-		AppName: "ft_box_orga v1.0",
+		AppName:   "ft_box_orga v1.0",
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
-	orgaHandler := handlers.NewOrgaHandler(dbConn)
-
+	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub)
 	// Middlewares
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
@@ -58,6 +66,18 @@ func main() {
 	org.Get("/members", member, orgaHandler.GetMembers)
 	org.Get("/members/key", member, orgaHandler.GetMemberPrivateKey)
 
+	app.Get("/ws/notifications",
+		middleware.ProtectedRoute(env.JwtSecret),
+		func(c fiber.Ctx) error {
+			if websocket.IsWebSocketUpgrade(c) {
+				return c.Next()
+			}
+			return fiber.ErrUpgradeRequired
+		},
+		websocket.New(wsHub.GlobalWSHandler, websocket.Config{
+			Origins: []string{"*"}, //TODO: set les url who can create ws
+		}),
+	)
 	// Run
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8082...")
@@ -65,7 +85,6 @@ func main() {
 			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
 		}
 	}()
-
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
