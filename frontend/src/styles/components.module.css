@@ -303,3 +303,80 @@
 .dropdownItem:hover {
     background-color: rgba(222, 115, 86, 0.2);
 }
+
+
+/* ============================================================================
+   FOOTER COMPONENT
+   ============================================================================ */
+
+.footer {
+    background-color: #fdf3ef;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.footerGrid {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 64px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 40px;
+}
+
+.footerBrand {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #de7356;
+    margin-bottom: 12px;
+}
+
+.footerTagline {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.footerColumnTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #de7356;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.footerNav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footerLink {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footerLink:hover {
+    color: #de7356;
+}
+
+.footerBottom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.footerCopyright {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    color: #9ca3af;
+    text-align: center;
+    margin: 0;
+}
