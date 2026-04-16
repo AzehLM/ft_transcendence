@@ -2,6 +2,7 @@ import styles from "../styles/auth.module.css"
 import { Link } from "react-router-dom";
 import { Package} from "lucide-react";
 import { useEffect, useState } from "react";
+import { Footer } from "../components/footer";
 
 async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     let token = localStorage.getItem("token") || "";
@@ -82,18 +83,23 @@ export default function ProfilePage() {
     }, []);
 
     return (
-        <div>
-            <div className={styles.logo_section}>
-                <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
-                    <div className={styles.logo_box}>
-                        <Package className="w-11 h-11 text-white" strokeWidth={2} />
-                    </div>
-                    <span className={styles.logo_title}>
-                        ft_box
-                    </span>
-                </Link>
+        <>
+            <div>
+                <div className={styles.logo_section}>
+                    <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
+                        <div className={styles.logo_box}>
+                            <Package className="w-11 h-11 text-white" strokeWidth={2} />
+                        </div>
+                        <span className={styles.logo_title}>
+                            ft_box
+                        </span>
+                    </Link>
+                </div>
+                <div>{user ? JSON.stringify(user) : "Loading..."}</div>
             </div>
-            <div>{user ? JSON.stringify(user) : "Loading..."}</div>
-        </div>
+            <div>
+                <Footer />
+            </div>
+        </>
     )
 }

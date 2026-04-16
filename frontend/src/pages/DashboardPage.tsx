@@ -4,6 +4,7 @@ import { ProfileDropdown } from "../components/profiledropdown"
 import { LeftSidebar } from "../components/leftsidebar";
 import { Search, User } from "lucide-react";
 import { useState } from "react";
+import { Footer } from "../components/footer";
 import styles from "../styles/dashboard.module.css";
 
 export default function DashboardPage() {
@@ -18,49 +19,53 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className={styles.page}>
-            <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
+        <>
+            <div className={styles.page}>
+                <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
 
-            {/* Search bar */}
-            <div className={styles.searchContainer}>
-                <div className={styles.searchBox}>
-                    <Search className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className={styles.searchInput}
-                    />
+                {/* Search bar */}
+                <div className={styles.searchContainer}>
+                    <div className={styles.searchBox}>
+                        <Search className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            className={styles.searchInput} />
+                    </div>
+                </div>
+
+                {/* User's profile image */}
+                <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className={styles.profileButton}
+                >
+                    <User className={styles.profileIcon} strokeWidth={2.5} />
+                </button>
+
+                <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
+
+                <ActionButtons />
+
+                {/* Main content area */}
+                <div className={styles.contentArea}>
+                    <h1 className={styles.title}>
+                        Personal space
+                    </h1>
+                    <h2 className={styles.subtitle}>
+                        All files
+                    </h2>
+
+                    {/* Files grid */}
+                    <div className={styles.fileGrid}>
+                        {files.map((file) => (
+                            <FileCard key={file.id} name={file.name} />
+                        ))}
+                    </div>
                 </div>
             </div>
-
-            {/* User's profile image */}
-            <button
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className={styles.profileButton}
-            >
-                <User className={styles.profileIcon} strokeWidth={2.5} />
-            </button>
-
-            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
-
-            <ActionButtons />
-
-            {/* Main content area */}
-            <div className={styles.contentArea}>
-                <h1 className={styles.title}>
-                    Personal space
-                </h1>
-                <h2 className={styles.subtitle}>
-                    All files
-                </h2>
-
-                {/* Files grid */}
-                <div className={styles.fileGrid}>
-                    {files.map((file) => (
-                        <FileCard key={file.id} name={file.name} />
-                    ))}
-                </div>
+            <div>
+                <Footer />
             </div>
-        </div>
+        </>
     );
 }
