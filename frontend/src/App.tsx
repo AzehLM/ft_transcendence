@@ -7,6 +7,7 @@ import TermsPage from './pages/TermsPage'
 import ProfilePage from './pages/ProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import TrashPage from './pages/TrashPage'
+import AboutPage from './pages/About'
 
 function App() {
     return (
@@ -21,6 +22,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/trash" element={<TrashPage />} />
+                <Route path="/about" element={<AboutPage />} />
             </Routes>
         </BrowserRouter>
     )
