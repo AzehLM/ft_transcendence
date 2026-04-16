@@ -60,7 +60,7 @@ export default function LoginPage() {
             const data = await response.json()
             localStorage.setItem("token", data.access_token);
             // navigate("/dashboard");
-            navigate("/profile");
+            navigate("/upload");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
