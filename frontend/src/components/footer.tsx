@@ -23,32 +23,31 @@ export function Footer() {
             <div className={styles.footerGrid}>
                 {/* Brand */}
                 <div>
-                    <div className={styles.footerBrand}>Ostrom</div>
+                    <Link to="/">
+                        <div className={styles.footerBrand}>Ostrom</div>
+                    </Link>
                     <p className={styles.footerTagline}>
                         Securing digital exchange.
                     </p>
                 </div>
-
-                {/* Columns */}
-                {FOOTER_COLUMNS.map(({ title, links }) => (
-                    <div key={title}>
-                        <span className={styles.footerColumnTitle}>{title}</span>
-                        <nav className={styles.footerNav}>
-                            {links.map(({ label, to }) => (
-                                <Link
-                                    key={to}
-                                    to={to}
-                                    className={styles.footerLink}
-                                >
-                                    {label}
-                                </Link>
-                            ))}
-                        </nav>
-                    </div>
-                ))}
-            </div>
-
-            <div className={styles.footerBottom}>
+            {/* Columns */}
+            {FOOTER_COLUMNS.map(({ title, links }) => (
+                <div key={title}>
+                    <span className={styles.footerColumnTitle}>{title}</span>
+                    <nav className={styles.footerNav}>
+                        {links.map(({ label, to }) => (
+                            <Link
+                                key={to}
+                                to={to}
+                                className={styles.footerLink}
+                            >
+                                {label}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+            ))}
+            </div><div className={styles.footerBottom}>
                 <p className={styles.footerCopyright}>
                     © 2026 Ostrom. All rights reserved.
                 </p>
