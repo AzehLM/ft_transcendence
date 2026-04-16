@@ -72,6 +72,12 @@ export default function LoginPage() {
             
             console.log("PRIVATE KEY FINAL = ", privateKey) // delete
             // navigate("/dashboard");
+
+
+            const exportedKey = await crypto.subtle.exportKey("pkcs8", privateKey);
+            const base64Key = btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
+            sessionStorage.setItem("privateKey", base64Key);
+
             navigate("/profile");
             console.log("✅ Connexion réussie!");
 

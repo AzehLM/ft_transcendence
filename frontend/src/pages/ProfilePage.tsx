@@ -1,7 +1,22 @@
+import { useNavigate, Link } from "react-router-dom";
 import styles from "../styles/auth.module.css"
-import { Link } from "react-router-dom";
 import { Package} from "lucide-react";
 import { useEffect, useState } from "react";
+
+async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
+    const base64Key = sessionStorage.getItem("privateKey");
+    if (!base64Key) return null;
+
+    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+    
+    return crypto.subtle.importKey(
+        "pkcs8",
+        keyBuffer,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["decrypt"]
+    );
+}
 
 async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     let token = localStorage.getItem("token") || "";
@@ -54,10 +69,30 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
 export default function ProfilePage() {
 
     const [user, setUser] = useState(null);
+    const navigate = useNavigate()
+
+    function logout() {
+        sessionStorage.removeItem("privateKey");
+        localStorage.removeItem("token");
+        navigate("/login");
+    }
+
+    const [privateKey, setPrivateKey] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchUser = async () => {
             try {
+                const key = await getPrivateKeyFromSession();
+                if (!key) {
+                    navigate("/login");
+                    return;
+                }
+                
+                const exported = await crypto.subtle.exportKey("pkcs8", key);
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
+                setPrivateKey(base64);
+
+                
                 const response = await fetchWithRefresh("/api/auth/me");
                 const text = await response.text();
                 let data: any;
@@ -93,6 +128,12 @@ export default function ProfilePage() {
                 </Link>
             </div>
             <div>{user ? JSON.stringify(user) : "Loading..."}</div>
+           <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
+                {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Clé non trouvée"}
+            </div>
+            <button onClick={logout}>
+                Déconnexion
+            </button>
         </div>
     )
 }
