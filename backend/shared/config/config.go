@@ -55,7 +55,7 @@ func LoadEnv() (*Env, error) {
 		RedisPassword:		redisPassword,
 		RedisPort:			os.Getenv("REDIS_PORT"),
 		MinioPort:			os.Getenv("MINIO_PORT"),
-		AppPort:			os.Getenv("APP_PORT"),
+		AppPort:			os.Getenv("PORT"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" ||
