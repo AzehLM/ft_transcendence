@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -44,22 +45,19 @@ func main() {
 		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
 	}
 
-	redisPassword, err := config.ReadSecret("redis_pwd")
-	if err != nil {
-		log.Fatalf("[FATAL] Could not read Redis password secret: %v", err)
-	}
-
 	// redisClient used for the business logic
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: redisPassword,
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
 	})
+	defer redisClient.Close()
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
 	// internal Docker network — SSL not required
 	useSSL := false
-	minioEndpoint := "minio:9000"
+	minioEndpoint := fmt.Sprintf(("minio:%s"), env.MinioPort)
 
 	minioClient, err := files.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
 	if err != nil {
