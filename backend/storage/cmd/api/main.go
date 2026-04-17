@@ -51,7 +51,11 @@ func main() {
 		Addr:		redisAddr,
 		Password:	env.RedisPassword,
 	})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
