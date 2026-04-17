@@ -45,23 +45,6 @@ jobs:
       - name: Launch Ostrom in dev mode
         run: make dev
 
-      - name: Wait for stack to be ready (via Prometheus)
-        run: |
-          echo "Waiting for Prometheus to be healthy (implies Caddy + all services are up)..."
-          for i in $(seq 1 30); do
-            if docker inspect --format='{{.State.Health.Status}}' prometheus 2>/dev/null | grep -q "healthy"; then
-              echo "Prometheus is healthy after ${i}x5s — stack is ready."
-              exit 0
-            fi
-            echo "  attempt $i/30 — not ready yet, waiting 5s..."
-            sleep 5
-          done
-          echo "Timeout: Prometheus never became healthy."
-          docker ps -a
-          docker logs prometheus || true
-          docker logs caddy || true
-          exit 1
-
       - name: Run Postman tests
         id: tests
         continue-on-error: true
