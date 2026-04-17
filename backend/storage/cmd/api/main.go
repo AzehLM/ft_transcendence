@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,9 +12,9 @@ import (
 
 	"backend/shared/config"
 	"backend/shared/db"
-	"backend/storage/internal/workers"
-	"backend/storage/internal/service"
 	"backend/storage/internal/handlers"
+	"backend/storage/internal/service"
+	"backend/storage/internal/workers"
 
 	"backend/shared/middleware"
 	"backend/shared/rbac"
@@ -21,6 +22,21 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
 )
+
+func initConsumerGroups(client *redis.Client) {
+	streams := []string{
+		"events:domain:file_orphaned",
+		// "events:domain:user_deleted"
+		// "events:domain:org_deleted"
+	}
+	for _, stream := range streams {
+		err := client.XGroupCreateMkStream(context.TODO(), stream, "storage-workers", "$").Err()
+		if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
+			log.Fatalf("[FATAL] Cannot create consumer group for %s: %v", stream, err)
+		}
+		log.Printf("[INFO] Consumer group ready for stream: %s", stream)
+	}
+}
 
 func main() {
 	env, err := config.LoadEnv()
@@ -51,6 +67,8 @@ func main() {
 		Addr:		redisAddr,
 		Password:	env.RedisPassword,
 	})
+	initConsumerGroups(redisClient)
+
 	defer func() {
 		if err := redisClient.Close(); err != nil {
 			log.Printf("[WARN] Redis client close error: %v", err)
@@ -78,6 +96,9 @@ func main() {
 	repo := files.NewStorageRepository(database)
 	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker, env)
 	handler := handlers.NewStorageHandler(svc, env)
+
+	consumer := workers.NewEventConsumer(repo, minioClient)
+	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
