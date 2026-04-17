@@ -72,8 +72,8 @@ func main() {
 	checker := rbac.NewDBChecker(database)
 
 	repo := files.NewStorageRepository(database)
-	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker)
-	handler := handlers.NewStorageHandler(svc)
+	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker, env)
+	handler := handlers.NewStorageHandler(svc, env)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))

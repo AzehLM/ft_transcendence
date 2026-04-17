@@ -19,6 +19,7 @@ type Env struct {
 	RedisPassword		string
 	RedisPort			string
 	MinioPort			string
+	AppPort				string
 }
 
 func LoadEnv() (*Env, error) {
@@ -54,12 +55,13 @@ func LoadEnv() (*Env, error) {
 		RedisPassword:		redisPassword,
 		RedisPort:			os.Getenv("REDIS_PORT"),
 		MinioPort:			os.Getenv("MINIO_PORT"),
+		AppPort:			os.Getenv("APP_PORT"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" ||
 		env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" ||
-		env.RedisPassword == "" || env.RedisPort == "" || env.MinioPort == "" {
-		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret, RedisPassword, RedisPort, MinioPort")
+		env.RedisPassword == "" || env.RedisPort == "" || env.MinioPort == "" || env.AppPort == "" {
+		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret, RedisPassword, RedisPort, MinioPort, AppPort")
 	}
 
 	return env, nil

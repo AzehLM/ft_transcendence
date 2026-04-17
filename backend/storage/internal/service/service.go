@@ -9,8 +9,9 @@ import (
 
 	"backend/storage/internal"
 
-	"backend/storage/internal/workers"
+	"backend/shared/config"
 	"backend/shared/rbac"
+	"backend/storage/internal/workers"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -53,14 +54,16 @@ type storageService struct {
 	minioClient	*minio.Client
 	publisher	*workers.EventPublisher
 	rbac		rbac.Checker
+	env			*config.Env
 }
 
-func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker) StorageService {
+func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker, env *config.Env) StorageService {
 	return &storageService{
 		repo:			repo,
 		minioClient:	minioClient,
 		publisher:		publisher,
 		rbac:			checker,
+		env:			env,
 	}
 }
 
@@ -118,7 +121,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
 
 	return presignedURL, objectID, err
 }
@@ -201,7 +204,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
