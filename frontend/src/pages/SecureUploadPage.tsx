@@ -1,51 +1,68 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    generateRSAKeyPair,
+    encryptDEKWithPublicKey,
+    uint8ArrayToBase64
+} from '../services/crypto.service';
+import { setTemporaryPrivateKey } from '../services/temp-e2ee-key.service';
 
-
-const arrayBufferToBase64 = (buffer: ArrayBuffer | Uint8Array) => {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-};
-
-export default function SecureUploadPage() {
+export default function TestUploadPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [progress, setProgress] = useState<string>("");
+    const [status, setStatus] = useState("");
     const [isUploading, setIsUploading] = useState(false);
+    const [lastFileId, setLastFileId] = useState("");
+    const navigate = useNavigate();
 
-    const CHUNK_SIZE = 5 * 1024 * 1024; // 5mo
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
 
-    const handleUpload = async () => {
-        if (!file)
-            return;
+    const startTestUpload = async () => {
+        if (!file) return;
         setIsUploading(true);
-        setProgress("Préparation de la cryptographie...");
+        setStatus("Initialisation du chiffrement...");
+        setLastFileId("");
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setStatus("❌ Session expirée. Reconnecte-toi.");
+            setIsUploading(false);
+            navigate("/login");
+            return;
+        }
 
         try {
-            // On génère la Data Encryption Key (DEK) et l'IV de base pour ce fichier
-            const dek = window.crypto.getRandomValues(new Uint8Array(32));
-            const baseIv = window.crypto.getRandomValues(new Uint8Array(12));
+            // 1. CLÉ PUBLIQUE TEMPORAIRE (EN ATTENDANT LE STOCKAGE PERSISTANT)
+            // Flux final attendu:
+            // const b64PubKey = sessionStorage.getItem("public_key");
+            // if (!b64PubKey) throw new Error("Clé publique absente du sessionStorage. Connectez-vous d'abord.");
+            // const publicKey = await importPublicKey(b64PubKey);
+            const temporaryKeyPair = await generateRSAKeyPair();
+            const publicKey = temporaryKeyPair.publicKey;
+            setTemporaryPrivateKey(temporaryKeyPair.privateKey);
+
+            // 2. GÉNÉRATION DES SECRETS DU FICHIER (DEK & IV)
+            const dek = window.crypto.getRandomValues(new Uint8Array(32)); // AES-256
+            const baseIv = window.crypto.getRandomValues(new Uint8Array(12)); // IV pour GCM
 
             const cryptoKey = await window.crypto.subtle.importKey(
                 "raw", dek, "AES-GCM", false, ["encrypt"]
             );
 
-            // Calcul de la taille finale chiffrée
-            // En AES-GCM, chaque morceau chiffré ajoute un "Auth Tag" de 16 octets à la fin.
-            const numChunks = Math.ceil(file.size / CHUNK_SIZE);
-            const totalEncryptedSize = file.size + (numChunks * 16);
+            // 3. CHIFFREMENT DE LA CLÉ AES (DEK) AVEC RSA-OAEP
+            // C'est ici que le Zero-Knowledge opère : le serveur ne verra jamais la DEK en clair.
+            const encryptedDEK = await encryptDEKWithPublicKey(dek, publicKey);
 
-            // 2. DEMANDE D'URL AU BACKEND GO
-            setProgress("1/3 : Réservation de l'espace sur le serveur...");
+            // 4. DEMANDE D'URL AU BACKEND GO
+            setStatus("Étape 1/3 : Réservation de l'Upload...");
+            const numChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const totalEncryptedSize = file.size + (numChunks * 16); // +16 octets de tag GCM par chunk
+
             const initRes = await fetch("/api/files/upload-url", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                    "Authorization": `Bearer ${token}`
                 },
-                // On envoie la taille chiffrée pour que MinIO alloue le bon quota
                 body: JSON.stringify({
                     file_size: totalEncryptedSize,
                     folder_id: null,
@@ -53,12 +70,11 @@ export default function SecureUploadPage() {
                 })
             });
 
-            if (!initRes.ok) throw new Error("Impossible d'obtenir l'URL d'upload");
+            if (!initRes.ok) throw new Error("Échec de l'obtention de la Presigned URL");
             const { presigned_url, object_id } = await initRes.json();
 
-            // 3. CRÉATION DU FLUX CHIFFRÉ (STREAMING)
-            setProgress("2/3 : Chiffrement et Upload en direct...");
-
+            // 5. UPLOAD EN STREAMING CHIFFRÉ VERS MINIO
+            setStatus("Étape 2/3 : Chiffrement et streaming vers MinIO...");
             let offset = 0;
             let chunkIndex = 0;
 
@@ -72,14 +88,12 @@ export default function SecureUploadPage() {
                     const slice = file.slice(offset, offset + CHUNK_SIZE);
                     const buffer = await slice.arrayBuffer();
 
-                    // Sécurité E2EE : On crée un IV unique pour CE morceau en incrémentant l'IV de base
+                    // Incrémentation de l'IV pour chaque chunk (sécurité GCM)
                     const chunkIv = new Uint8Array(12);
                     chunkIv.set(baseIv);
                     const view = new DataView(chunkIv.buffer);
-                    // On ajoute l'index du morceau aux 4 derniers octets de l'IV
                     view.setUint32(8, view.getUint32(8) + chunkIndex);
 
-                    // Chiffrement strict du morceau en RAM
                     const encryptedChunk = await window.crypto.subtle.encrypt(
                         { name: "AES-GCM", iv: chunkIv },
                         cryptoKey,
@@ -87,118 +101,95 @@ export default function SecureUploadPage() {
                     );
 
                     controller.enqueue(new Uint8Array(encryptedChunk));
-
                     offset += CHUNK_SIZE;
                     chunkIndex++;
                 }
             });
 
-            console.log("avant le put")
-            // 4. UPLOAD VERS MINIO VIA LE FLUX
             const uploadRes = await fetch(presigned_url, {
                 method: "PUT",
                 body: encryptedStream,
-                // @ts-ignore : Paramètre requis par l'API Fetch pour streamer un Body
+                // @ts-ignore : Nécessaire pour le streaming dans Fetch
                 duplex: 'half',
-                headers: {
-                    "Content-Type": "application/octet-stream"
-                }
+                headers: { "Content-Type": "application/octet-stream" }
             });
 
-            console.log("after the put")
+            if (!uploadRes.ok) throw new Error("L'upload vers MinIO a échoué");
 
-            if (!uploadRes.ok)
-                throw new Error("MinIO a rejeté le fichier.");
-
-            console.log("wtf")
-            // 5. FINALISATION DANS LA BDD GO
-            setProgress("3/3 : Finalisation et sauvegarde des clés...");
-
-            // TODO (Plus tard avec ton mate) : Ici on devra chiffrer la variable `dek` avec la clé publique RSA
-            // Pour l'instant on simule en l'envoyant directement (Mock)
-            const encryptedDEK = dek;
-
-            // Le nom du fichier doit aussi être chiffré, ici on fait un simple base64 pour le MVP
-            const encryptedFilename = arrayBufferToBase64(new TextEncoder().encode(file.name));
+            // 6. FINALISATION (ENVOI DES MÉTADONNÉES CHIFFRÉES) [cite: 1, 2, 4]
+            setStatus("Étape 3/3 : Finalisation en base de données...");
 
             const finalizeRes = await fetch("/api/files/finalize", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     object_id: object_id,
-                    encrypted_filename: encryptedFilename,
-                    // En Go, un champ []byte attend du Base64 dans le JSON
-                    encrypted_dek: arrayBufferToBase64(encryptedDEK),
-                    iv: arrayBufferToBase64(baseIv),
+                    // Nom de fichier encodé (à chiffrer en AES plus tard pour plus de secret)
+                    encrypted_filename: uint8ArrayToBase64(new TextEncoder().encode(file.name)),
+                    // Envoi de la DEK chiffrée par RSA et de l'IV de base
+                    encrypted_dek: uint8ArrayToBase64(encryptedDEK),
+                    iv: uint8ArrayToBase64(baseIv),
                     org_id: null
                 })
             });
 
-            if (!finalizeRes.ok) throw new Error("Erreur lors de la finalisation.");
+            if (!finalizeRes.ok) {
+                throw new Error("La finalisation a échoué côté Backend");
+            }
 
-            setProgress(`✅ Fichier "${file.name}" chiffré et sauvegardé avec succès !`);
-            setFile(null); // Reset
+            const finalizeData = await finalizeRes.json();
+            const fileId = finalizeData.file_id as string | undefined;
+            if (!fileId) {
+                throw new Error("Réponse invalide: file_id manquant");
+            }
+
+            setLastFileId(fileId);
+            setStatus(`✅ Upload réussi. file_id: ${fileId}`);
 
         } catch (err: any) {
+            setStatus(`❌ Erreur : ${err.message}`);
             console.error(err);
-            setProgress("❌ Erreur : " + err.message);
         } finally {
             setIsUploading(false);
         }
     };
 
     return (
-        <div style={{ padding: '30px', maxWidth: '600px', margin: 'auto', fontFamily: 'sans-serif' }}>
-            <h2 style={{ color: '#2c3e50' }}>Coffre-fort E2EE - Upload</h2>
-
-            <div style={{
-                border: '2px dashed #bdc3c7',
-                padding: '30px',
-                borderRadius: '10px',
-                textAlign: 'center',
-                backgroundColor: '#f9f9f9'
-            }}>
+        <div style={{ padding: '40px', fontFamily: 'monospace' }}>
+            <h1>🛠 Page de Test Upload E2EE</h1>
+            <div style={{ border: '1px solid #ccc', padding: '20px', background: '#f4f4f4' }}>
                 <input
                     type="file"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                     disabled={isUploading}
-                    style={{ marginBottom: '20px' }}
                 />
-
-                <br />
-
                 <button
-                    onClick={handleUpload}
+                    onClick={startTestUpload}
                     disabled={!file || isUploading}
-                    style={{
-                        padding: '12px 24px',
-                        backgroundColor: (file && !isUploading) ? '#27ae60' : '#95a5a6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: (file && !isUploading) ? 'pointer' : 'not-allowed',
-                        fontWeight: 'bold'
-                    }}
+                    style={{ marginLeft: '10px', padding: '5px 15px' }}
                 >
-                    {isUploading ? 'Traitement en cours...' : 'Chiffrer et Envoyer'}
+                    {isUploading ? "Upload en cours..." : "Lancer le Test"}
                 </button>
             </div>
-
-            {progress && (
-                <div style={{
-                    marginTop: '20px',
-                    padding: '15px',
-                    backgroundColor: '#ecf0f1',
-                    borderRadius: '5px',
-                    fontWeight: 'bold',
-                    color: progress.includes('❌') ? '#c0392b' : '#2980b9'
-                }}>
-                    {progress}
-                </div>
-            )}
+            <div style={{ marginTop: '20px', fontWeight: 'bold', color: '#333' }}>
+                Statut : {status}
+            </div>
+            <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                    onClick={() => navigate(lastFileId ? `/download?fileId=${encodeURIComponent(lastFileId)}` : '/download')}
+                    style={{ padding: '6px 12px', border: '1px solid #333', background: '#fff', cursor: 'pointer' }}
+                >
+                    Aller à Download
+                </button>
+                {lastFileId && (
+                    <span style={{ fontSize: '13px', color: '#333' }}>
+                        Dernier file_id: {lastFileId}
+                    </span>
+                )}
+            </div>
         </div>
     );
 }
