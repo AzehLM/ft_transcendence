@@ -24,17 +24,17 @@ import (
 )
 
 func initConsumerGroups(client *redis.Client) {
-	streams := []string{
-		"events:domain:file_orphaned",
-		"events:domain:user_deleted",
-		"events:domain:org_deleted",
+	streams := map[string]string{
+		"events:domain:file_orphaned":	"storage-file-orphaned",
+		"events:domain:user_deleted":	"storage-user-deleted",
+		"events:domain:org_deleted":	"storage-org-deleted",
 	}
-	for _, stream := range streams {
-		err := client.XGroupCreateMkStream(context.TODO(), stream, "storage-workers", "$").Err()
+	for stream, group := range streams {
+		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "$").Err()
 		if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
 			log.Fatalf("[FATAL] Cannot create consumer group for %s: %v", stream, err)
 		}
-		log.Printf("[INFO] Consumer group ready for stream: %s", stream)
+		log.Printf("[INFO] Consumer group ready: %s → %s", stream, group)
 	}
 }
 

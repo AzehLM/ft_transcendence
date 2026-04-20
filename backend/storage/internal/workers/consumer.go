@@ -28,8 +28,8 @@ func NewEventConsumer(repo storage.StorageRepository, minioClient *minio.Client)
 
 func (c *EventConsumer) ConsumeFileOrphaned(ctx context.Context, rdb *redis.Client) {
 	const (
-		stream    = "events:domain:file_orphaned"
-		group     = "storage-workers"
+		stream   = "events:domain:file_orphaned"
+		group    = "storage-file-orphaned"
 	)
 
 	for {
@@ -110,7 +110,7 @@ func (c *EventConsumer) handleFileOrphaned(ctx context.Context, rdb *redis.Clien
 func (c *EventConsumer) ConsumeOrgDeleted(ctx context.Context, rdb *redis.Client) {
 	const (
 		stream    = "events:domain:org_deleted"
-		group     = "storage-workers"
+		group     = "storage-org-deleted"
 	)
 
 	for {
@@ -184,7 +184,7 @@ func (c *EventConsumer) handleOrgDeleted(ctx context.Context, rdb *redis.Client,
 func (c *EventConsumer) ConsumeUserDeleted(ctx context.Context, rdb *redis.Client) {
 	const (
 		stream    = "events:domain:user_deleted"
-		group     = "storage-workers"
+		group     = "storage-user-deleted"
 	)
 
 	for {
@@ -209,7 +209,7 @@ func (c *EventConsumer) ConsumeUserDeleted(ctx context.Context, rdb *redis.Clien
 		}
 
 		for _, entry := range entries[0].Messages {
-			if err := c.handleOrgDeleted(ctx, rdb, entry, stream, group); err != nil {
+			if err := c.handleUserDeleted(ctx, rdb, entry, stream, group); err != nil {
 				log.Printf("[ERROR] ConsumeOrgDeleted: failed to handle message %s: %v", entry.ID, err)
 			}
 		}
@@ -251,6 +251,6 @@ func (c *EventConsumer) handleUserDeleted(ctx context.Context, rdb *redis.Client
 		log.Printf("[WARN] user_deleted: XACK failed for %s: %v", msg.ID, err)
 	}
 
-	log.Printf("[INFO] user_deleted: cleaned up org %s (%d files)", userID, len(files))
+	log.Printf("[INFO] user_deleted: cleaned up user files %s (%d files)", userID, len(files))
 	return nil
 }
