@@ -96,16 +96,26 @@ clean: down
 
 .PHONY: fclean
 fclean: clean
-	@# $(COMPOSE_CMD) down --volumes --remove-orphans
+#	@$(COMPOSE_CMD) down --volumes --remove-orphans
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 
 .PHONY: reset-db
 reset-db:
-	@echo "[reset-db] Truncating files and folders..."
-	@docker exec postgres psql -U test -d db-test -c "TRUNCATE files, folders CASCADE;" >/dev/null
+	@echo "[reset-db] Truncating all tables..."
+	@docker exec postgres psql \
+		-U $$(cat secrets/postgres/postgres_user.txt) \
+		-d $$(cat secrets/postgres/postgres_db.txt) \
+		-c "TRUNCATE users, organizations, org_members, files, folders CASCADE;" >/dev/null
 	@echo "[reset-db] Done. Current counts:"
-	@docker exec postgres psql -U test -d db-test -c "SELECT 'folders' AS table, COUNT(*) FROM folders UNION ALL SELECT 'files', COUNT(*) FROM files;"
+	@docker exec postgres psql \
+		-U $$(cat secrets/postgres/postgres_user.txt) \
+		-d $$(cat secrets/postgres/postgres_db.txt) \
+		-c "SELECT 'users' AS table, COUNT(*) FROM users \
+			UNION ALL SELECT 'organizations', COUNT(*) FROM organizations \
+			UNION ALL SELECT 'org_members', COUNT(*) FROM org_members \
+			UNION ALL SELECT 'folders', COUNT(*) FROM folders \
+			UNION ALL SELECT 'files', COUNT(*) FROM files;"
 
 # --------------------------------- CI/CD ------------------------------------
 
