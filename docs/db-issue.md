@@ -65,7 +65,7 @@ Suppressing in the right order from the `user_deleted` event worker, without mod
 4. Suppressing the user
 ```
 
-Sorting by deepness is done via recursive SQL request (CTE, the same as `IsDescendant`) :
+Sorting by deepness is done via recursive SQL queries (CTE, the same as `IsDescendant`) :
 
 It implies to remove the **CASCADE** from `folders.owner_user_id -> users` so Postgres doesn't try to suppress folders on its own before the worker is done with the cleanup.
 
