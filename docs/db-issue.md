@@ -97,9 +97,15 @@ Instead of DELETE in the auth service :
 
 ---
 
-## Points ouverts à discuter en équipe
 ## Open points to talk with everyone
 
 1. **Files in the orgas**: do we delete files in organizations in which they are members when they get deleted ? My current requests doesn't check if `owner_user_id` is part of an organization, folders of these users can contain other people's files
 2. **Preference choice**: Option 1 is simplier, Option 2 a bit complicated, Option 3 might cause more problems that anything as both auth and storage service needs to be in sync, probably orga as well later on.
 3. **Who deletes the user in DB**: auth does it synchronously, which is normal as it is the service that handles `DELETE /api/auth/me`. But does it have to wait the worker to confirm ? We know for sure the event will be treated as we use stream for this kind of events, so both services could do it, up to preferences as well
+
+
+> fix trouvé qui fait demande le moins de modifications: `folder_id UUID REFERENCES folders(id) ON DELETE SET NULL`
+
+> puis publish l'event avant le delete user en DB dans `DeleteUser()`
+
+> probleme potentiel: ça fonctionne parce que le worker est assez rapide pour lire l'event et récupérer les fichiers avant que le CASCADE ait propagé, mais c'est une race condition
