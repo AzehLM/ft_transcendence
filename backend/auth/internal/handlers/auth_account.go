@@ -111,3 +111,82 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		"message": "password_updated_please_login_again",
 	})
 }
+
+func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	var user models.User
+
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	file, err := c.FormFile("avatar")
+
+	if (err != nil) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "no file uploaded"})
+	}
+
+	const maxSize := 5 * 1024 * 1024
+	fileSize := file.Size
+
+	if (file.Size > maxSize) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "file too large, bigger than 5MB"})
+	}
+
+	filename := fmt.Sprintf("avatars/%s-%d.jpg", userID, time.Now().Unix())
+
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	buffer := make([]byte, 512)
+	src.Read(buffer)
+
+	realType := http.DetectContentType(buffer)
+
+	if realType != "image/jpeg" && realType != "image/png" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "invalid file type, should be png or jpeg"})
+	}
+
+	src.Seek(0, 0)
+	fullBuffer, err := io.ReadAll(src)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.TODO()
+    err := h.minioClient.PutObject(
+        ctx,
+        "ostrom",
+        filename,
+        bytes.NewReader(fullBuffer),
+        fileSize,
+        minio.PutObjectOptions{},
+    )
+    
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "failed_to_upload_avatar",
+        })
+    }
+
+	avatarURL := fmt.Sprintf("https://minio/ostrom/%s", filename)
+
+	err = h.DB.Model(&user).Updates(map[string]interface{}{
+		"avatar_url":       avatarURL
+	}).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	}
+
+	log.Printf("[INFO] Avatar successfully uploaded for user %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":     "avatar_uploaded_successfully",
+    	"avatar_url":  avatarURL,
+	})
+
+
+}
