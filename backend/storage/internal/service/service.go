@@ -240,6 +240,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// suppress actual file in minio
 	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
 		return err
 	}
 
