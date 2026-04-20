@@ -1,71 +1,88 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     generateRSAKeyPair,
     encryptDEKWithPublicKey,
-    uint8ArrayToBase64
+    uint8ArrayToBase64,
+    // importPublicKey // À décommenter pour la prod
 } from '../services/crypto.service';
 import { setTemporaryPrivateKey } from '../services/temp-e2ee-key.service';
 
-export default function TestUploadPage() {
+interface UploadUrlResponse {
+    presigned_url: string;
+    object_id: string;
+}
+
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
+
+export default function SecureUploadPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [status, setStatus] = useState("");
-    const [isUploading, setIsUploading] = useState(false);
-    const [lastFileId, setLastFileId] = useState("");
+    const [status, setStatus] = useState<string>("");
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+    const [lastFileId, setLastFileId] = useState<string>("");
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
-    const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
-
-    const startTestUpload = async () => {
-        if (!file) return;
-        setIsUploading(true);
-        setStatus("Initialisation du chiffrement...");
-        setLastFileId("");
+    const handleUpload = async () => {
+        if (!file)
+            return;
 
         const token = localStorage.getItem("token");
         if (!token) {
             setStatus("❌ Session expirée. Reconnecte-toi.");
-            setIsUploading(false);
             navigate("/login");
             return;
         }
 
+        setIsUploading(true);
+        setStatus("1/4 : Initialisation de la cryptographie Zero-Knowledge...");
+        setLastFileId("");
+
         try {
-            // 1. CLÉ PUBLIQUE TEMPORAIRE (EN ATTENDANT LE STOCKAGE PERSISTANT)
-            // Flux final attendu:
-            // const b64PubKey = sessionStorage.getItem("public_key");
-            // if (!b64PubKey) throw new Error("Clé publique absente du sessionStorage. Connectez-vous d'abord.");
-            // const publicKey = await importPublicKey(b64PubKey);
-// 1. GÉNÉRATION D'UN COUPLE DE CLÉS TEMPORAIRES (Pour le test)
-            // On remplace temporairement l'utilisation du sessionStorage
-            setStatus("Génération des clés de test...");
+            // ====================================================================
+            // ÉTAPE 1 : RÉCUPÉRATION DE LA CLÉ PUBLIQUE (RSA)
+            // ====================================================================
+
+            // [PROD : SESSION STORAGE]
+            /*
+            const b64PubKey = sessionStorage.getItem("public_key");
+            if (!b64PubKey)
+                throw new Error("Clé publique introuvable. Veuillez vous reconnecter.");
+            const publicKey = await importPublicKey(b64PubKey);
+            */
+
+            // [DEV] Génération d'une clé temporaire pour les tests actuels
             const temporaryKeyPair = await window.crypto.subtle.generateKey(
                 { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
                 true, ["encrypt", "decrypt"]
             );
-
-            // On stocke la clé privée en RAM pour que SecureDownloadPage puisse la récupérer !
-            setTemporaryPrivateKey(temporaryKeyPair.privateKey);
-
-            // On utilise la clé publique temporaire pour chiffrer la DEK
+            setTemporaryPrivateKey(temporaryKeyPair.privateKey); // Sauvegarde en RAM pour le Download
             const publicKey = temporaryKeyPair.publicKey;
 
-            // 2. GÉNÉRATION DES SECRETS DU FICHIER (DEK & IV)
-            const dek = window.crypto.getRandomValues(new Uint8Array(32)); // AES-256
-            const baseIv = window.crypto.getRandomValues(new Uint8Array(12)); // IV pour GCM
+            // ====================================================================
+            // ÉTAPE 2 : GÉNÉRATION DES CLÉS DU FICHIER (AES-GCM)
+            // ====================================================================
+            // Pourquoi AES-GCM ? C'est le standard de l'industrie. Il chiffre les données
+            // ET vérifie leur intégrité (grâce à un "Auth Tag" de 16 octets ajouté à la fin).
+            const dek = window.crypto.getRandomValues(new Uint8Array(32)); // Data Encryption Key (256-bit)
+            const baseIv = window.crypto.getRandomValues(new Uint8Array(12)); // Initialization Vector (96-bit)
 
             const cryptoKey = await window.crypto.subtle.importKey(
                 "raw", dek, "AES-GCM", false, ["encrypt"]
             );
 
-            // 3. CHIFFREMENT DE LA CLÉ AES (DEK) AVEC RSA-OAEP
-            // C'est ici que le Zero-Knowledge opère : le serveur ne verra jamais la DEK en clair.
+            // Chiffrement de la clé AES (DEK) avec la clé RSA publique de l'utilisateur.
             const encryptedDEK = await encryptDEKWithPublicKey(dek, publicKey);
 
-            // 4. DEMANDE D'URL AU BACKEND GO
-            setStatus("Étape 1/3 : Réservation de l'Upload...");
+            // ====================================================================
+            // ÉTAPE 3 : RÉSERVATION DE L'ESPACE SUR LE SERVEUR (API)
+            // ====================================================================
+            setStatus("2/4 : Demande d'autorisation au serveur...");
+
+            // Calcul de la taille finale : Fichier original + 16 octets d'Auth Tag par bloc chiffré
             const numChunks = Math.ceil(file.size / CHUNK_SIZE);
-            const totalEncryptedSize = file.size + (numChunks * 16); // +16 octets de tag GCM par chunk
+            const totalEncryptedSize = file.size + (numChunks * 16);
 
             const initRes = await fetch("/api/files/upload-url", {
                 method: "POST",
@@ -80,24 +97,31 @@ export default function TestUploadPage() {
                 })
             });
 
-            if (!initRes.ok) throw new Error("Échec de l'obtention de la Presigned URL");
-            const { presigned_url, object_id } = await initRes.json();
+            if (!initRes.ok)
+                throw new Error(`Erreur Backend (${initRes.status}) : Impossible de préparer l'upload`);
+            const { presigned_url, object_id }: UploadUrlResponse = await initRes.json();
 
-// 5. UPLOAD CHIFFRÉ VERS MINIO (Mode Blob avec Content-Length strict)
-            setStatus("Étape 2/3 : Chiffrement et envoi vers MinIO...");
+            // ====================================================================
+            // ÉTAPE 4 : CHIFFREMENT PAR BLOCS ET ENVOI À MINIO (S3)
+            // ====================================================================
+            setStatus("3/4 : Chiffrement et transfert vers le coffre-fort...");
+
             let offset = 0;
             let chunkIndex = 0;
-            const encryptedChunks = []; // On stocke les blocs chiffrés en RAM pour le test
+            const encryptedChunks: Uint8Array[] = [];
 
+            // Découpage du fichier en morceaux pour ne pas saturer la RAM (sauf lors du Blob final)
             while (offset < file.size) {
                 const slice = file.slice(offset, offset + CHUNK_SIZE);
                 const buffer = await slice.arrayBuffer();
 
+                // Sécurité GCM : L'IV doit être unique pour chaque bloc. On l'incrémente mathématiquement.
                 const chunkIv = new Uint8Array(12);
                 chunkIv.set(baseIv);
                 const view = new DataView(chunkIv.buffer);
                 view.setUint32(8, view.getUint32(8) + chunkIndex);
 
+                // Chiffrement du bloc
                 const encryptedChunk = await window.crypto.subtle.encrypt(
                     { name: "AES-GCM", iv: chunkIv },
                     cryptoKey,
@@ -109,19 +133,24 @@ export default function TestUploadPage() {
                 chunkIndex++;
             }
 
-            // On fusionne tous les blocs en un seul fichier virtuel (Blob)
-            const finalBlob = new Blob(encryptedChunks, { type: "application/octet-stream" });
-            console.log(`Taille finale exacte envoyée à MinIO : ${finalBlob.size} octets`);
-
+            // Assemblage final.
+            // Pourquoi un Blob ? MinIO (S3) exige l'en-tête HTTP 'Content-Length' exact.
+            // L'objet Blob calcule automatiquement cette taille pour le navigateur avant le fetch.
+            const finalBlob = new Blob(encryptedChunks as BlobPart[], { type: "application/octet-stream" });
             const uploadRes = await fetch(presigned_url, {
                 method: "PUT",
                 body: finalBlob
-                // On retire duplex: 'half' car on n'utilise plus de stream direct
             });
 
-            if (!uploadRes.ok) throw new Error("L'upload vers MinIO a échoué");
-            // 6. FINALISATION (ENVOI DES MÉTADONNÉES CHIFFRÉES) [cite: 1, 2, 4]
-            setStatus("Étape 3/3 : Finalisation en base de données...");
+            if (!uploadRes.ok) {
+                const s3Error = await uploadRes.text();
+                throw new Error(`MinIO a rejeté le fichier : ${s3Error}`);
+            }
+
+            // ====================================================================
+            // ÉTAPE 5 : FINALISATION ET MÉTADONNÉES (API)
+            // ====================================================================
+            setStatus("4/4 : Enregistrement sécurisé en base de données...");
 
             const finalizeRes = await fetch("/api/files/finalize", {
                 method: "POST",
@@ -131,69 +160,96 @@ export default function TestUploadPage() {
                 },
                 body: JSON.stringify({
                     object_id: object_id,
-                    // Nom de fichier encodé (à chiffrer en AES plus tard pour plus de secret)
+                    // TODO (Optionnel) : Remplacer l'encodage base64 par un vrai chiffrement AES du nom de fichier
                     encrypted_filename: uint8ArrayToBase64(new TextEncoder().encode(file.name)),
-                    // Envoi de la DEK chiffrée par RSA et de l'IV de base
                     encrypted_dek: uint8ArrayToBase64(encryptedDEK),
                     iv: uint8ArrayToBase64(baseIv),
                     org_id: null
                 })
             });
 
-            if (!finalizeRes.ok) {
-                throw new Error("La finalisation a échoué côté Backend");
-            }
+            if (!finalizeRes.ok)
+                throw new Error("Le serveur a échoué lors de la finalisation.");
 
-            const finalizeData = await finalizeRes.json();
-            const fileId = finalizeData.file_id as string | undefined;
-            if (!fileId) {
-                throw new Error("Réponse invalide: file_id manquant");
-            }
-
-            setLastFileId(fileId);
-            setStatus(`✅ Upload réussi. file_id: ${fileId}`);
+            const { file_id } = await finalizeRes.json();
+            // Fin de la procédure
+            setStatus("✅ Succès ! Votre fichier est protégé par chiffrement de bout en bout.");
+            setLastFileId(file_id);
 
         } catch (err: any) {
-            setStatus(`❌ Erreur : ${err.message}`);
-            console.error(err);
+            console.error("Erreur d'upload sécurisé :", err);
+            setStatus(`❌ ${err.message}`);
         } finally {
             setIsUploading(false);
+            // On vide l'input file pour permettre d'uploader le même fichier consécutivement si besoin
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
     return (
-        <div style={{ padding: '40px', fontFamily: 'monospace' }}>
-            <h1>🛠 Page de Test Upload E2EE</h1>
-            <div style={{ border: '1px solid #ccc', padding: '20px', background: '#f4f4f4' }}>
-                <input
-                    type="file"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    disabled={isUploading}
-                />
-                <button
-                    onClick={startTestUpload}
-                    disabled={!file || isUploading}
-                    style={{ marginLeft: '10px', padding: '5px 15px' }}
-                >
-                    {isUploading ? "Upload en cours..." : "Lancer le Test"}
-                </button>
+        <div style={{ padding: '40px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
+            <h1 style={{ color: '#2c3e50', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
+                🛡️ Upload Sécurisé (E2EE)
+            </h1>
+
+            <div style={{ border: '1px solid #e0e0e0', borderRadius: '8px', padding: '24px', background: '#f8f9fa', marginTop: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        disabled={isUploading}
+                        style={{ padding: '10px', background: '#fff', border: '1px dashed #bdc3c7', borderRadius: '4px' }}
+                    />
+
+                    <button
+                        onClick={handleUpload}
+                        disabled={!file || isUploading}
+                        style={{
+                            padding: '12px 24px',
+                            backgroundColor: (file && !isUploading) ? '#27ae60' : '#95a5a6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: (file && !isUploading) ? 'pointer' : 'not-allowed',
+                            fontWeight: 'bold',
+                            transition: 'background-color 0.3s ease'
+                        }}
+                    >
+                        {isUploading ? "Chiffrement et envoi en cours..." : "Chiffrer et Envoyer"}
+                    </button>
+                </div>
             </div>
-            <div style={{ marginTop: '20px', fontWeight: 'bold', color: '#333' }}>
-                Statut : {status}
-            </div>
-            <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button
-                    onClick={() => navigate(lastFileId ? `/download?fileId=${encodeURIComponent(lastFileId)}` : '/download')}
-                    style={{ padding: '6px 12px', border: '1px solid #333', background: '#fff', cursor: 'pointer' }}
-                >
-                    Aller à Download
-                </button>
-                {lastFileId && (
-                    <span style={{ fontSize: '13px', color: '#333' }}>
-                        Dernier file_id: {lastFileId}
-                    </span>
-                )}
-            </div>
+
+            {/* Zone de notification / statut */}
+            {status && (
+                <div style={{
+                    marginTop: '20px',
+                    padding: '16px',
+                    borderRadius: '6px',
+                    fontWeight: '500',
+                    backgroundColor: status.includes('❌') ? '#fdecea' : '#e8f5e9',
+                    color: status.includes('❌') ? '#c0392b' : '#2e7d32',
+                    border: `1px solid ${status.includes('❌') ? '#fadbd8' : '#c8e6c9'}`
+                }}>
+                    {status}
+                </div>
+            )}
+
+            {/* Zone de redirection vers le téléchargement */}
+            {lastFileId && (
+                <div style={{ marginTop: '24px', padding: '16px', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>
+                    <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#7f8c8d' }}>
+                        ID du fichier (UUID) : <code style={{ background: '#ecf0f1', padding: '2px 6px', borderRadius: '4px' }}>{lastFileId}</code>
+                    </p>
+                    <button
+                        onClick={() => navigate(`/download?fileId=${encodeURIComponent(lastFileId)}`)}
+                        style={{ padding: '8px 16px', border: '1px solid #34495e', background: 'transparent', color: '#34495e', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                        Tester le Téléchargement →
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
