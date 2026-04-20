@@ -1,7 +1,7 @@
 # Problem : suppressing a user and FK constraints
 
 > FK stand for Foreign Key, it's a column or a combinaison of columns in a table whose value must match values of a column in another table
-> It enforces referencial integrity, so if A refers to B, B must value **must** exists!
+> It enforces referencial integrity, so if A refers to B, B value **must** exists!
 
 ## Context
 
@@ -27,7 +27,7 @@ of foreign key constraint "files_folder_id_fkey" on table "files"
 
 ## Why RESTRICT on files.folder_id ?
 
-Choice mate on the API : a non-empty folder cannot be deleted. I replicated this check with the `IsFolderEmpty` in the `storage` service, but the `RESTRICT` in DB is a double protection
+Choice made on the API : a non-empty folder cannot be deleted. I replicated this check with the `IsFolderEmpty` in the `storage` service, but the `RESTRICT` in DB is a double protection
 
 ---
 
