@@ -15,7 +15,7 @@ users
         └── files.folder_id  ON DELETE RESTRICT   ← blocks everything
 ```
 
-Quand `auth` suppress the user:
+When `auth` suppress the user:
 1. Postgres tries ON CASCADE on `folders` (to delete all its folders)
 2. Postgres identify `files` are referencing those folders via `files.folder_id` with `RESTRICT`
 3. Postgres block -> error `23001` -> the user is not suppressed
@@ -44,7 +44,7 @@ ALTER TABLE files ADD CONSTRAINT files_folder_id_fkey
 When a folder is suppressed (via CASCADE from users), the files inside of it looses their `folder_id` (changed to NULL) but stays in DB. The worker launched from `user_deleted` events can suppress them from their `owner_user_id`
 
 **Pros**
-- Easy to implementer, only one migration
+- Easy to implement, only one migration
 - The CASCADE `users -> folders` still works without errors
 - The worker can suppress files by `owner_user_id` without checking order (will be explained later)
 
