@@ -31,7 +31,7 @@ func main() {
 	})
 
 	loginLimiter := limiter.New(limiter.Config{
-		Max:        5,
+		Max:        50,
 		Expiration: 15 * time.Minute,
 		KeyGenerator: func(c fiber.Ctx) string {
 			return c.IP()
