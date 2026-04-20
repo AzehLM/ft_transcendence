@@ -10,6 +10,11 @@ import TrashPage from './pages/TrashPage'
 import SecureUploadPage from './pages/SecureUploadPage'
 import SecureDownloadPage from './pages/SecureDownloadPage'
 
+const withAuth = (element: JSX.Element) => {
+    const token = localStorage.getItem('token')
+    return token ? element : <Navigate to="/login" replace />
+}
+
 function App() {
     return (
         <BrowserRouter>
@@ -23,8 +28,8 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/trash" element={<TrashPage />} />
-                <Route path="/upload" element={<SecureUploadPage />} />
-                <Route path="/dowload" element={<SecureDownloadPage />} />
+                <Route path="/upload" element={withAuth(<SecureUploadPage />)} />
+                <Route path="/download" element={withAuth(<SecureDownloadPage />)} />
             </Routes>
         </BrowserRouter>
     )
