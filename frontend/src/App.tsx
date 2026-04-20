@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import TrashPage from './pages/TrashPage'
 import SecureUploadPage from './pages/SecureUploadPage'
+import SecureDownloadPage from './pages/SecureDownloadPage'
 
 function App() {
     return (
@@ -23,6 +24,7 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/trash" element={<TrashPage />} />
                 <Route path="/upload" element={<SecureUploadPage />} />
+                <Route path="/dowload" element={<SecureDownloadPage />} />
             </Routes>
         </BrowserRouter>
     )

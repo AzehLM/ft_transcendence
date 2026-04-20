@@ -118,7 +118,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:8080/storage", 1)
 
 	return presignedURL, objectID, err
 }
