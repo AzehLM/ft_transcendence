@@ -331,3 +331,37 @@ export async function generateLoginData(email: string, password: string) {
 
     return loginData;
 }
+
+
+export async function importPublicKey(base64Key: string): Promise<CryptoKey> {
+    const binaryDer = base64ToUint8Array(base64Key);
+    const derBytes = new Uint8Array(binaryDer);
+    return await crypto.subtle.importKey(
+        "spki",
+        derBytes,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+    );
+}
+
+
+export async function encryptDEKWithPublicKey(dek: Uint8Array, publicKey: CryptoKey): Promise<Uint8Array> {
+    const dekBytes = new Uint8Array(dek);
+    const encryptedDEK = await crypto.subtle.encrypt(
+        { name: "RSA-OAEP" },
+        publicKey,
+        dekBytes
+    );
+    return new Uint8Array(encryptedDEK);
+}
+
+export async function decryptDEKWithPrivateKey(encryptedDEK: Uint8Array, privateKey: CryptoKey): Promise<Uint8Array> {
+    const encryptedBytes = new Uint8Array(encryptedDEK);
+    const decryptedDEK = await crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        privateKey,
+        encryptedBytes
+    );
+    return new Uint8Array(decryptedDEK);
+}
