@@ -333,10 +333,10 @@ func (r *storageRepository) DeleteOrgData(orgID uuid.UUID) error {
 }
 
 func (r *storageRepository) DeleteUserData(userID uuid.UUID) error {
-	if err := r.db.Where("user_id = ?", userID).Delete(&File{}).Error; err != nil {
+	if err := r.db.Where("owner_user_id = ?", userID).Delete(&File{}).Error; err != nil {
 		return err
 	}
-	if err := r.db.Where("user_id = ?", userID).Delete(&Folder{}).Error; err != nil {
+	if err := r.db.Where("owner_user_id = ?", userID).Delete(&Folder{}).Error; err != nil {
 		return err
 	}
 	return nil

@@ -210,7 +210,7 @@ func (c *EventConsumer) ConsumeUserDeleted(ctx context.Context, rdb *redis.Clien
 
 		for _, entry := range entries[0].Messages {
 			if err := c.handleUserDeleted(ctx, rdb, entry, stream, group); err != nil {
-				log.Printf("[ERROR] ConsumeOrgDeleted: failed to handle message %s: %v", entry.ID, err)
+				log.Printf("[ERROR] ConsumeUserDeleted: failed to handle message %s: %v", entry.ID, err)
 			}
 		}
 	}
