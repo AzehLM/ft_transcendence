@@ -26,8 +26,8 @@ import (
 func initConsumerGroups(client *redis.Client) {
 	streams := []string{
 		"events:domain:file_orphaned",
-		// "events:domain:user_deleted"
-		// "events:domain:org_deleted"
+		"events:domain:user_deleted",
+		"events:domain:org_deleted",
 	}
 	for _, stream := range streams {
 		err := client.XGroupCreateMkStream(context.TODO(), stream, "storage-workers", "$").Err()
@@ -98,6 +98,8 @@ func main() {
 	handler := handlers.NewStorageHandler(svc, env)
 
 	consumer := workers.NewEventConsumer(repo, minioClient)
+	go consumer.ConsumeOrgDeleted(context.TODO(), redisClient)
+	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
 
 	api := app.Group("/api")

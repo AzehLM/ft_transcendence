@@ -106,3 +106,151 @@ func (c *EventConsumer) handleFileOrphaned(ctx context.Context, rdb *redis.Clien
 	log.Printf("[INFO] file_orphaned: cleaned up file %s (minio key: %s)", fileID, minioKeyStr)
 	return nil
 }
+
+func (c *EventConsumer) ConsumeOrgDeleted(ctx context.Context, rdb *redis.Client) {
+	const (
+		stream    = "events:domain:org_deleted"
+		group     = "storage-workers"
+	)
+
+	for {
+		entries, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
+			Group:    group,
+			Streams:  []string{stream, ">"},
+			Count:    10,
+			Block:    5 * time.Second,
+		}).Result()
+
+		if err != nil {
+			if errors.Is(err, redis.Nil) {
+				continue
+			}
+			if errors.Is(err, context.Canceled) {
+				log.Println("[INFO] ConsumeOrgDeleted: context cancelled, stopping")
+				return
+			}
+			log.Printf("[ERROR] ConsumeOrgDeleted: XREADGROUP error: %v", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		for _, entry := range entries[0].Messages {
+			if err := c.handleOrgDeleted(ctx, rdb, entry, stream, group); err != nil {
+				log.Printf("[ERROR] ConsumeOrgDeleted: failed to handle message %s: %v", entry.ID, err)
+			}
+		}
+	}
+}
+
+func (c *EventConsumer) handleOrgDeleted(ctx context.Context, rdb *redis.Client, msg redis.XMessage, stream, group string) error {
+
+	orgIDStr, ok := msg.Values["org_id"].(string)
+	if !ok {
+		log.Printf("[WARN] org_deleted: missing org_id in message %s", msg.ID)
+		rdb.XAck(ctx, stream, group, msg.ID)
+		return nil
+	}
+
+	orgID, err := uuid.Parse(orgIDStr)
+	if err != nil {
+		log.Printf("[WARN] org_deleted: invalid org_id %s: %v", orgIDStr, err)
+		rdb.XAck(ctx, stream, group, msg.ID)
+		return nil
+	}
+
+	files, err := c.repo.FindFilesByOrgID(orgID)
+	if err != nil {
+		return fmt.Errorf("FindFilesByOrgID %s: %w", orgID, err)
+	}
+
+	if err := c.repo.DeleteOrgData(orgID); err != nil {
+		return fmt.Errorf("DeleteOrgData %s: %w", orgID, err)
+	}
+
+	for _, file := range files {
+		if err := c.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+			log.Printf("[WARN] org_deleted: MinIO removal failed for %s: %v", file.MinioObjectKey, err)
+		}
+	}
+
+	if err := rdb.XAck(ctx, stream, group, msg.ID).Err(); err != nil {
+		log.Printf("[WARN] org_deleted: XACK failed for %s: %v", msg.ID, err)
+	}
+
+	log.Printf("[INFO] org_deleted: cleaned up org %s (%d files)", orgID, len(files))
+	return nil
+}
+
+func (c *EventConsumer) ConsumeUserDeleted(ctx context.Context, rdb *redis.Client) {
+	const (
+		stream    = "events:domain:user_deleted"
+		group     = "storage-workers"
+	)
+
+	for {
+		entries, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
+			Group:    group,
+			Streams:  []string{stream, ">"},
+			Count:    10,
+			Block:    5 * time.Second,
+		}).Result()
+
+		if err != nil {
+			if errors.Is(err, redis.Nil) {
+				continue
+			}
+			if errors.Is(err, context.Canceled) {
+				log.Println("[INFO] ConsumeUserDeleted: context cancelled, stopping")
+				return
+			}
+			log.Printf("[ERROR] ConsumeUserDeleted: XREADGROUP error: %v", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		for _, entry := range entries[0].Messages {
+			if err := c.handleOrgDeleted(ctx, rdb, entry, stream, group); err != nil {
+				log.Printf("[ERROR] ConsumeOrgDeleted: failed to handle message %s: %v", entry.ID, err)
+			}
+		}
+	}
+}
+
+func (c *EventConsumer) handleUserDeleted(ctx context.Context, rdb *redis.Client, msg redis.XMessage, stream, group string) error {
+
+	userIDStr, ok := msg.Values["user_id"].(string)
+	if !ok {
+		log.Printf("[WARN] user_deleted: missing user_id in message %s", msg.ID)
+		rdb.XAck(ctx, stream, group, msg.ID)
+		return nil
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[WARN] user_deleted: invalid user_id %s: %v", userID, err)
+		rdb.XAck(ctx, stream, group, msg.ID)
+		return nil
+	}
+
+	files, err := c.repo.FindFilesByUserID(userID)
+	if err != nil {
+		return fmt.Errorf("FindFilesByUserID %s: %w", userID, err)
+	}
+
+	if err := c.repo.DeleteUserData(userID); err != nil {
+		return fmt.Errorf("DeleteUserData %s: %w", userID, err)
+	}
+
+	for _, file := range files {
+		if err := c.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+			log.Printf("[WARN] user_deleted: MinIO removal failed for %s: %v", file.MinioObjectKey, err)
+		}
+	}
+
+	if err := rdb.XAck(ctx, stream, group, msg.ID).Err(); err != nil {
+		log.Printf("[WARN] user_deleted: XACK failed for %s: %v", msg.ID, err)
+	}
+
+	log.Printf("[INFO] user_deleted: cleaned up org %s (%d files)", userID, len(files))
+	return nil
+}
