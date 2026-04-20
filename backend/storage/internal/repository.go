@@ -22,6 +22,11 @@ type StorageRepository interface {
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)		// PATCH /files/{file_id}
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
+	FindFilesByUserID(userID uuid.UUID) ([]File, error)	// used for user_deleted event handling
+	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)	// used for org_deleted event handling
+	DeleteOrgData(orgID uuid.UUID) error
+	DeleteUserData(userID uuid.UUID) error
+
 	// Folder part
 	CreateFolder(folder *Folder) error											// POST /folders
 	FindFolderByID(folderID uuid.UUID) (*Folder, error)							// GET /folders?parent_id=xxx and GET /orgs/{org_id}/folders/{folder_id}/contents
@@ -296,4 +301,43 @@ func (r *storageRepository) ListOrgFolderContents(orgID uuid.UUID, folderID uuid
 	}
 
 	return folders, files, nil
+}
+
+func (r *storageRepository) FindFilesByOrgID(orgID uuid.UUID) ([]File, error) {
+	var files []File
+	err := r.db.Where("org_id = ? AND status = 'ACTIVE'", orgID).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r *storageRepository) FindFilesByUserID(userID uuid.UUID) ([]File, error) {
+	var files []File
+	err := r.db.Where("user_id = ? AND status = 'ACTIVE'", userID).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r *storageRepository) DeleteOrgData(orgID uuid.UUID) error {
+	// files first because it can have FK to folders
+	if err := r.db.Where("org_id = ?", orgID).Delete(&File{}).Error; err != nil {
+		return err
+	}
+	if err := r.db.Where("org_id = ?", orgID).Delete(&Folder{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *storageRepository) DeleteUserData(userID uuid.UUID) error {
+	if err := r.db.Where("user_id = ?", userID).Delete(&File{}).Error; err != nil {
+		return err
+	}
+	if err := r.db.Where("user_id = ?", userID).Delete(&Folder{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
