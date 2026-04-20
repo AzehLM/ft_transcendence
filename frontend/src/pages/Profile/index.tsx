@@ -1,7 +1,14 @@
-import styles from "../../styles/auth.module.css"
-import { Link } from "react-router-dom";
-import { Package } from "lucide-react";
+// import styles from "../../styles/auth.module.css"
+import styles from "./Profile.module.css";
+// import { Link } from "react-router-dom";
+// import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SearchBar } from "../../components/SearchBar";
+import { LeftSidebar } from "../../components/LeftSidebarProfile";
+import { ProfileDropdown } from "../../components/ProfileDropdown"
+import { UserProfileButton } from "../../components/UserProfileButton";
+
+
 
 async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     let token = localStorage.getItem("token") || "";
@@ -52,7 +59,7 @@ async function fetchWithRefresh(url: string, options: RequestInit = {}) {
 }
 
 export default function ProfilePage() {
-
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
@@ -82,18 +89,27 @@ export default function ProfilePage() {
     }, []);
 
     return (
-        <div>
-            <div className={styles.logo_section}>
-                <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
-                    <div className={styles.logo_box}>
-                        <Package className="w-11 h-11 text-white" strokeWidth={2} />
-                    </div>
-                    <span className={styles.logo_title}>
-                        ft_box
-                    </span>
-                </Link>
-            </div>
-            <div>{user ? JSON.stringify(user) : "Loading..."}</div>
+        // <div>
+        //     <div className={styles.logo_section}>
+        //         <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
+        //             <div className={styles.logo_box}>
+        //                 <Package className="w-11 h-11 text-white" strokeWidth={2} />
+        //             </div>
+        //             <span className={styles.logo_title}>
+        //                 ft_box
+        //             </span>
+        //         </Link>
+        //     </div>
+        //     <div>{user ? JSON.stringify(user) : "Loading..."}</div>
+        // </div>
+        <div className={styles.page}>
+            <LeftSidebar />
+            <SearchBar />
+            <UserProfileButton
+                isOpen={profileDropdownOpen}
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            />
+            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
         </div>
     )
 }
