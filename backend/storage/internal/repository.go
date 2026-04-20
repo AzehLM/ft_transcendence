@@ -314,7 +314,7 @@ func (r *storageRepository) FindFilesByOrgID(orgID uuid.UUID) ([]File, error) {
 
 func (r *storageRepository) FindFilesByUserID(userID uuid.UUID) ([]File, error) {
 	var files []File
-	err := r.db.Where("user_id = ? AND status = 'ACTIVE'", userID).Find(&files).Error
+	err := r.db.Where("owner_user_id = ? AND status = 'ACTIVE'", userID).Find(&files).Error
 	if err != nil {
 		return nil, err
 	}

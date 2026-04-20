@@ -8,9 +8,6 @@ const (
 	EventFileDeleted = "file_deleted"
 	EventFileMoved = "file_moved"
 
-	// Redis streams, cross-service cleanup
-	EventFileOrphaned = "file_orphaned"
-
 	// folder
 	EventFolderCreated = "folder_created"
 	EventFolderDeleted = "folder_deleted"
