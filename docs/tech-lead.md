@@ -160,6 +160,11 @@ Redis has several roles in our architecture:
 
 Dev mode only, not much more to say. Its easier to navigate throught the tables with it. Used to debug/validate features
 
-### Design Systen
+### Design System (lucide-react)
 
-> Custom design system built with X to ensure consistent UI.
+We've standardized on lucide-react for icon management in our frontend because it delivers measurable advantages:
+
+- Optimized bundle efficiency: Icon libraries like FontAwesome ship CSS files that define styling for all 7,000+ icons, even if you only use 20. That's wasted payload. Lucide-react is pure JavaScript, each icon is a React component, and our bundler includes only what we import. No CSS declarations or unused icon definitions that bloat the bundle.
+- Unified design language: Every icon adheres to the same specifications : 24px viewport, 2px stroke weight, which gives consistent visual hierarchy. This enforces design coherence across the product. As the application scales, this consistency prevents the fragmentation that occurs when teams source icons from multiple libraries or custom SVG repositories.
+- Operational sustainability: The library is maintained by the open-source community, integrated into production systems at scale (Vercel, Supabase, etc.), and published under the MIT license. This reduces technical debt compared to custom SVG management, which requires manual maintenance, testing, and versioning of individual assets.
+- Integration simplicity: Lucide-react integrates directly with our existing Tailwind and CSS modules stack. No adapter layers, middleware, or bespoke configuration required.
