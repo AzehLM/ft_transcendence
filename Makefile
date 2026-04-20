@@ -72,6 +72,21 @@ exec:
 		|| (echo "Usage: make exec <service>" && exit 1)
 	$(COMPOSE_CMD) exec $(word 2,$(MAKECMDGOALS)) sh
 
+# rules to help check
+.PHONY: reset-quota
+reset-quota:
+	@[ -n "$(email)" ] || (echo "Usage: make reset-quota email=<email>" && exit 1)
+	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
+		-c "UPDATE users SET used_space = 0 WHERE email = '\''$(email)'\'';"' 2>/dev/null
+	@echo "[reset-quota] Quota reset for $(email)"
+
+.PHONY: saturate-quota
+saturate-quota:
+	@[ -n "$(email)" ] || (echo "Usage: make saturate-quota email=<email>" && exit 1)
+	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
+		-c "UPDATE users SET used_space = max_space WHERE email = '\''$(email)'\'';"' 2>/dev/null
+	@echo "[saturate-quota] Quota saturated for $(email)"
+
 # --------------------------------- cleanup ------------------------------------
 
 .PHONY: clean
