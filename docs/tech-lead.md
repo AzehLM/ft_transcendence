@@ -136,6 +136,30 @@ These are acknowledged as bypassable by a motivated attacker, and are not presen
 
 > ⚠️ **NOTE**: GORM’s `AutoMigrate()` is restricted to **development only**. In production, we will use a dedicated migration tool (e.g. `golang‑migrate`) to ensure reversible schema changes.
 
+### Redis
+
+Redis has several roles in our architecture:
+
+- **Session / Auth**: Stores refresh tokens with a native TTL, avoiding the need
+  for a cleanup job or DB polling. Invalidation on logout is O(1).
+
+- **Events manager**
+  - **UI realtime (pub/sub)**: The storage service publishes file and folder events
+    (`file_uploaded`, `folder_created`, etc.) to per-user and per-org channels
+    (`user_events:{id}`, `org_events:{id}`). The WebSocket broker subscribes and
+    re-broadcasts to connected clients. This is fire-and-forget: event loss is
+    acceptable because the frontend re-fetches on page load.
+  - **Cross-service side effects (Streams)**: Critical events such as `user_deleted`
+    and `file_orphaned` use `XADD`/`XREAD` for their guaranteed delivery semantics.
+    Messages persist in the stream and are consumed even after a consumer restart —
+    a missed event means orphaned data in MinIO or PostgreSQL.
+    Background workers (one goroutine per consumer) are launched alongside the HTTP
+    server. ⚠️ do we have a PeriodicSweep ? if not delete this: A periodic sweep worker runs every 15 minutes as a safety net. *(planned)*
+
+### Adminer
+
+Dev mode only, not much more to say. Its easier to navigate throught the tables with it. Used to debug/validate features
+
 ### Design Systen
 
 > Custom design system built with X to ensure consistent UI.
