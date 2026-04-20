@@ -87,7 +87,7 @@ export default function ProfilePage() {
     return (
 
         <div className={styles.page}>
-          
+          <h2>profile</h2>
         </div>
     )
 }

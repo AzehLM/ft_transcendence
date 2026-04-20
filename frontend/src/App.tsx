@@ -11,6 +11,9 @@ import { AuthLayout } from './AuthLayout'
 import { MainLayout } from './MainLayout'
 import { MenuSidebar } from './components/MenuSidebar'
 import { ProfileSidebar } from './components/ProfileSidebar'
+import StoragePage from './pages/storage'
+import AccountPage from './pages/account'
+import OrganizationsPage from './pages/organizations'
 
 function App() {
     return (
@@ -27,7 +30,9 @@ function App() {
 
                 <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
                     <Route path="/profile" element={<ProfilePage />} />
-                    {/* <Route path="/storage" element={<Storage />} /> */}
+                    <Route path="/storage" element={<StoragePage />} />
+                    <Route path="/account" element={<AccountPage />} />
+                    <Route path="/organizations" element={<OrganizationsPage />} />
                 </Route>
                 <Route path="/" element={<Navigate to="/home" />} />
                 <Route path="/home" element={<HomePage />} />
