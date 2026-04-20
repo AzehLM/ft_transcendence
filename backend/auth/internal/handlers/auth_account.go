@@ -35,6 +35,13 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	userIDStr := c.Locals("user_id").(string)
 
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[WARN] invalid user_id %s: %v", userID, err)
+	}
+
+	_ = h.Publisher.PublishUserDeleted(context.TODO(), userID)
+
 	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
@@ -44,12 +51,6 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	log.Printf("[INFO] User %s deleted their account", userIDStr)
 
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		log.Printf("[WARN] invalid user_id %s: %v", userID, err)
-	}
-
-	_ = h.Publisher.PublishUserDeleted(context.TODO(), userID)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "account_deleted_successfully",
