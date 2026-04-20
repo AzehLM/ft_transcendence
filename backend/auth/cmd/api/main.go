@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	"backend/auth/internal"
 	"backend/auth/internal/handlers"
 	"backend/shared/config"
 	"backend/shared/db"
@@ -44,7 +45,25 @@ func main() {
 		},
 	})
 
-	authHandler := handlers.NewAuthHandler(dbConn, env)
+	minioUser, err := config.ReadSecret("minio_admin_user")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO user secret: %v", err)
+	}
+
+	minioPassword, err := config.ReadSecret("minio_admin_pwd")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
+	}
+
+	useSSL := false
+	minioEndpoint := "minio:9000"
+
+	minioClient, err := internal.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
+	if err != nil {
+		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
+	}
+
+	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)

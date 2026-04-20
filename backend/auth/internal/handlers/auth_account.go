@@ -1,11 +1,18 @@
 package handlers
 
 import (
-	"backend/auth/internal/models"
-	"encoding/base64"
-	"log"
+    "backend/auth/internal/models"
+    "bytes"
+    "context"
+    "encoding/base64"
+    "fmt"
+    "io"
+    "log"
+    "net/http"
+    "time"
 
-	"github.com/gofiber/fiber/v3"
+    "github.com/gofiber/fiber/v3"
+    "github.com/minio/minio-go/v7"
 )
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
@@ -126,7 +133,7 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "no file uploaded"})
 	}
 
-	const maxSize := 5 * 1024 * 1024
+	maxSize := int64(5 * 1024 * 1024)
 	fileSize := file.Size
 
 	if (file.Size > maxSize) {
@@ -157,25 +164,25 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 	}
 
 	ctx := context.TODO()
-    err := h.minioClient.PutObject(
-        ctx,
-        "ostrom",
-        filename,
-        bytes.NewReader(fullBuffer),
-        fileSize,
-        minio.PutObjectOptions{},
-    )
-    
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "failed_to_upload_avatar",
-        })
-    }
+	_, err = h.MinioClient.PutObject(
+		ctx,
+		"ostrom",
+		filename,
+		bytes.NewReader(fullBuffer),
+		fileSize,
+		minio.PutObjectOptions{},
+	)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed_to_upload_avatar",
+		})
+	}
 
 	avatarURL := fmt.Sprintf("https://minio/ostrom/%s", filename)
 
 	err = h.DB.Model(&user).Updates(map[string]interface{}{
-		"avatar_url":       avatarURL
+		"avatar_url": avatarURL,
 	}).Error
 
 	if err != nil {
@@ -184,9 +191,7 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 
 	log.Printf("[INFO] Avatar successfully uploaded for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":     "avatar_uploaded_successfully",
-    	"avatar_url":  avatarURL,
+		"message":    "avatar_uploaded_successfully",
+		"avatar_url": avatarURL,
 	})
-
-
 }
