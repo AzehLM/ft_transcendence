@@ -60,7 +60,7 @@ export default function DashboardPage() {
 
     return (
         <div className={styles.page}>
-            <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
+            {/* <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
 
             <SearchBar />
 
@@ -69,7 +69,7 @@ export default function DashboardPage() {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             />
 
-            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
+            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} /> */}
 
             <ActionButtons />
 

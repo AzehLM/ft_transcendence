@@ -103,13 +103,13 @@ export default function ProfilePage() {
         //     <div>{user ? JSON.stringify(user) : "Loading..."}</div>
         // </div>
         <div className={styles.page}>
-            <LeftSidebar />
+            {/* <LeftSidebar />
             <SearchBar />
             <UserProfileButton
                 isOpen={profileDropdownOpen}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             />
-            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} />
+            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} /> */}
         </div>
     )
 }
