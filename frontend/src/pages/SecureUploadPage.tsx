@@ -36,9 +36,19 @@ export default function TestUploadPage() {
             // const b64PubKey = sessionStorage.getItem("public_key");
             // if (!b64PubKey) throw new Error("Clé publique absente du sessionStorage. Connectez-vous d'abord.");
             // const publicKey = await importPublicKey(b64PubKey);
-            const temporaryKeyPair = await generateRSAKeyPair();
-            const publicKey = temporaryKeyPair.publicKey;
+// 1. GÉNÉRATION D'UN COUPLE DE CLÉS TEMPORAIRES (Pour le test)
+            // On remplace temporairement l'utilisation du sessionStorage
+            setStatus("Génération des clés de test...");
+            const temporaryKeyPair = await window.crypto.subtle.generateKey(
+                { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+                true, ["encrypt", "decrypt"]
+            );
+
+            // On stocke la clé privée en RAM pour que SecureDownloadPage puisse la récupérer !
             setTemporaryPrivateKey(temporaryKeyPair.privateKey);
+
+            // On utilise la clé publique temporaire pour chiffrer la DEK
+            const publicKey = temporaryKeyPair.publicKey;
 
             // 2. GÉNÉRATION DES SECRETS DU FICHIER (DEK & IV)
             const dek = window.crypto.getRandomValues(new Uint8Array(32)); // AES-256
@@ -73,49 +83,43 @@ export default function TestUploadPage() {
             if (!initRes.ok) throw new Error("Échec de l'obtention de la Presigned URL");
             const { presigned_url, object_id } = await initRes.json();
 
-            // 5. UPLOAD EN STREAMING CHIFFRÉ VERS MINIO
-            setStatus("Étape 2/3 : Chiffrement et streaming vers MinIO...");
+// 5. UPLOAD CHIFFRÉ VERS MINIO (Mode Blob avec Content-Length strict)
+            setStatus("Étape 2/3 : Chiffrement et envoi vers MinIO...");
             let offset = 0;
             let chunkIndex = 0;
+            const encryptedChunks = []; // On stocke les blocs chiffrés en RAM pour le test
 
-            const encryptedStream = new ReadableStream({
-                async pull(controller) {
-                    if (offset >= file.size) {
-                        controller.close();
-                        return;
-                    }
+            while (offset < file.size) {
+                const slice = file.slice(offset, offset + CHUNK_SIZE);
+                const buffer = await slice.arrayBuffer();
 
-                    const slice = file.slice(offset, offset + CHUNK_SIZE);
-                    const buffer = await slice.arrayBuffer();
+                const chunkIv = new Uint8Array(12);
+                chunkIv.set(baseIv);
+                const view = new DataView(chunkIv.buffer);
+                view.setUint32(8, view.getUint32(8) + chunkIndex);
 
-                    // Incrémentation de l'IV pour chaque chunk (sécurité GCM)
-                    const chunkIv = new Uint8Array(12);
-                    chunkIv.set(baseIv);
-                    const view = new DataView(chunkIv.buffer);
-                    view.setUint32(8, view.getUint32(8) + chunkIndex);
+                const encryptedChunk = await window.crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv: chunkIv },
+                    cryptoKey,
+                    buffer
+                );
 
-                    const encryptedChunk = await window.crypto.subtle.encrypt(
-                        { name: "AES-GCM", iv: chunkIv },
-                        cryptoKey,
-                        buffer
-                    );
+                encryptedChunks.push(new Uint8Array(encryptedChunk));
+                offset += CHUNK_SIZE;
+                chunkIndex++;
+            }
 
-                    controller.enqueue(new Uint8Array(encryptedChunk));
-                    offset += CHUNK_SIZE;
-                    chunkIndex++;
-                }
-            });
+            // On fusionne tous les blocs en un seul fichier virtuel (Blob)
+            const finalBlob = new Blob(encryptedChunks, { type: "application/octet-stream" });
+            console.log(`Taille finale exacte envoyée à MinIO : ${finalBlob.size} octets`);
 
             const uploadRes = await fetch(presigned_url, {
                 method: "PUT",
-                body: encryptedStream,
-                // @ts-ignore : Nécessaire pour le streaming dans Fetch
-                duplex: 'half',
-                headers: { "Content-Type": "application/octet-stream" }
+                body: finalBlob
+                // On retire duplex: 'half' car on n'utilise plus de stream direct
             });
 
             if (!uploadRes.ok) throw new Error("L'upload vers MinIO a échoué");
-
             // 6. FINALISATION (ENVOI DES MÉTADONNÉES CHIFFRÉES) [cite: 1, 2, 4]
             setStatus("Étape 3/3 : Finalisation en base de données...");
 

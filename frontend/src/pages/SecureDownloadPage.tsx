@@ -15,7 +15,7 @@ export default function SecureDownloadPage() {
     const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
     const CIPHER_CHUNK_SIZE = CHUNK_SIZE + 16; // 5 Mo + tag GCM
 
-    const handleDownload = async () => {
+const handleDownload = async () => {
         if (!fileId) return;
         setIsDownloading(true);
         setStatus("1/4 : Récupération des métadonnées et clés...");
@@ -33,36 +33,33 @@ export default function SecureDownloadPage() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
-            if (!metaRes.ok) throw new Error("Erreur lors de la récupération du fichier");
-
+            if (!metaRes.ok) throw new Error("Erreur Backend lors de la récupération des métadonnées");
             const { presigned_url, encrypted_dek, iv, encrypted_filename } = await metaRes.json();
 
-            // 2. PRÉPARATION DE LA CRYPTOGRAPHIE
-            const tempPrivateKey = getTemporaryPrivateKey();
-            if (!tempPrivateKey) throw new Error("Clé privée temporaire introuvable.");
+            // 2. DÉCHIFFREMENT DE LA CLÉ (DEBUG RSA)
+            let dek: Uint8Array;
+            try {
+                const tempPrivateKey = getTemporaryPrivateKey();
+                if (!tempPrivateKey) throw new Error("Clé introuvable en RAM.");
 
-            const encryptedDekBytes = base64ToUint8Array(encrypted_dek);
-            const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, tempPrivateKey);
+                const encryptedDekBytes = base64ToUint8Array(encrypted_dek);
+                dek = await decryptDEKWithPrivateKey(encryptedDekBytes, tempPrivateKey);
+            } catch (err: any) {
+                console.error("Erreur RSA:", err);
+                throw new Error("Déchiffrement RSA impossible. (Avez-vous rafraîchi la page F5 ou pris un ancien UUID ? Vous devez uploader et télécharger dans la même session sans F5).");
+            }
+
             const baseIv = base64ToUint8Array(iv);
-
             const cryptoKey = await window.crypto.subtle.importKey(
-                "raw",
-                dek as unknown as BufferSource, // Le fix est ici : on force la compatibilité du buffer
-                { name: "AES-GCM" },
-                false,
-                ["decrypt"] as KeyUsage[]
+                "raw", dek as unknown as BufferSource, { name: "AES-GCM" }, false, ["decrypt"] as KeyUsage[]
             );
-
             const filename = new TextDecoder().decode(base64ToUint8Array(encrypted_filename));
 
             // 3. DÉTECTION DU NAVIGATEUR ET PRÉPARATION DU FLUX
             setStatus("2/4 : Préparation du téléchargement...");
-
-            // On vérifie si le navigateur supporte l'écriture directe sur disque
             const supportsFileSystemAccess = 'showSaveFilePicker' in window;
-
-            let writable: FileSystemWritableFileStream | null = null;
-            let firefoxFallbackChunks: Uint8Array[] = []; // Accumulateur pour Firefox/Safari
+            let writable: any = null;
+            let firefoxFallbackChunks: Uint8Array[] = [];
 
             if (supportsFileSystemAccess) {
                 try {
@@ -74,10 +71,15 @@ export default function SecureDownloadPage() {
                 }
             }
 
-            // 4. TÉLÉCHARGEMENT ET DÉCHIFFREMENT EN STREAMING
+            // 4. TÉLÉCHARGEMENT (DEBUG MINIO ET AES)
             setStatus("3/4 : Téléchargement et déchiffrement à la volée...");
-
             const response = await fetch(presigned_url);
+
+            // LE FIX EST ICI : On empêche le code d'essayer de déchiffrer un message d'erreur XML !
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`MinIO a refusé l'accès au fichier (${response.status}) : ${errorText}`);
+            }
             if (!response.body) throw new Error("Le navigateur ne supporte pas les streams");
 
             const reader = response.body.getReader();
@@ -103,19 +105,15 @@ export default function SecureDownloadPage() {
                     const view = new DataView(chunkIv.buffer);
                     view.setUint32(8, view.getUint32(8) + chunkIndex);
 
-                    const decryptedBuffer = await window.crypto.subtle.decrypt(
-                        { name: "AES-GCM", iv: chunkIv },
-                        cryptoKey,
-                        chunkToDecrypt
-                    );
-
-                    // Aiguillage selon le navigateur
-                    if (writable) {
-                        await writable.write(decryptedBuffer); // Chrome/Edge : on écrit sur le SSD
-                    } else {
-                        firefoxFallbackChunks.push(new Uint8Array(decryptedBuffer)); // Firefox : on garde en RAM
+                    try {
+                        const decryptedBuffer = await window.crypto.subtle.decrypt(
+                            { name: "AES-GCM", iv: chunkIv }, cryptoKey, chunkToDecrypt
+                        );
+                        if (writable) await writable.write(decryptedBuffer);
+                        else firefoxFallbackChunks.push(new Uint8Array(decryptedBuffer));
+                    } catch (err) {
+                        throw new Error(`Déchiffrement AES planté au bloc ${chunkIndex}. Fichier corrompu ou mauvaise clé.`);
                     }
-
                     chunkIndex++;
                 }
 
@@ -126,16 +124,14 @@ export default function SecureDownloadPage() {
                         const view = new DataView(chunkIv.buffer);
                         view.setUint32(8, view.getUint32(8) + chunkIndex);
 
-                        const decryptedBuffer = await window.crypto.subtle.decrypt(
-                            { name: "AES-GCM", iv: chunkIv },
-                            cryptoKey,
-                            buffer
-                        );
-
-                        if (writable) {
-                            await writable.write(decryptedBuffer);
-                        } else {
-                            firefoxFallbackChunks.push(new Uint8Array(decryptedBuffer));
+                        try {
+                            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                                { name: "AES-GCM", iv: chunkIv }, cryptoKey, buffer
+                            );
+                            if (writable) await writable.write(decryptedBuffer);
+                            else firefoxFallbackChunks.push(new Uint8Array(decryptedBuffer));
+                        } catch (err) {
+                            throw new Error("Déchiffrement AES planté sur le tout dernier bloc.");
                         }
                     }
                     break;
@@ -144,28 +140,25 @@ export default function SecureDownloadPage() {
 
             // 5. FINALISATION
             setStatus("4/4 : Finalisation de la sauvegarde...");
-
             if (writable) {
-                // Chrome/Edge : On ferme le flux vers le disque
                 await writable.close();
             } else {
-                // Firefox/Safari : On fusionne les morceaux de la RAM et on lance le téléchargement classique
-                const blob = new Blob(firefoxFallbackChunks as BlobPart[], { type: 'application/octet-stream' });                const downloadUrl = URL.createObjectURL(blob);
-
+                const blob = new Blob(firefoxFallbackChunks as BlobPart[], { type: 'application/octet-stream' });
+                const downloadUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
                 a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(downloadUrl); // Libère la RAM
+                URL.revokeObjectURL(downloadUrl);
             }
 
             setStatus(`✅ Succès ! Fichier "${filename}" téléchargé et déchiffré.`);
 
         } catch (err: any) {
             console.error(err);
-            setStatus(`❌ Erreur : ${err.message}`);
+            setStatus(`❌ ${err.message}`);
         } finally {
             setIsDownloading(false);
         }
