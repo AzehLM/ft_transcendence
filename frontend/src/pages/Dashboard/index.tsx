@@ -1,16 +1,10 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
-import { ProfileDropdown } from "../../components/ProfileDropdown"
-import { LeftSidebar } from "../../components/LeftSidebar";
-import { SearchBar } from "../../components/SearchBar";
-import { UserProfileButton } from "../../components/UserProfileButton";
 import { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService, FileItem } from "../../services/files.service";
 
 export default function DashboardPage() {
-    const [foldersExpanded, setFoldersExpanded] = useState(true);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -60,16 +54,6 @@ export default function DashboardPage() {
 
     return (
         <div className={styles.page}>
-            {/* <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
-
-            <SearchBar />
-
-            <UserProfileButton
-                isOpen={profileDropdownOpen}
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            />
-
-            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} /> */}
 
             <ActionButtons />
 

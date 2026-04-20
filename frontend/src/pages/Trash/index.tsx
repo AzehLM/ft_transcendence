@@ -1,15 +1,9 @@
 import { FileCard } from "../../components/FileCard"
-import { ProfileDropdown } from "../../components/ProfileDropdown"
-import { LeftSidebar } from "../../components/LeftSidebar";
-import { SearchBar } from "../../components/SearchBar";
-import { UserProfileButton } from "../../components/UserProfileButton";
 import { useState, useEffect } from "react";
 import styles from "../Dashboard/Dashboard.module.css";
 import { FilesService, FileItem } from "../../services/files.service";
 
 export default function TrashPage() {
-    const [foldersExpanded, setFoldersExpanded] = useState(true);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [trashedFiles, setTrashedFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -57,18 +51,7 @@ export default function TrashPage() {
 
     return (
         <div className={styles.page}>
-            {/* <LeftSidebar foldersExpanded={foldersExpanded} setFoldersExpanded={setFoldersExpanded} />
 
-            <SearchBar />
-
-            <UserProfileButton
-                isOpen={profileDropdownOpen}
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            />
-
-            <ProfileDropdown isOpen={profileDropdownOpen} onClose={() => setProfileDropdownOpen(false)} /> */}
-
-            {/* Main content area - positioned higher without action buttons */}
             <div className={styles.contentAreaNoButtons}>
                 <h1 className={styles.title}>
                     Trash

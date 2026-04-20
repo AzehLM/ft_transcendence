@@ -1,4 +1,4 @@
-import { ChevronDown, Folder } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 interface SidebarMenuProps {
