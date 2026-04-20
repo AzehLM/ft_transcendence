@@ -3,10 +3,8 @@
    ============================================================================ */
 
 .searchContainer {
-    position: absolute;
-    left: 284px;
-    top: 33px;
-    width: 806px;
+    flex: 1;
+    max-width: 80%;
 }
 
 .searchBox {

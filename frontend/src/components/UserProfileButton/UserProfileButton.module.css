@@ -3,12 +3,10 @@
    ============================================================================ */
 
 .profileButtonContainer {
-    position: absolute;
-    right: 100px;
-    top: 33px;
-    display: flex;
-    align-items: center;
-    gap: 30px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-shrink: 0;
 }
 
 .profileButton {
