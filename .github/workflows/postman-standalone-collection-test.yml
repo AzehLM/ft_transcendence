@@ -49,7 +49,7 @@ jobs:
         id: tests
         continue-on-error: true
         run: |
-          postman collection run "52021088-67380c7e-a9c5-4431-906d-7153a2e6d505" \
+          postman collection run "52021088-2aa6dd73-8db1-40c8-a401-ddfac3f45319" \
             -e "52021088-580ece52-37d3-4dd2-9ca1-a242d70d68b0" \
             --ignore-redirects \
             -r cli,json --reporter-json-export report.json
