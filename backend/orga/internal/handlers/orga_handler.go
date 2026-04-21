@@ -146,7 +146,12 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
-	_ = h.Publisher.PublishOrgDeleted(context.TODO(), orgID)
+	if err := h.Publisher.PublishOrgDeleted(context.TODO(), orgID); err != nil {
+		log.Printf("[EVENT] failed to publish org_deleted for org %s: %v", orgID.String(), err)
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "failed to enqueue organization cleanup",
+		})
+	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
 	deleted, err := repo.DeleteOrganization(orgID)
