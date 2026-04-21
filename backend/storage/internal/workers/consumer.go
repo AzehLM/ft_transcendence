@@ -68,7 +68,7 @@ func (c *EventConsumer) handleFileOrphaned(ctx context.Context, rdb *redis.Clien
 	fileIDStr, ok := msg.Values["file_id"].(string)
 	if !ok {
 		log.Printf("[WARN] file_orphaned: missing file_id in message %s", msg.ID)
-		// incorrect message format, we aknowledge to avoid blocking the stream
+		// incorrect message format, we acknowledge to avoid blocking the stream
 		rdb.XAck(ctx, stream, group, msg.ID)
 		return nil
 	}
