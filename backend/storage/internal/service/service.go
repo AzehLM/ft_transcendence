@@ -227,14 +227,16 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// suppress file metadata in DB
 	if err := s.repo.DeleteFile(fileID); err != nil {
-		// if this fails, need to publish a `file_orphaned` event before returning
+		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
 		return err
 	}
 
 	// suppress actual file in minio
 	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
-		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
-		return err
+		if publishErr := s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID); publishErr != nil {
+			return err
+		}
+		return nil
 	}
 
 	if err := s.repo.DecrementUserUsedSpace(userID /* file.OwnerUserID */, file.FileSize); err != nil {
