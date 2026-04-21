@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -27,22 +26,22 @@ func LoadEnv() (*Env, error) {
 
 	postgresPassword, err := ReadSecret("postgres_pwd")
 	if  err != nil {
-		log.Fatalf("[FATAL] Could not read Postgres password secret: %v", err)
+		return nil, fmt.Errorf("secret postgres_pwd: %v", err)
 	}
 
 	postgresUser, err := ReadSecret("postgres_user")
 	if  err != nil {
-		log.Fatalf("[FATAL] Could not read Postgres user secret: %v", err)
+		return nil, fmt.Errorf("secret postgres_user: %v", err)
 	}
 
 	jwtSecret, err := ReadSecret("jwt_secret")
 	if  err != nil {
-		log.Fatalf("[FATAL] Could not read JWT secret secret: %v", err)
+		return nil, fmt.Errorf("secret jwt_secret: %v", err)
 	}
 
 	redisPassword, err := ReadSecret("redis_pwd")
 	if  err != nil {
-		log.Fatalf("[FATAL] Could not read Redis password secret: %v", err)
+		return nil, fmt.Errorf("secret redis_pwd: %v", err)
 	}
 
 	env := &Env{
