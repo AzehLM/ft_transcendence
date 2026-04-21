@@ -9,6 +9,7 @@ import (
 
 	"backend/orga/internal/handlers"
 	"backend/orga/internal/ws"
+	"backend/orga/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/shared/middleware"
@@ -37,7 +38,10 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
-	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub)
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+
+	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub, eventPublisher)
 	// Middlewares
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))

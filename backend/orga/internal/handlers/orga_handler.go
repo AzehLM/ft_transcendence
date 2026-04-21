@@ -3,7 +3,9 @@ package handlers
 import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"backend/orga/internal/workers"
 	"log"
+	"context"
 
 	"backend/orga/internal/ws"
 	"encoding/base64"
@@ -17,12 +19,15 @@ import (
 type OrgaHandler struct {
 	DB  *gorm.DB
 	Hub *ws.Hub
+	Publisher	*workers.EventPublisher
+
 }
 
-func NewOrgaHandler(db *gorm.DB, hub *ws.Hub) *OrgaHandler {
+func NewOrgaHandler(db *gorm.DB, hub *ws.Hub, publisher *workers.EventPublisher) *OrgaHandler {
 	return &OrgaHandler{
 		DB:  db,
 		Hub: hub,
+		Publisher:	publisher,
 	}
 }
 
@@ -140,6 +145,8 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
+
+	_ = h.Publisher.PublishOrgDeleted(context.TODO(), orgID)
 
 	repo := repository.NewOrganizationRepository(h.DB)
 	deleted, err := repo.DeleteOrganization(orgID)
