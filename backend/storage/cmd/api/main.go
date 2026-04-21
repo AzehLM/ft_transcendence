@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	files "backend/storage/internal"
@@ -30,8 +31,8 @@ func initConsumerGroups(client *redis.Client) {
 		"events:domain:org_deleted":	"storage-org-deleted",
 	}
 	for stream, group := range streams {
-		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "$").Err()
-		if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
+		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "0").Err()
+		if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
 			log.Fatalf("[FATAL] Cannot create consumer group for %s: %v", stream, err)
 		}
 		log.Printf("[INFO] Consumer group ready: %s → %s", stream, group)
