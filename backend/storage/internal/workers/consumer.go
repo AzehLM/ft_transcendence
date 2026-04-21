@@ -28,14 +28,16 @@ func NewEventConsumer(repo storage.StorageRepository, minioClient *minio.Client)
 
 func (c *EventConsumer) ConsumeFileOrphaned(ctx context.Context, rdb *redis.Client) {
 	const (
-		stream   = "events:domain:file_orphaned"
-		group    = "storage-file-orphaned"
+		stream		= "events:domain:file_orphaned"
+		group		= "storage-file-orphaned"
+		consumer	= "storage"
 	)
 
 	for {
 		entries, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    group,
 			Streams:  []string{stream, ">"}, // ">" makes the function read only events that have not been read yet
+			Consumer: consumer,
 			Count:    10,
 			Block:    5 * time.Second, // latency between each Read. For comparision it is an equivalent to the last parameter of epoll_wait(..., timeout)
 		}).Result()
@@ -109,8 +111,9 @@ func (c *EventConsumer) handleFileOrphaned(ctx context.Context, rdb *redis.Clien
 
 func (c *EventConsumer) ConsumeOrgDeleted(ctx context.Context, rdb *redis.Client) {
 	const (
-		stream    = "events:domain:org_deleted"
-		group     = "storage-org-deleted"
+		stream		= "events:domain:org_deleted"
+		group		= "storage-org-deleted"
+		consumer	= "storage"
 	)
 
 	for {
@@ -118,6 +121,7 @@ func (c *EventConsumer) ConsumeOrgDeleted(ctx context.Context, rdb *redis.Client
 			Group:    group,
 			Streams:  []string{stream, ">"},
 			Count:    10,
+			Consumer: consumer,
 			Block:    5 * time.Second,
 		}).Result()
 
@@ -183,14 +187,17 @@ func (c *EventConsumer) handleOrgDeleted(ctx context.Context, rdb *redis.Client,
 
 func (c *EventConsumer) ConsumeUserDeleted(ctx context.Context, rdb *redis.Client) {
 	const (
-		stream    = "events:domain:user_deleted"
-		group     = "storage-user-deleted"
+		stream		= "events:domain:user_deleted"
+		group		= "storage-user-deleted"
+		consumer	= "storage"
 	)
+
 
 	for {
 		entries, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    group,
 			Streams:  []string{stream, ">"},
+			Consumer: consumer,
 			Count:    10,
 			Block:    5 * time.Second,
 		}).Result()
