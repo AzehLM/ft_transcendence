@@ -41,7 +41,10 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
 	}
 
-	_ = h.Publisher.PublishUserDeleted(context.TODO(), userID)
+	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
+		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_publish_user_deleted_event"})
+	}
 
 	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
