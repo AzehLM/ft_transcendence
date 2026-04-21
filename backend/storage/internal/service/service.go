@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -143,14 +142,6 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, ErrForbidden
 	}
 
-	// activates file in DB
-	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return uuid.Nil, ErrNotFound
-		}
-		return uuid.Nil, err
-	}
-
 	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
 	ok, err = s.repo.TryIncrementUserUsedSpace(userID, file.FileSize)
@@ -159,13 +150,15 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	}
 
 	if !ok {
-		// TODO(redis): `file_orphaned` event with {object_key, file_id} (stream)
-		// so the cleanup worker removes the MinIO blob and the PENDING row
-		// Until the event bus is wired, quota-rejected uploads leave an orphan blob + PENDING row
-		if err := s.publisher.PublishFileOrphaned(context.TODO(), file.ID, file.MinioObjectKey, file.OwnerUserID); err != nil {
-			log.Printf("[WARN] Failed to publish file_orphaned for %s: %v", file.ID, err)
-		}
 		return uuid.Nil, ErrQuotaExceeded
+	}
+
+	// activates file in DB
+	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
 	}
 
 	// update of file here so the event does't return an empty name = ""
