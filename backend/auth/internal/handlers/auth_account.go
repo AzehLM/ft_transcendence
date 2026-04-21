@@ -37,7 +37,8 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		log.Printf("[WARN] invalid user_id %s: %v", userID, err)
+		log.Printf("[WARN] invalid user_id %s: %v", userIDStr, err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
 	}
 
 	_ = h.Publisher.PublishUserDeleted(context.TODO(), userID)
