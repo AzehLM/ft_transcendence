@@ -136,6 +136,35 @@ These are acknowledged as bypassable by a motivated attacker, and are not presen
 
 > ⚠️ **NOTE**: GORM’s `AutoMigrate()` is restricted to **development only**. In production, we will use a dedicated migration tool (e.g. `golang‑migrate`) to ensure reversible schema changes.
 
-### Design Systen
+### Redis
 
-> Custom design system built with X to ensure consistent UI.
+Redis has several roles in our architecture:
+
+- **Session / Auth**: Stores refresh tokens with a native TTL, avoiding the need
+  for a cleanup job or DB polling. Invalidation on logout is O(1).
+
+- **Events manager**
+  - **UI realtime (pub/sub)**: The storage service publishes file and folder events
+    (`file_uploaded`, `folder_created`, etc.) to per-user and per-org channels
+    (`user_events:{id}`, `org_events:{id}`). The WebSocket broker subscribes and
+    re-broadcasts to connected clients. This is fire-and-forget: event loss is
+    acceptable because the frontend re-fetches on page load.
+  - **Cross-service side effects (Streams)**: Critical events such as `user_deleted`
+    and `file_orphaned` use `XADD`/`XREAD` for their guaranteed delivery semantics.
+    Messages persist in the stream and are consumed even after a consumer restart —
+    a missed event means orphaned data in MinIO or PostgreSQL.
+    Background workers (one goroutine per consumer) are launched alongside the HTTP
+    server. A periodic sweep worker runs every 15 minutes as a safety net.
+
+### Adminer
+
+Dev mode only, not much more to say. Its easier to navigate throught the tables with it. Used to debug/validate features
+
+### Design System (lucide-react)
+
+We've standardized on lucide-react for icon management in our frontend because it delivers measurable advantages:
+
+- Optimized bundle efficiency: Icon libraries like FontAwesome ship CSS files that define styling for all 7,000+ icons, even if you only use 20. That's wasted payload. Lucide-react is pure JavaScript, each icon is a React component, and our bundler includes only what we import. No CSS declarations or unused icon definitions that bloat the bundle.
+- Unified design language: Every icon adheres to the same specifications : 24px viewport, 2px stroke weight, which gives consistent visual hierarchy. This enforces design coherence across the product. As the application scales, this consistency prevents the fragmentation that occurs when teams source icons from multiple libraries or custom SVG repositories.
+- Operational sustainability: The library is maintained by the open-source community, integrated into production systems at scale (Vercel, Supabase, etc.), and published under the MIT license. This reduces technical debt compared to custom SVG management, which requires manual maintenance, testing, and versioning of individual assets.
+- Integration simplicity: Lucide-react integrates directly with our existing Tailwind and CSS modules stack. No adapter layers, middleware, or bespoke configuration required.

@@ -176,6 +176,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    secrets:
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,6 +197,9 @@ services:
       - minio_admin_user
       - minio_admin_pwd
       - redis_pwd
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
     env_file:
       - ../.env
     depends_on:
@@ -214,6 +222,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    secrets:
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
     depends_on:
       postgres:
         condition: service_healthy
@@ -280,3 +293,5 @@ secrets:
     file: ../secrets/redis/redis_pwd.txt
   cloudflare_tunnel_token:
     file: ../secrets/cloudflare_tunnel_token
+  jwt_secret:
+    file: ../secrets/jwt_secret

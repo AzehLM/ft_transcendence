@@ -72,6 +72,21 @@ exec:
 		|| (echo "Usage: make exec <service>" && exit 1)
 	$(COMPOSE_CMD) exec $(word 2,$(MAKECMDGOALS)) sh
 
+# rules to help check
+.PHONY: reset-quota
+reset-quota:
+	@[ -n "$(email)" ] || (echo "Usage: make reset-quota email=<email>" && exit 1)
+	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
+		-c "UPDATE users SET used_space = 0 WHERE email = '\''$(email)'\'';"' 2>/dev/null
+	@echo "[reset-quota] Quota reset for $(email)"
+
+.PHONY: saturate-quota
+saturate-quota:
+	@[ -n "$(email)" ] || (echo "Usage: make saturate-quota email=<email>" && exit 1)
+	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
+		-c "UPDATE users SET used_space = max_space WHERE email = '\''$(email)'\'';"' 2>/dev/null
+	@echo "[saturate-quota] Quota saturated for $(email)"
+
 # --------------------------------- cleanup ------------------------------------
 
 .PHONY: clean
@@ -81,16 +96,26 @@ clean: down
 
 .PHONY: fclean
 fclean: clean
-	@# $(COMPOSE_CMD) down --volumes --remove-orphans
+#	@$(COMPOSE_CMD) down --volumes --remove-orphans
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 
 .PHONY: reset-db
 reset-db:
-	@echo "[reset-db] Truncating files and folders..."
-	@docker exec postgres psql -U test -d db-test -c "TRUNCATE files, folders CASCADE;" >/dev/null
+	@echo "[reset-db] Truncating all tables..."
+	@docker exec postgres psql \
+		-U $$(cat secrets/postgres/postgres_user.txt) \
+		-d $$(cat secrets/postgres/postgres_db.txt) \
+		-c "TRUNCATE users, organizations, org_members, files, folders CASCADE;" >/dev/null
 	@echo "[reset-db] Done. Current counts:"
-	@docker exec postgres psql -U test -d db-test -c "SELECT 'folders' AS table, COUNT(*) FROM folders UNION ALL SELECT 'files', COUNT(*) FROM files;"
+	@docker exec postgres psql \
+		-U $$(cat secrets/postgres/postgres_user.txt) \
+		-d $$(cat secrets/postgres/postgres_db.txt) \
+		-c "SELECT 'users' AS table, COUNT(*) FROM users \
+			UNION ALL SELECT 'organizations', COUNT(*) FROM organizations \
+			UNION ALL SELECT 'org_members', COUNT(*) FROM org_members \
+			UNION ALL SELECT 'folders', COUNT(*) FROM folders \
+			UNION ALL SELECT 'files', COUNT(*) FROM files;"
 
 # --------------------------------- CI/CD ------------------------------------
 

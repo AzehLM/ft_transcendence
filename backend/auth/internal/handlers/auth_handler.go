@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"backend/auth/internal/workers"
 	"backend/shared/config"
 
 	"gorm.io/gorm"
@@ -20,8 +21,9 @@ type SaltRequest struct {
 }
 
 type AuthHandler struct {
-	DB  *gorm.DB
-	Env *config.Env
+	DB 			*gorm.DB
+	Env			*config.Env
+	Publisher	*workers.EventPublisher
 }
 
 type LoginRequest struct {
@@ -37,9 +39,10 @@ type UpdatePasswordRequest struct {
 	NewEncryptedPrivKey string `json:"new_encrypted_private_key"`
 }
 
-func NewAuthHandler(db *gorm.DB, env *config.Env) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, env *config.Env, publisher *workers.EventPublisher) *AuthHandler {
 	return &AuthHandler{
 		DB:  db,
 		Env: env,
+		Publisher:	publisher,
 	}
 }

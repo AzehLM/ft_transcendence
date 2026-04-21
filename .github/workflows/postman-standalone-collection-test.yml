@@ -1,0 +1,93 @@
+name: Automated API tests using Postman CLI (standalone)
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  automated-api-tests:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential jq
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login Postman
+        run: postman login --with-api-key "${{ secrets.POSTMAN_APY_KEY }}"
+
+      - name: Recreate secrets and env
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+          mkdir -p secrets/postgres secrets/redis secrets/minio secrets/grafana
+
+          echo "${{ secrets.SECRET_POSTGRES_USER }}"  > secrets/postgres/postgres_user.txt
+          echo "${{ secrets.SECRET_POSTGRES_PWD }}"   > secrets/postgres/postgres_pwd.txt
+          echo "${{ secrets.SECRET_POSTGRES_DB }}"    > secrets/postgres/postgres_db.txt
+          echo "${{ secrets.SECRET_REDIS_PWD }}"      > secrets/redis/redis_pwd.txt
+          echo "${{ secrets.SECRET_MINIO_USER }}"     > secrets/minio/minio_admin_user.txt
+          echo "${{ secrets.SECRET_MINIO_PWD }}"      > secrets/minio/minio_admin_pwd.txt
+          echo "${{ secrets.SECRET_GRAFANA_USER }}"   > secrets/grafana/grafana_admin_user.txt
+          echo "${{ secrets.SECRET_GRAFANA_PWD }}"    > secrets/grafana/grafana_admin_pwd.txt
+          echo "${{ secrets.SECRET_CF_TOKEN }}"       > secrets/cloudflare_tunnel_token
+          echo "${{ secrets.SECRET_JWT_TOKEN }}"      > secrets/jwt_secret
+
+      - name: Launch Ostrom in dev mode
+        run: make dev
+
+      - name: Run Postman tests
+        id: tests
+        continue-on-error: true
+        run: |
+          postman collection run "52021088-2aa6dd73-8db1-40c8-a401-ddfac3f45319" \
+            -e "52021088-580ece52-37d3-4dd2-9ca1-a242d70d68b0" \
+            --ignore-redirects \
+            -r cli,json --reporter-json-export report.json
+
+      - name: Show detailed results
+        if: always()
+        run: |
+          if [ -f report.json ]; then
+            echo "=== Test Summary ==="
+            jq '.run.stats // empty' report.json || echo "No stats in JSON"
+            echo ""
+            echo "=== Failed Tests ==="
+            jq '.run.executions[] | select(.assertions[]?.error) | {name: .item.name, errors: [.assertions[] | select(.error) | .error.message]}' report.json || echo "No failed assertions"
+          fi
+
+      - name: Fail if tests failed
+        if: always()
+        run: |
+          if [ -f report.json ]; then
+            FAILURES=$(jq '.run.stats.assertions.failed // 0' report.json)
+            if [ "$FAILURES" -gt 0 ]; then
+              echo "$FAILURES assertion(s) failed."
+              exit 1
+            fi
+            echo "All assertions passed."
+          else
+            echo "No report.json found — collection run may have crashed."
+            exit 1
+          fi
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          for svc in caddy auth orga storage postgres redis minio prometheus; do
+            echo "=== $svc ==="
+            docker logs $svc 2>&1 | tail -50 || true
+          done
+
+      - name: Cleanup
+        if: always()
+        run: make fclean
