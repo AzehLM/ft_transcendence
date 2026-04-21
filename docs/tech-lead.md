@@ -154,7 +154,7 @@ Redis has several roles in our architecture:
     Messages persist in the stream and are consumed even after a consumer restart —
     a missed event means orphaned data in MinIO or PostgreSQL.
     Background workers (one goroutine per consumer) are launched alongside the HTTP
-    server. ⚠️ do we have a PeriodicSweep ? if not delete this: A periodic sweep worker runs every 15 minutes as a safety net. *(planned)*
+    server. A periodic sweep worker runs every 15 minutes as a safety net.
 
 ### Adminer
 
