@@ -289,7 +289,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 			"max space": newSpace,
 		},
 	}
-	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"max_space": newSpace,
@@ -358,7 +358,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 			"used_space": newSpace,
 		},
 	}
-	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"used_space": newSpace,

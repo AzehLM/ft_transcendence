@@ -28,7 +28,11 @@ func main() {
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr, Password: env.RedisPassword})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
 
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)
