@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"backend/auth/internal/handlers"
+	"backend/auth/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
 
@@ -15,6 +17,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -44,7 +47,21 @@ func main() {
 		},
 	})
 
-	authHandler := handlers.NewAuthHandler(dbConn, env)
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
+	})
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
+
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+	authHandler := handlers.NewAuthHandler(dbConn, env, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)

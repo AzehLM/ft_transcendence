@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -161,6 +162,9 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		// TODO(redis): `file_orphaned` event with {object_key, file_id} (stream)
 		// so the cleanup worker removes the MinIO blob and the PENDING row
 		// Until the event bus is wired, quota-rejected uploads leave an orphan blob + PENDING row
+		if err := s.publisher.PublishFileOrphaned(context.TODO(), file.ID, file.MinioObjectKey, file.OwnerUserID); err != nil {
+			log.Printf("[WARN] Failed to publish file_orphaned for %s: %v", file.ID, err)
+		}
 		return uuid.Nil, ErrQuotaExceeded
 	}
 
@@ -236,6 +240,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// suppress actual file in minio
 	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
 		return err
 	}
 

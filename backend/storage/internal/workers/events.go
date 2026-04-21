@@ -8,9 +8,6 @@ const (
 	EventFileDeleted = "file_deleted"
 	EventFileMoved = "file_moved"
 
-	// Redis streams, cross-service cleanup
-	EventFileOrphaned = "file_orphaned"
-
 	// folder
 	EventFolderCreated = "folder_created"
 	EventFolderDeleted = "folder_deleted"
@@ -57,14 +54,6 @@ type FileMovedPayload struct {
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	OldFolderID	*uuid.UUID	`json:"old_folder_id,omitempty"`
 	NewFolderID	*uuid.UUID	`json:"new_folder_id,omitempty"`
-}
-
-type FileRenamedPayload struct {
-	FileID		uuid.UUID	`json:"file_id"`
-	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
-	OwnerID		uuid.UUID	`json:"owner_id"`
-	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
-	NewName		string		`json:"new_name"`
 }
 
 type FolderCreatedPayload struct {
