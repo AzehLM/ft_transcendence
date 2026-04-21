@@ -45,6 +45,7 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
           Logout
         </button>
       </div>
+      <div className={styles.overlay} onClick={onClose} />
     </>
   );
 }
