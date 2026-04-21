@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -26,6 +27,10 @@ type StorageRepository interface {
 	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)	// used for org_deleted event handling
 	DeleteOrgData(orgID uuid.UUID) error
 	DeleteUserData(userID uuid.UUID) error
+
+	// periodic sweep utils
+	FindAllActiveFiles() ([]File, error)
+	FindStalePendingFiles(age time.Duration) ([]File, error)
 
 	// Folder part
 	CreateFolder(folder *Folder) error											// POST /folders
@@ -340,4 +345,24 @@ func (r *storageRepository) DeleteUserData(userID uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+func (r *storageRepository) FindAllActiveFiles() ([]File, error) {
+	var files []File
+	err := r.db.Where("status = 'ACTIVE'").Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+
+}
+
+func (r *storageRepository) FindStalePendingFiles(age time.Duration) ([]File, error) {
+	var files []File
+	cutoff := time.Now().Add(-age)
+	err := r.db.Where("status = 'PENDING' AND created_at < ?", cutoff).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
 }
