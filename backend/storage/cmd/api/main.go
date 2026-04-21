@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	files "backend/storage/internal"
 
@@ -102,6 +103,8 @@ func main() {
 	go consumer.ConsumeOrgDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
+
+	go consumer.PeriodicSweep(context.TODO(), 15 * time.Minute)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))

@@ -261,3 +261,85 @@ func (c *EventConsumer) handleUserDeleted(ctx context.Context, rdb *redis.Client
 	log.Printf("[INFO] user_deleted: cleaned up user files %s (%d files)", userID, len(files))
 	return nil
 }
+
+
+func (c *EventConsumer) PeriodicSweep(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+				log.Println("[INFO] PeriodicSweep: stopping")
+				return
+		case <-ticker.C:
+			c.sweepOrphanedElements(ctx)
+		}
+	}
+}
+
+
+func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
+	// getting every minio blob (only fully uploaded files)
+	objectCh := c.minioClient.ListObjects(ctx, "ostrom", minio.ListObjectsOptions{})
+	minioKeys := make(map[string]struct{})
+	for object := range objectCh {
+		if object.Err != nil {
+			log.Printf("[WARN] sweep: ListObjects error: %v", object.Err)
+			continue
+		}
+		minioKeys[object.Key] = struct{}{}
+	}
+
+	// getting every ACTIVE file in DB
+	activeFiles, err := c.repo.FindAllActiveFiles()
+	if err != nil {
+		log.Printf("[ERROR] sweep: FindAllActiveFiles: %v", err)
+		return
+	}
+
+	dbKeys := make(map[string]struct{}, len(activeFiles))
+	for _, f := range activeFiles {
+		dbKeys[f.MinioObjectKey.String()] = struct{}{}
+	}
+
+	// case 1 -> minio blobs without db row (only exist in minio)
+	for key := range minioKeys {
+		if _, found := dbKeys[key]; !found {
+			if err := c.minioClient.RemoveObject(ctx, "ostrom", key, minio.RemoveObjectOptions{}); err != nil {
+				log.Printf("[WARN] sweep: RemoveObject call failed %s: %v", key, err)
+				continue
+			}
+			log.Printf("[INFO] sweep: removed orphaned blob %s", key)
+		}
+	}
+
+	// case 2 -> ACTIVE row in DB without MinIO blob
+	for _, f := range activeFiles {
+		if _, found := minioKeys[f.MinioObjectKey.String()]; !found {
+			if err := c.repo.DeleteFile(f.ID); err != nil {
+				log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
+				continue
+			}
+			log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
+		}
+	}
+
+	// case 3 -> PENDING file too old
+	// hardcoded 15 value, which is the interval between each sweep + the TTL of minio presignedURLs
+	// if the upload of a file takes more than the TTL of a minio presignedURL then we sweep it, deleting data on both DB and minio side
+	stalePending, err := c.repo.FindStalePendingFiles(15 * time.Minute)
+	if err != nil {
+		log.Printf("[ERROR] sweep: FindStalePendingFiles call failed: %v", err)
+		return
+	}
+
+	for _, f := range stalePending {
+		_ = c.minioClient.RemoveObject(ctx, "ostrom", f.MinioObjectKey.String(), minio.RemoveObjectOptions{})
+		if err := c.repo.DeleteFile(f.ID); err != nil {
+			log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
+			continue
+		}
+		log.Printf("[INFO] sweep: removed stale PENDING %s (age: %s)", f.ID, time.Since(f.CreatedAt).Round(time.Second))
+	}
+}
