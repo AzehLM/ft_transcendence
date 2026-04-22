@@ -1,25 +1,26 @@
 import { useNavigate } from "react-router-dom";
-import { generateLoginData } from "../services/crypto.service";
+import { generateRegistrationData } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "../styles/auth.module.css"
-import { Button } from "../components/button";
-import { InputField } from "../components/input";
+import styles from "../../styles/auth.module.css"
+import { Button } from "../../components/Button";
+import { InputField } from "../../components/Input";
 
 
-export default function LoginPage() {
+export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+        setError("");  // Réinitialise les erreurs précédentes
 
-        if (!email || !password) {
+        if (!email || !password || !confirmPassword) {
             setError("All fields are required!");
             return;
         }
@@ -30,41 +31,45 @@ export default function LoginPage() {
             return;
         }
 
+        if (password !== confirmPassword) {
+            setError("Passwords do not match!");
+            return;
+        }
+
         if (password.length < 8) {
             setError("Password must be at least 8 characters!");
             return;
         }
 
+
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques pour la connexion...");
-            const loginData = await generateLoginData(email, password);
+            console.log("🔐 Génération des données cryptographiques...");
+            const registrationData = await generateRegistrationData(email, password);
 
             console.log("📤 Envoi au serveur...");
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch("/api/auth/register", {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(loginData),
+                body: JSON.stringify(registrationData),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                setError(errorData.message || "Login failed!");
+                setError(errorData.message || "Registration failed!");
                 setIsLoading(false);
                 return;
             }
 
-            console.log("✅ Connexion réussie!");
-            const data = await response.json()
-            localStorage.setItem("token", data.access_token);
-            // navigate("/dashboard");
-            navigate("/profile");
+            console.log("✅ Enregistrement réussi!");
+            navigate("/login");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
-            setError(err.message || "An error occurred during login!");
+            setError(err.message || "An error occurred during registration!");
             setIsLoading(false);
         }
     };
@@ -83,14 +88,14 @@ export default function LoginPage() {
                         </span>
                     </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
-                        Welcome Back
+                        Create Your Account
                     </h1>
                     <p className={styles.logo_subtitle}>
-                        Log in to access your secure files
+                        Start protecting your files with zero-knowledge encryption
                     </p>
                 </div>
 
-                {/* Login Form */}
+                {/* Registration Form */}
                 <div className={styles.login_form}>
                     <form className={styles.login_form_inner} onSubmit={handleSubmit}>
                         <InputField
@@ -106,16 +111,25 @@ export default function LoginPage() {
                             label="Password"
                             type="password"
                             icon={Lock}
-                            placeholder="Enter your password"
+                            placeholder="Create a strong password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                        />
+
+                        <InputField
+                            label="Confirm Password"
+                            type="password"
+                            icon={Lock}
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                         />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>
                             <Shield className={`${styles.security_notice_icon} w-5 h-5`} style={{ color: "var(--brand-primary)" }} />
                             <p className={styles.security_notice_text}>
-                                <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
+                                <span className={styles.security_notice_title}>Important:</span> Your password cannot be recovered. Make sure to store it securely—we cannot reset it for you due to our zero-knowledge architecture.
                             </p>
                         </div>
 
@@ -127,7 +141,7 @@ export default function LoginPage() {
                         )}
 
                         <Button type="submit" variant="primary" disabled={isLoading}>
-                            {isLoading ? "Logging In..." : "Log In"}
+                            {isLoading ? "Creating Account..." : "Create Account"}
                             <ArrowRight className="inline-block ml-2 w-5 h-5" />
                         </Button>
                     </form>
@@ -139,28 +153,42 @@ export default function LoginPage() {
                         </div>
                         <div className={styles.divider_text_container}>
                             <span className={styles.divider_text}>
-                                Don't have an account?
+                                Already have an account?
                             </span>
                         </div>
                     </div>
 
-                    {/* Sign Up Link */}
+                    {/* Login Link */}
                     <Link
-                        to="/register"
+                        to="/login"
                         className={styles.signup_link}
                     >
-                        Create Account
+                        Log In
                     </Link>
                 </div>
 
-                {/* Back to Home */}
-                <div className={styles.back_home_container}>
-                    <Link
-                        to="/"
-                        className={styles.back_home_link}
-                    >
-                        ← Back to Home
-                    </Link>
+                {/* Terms and Privacy */}
+                <div style={{ marginTop: "32px", textAlign: "center" }}>
+                    <p style={{ fontSize: "14px", color: "var(--brand-dark)", opacity: 0.7, lineHeight: 1.6 }}>
+                        By signing up, you agree to our{" "}
+                        <Link
+                            to="/terms"
+                            style={{ color: "var(--brand-primary)", textDecoration: "none" }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                        >
+                            Terms of Service
+                        </Link>
+                        {" "}and{" "}
+                        <Link
+                            to="/privacy"
+                            style={{ color: "var(--brand-primary)", textDecoration: "none" }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                        >
+                            Privacy Policy
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>
