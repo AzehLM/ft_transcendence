@@ -14,6 +14,7 @@ import { ProfileSidebar } from './components/ProfileSidebar'
 import StoragePage from './pages/storage'
 import AccountPage from './pages/account'
 import OrganizationsPage from './pages/organizations'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
     return (
@@ -23,16 +24,18 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                 </Route>
-                <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/trash" element={<TrashPage />} />
-                </Route>
+                <Route element={<ProtectedRoute />}>
+                    <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/trash" element={<TrashPage />} />
+                    </Route>
 
-                <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/storage" element={<StoragePage />} />
-                    <Route path="/account" element={<AccountPage />} />
-                    <Route path="/organizations" element={<OrganizationsPage />} />
+                    <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/storage" element={<StoragePage />} />
+                        <Route path="/account" element={<AccountPage />} />
+                        <Route path="/organizations" element={<OrganizationsPage />} />
+                    </Route>
                 </Route>
                 <Route path="/" element={<Navigate to="/home" />} />
                 <Route path="/home" element={<HomePage />} />

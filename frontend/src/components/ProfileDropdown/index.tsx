@@ -1,15 +1,12 @@
 import { LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./ProfileDropdown.module.css";
+import { logout } from "../../services/auth.service";
 
 export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
-
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    window.location.href = "/login";
-  };
-
+  const navigate = useNavigate();
+  
   return (
     <>
       <div
@@ -22,6 +19,13 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
         <div className={styles.dropdown__header}>
           <p className={styles.dropdown__header__email}>Account</p>
         </div>
+        <Link
+          to="/dashboard"
+          onClick={onClose}
+          className={styles.dropdown__item}
+        >
+          Dashboard
+        </Link>
         <Link
           to="/profile"
           onClick={onClose}
@@ -38,7 +42,7 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
         </Link>
         <div className={styles.dropdown__divider} />
         <button
-          onClick={handleLogout}
+          onClick={() => logout(navigate)}
           className={`${styles.dropdown__item} ${styles["dropdown__item--danger"]}`}
         >
           <LogOut className="w-4 h-4" />
