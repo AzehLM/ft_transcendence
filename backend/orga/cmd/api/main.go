@@ -44,6 +44,8 @@ func main() {
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
+	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
+	app.Get("/health", healthHandler.Checker)
 
 	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub, eventPublisher)
 	// Middlewares
