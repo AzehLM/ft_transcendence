@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { generateLoginData } from "../../services/crypto.service";
+import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -38,7 +38,7 @@ export default function LoginPage() {
         setIsLoading(true);
         try {
             console.log("🔐 Génération des données cryptographiques pour la connexion...");
-            const loginData = await generateLoginData(email, password);
+            const { masterKey, loginData } = await generateLoginData(email, password);
 
             console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/login", {
@@ -49,6 +49,8 @@ export default function LoginPage() {
                 body: JSON.stringify(loginData),
             });
 
+            const responseData = await response.json();
+
             if (!response.ok) {
                 const errorData = await response.json();
                 setError(errorData.message || "Login failed!");
@@ -57,10 +59,15 @@ export default function LoginPage() {
             }
 
             console.log("✅ Connexion réussie!");
-            const data = await response.json()
-            localStorage.setItem("token", data.access_token);
-            // navigate("/dashboard");
-            navigate("/profile");
+            localStorage.setItem("token", responseData.access_token);
+
+            const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
+            const iv = base64ToUint8Array(responseData.iv);
+
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+            await storePrivateKey(privateKey);
+            navigate("/dashboard");
+            // navigate("/profile");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
