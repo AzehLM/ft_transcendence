@@ -329,5 +329,66 @@ export async function generateLoginData(email: string, password: string) {
 
     console.log("✅ Données de connexion générées:", loginData);
 
-    return loginData;
+    return { masterKey, loginData };
+}
+
+// unwrap private key
+function toArrayBuffer(data: Uint8Array | ArrayBuffer | number[] | object): ArrayBuffer {
+    if (data instanceof ArrayBuffer) return data;
+    
+    if (data instanceof Uint8Array) {
+        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    }
+        const values = Object.values(data) as number[];
+    return new Uint8Array(values).buffer;
+}
+
+export async function unwrapPrivateKey(
+    encryptedPrivateKey: Uint8Array,
+    masterKey: CryptoKey,
+    iv: Uint8Array
+): Promise<CryptoKey> {
+
+    console.log("IV AFTER REBUILD:", Array.from(iv)); // delete
+    console.log("ENCRYPTED AFTER REBUILD:", Array.from(encryptedPrivateKey)); //delete
+    
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        masterKey,
+        toArrayBuffer(encryptedPrivateKey)
+    );
+
+    const privateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        decryptedBuffer,
+        {
+            name: "RSA-OAEP",
+            hash: "SHA-256",
+        },
+        true,
+        ["decrypt"]
+    );
+
+    return privateKey;
+}
+
+export async function storePrivateKey(privateKey: CryptoKey) {
+  const exported = await crypto.subtle.exportKey("pkcs8", privateKey);
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
+  sessionStorage.setItem("privateKey", base64);
+}
+
+// rebuild private key
+export async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
+    const base64Key = sessionStorage.getItem("privateKey");
+    if (!base64Key) return null;
+    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+
+    return crypto.subtle.importKey(
+        "pkcs8",
+        keyBuffer,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["decrypt"]
+    );
 }

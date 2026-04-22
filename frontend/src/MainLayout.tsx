@@ -14,16 +14,16 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
         {/* Topbar */}
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
         <SearchBar />
-        <div style={{ marginLeft: "auto" }}> 
+        <div style={{ marginLeft: "auto", position: "relative" }}> 
           <UserProfileButton
             isOpen={profileDropdownOpen}
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
           />
-          </div>
           <ProfileDropdown
             isOpen={profileDropdownOpen}
             onClose={() => setProfileDropdownOpen(false)}
           />
+          </div>
         </div>
 
         {/* Contenu de la page */}
