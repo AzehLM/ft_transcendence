@@ -6,11 +6,11 @@ import (
 )
 
 type HealthHandler struct {
-    httpClient *http.Client
+	httpClient *http.Client
 }
 
 func NewHealthHandler() *HealthHandler {
-    return &HealthHandler{
-        httpClient: &http.Client{Timeout: 3 * time.Second},
-    }
+	return &HealthHandler{
+		httpClient: &http.Client{Timeout: 3 * time.Second},
+	}
 }
