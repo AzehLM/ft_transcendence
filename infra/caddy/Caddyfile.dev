@@ -150,6 +150,10 @@
     handle @orga {
         reverse_proxy orga:8082
     }
+    @health path /api/health
+    handle @health {
+        reverse_proxy health-aggregator:8084
+    }
 
 # --- WebSockets ---
     @ws path /ws/*
