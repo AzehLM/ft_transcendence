@@ -15,6 +15,7 @@ import StoragePage from './pages/storage'
 import AccountPage from './pages/account'
 import OrganizationsPage from './pages/organizations'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import StatusPage from './pages/Status'
 
 function App() {
     return (
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/status" element={<StatusPage />} />
             </Routes>
         </BrowserRouter>
     )
