@@ -25,6 +25,7 @@ type AuthHandler struct {
 	DB  *gorm.DB
 	Env *config.Env
 	MinioClient *minio.Client
+	Publisher	*workers.EventPublisher
 }
 
 type LoginRequest struct {
