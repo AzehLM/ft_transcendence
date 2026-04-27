@@ -63,6 +63,20 @@ func main() {
 		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
 	}
 
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
+	})
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
+
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
 	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
