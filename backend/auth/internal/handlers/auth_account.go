@@ -13,6 +13,7 @@ import (
 
     "github.com/gofiber/fiber/v3"
     "github.com/minio/minio-go/v7"
+	"github.com/google/uuid"
 )
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
