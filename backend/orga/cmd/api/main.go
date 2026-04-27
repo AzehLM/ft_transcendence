@@ -9,6 +9,7 @@ import (
 
 	"backend/orga/internal/handlers"
 	"backend/orga/internal/ws"
+	"backend/orga/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/shared/middleware"
@@ -27,17 +28,24 @@ func main() {
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr, Password: env.RedisPassword})
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
 
 	dbConn := db.InitDB(env)
 	wsHub := ws.NewHub(redisClient, dbConn)
 
 	app := fiber.New(fiber.Config{
-		AppName:   "ft_box_orga v1.0",
+		AppName:   "ostrom_orga v1.0",
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
-	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub)
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+
+	orgaHandler := handlers.NewOrgaHandler(dbConn, wsHub, eventPublisher)
 	// Middlewares
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))

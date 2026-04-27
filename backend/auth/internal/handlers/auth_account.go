@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
+	"context"
 	"encoding/base64"
 	"log"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
@@ -31,16 +33,29 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userIDStr := c.Locals("user_id").(string)
 
-	if err := h.DB.Where("id = ?", userID).Delete(&models.User{}).Error; err != nil {
-		log.Printf("[ERROR] Failed to delete user %s: %v\n", userID, err)
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[WARN] invalid user_id %s: %v", userIDStr, err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+	}
+
+	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
+		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_publish_user_deleted_event"})
+	}
+
+	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
+		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
 	}
 
 	clearRefreshTokenCookie(c)
 
-	log.Printf("[INFO] User %s deleted their account", userID)
+	log.Printf("[INFO] User %s deleted their account", userIDStr)
+
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "account_deleted_successfully",
 	})

@@ -9,8 +9,9 @@ import (
 
 	"backend/storage/internal"
 
-	"backend/storage/internal/workers"
+	"backend/shared/config"
 	"backend/shared/rbac"
+	"backend/storage/internal/workers"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
@@ -53,14 +54,16 @@ type storageService struct {
 	minioClient	*minio.Client
 	publisher	*workers.EventPublisher
 	rbac		rbac.Checker
+	env			*config.Env
 }
 
-func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker) StorageService {
+func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker, env *config.Env) StorageService {
 	return &storageService{
 		repo:			repo,
 		minioClient:	minioClient,
 		publisher:		publisher,
 		rbac:			checker,
+		env:			env,
 	}
 }
 
@@ -118,7 +121,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
 
 	return presignedURL, objectID, err
 }
@@ -139,14 +142,6 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, ErrForbidden
 	}
 
-	// activates file in DB
-	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return uuid.Nil, ErrNotFound
-		}
-		return uuid.Nil, err
-	}
-
 	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
 	ok, err = s.repo.TryIncrementUserUsedSpace(userID, file.FileSize)
@@ -155,10 +150,15 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	}
 
 	if !ok {
-		// TODO(redis): `file_orphaned` event with {object_key, file_id} (stream)
-		// so the cleanup worker removes the MinIO blob and the PENDING row
-		// Until the event bus is wired, quota-rejected uploads leave an orphan blob + PENDING row
 		return uuid.Nil, ErrQuotaExceeded
+	}
+
+	// activates file in DB
+	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
 	}
 
 	// update of file here so the event does't return an empty name = ""
@@ -201,7 +201,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:9000", "https://localhost:4242/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
@@ -227,13 +227,16 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 
 	// suppress file metadata in DB
 	if err := s.repo.DeleteFile(fileID); err != nil {
-		// if this fails, need to publish a `file_orphaned` event before returning
+		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
 		return err
 	}
 
 	// suppress actual file in minio
 	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
-		return err
+		if publishErr := s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID); publishErr != nil {
+			return err
+		}
+		return nil
 	}
 
 	if err := s.repo.DecrementUserUsedSpace(userID /* file.OwnerUserID */, file.FileSize); err != nil {
