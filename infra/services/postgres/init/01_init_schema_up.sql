@@ -57,7 +57,7 @@ CREATE TABLE files (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     org_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    folder_id UUID REFERENCES folders(id) ON DELETE RESTRICT,
+    folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
     name VARCHAR(100) NOT NULL,
     file_size BIGINT NOT NULL,
     minio_object_key UUID UNIQUE NOT NULL,
