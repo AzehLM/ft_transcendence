@@ -50,9 +50,9 @@ type GenerateRecoveryKeyResponse struct {
 
 func NewWebauthnHandler(db *gorm.DB, env *config.Env) *WebAuthnHandler {
 	// Get WebAuthn config from environment
-	rpID := env.WebAuthnRPID     // e.g., "example.com"
-	rpName := env.WebAuthnRPName // e.g., "ft_box"
-	origin := env.WebAuthnOrigin // e.g., "https://example.com"
+	rpID := env.WebAuthnRPID
+	rpName := env.WebAuthnRPName
+	origin := env.WebAuthnOrigin 
 
 	// Initialize WebAuthn service
 	webauthnService, err := service.NewWebAuthnService(rpID, rpName, origin)
