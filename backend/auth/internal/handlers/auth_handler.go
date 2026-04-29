@@ -22,8 +22,8 @@ type SaltRequest struct {
 }
 
 type AuthHandler struct {
-	DB  *gorm.DB
-	Env *config.Env
+	DB          *gorm.DB
+	Env         *config.Env
 	MinioClient *minio.Client
 }
 
@@ -42,8 +42,8 @@ type UpdatePasswordRequest struct {
 
 func NewAuthHandler(db *gorm.DB, env *config.Env, minioClient *minio.Client) *AuthHandler {
 	return &AuthHandler{
-		DB:  db,
-		Env: env,
+		DB:          db,
+		Env:         env,
 		MinioClient: minioClient,
 	}
 }

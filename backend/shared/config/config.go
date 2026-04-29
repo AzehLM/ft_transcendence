@@ -17,6 +17,9 @@ type Env struct {
 	JwtSecret        string
 	RedisPassword    string
 	RedisPort        string
+	WebAuthnRPID     string
+	WebAuthnRPName   string
+	WebAuthnOrigin   string
 }
 
 func LoadEnv() (*Env, error) {
@@ -31,20 +34,22 @@ func LoadEnv() (*Env, error) {
 		JwtSecret:        os.Getenv("JWT_SECRET"),
 		RedisPassword:    os.Getenv("REDIS_PASSWORD"),
 		RedisPort:        os.Getenv("REDIS_PORT"),
+		WebAuthnRPID:     os.Getenv("WEBAUTHN_RP_ID"),
+		WebAuthnRPName:   os.Getenv("WEBAUTHN_RP_NAME"),
+		WebAuthnOrigin:   os.Getenv("WEBAUTHN_ORIGIN"),
 	}
 
-	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" {
-		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret")
+	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" || env.WebAuthnRPID == "" || env.WebAuthnRPName == "" || env.WebAuthnOrigin == "" {
+		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret, WebAuthnRPID, WebAuthnRPName, WebAuthnOrigin")
 	}
 
 	return env, nil
 }
-
 
 func ReadSecret(name string) (string, error) {
 	data, err := os.ReadFile("/run/secrets/" + name)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(data)) , nil
+	return strings.TrimSpace(string(data)), nil
 }

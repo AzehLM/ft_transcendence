@@ -74,6 +74,11 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
+	webauthnHandler := handlers.NewWebauthnHandler(dbConn, env)
+	api.Post("/auth/webauthn/register/begin", webauthnHandler.BeginRegistration)
+	api.Post("/auth/webauthn/register/complete", webauthnHandler.CompleteRegistration)
+	api.Post("/auth/webauthn/recovery/generate", webauthnHandler.GenerateRecoveryKey)
+
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
