@@ -1,8 +1,12 @@
-export default function OrganizationsPage() {
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "../Profile/SettingsLayout";
+
+export default function ProfilePage() {
+
     return (
 
-        <div>
-          <h2>Orga</h2>
-        </div>
-    )
+        <SettingsLayout>
+          <h2 className={styles.subtitle}>Your Organizations</h2>
+        </SettingsLayout>
+    );
 }

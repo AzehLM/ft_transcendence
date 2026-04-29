@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPrivateKeyFromSession } from "../../services/crypto.service";
-import styles from "./Profile.module.css";
-
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "./SettingsLayout";
 
 export default function ProfilePage() {
   const [privateKey, setPrivateKey] = useState<string | null>(null);
@@ -19,11 +19,11 @@ useEffect(() => {
 
     return (
 
-        <div className={styles.page}>
-          <h2>profile</h2>
-          <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
+        <SettingsLayout>
+          <h2 className={styles.subtitle}>Personnal information</h2>
+          {/* <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
             {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Key not found"}
-          </div>
-        </div>
-    )
+          </div> */}
+        </SettingsLayout>
+    );
 }

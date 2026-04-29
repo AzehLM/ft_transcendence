@@ -1,8 +1,12 @@
-export default function Storage() {
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "../Profile/SettingsLayout";
+
+export default function ProfilePage() {
+
     return (
 
-        <div>
-          <h2>storage</h2>
-        </div>
-    )
+        <SettingsLayout>
+          <h2 className={styles.subtitle}>Storage</h2>
+        </SettingsLayout>
+    );
 }
