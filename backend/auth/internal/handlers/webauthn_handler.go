@@ -7,8 +7,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"log"
+	"strings"
 
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -52,7 +55,7 @@ func NewWebauthnHandler(db *gorm.DB, env *config.Env) *WebAuthnHandler {
 	// Get WebAuthn config from environment
 	rpID := env.WebAuthnRPID
 	rpName := env.WebAuthnRPName
-	origin := env.WebAuthnOrigin 
+	origin := env.WebAuthnOrigin
 
 	// Initialize WebAuthn service
 	webauthnService, err := service.NewWebAuthnService(rpID, rpName, origin)
@@ -119,26 +122,51 @@ func (h *WebAuthnHandler) CompleteRegistration(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
 	}
 
-	// Decode attestation response
-	attestationBytes, err := base64.StdEncoding.DecodeString(req.AttestationResponse)
-	if err != nil {
+	// Parse attestation response from frontend
+	var attestationResponseJSON map[string]interface{}
+	if err := json.Unmarshal([]byte(req.AttestationResponse), &attestationResponseJSON); err != nil {
+		log.Printf("[ERROR] Failed to parse attestation response: %v\n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_attestation_format"})
 	}
 
-	// TODO: Verify attestation and extract credential using WebAuthn library
-	// This requires parsing the attestation and verifying it
-	// For now, this is a placeholder - you'll need to implement the actual verification
+	// Parse the attestation response using webauthn library
+	parsedResponse, err := protocol.ParseCredentialCreationResponseBody(strings.NewReader(req.AttestationResponse))
+	if err != nil {
+		log.Printf("[ERROR] Failed to parse credential creation response: %v\n", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "failed_to_parse_response"})
+	}
+
+	// Create WebAuthn user object
+	webauthnUser := &webauthn.User{
+		ID:          []byte(userID),
+		Name:        user.Email,
+		DisplayName: user.Email,
+	}
+
+	// Get session data from service
+	session, exists := h.WebAuthnService.GetSession(userID)
+	if !exists {
+		log.Printf("[ERROR] Session data not found for user %s\n", userID)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "session_expired"})
+	}
+
+	// Verify registration and extract credential
+	credential, err := h.WebAuthnService.FinishRegistration(webauthnUser, session, parsedResponse)
+	if err != nil {
+		log.Printf("[ERROR] Failed to verify registration: %v\n", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_attestation"})
+	}
 
 	// Store credential in database
-	credential := &models.Credential{
+	newCredential := &models.Credential{
 		ID:           uuid.New(),
 		UserID:       user.ID,
-		CredentialID: attestationBytes, // In real implementation, extract from attestation
-		PublicKey:    attestationBytes, // In real implementation, extract public key from attestation
+		CredentialID: credential.ID,
+		PublicKey:    credential.PublicKey,
 		DeviceName:   req.DeviceName,
 	}
 
-	if err := h.DB.Create(credential).Error; err != nil {
+	if err := h.DB.Create(newCredential).Error; err != nil {
 		log.Printf("[ERROR] Failed to save credential: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed_to_save_credential"})
 	}
