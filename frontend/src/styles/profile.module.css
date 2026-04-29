@@ -6,6 +6,8 @@
     width: 100%;
     min-height: 100%;
     background-color: #f5f5f5;
+    font-family: 'IBM Plex Sans', sans-serif;
+
 }
 
 .contentArea {
@@ -30,4 +32,102 @@
     font-weight: 500;
     color: var(--brand-dark);
     letter-spacing: 0px;
+}
+
+.mainBox {
+    margin : 20px;
+    padding : 3%;
+    background-color: var(--brand-light);
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    border-radius: 8px;
+    width: 90%;
+}
+
+.profileBox {
+    display: flex;
+}
+
+.profileAvatarCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5%;
+    width: 50%;
+}
+
+.profileAvatarCol img {
+    width: 90%;
+    padding-bottom: 10%;
+}
+
+.profileButton {
+    padding: 16px 16px;
+    min-width: 120px;
+    min-height: 50px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 18px;
+    /* display: flex;
+    align-items: center;
+    justify-content: center; */
+    color: var(--brand-dark);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+}
+
+.buttonChange {
+    background-color: var(--brand-primary);
+}
+
+.buttonCancel {
+    background-color: #eeb9aa
+}
+
+button:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.infoBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 5%;
+    width: 100%;
+    gap: 8%;
+}
+
+.infoBox p {
+    font-weight: 500;
+}
+
+.nameBox {
+    display: flex;
+    gap: 30px;
+    /* flex-direction: ; */
+}
+
+.inputBox {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.inputBox input {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  border: 2px solid var(--brand-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  margin-top: 10px;
+}
+
+.buttons {
+    display: flex;
+    gap: 30px;
+    margin-top: 40px;
 }
