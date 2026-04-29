@@ -6,6 +6,7 @@ interface DeleteConfirmationModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     isTrash?: boolean;
+    isAccount?: boolean;
 }
 
 export function DeleteConfirmationModal({
@@ -14,15 +15,31 @@ export function DeleteConfirmationModal({
     onConfirm,
     onCancel,
     isTrash = false,
+    isAccount = false,
 }: DeleteConfirmationModalProps) {
     if (!isOpen) return null;
 
-    const title = isTrash ? "Delete File?" : "Move to Trash?";
-    const message = isTrash
+    // const title = isTrash ? "Delete File?" : "Move to Trash?";
+    let title: string;
+
+    if (isAccount) {
+    title = "Delete Account?";
+    } else if (isTrash) {
+    title = "Delete File?";
+    } else {
+    title = "Move to Trash?";
+    }
+
+    const message: string | undefined = isAccount
+    ? "Are you sure you want to permanently delete your account? This action cannot be undone."
+    : isTrash
         ? `Are you sure you want to permanently delete "${fileName}"? This action cannot be undone.`
         : undefined;
-    const buttonText = isTrash ? "Delete" : "Move to Trash";
-
+    const buttonText = isAccount
+    ? "Delete Account"
+    : isTrash
+        ? "Delete"
+        : "Move to Trash";
     return (
         <>
             <div className={styles.modal__overlay} onClick={onCancel} />
