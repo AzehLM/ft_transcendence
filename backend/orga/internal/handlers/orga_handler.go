@@ -33,45 +33,18 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
-	var orgas []models.Orga
 	repo := repository.NewOrganizationRepository(h.DB)
-	orgas, resErr := repo.GetMemberOrga(userID)
+
+
+	var orgResponses []models.OrgResponse
+	orgResponses, resErr := repo.GetMemberOrga(userID)
 	if resErr != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": resErr.Error(),
 		})
 	}
 
-	var orgResponses []models.OrgResponse
-
-	for _, orga := range orgas {
-		role, err := repo.GetMemberRole(orga.ID, userID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				role = "unknown"
-			} else {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": err.Error(),
-				})
-			}
-		}
-		
-		orgResponses = append(orgResponses, models.OrgResponse{
-			ID:        orga.ID,
-			Name:      orga.Name,
-			PublicKey: orga.PublicKey,
-			UsedSpace: orga.UsedSpace,
-			MaxSpace:  orga.MaxSpace,
-			CreatedAt: orga.CreatedAt,
-			Role:      role,
-		})
-	}
-
-	if orgResponses == nil {
-		orgResponses = []models.OrgResponse{}
-	}
 	return c.JSON(orgResponses)
-
 }
 
 
