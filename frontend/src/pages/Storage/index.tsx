@@ -1,7 +1,7 @@
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "../Profile/SettingsLayout";
 
-export default function ProfilePage() {
+export default function StoragePage() {
 
     // GET FROM BACK
     const used = 3;

@@ -1,6 +1,7 @@
 import styles from "../../styles/profile.module.css";
+import type { ReactNode } from "react";
 
-export function SettingsLayout({ children }: { children: React.ReactNode }) {
+export function SettingsLayout({ children }: { children: ReactNode }) {
   return (
         <div className={styles.page}>
           <div className={styles.contentArea}>

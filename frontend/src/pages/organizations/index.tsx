@@ -28,7 +28,7 @@ interface Organization {
 export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [, setSelectedOrg] = useState<Organization | null>(null);
 
 
   useEffect(() => {

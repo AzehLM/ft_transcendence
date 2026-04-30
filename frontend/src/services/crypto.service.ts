@@ -348,9 +348,6 @@ export async function unwrapPrivateKey(
     masterKey: CryptoKey,
     iv: Uint8Array
 ): Promise<CryptoKey> {
-
-    console.log("IV AFTER REBUILD:", Array.from(iv)); // delete
-    console.log("ENCRYPTED AFTER REBUILD:", Array.from(encryptedPrivateKey)); //delete
     
     const decryptedBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey, storePublicKey } from "../../services/crypto.service";
+import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";

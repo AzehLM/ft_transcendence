@@ -85,7 +85,7 @@
     background-color: #eeb9aa
 }
 
-button:hover {
+.profileButton:hover {
     opacity: 0.8;
     cursor: pointer;
 }

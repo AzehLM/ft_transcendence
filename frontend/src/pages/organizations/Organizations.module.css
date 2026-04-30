@@ -123,10 +123,6 @@
 }
 
 .buttonIconAdd:hover {
-  background-color: rgba(213, 79, 42, 0.08);
-}
-
-.buttonIconAdd:hover {
   background-color: rgba(91, 0, 0, 0.7);
 }
 
