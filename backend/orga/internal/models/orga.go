@@ -14,6 +14,16 @@ type Orga struct {
 	CreatedAt	time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 }
 
+type OrgResponse struct {
+	ID			uuid.UUID `json:"id"`
+	Name		string `json:"name"`
+	PublicKey	[]byte `json:"public_key"`
+	UsedSpace	int64     `json:"used_space"`
+	MaxSpace	int64     `json:"max_space"`
+	CreatedAt	time.Time `json:"created_at"`
+	Role  		string `json:"role"`
+}
+
 func (Orga) TableName() string {
     return "organizations" 
 }

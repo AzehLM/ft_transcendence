@@ -1,8 +1,101 @@
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "../Profile/SettingsLayout";
+import { useState } from "react";
+import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
+import { fetchWithRefresh } from "../../services/api.service";
+import { logout } from "../../services/auth.service";
+import { useNavigate } from "react-router-dom";
+
+
 export default function AccountPage() {
+    const navigate = useNavigate();
+    const [error, setError] = useState<string | null>(null);
+
+    const handleDeleteAccount = async () => {
+    try {
+        const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
+        
+        if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to delete account:", data);
+        setShowDeleteConfirm(false);
+        setError(data.message || "Failed to delete account, please try again.");
+        return;
+        }
+
+        logout(navigate);
+    } catch (err) {
+        console.error("Network error:", err);
+        setShowDeleteConfirm(false);
+        setError("Network error, please try again.");
+    }
+    };
+    const [password, setPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    
     return (
 
-        <div>
-          <h2>account</h2>
-        </div>
-    )
+        <SettingsLayout>
+            <div className={styles.accountBoxes}>
+                <div className={styles.mainBox}>
+                    <h2 className={styles.subtitle}>Security</h2>
+                    <div className={styles.handlePassword}>
+                        <div className={styles.inputBox}>
+                            <p>Current Password</p>
+                            <input
+                            type="password"
+                            autoComplete="current-password"
+                            value={password}
+                            placeholder="Enter current password"
+                            onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                        <div className={styles.inputBox}>
+                            <p>New Password</p>
+                            <input
+                            type="password"
+                            autoComplete="new-password"
+                            value={newPassword}
+                            placeholder="Enter new password"
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                        </div>
+                        <div className={styles.inputBox}>
+                            <p>Confirm your new password</p>
+                            <input
+                            type="password"
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            placeholder="Confirm new password"
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                        </div>
+                        <button className={`${styles.buttonChange} ${styles.profileButton}`}>Update Password</button>
+                    </div>
+                </div>
+                <div className={styles.deleteBox}>
+                <p className={styles.dangerTitle}>Danger Zone</p>
+                <div className={styles.dangerRow}>
+                    <div>
+                    <p className={styles.dangerLabel}>If you want to delete your account, click on the button</p>
+                    <p className={styles.dangerDescription}>This action cannot be undone</p>
+                    </div>
+                    <button className={styles.buttonDelete} onClick={() => setShowDeleteConfirm(true)}>Delete Account</button>
+                    <DeleteConfirmationModal
+                    isOpen={showDeleteConfirm}
+                    fileName="your account"
+                    onConfirm={handleDeleteAccount}
+                    onCancel={() => setShowDeleteConfirm(false)}
+                    isTrash={false}
+                    isAccount={true}
+                    />
+                </div>
+                    {error && <p className={styles.errorMessage}>{error}</p>}
+                </div>
+            </div>
+        </SettingsLayout>
+    );
 }

@@ -42,16 +42,18 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
-	var orgas []models.Orga
 	repo := repository.NewOrganizationRepository(h.DB)
-	orgas, resErr := repo.GetMemberOrga(userID)
+
+
+	var orgResponses []models.OrgResponse
+	orgResponses, resErr := repo.GetMemberOrga(userID)
 	if resErr != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": resErr.Error(),
 		})
 	}
-	return c.JSON(orgas)
 
+	return c.JSON(orgResponses)
 }
 
 func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {

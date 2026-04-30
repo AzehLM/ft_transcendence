@@ -1,0 +1,279 @@
+.page {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    /* position: relative; */
+    width: 100%;
+    min-height: 100%;
+    background-color: #f5f5f5;
+    font-family: 'IBM Plex Sans', sans-serif;
+
+}
+
+.contentArea {
+    padding: 5%;
+}
+
+.title {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    letter-spacing: 0px;
+}
+
+.subtitle {
+    margin-top: 0;
+    margin-bottom: 48px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--brand-dark);
+    letter-spacing: 0px;
+}
+
+.mainBox {
+    margin : 20px;
+    padding : 20px;
+    background-color: var(--brand-light);
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    border-radius: 8px;
+    width: 90%;
+}
+
+.profileBox {
+    display: flex;
+    gap: 15px;
+}
+
+.profileAvatarCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5%;
+    width: 50%;
+}
+
+.profileAvatarCol img {
+    width: 90%;
+    padding-bottom: 10%;
+}
+
+.profileButton {
+    padding: 16px 16px;
+    width: 120px;
+    min-width: fit-content;
+    min-height: 50px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--brand-dark);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    max-width: 50%;
+    white-space: nowrap;
+}
+
+.buttonChange {
+    background-color: var(--brand-primary);
+}
+
+.buttonCancel {
+    background-color: #eeb9aa
+}
+
+.profileButton:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.infoBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 5%;
+    width: 100%;
+    gap: 8%;
+}
+
+.infoBox p {
+    font-weight: 500;
+}
+
+.nameBox {
+    display: flex;
+    gap: 30px;
+    /* flex-direction: ; */
+}
+
+.inputBox {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.inputBox input {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  border: 2px solid var(--brand-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  margin-top: 10px;
+}
+
+.buttons {
+    display: flex;
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.storageBar {
+  width: 100%;
+  height: 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgb(192, 192, 192);
+  margin-bottom: 15px;
+}
+
+.storageBarFill {
+  height: 100%;
+  background-color: var(--brand-primary);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+.spaceUsage {
+    padding-left: 5%;
+    color: rgb(77, 77, 77);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.usageType {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.usageTypeInfo {
+    display: flex;
+    justify-content: space-between;
+    padding-right: 20px;
+    padding-left: 10px;
+}
+
+.usageTypeInfo p {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.usageTypeInfo:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.storageBoxes {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bullet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulletDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.handlePassword {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+}
+
+.handlePassword button {
+  align-self: flex-start;
+}
+
+.accountBoxes {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.deleteBox {
+  margin: 20px;
+  padding: 3%;
+  background-color: var(--brand-light);
+  box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+  border-radius: 8px;
+  border: 2px solid var(--brand-primary);
+  width: 90%;
+}
+
+.dangerTitle {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--brand-primary);
+  margin-bottom: 16px;
+}
+
+.dangerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dangerLabel {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--brand-dark);
+}
+
+.dangerDescription {
+  font-size: 13px;
+  color: rgb(120, 120, 120);
+  margin-top: 4px;
+}
+
+.buttonDelete {
+    background-color: var(--brand-primary);
+    color: white;
+    border: none;
+    align-self: flex-start;
+    padding: 16px 16px;
+    min-width: 120px;
+    min-height: 50px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 18px;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    margin-left: 10px;
+}
+
+
+.errorMessage {
+  color: #d32f2f;
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 20px;
+}

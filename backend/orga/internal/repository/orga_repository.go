@@ -21,15 +21,35 @@ func (r *OrganizationRepository) GetAllOrgas() ([]models.Orga, error) {
 }
 
 
-func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.Orga, error) {
-    var orgas []models.Orga
-    result := r.DB.
-        Distinct().
-        Joins("JOIN org_members ON org_members.org_id = organizations.id").
-        Where("org_members.user_id IN (?)", userID).
-        Find(&orgas)
+// func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.Orga, error) {
+//     var orgas []models.Orga
+//     result := r.DB.
+//         Distinct().
+//         Joins("JOIN org_members ON org_members.org_id = organizations.id").
+//         Where("org_members.user_id IN (?)", userID).
+//         Find(&orgas)
 
-    return orgas, result.Error
+//     return orgas, result.Error
+// }
+
+func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.OrgResponse, error) {
+    var orgResponses []models.OrgResponse
+    
+    result := r.DB.Table("organizations").
+        Select("organizations.id, organizations.name, organizations.public_key, organizations.used_space, organizations.max_space, organizations.created_at, org_members.role").
+        Joins("JOIN org_members ON org_members.org_id = organizations.id").
+        Where("org_members.user_id = ?", userID).
+        Scan(&orgResponses)
+    
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    
+    if orgResponses == nil {
+        orgResponses = []models.OrgResponse{}
+    }
+    
+    return orgResponses, nil
 }
 
 // func (r *OrganizationRepository) CreateNewOrga(orga *models.Orga) error {
@@ -132,4 +152,13 @@ func (r* OrganizationRepository) UpdateUsedSpace(space int64, orgID uuid.UUID) (
         return false, result.Error
     }
     return result.RowsAffected > 0, nil
+}
+
+func (r* OrganizationRepository) GetMemberRole(orgID uuid.UUID, userID uuid.UUID) (string, error) {
+    var member models.OrgaMember
+    result := r.DB.Where("org_id = ? AND user_id = ?", orgID, userID).First(&member)
+    if result.Error != nil {
+        return "", result.Error
+    }
+    return member.Role, nil
 }
