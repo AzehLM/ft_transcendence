@@ -333,14 +333,19 @@ export async function generateLoginData(email: string, password: string) {
 }
 
 // unwrap private key
-function toArrayBuffer(data: Uint8Array | ArrayBuffer | number[] | object): ArrayBuffer {
-    if (data instanceof ArrayBuffer) return data;
-    
-    if (data instanceof Uint8Array) {
-        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
-    }
-        const values = Object.values(data) as number[];
-    return new Uint8Array(values).buffer;
+
+function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayBuffer {
+  if (data instanceof ArrayBuffer) return data;
+
+  if (data instanceof Uint8Array) {
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  }
+
+  if (!data.every(n => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    throw new Error("toArrayBuffer: number[] contains invalid byte values (expected 0-255)");
+  }
+
+  return new Uint8Array(data).buffer;
 }
 
 export async function unwrapPrivateKey(
