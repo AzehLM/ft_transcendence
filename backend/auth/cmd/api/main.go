@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"backend/auth/internal"
 	"backend/auth/internal/handlers"
 	"backend/auth/internal/workers"
 	"backend/shared/config"
@@ -47,6 +48,24 @@ func main() {
 		},
 	})
 
+	minioUser, err := config.ReadSecret("minio_admin_user")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO user secret: %v", err)
+	}
+
+	minioPassword, err := config.ReadSecret("minio_admin_pwd")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
+	}
+
+	useSSL := false
+	minioEndpoint := "minio:9000"
+
+	minioClient, err := internal.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
+	if err != nil {
+		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
+	}
+
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:		redisAddr,
@@ -61,7 +80,7 @@ func main() {
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
-	authHandler := handlers.NewAuthHandler(dbConn, env, eventPublisher)
+	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
@@ -75,6 +94,7 @@ func main() {
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
+	api.Patch("/auth/avatar", authHandler.UploadAvatar)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8081...")
