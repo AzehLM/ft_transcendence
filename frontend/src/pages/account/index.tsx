@@ -9,10 +9,26 @@ import { useNavigate } from "react-router-dom";
 
 export default function AccountPage() {
     const navigate = useNavigate();
-    
+    const [error, setError] = useState<string | null>(null);
+
     const handleDeleteAccount = async () => {
-      await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
-      logout(navigate);
+    try {
+        const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
+        
+        if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to delete account:", data);
+        setShowDeleteConfirm(false);
+        setError(data.message || "Failed to delete account, please try again.");
+        return;
+        }
+
+        logout(navigate);
+    } catch (err) {
+        console.error("Network error:", err);
+        setShowDeleteConfirm(false);
+        setError("Network error, please try again.");
+    }
     };
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -74,6 +90,7 @@ export default function AccountPage() {
                     isAccount={true}
                     />
                 </div>
+                    {error && <p className={styles.errorMessage}>{error}</p>}
                 </div>
             </div>
         </SettingsLayout>

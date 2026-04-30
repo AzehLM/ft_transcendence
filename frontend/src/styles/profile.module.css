@@ -267,3 +267,13 @@ button:hover {
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
     margin-left: 10px;
 }
+
+
+.errorMessage {
+  color: #d32f2f;
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 20px;
+}
