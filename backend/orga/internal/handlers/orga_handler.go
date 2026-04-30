@@ -47,7 +47,13 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	for _, orga := range orgas {
 		role, err := repo.GetMemberRole(orga.ID, userID)
 		if err != nil {
-			role = "unknown"
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				role = "unknown"
+			} else {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
 		}
 		
 		orgResponses = append(orgResponses, models.OrgResponse{
