@@ -46,7 +46,8 @@ export default function AccountPage() {
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
                             <input
-                            type="text"
+                            type="password"
+                            autoComplete="current-password"
                             value={password}
                             placeholder="Enter current password"
                             onChange={(e) => setPassword(e.target.value)}
@@ -55,7 +56,8 @@ export default function AccountPage() {
                         <div className={styles.inputBox}>
                             <p>New Password</p>
                             <input
-                            type="text"
+                            type="password"
+                            autoComplete="new-password"
                             value={newPassword}
                             placeholder="Enter new password"
                             onChange={(e) => setNewPassword(e.target.value)}
@@ -64,9 +66,10 @@ export default function AccountPage() {
                         <div className={styles.inputBox}>
                             <p>Confirm your new password</p>
                             <input
-                            type="text"
+                            type="password"
+                            autoComplete="new-password"
                             value={confirmPassword}
-                            placeholder="Enter new password"
+                            placeholder="Confirm new password"
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             />
                         </div>
