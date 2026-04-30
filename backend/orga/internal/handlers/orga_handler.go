@@ -60,6 +60,10 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 			Role:      role,
 		})
 	}
+
+	if orgResponses == nil {
+		orgResponses = []models.OrgResponse{}
+	}
 	return c.JSON(orgResponses)
 
 }
