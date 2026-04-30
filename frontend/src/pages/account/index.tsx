@@ -7,7 +7,7 @@ import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
 
 
-export default function ProfilePage() {
+export default function AccountPage() {
     const navigate = useNavigate();
     
     const handleDeleteAccount = async () => {

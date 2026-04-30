@@ -36,7 +36,7 @@
 
 .mainBox {
     margin : 20px;
-    padding : 3%;
+    padding : 20px;
     background-color: var(--brand-light);
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
     border-radius: 8px;
@@ -45,6 +45,7 @@
 
 .profileBox {
     display: flex;
+    gap: 15px;
 }
 
 .profileAvatarCol {
@@ -62,7 +63,8 @@
 
 .profileButton {
     padding: 16px 16px;
-    min-width: 120px;
+    width: 120px;
+    min-width: fit-content;
     min-height: 50px;
     border-radius: 8px;
     font-weight: 500;
@@ -71,6 +73,8 @@
     cursor: pointer;
     transition: opacity 0.3s ease;
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    max-width: 50%;
+    white-space: nowrap;
 }
 
 .buttonChange {
@@ -261,4 +265,5 @@ button:hover {
     cursor: pointer;
     transition: opacity 0.3s ease;
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    margin-left: 10px;
 }

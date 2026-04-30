@@ -1,0 +1,140 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  /* justify-content: space-between; */
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.buttonCreate {
+  background-color: var(--brand-primary);
+  color: var(--brand-dark);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.empty {
+  color: rgb(120, 120, 120);
+  font-size: 16px;
+}
+
+.organizations {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.orgList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 90%;
+}
+
+.orgInfo {
+  flex: 1;
+  min-width: 0; 
+}
+
+.orgCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #faece8;
+  border-radius: 8px;
+  box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  overflow: hidden;
+  gap: 12px; 
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.orgCard:hover {
+  /* opacity: 0.9; */
+  background-color: #eeb9aa;
+  transform: scale(1.01);
+}
+
+.orgName {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--brand-dark);
+  /* text-overflow: ellipsis; */
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orgRole {
+  font-size: 13px;
+  color: rgb(120, 120, 120);
+  margin-top: 4px;
+}
+
+.buttonAdd {
+  background-color: #eeb9aa;
+  color: var(--brand-dark);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.orgActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0; 
+}
+
+.buttonIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  font-size: 11px;
+  font-weight: 500;
+  /* min-width: 50px; */
+  width: 50px;
+  height: 50px;
+}
+
+.buttonIconAdd {
+  /* color: var(--brand-primary); */
+  background-color: var(--brand-primary);
+  color: white;
+  border: solid 2px white;
+}
+
+.buttonIconAdd:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.buttonIconAdd:hover {
+  background-color: rgba(91, 0, 0, 0.7);
+}
+
+.buttonIconLeave {
+  color: #d32f2f;
+  border: solid 2px #d32f2f;
+}
+
+.buttonIconLeave:hover {
+  background-color: rgb(255, 255, 255);
+}
