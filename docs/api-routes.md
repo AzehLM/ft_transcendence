@@ -67,6 +67,7 @@ Reponse si 2FA desactivee (200) :
 {
   "access_token": "<jwt>",
   "encrypted_private_key": "<base64>",
+  "public_key": "<base64>",
   "iv": "<base64>"
 }
 ```

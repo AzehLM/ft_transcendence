@@ -63,8 +63,8 @@ export default function SecureUploadPage() {
             // ====================================================================
             // ÉTAPE 2 : GÉNÉRATION DES CLÉS DU FICHIER (AES-GCM)
             // ====================================================================
-            // Pourquoi AES-GCM ? C'est le standard de l'industrie. Il chiffre les données
-            // ET vérifie leur intégrité (grâce à un "Auth Tag" de 16 octets ajouté à la fin).
+            //
+            //
             const dek = window.crypto.getRandomValues(new Uint8Array(32)); // Data Encryption Key (256-bit)
             const baseIv = window.crypto.getRandomValues(new Uint8Array(12)); // Initialization Vector (96-bit)
 
@@ -134,8 +134,6 @@ export default function SecureUploadPage() {
             }
 
             // Assemblage final.
-            // Pourquoi un Blob ? MinIO (S3) exige l'en-tête HTTP 'Content-Length' exact.
-            // L'objet Blob calcule automatiquement cette taille pour le navigateur avant le fetch.
             const finalBlob = new Blob(encryptedChunks as BlobPart[], { type: "application/octet-stream" });
             const uploadRes = await fetch(presigned_url, {
                 method: "PUT",
@@ -160,8 +158,7 @@ export default function SecureUploadPage() {
                 },
                 body: JSON.stringify({
                     object_id: object_id,
-                    // TODO (Optionnel) : Remplacer l'encodage base64 par un vrai chiffrement AES du nom de fichier
-                    encrypted_filename: uint8ArrayToBase64(new TextEncoder().encode(file.name)),
+                    encrypted_filename: uint8ArrayToBase64(new TextEncoder().encode(file.name)), //need to change with the real name
                     encrypted_dek: uint8ArrayToBase64(encryptedDEK),
                     iv: uint8ArrayToBase64(baseIv),
                     org_id: null
