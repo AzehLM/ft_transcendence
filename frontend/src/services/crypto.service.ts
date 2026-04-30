@@ -392,3 +392,17 @@ export async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
         ["decrypt"]
     );
 }
+
+
+export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
+    const base64Key = sessionStorage.getItem("publicKey");
+    if (!base64Key) return null;
+    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+    return crypto.subtle.importKey(
+        "spki",
+        keyBuffer,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+    );
+}

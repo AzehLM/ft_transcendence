@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey } from "../../services/crypto.service";
+import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey, storePublicKey } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -61,11 +61,14 @@ export default function LoginPage() {
             console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
 
+
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
 
             const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
             await storePrivateKey(privateKey);
+
+            sessionStorage.setItem("publicKey", responseData.public_key);
             navigate("/dashboard");
             // navigate("/profile");
 
