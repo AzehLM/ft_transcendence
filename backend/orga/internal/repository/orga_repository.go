@@ -133,3 +133,12 @@ func (r* OrganizationRepository) UpdateUsedSpace(space int64, orgID uuid.UUID) (
     }
     return result.RowsAffected > 0, nil
 }
+
+func (r* OrganizationRepository) GetMemberRole(orgID uuid.UUID, userID uuid.UUID) (string, error) {
+    var member models.OrgaMember
+    result := r.DB.Where("org_id = ? AND user_id = ?", orgID, userID).First(&member)
+    if result.Error != nil {
+        return "", result.Error
+    }
+    return member.Role, nil
+}

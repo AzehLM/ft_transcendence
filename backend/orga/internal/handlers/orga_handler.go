@@ -41,7 +41,26 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 			"error": resErr.Error(),
 		})
 	}
-	return c.JSON(orgas)
+
+	var orgResponses []models.OrgResponse
+
+	for _, orga := range orgas {
+		role, err := repo.GetMemberRole(orga.ID, userID)
+		if err != nil {
+			role = "unknown"
+		}
+		
+		orgResponses = append(orgResponses, models.OrgResponse{
+			ID:        orga.ID,
+			Name:      orga.Name,
+			PublicKey: orga.PublicKey,
+			UsedSpace: orga.UsedSpace,
+			MaxSpace:  orga.MaxSpace,
+			CreatedAt: orga.CreatedAt,
+			Role:      role,
+		})
+	}
+	return c.JSON(orgResponses)
 
 }
 
