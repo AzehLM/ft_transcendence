@@ -11,8 +11,15 @@ COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE) --env-file $(ENV_FILE)
 SECRETS_PATH		:= secrets/
 GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 
+DATA_DIR        := $(HOME)/backups/ostrom/
+BACKUP_DIR      := $(DATA_DIR)
+
 $(SECRETS_PATH):
 	mkdir -p $@
+
+$(BACKUP_DIR):
+	mkdir -p $@
+	chmod 777 $@
 
 # List of the microservices in the speficied $(COMPOSE_FILE)
 SERVICES := $(shell docker compose -f $(COMPOSE_FILE) config --services)
@@ -22,19 +29,22 @@ $(ENV_FILE):
 	cp $(ENV_EXAMPLE) $(ENV_FILE)
 	@echo "$(ENV_FILE) created from $(ENV_EXAMPLE) — edit it before running."
 
+.PHONY: dirs
+dirs: $(BACKUP_DIR)
+
 # ---------------------------------- rules -------------------------------------
 
 # dev for now, will be switched for up later
 .DEFAULT_GOAL := dev
 
 .PHONY: up
-up: $(ENV_FILE)
+up: $(ENV_FILE) dirs
 	$(COMPOSE_CMD) up -d --build
 
 # watch mode beta-test here, not sure how it will look like as it also needs watch configuration in the $(COMPOSE_DEV_FILE)
 # to be defined
 .PHONY: dev
-dev: $(ENV_FILE)
+dev: $(ENV_FILE) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: watch
