@@ -15,9 +15,9 @@ CREATE TABLE users (
     max_space BIGINT NOT NULL DEFAULT 5368709120,
     refresh_token VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    avatar_url VARCHAR(255)
     -- username VARCHAR(50) UNIQUE
-    -- avatar
     -- two_factor_secret VARCHAR(255)
     -- two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE
 );

@@ -50,3 +50,7 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+
+#postman
+postman
+.postman
