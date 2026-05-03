@@ -264,6 +264,30 @@ services:
         condition: service_healthy
     command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflare_tunnel_token
 
+  backup:
+    container_name: backup
+    build:
+      context: ../
+      dockerfile: ./infra/services/backup/Dockerfile.dev
+    networks:
+      - dev
+    restart: unless-stopped
+    volumes:
+      - ${BACKUP_DIR}:/backups
+    env_file:
+      - ../.env
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_pwd
+      - minio_admin_user
+      - minio_admin_pwd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
 volumes:
   caddy_data:
   caddy_config:
