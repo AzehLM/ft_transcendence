@@ -1,11 +1,38 @@
+import { useRef } from "react";
 import { FilePlus, UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
 
-export function ActionButtons() {
+interface ActionButtonsProps {
+  onUploadFile?: (file: File) => void;
+  onCreateFolder?: () => void;
+  onCreateFile?: () => void;
+}
+
+export function ActionButtons({ onUploadFile, onCreateFolder, onCreateFile }: ActionButtonsProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onUploadFile) {
+      onUploadFile(file);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className={styles.container}>
       {/* Create files button */}
-      <button className={`${styles.button} ${styles["button--create-files"]}`}>
+      <button
+        className={`${styles.button} ${styles["button--create-files"]}`}
+        onClick={onCreateFile}
+      >
         <FilePlus className={styles["button__icon"]} />
         <span className={styles["button__text"]}>
           Create file
@@ -13,7 +40,10 @@ export function ActionButtons() {
       </button>
 
       {/* Create folder button */}
-      <button className={`${styles.button} ${styles["button--create-folder"]}`}>
+      <button
+        className={`${styles.button} ${styles["button--create-folder"]}`}
+        onClick={onCreateFolder}
+      >
         <FolderPlus className={styles["button__icon"]} />
         <span className={styles["button__text"]}>
           Create folder
@@ -21,12 +51,24 @@ export function ActionButtons() {
       </button>
 
       {/* Upload button */}
-      <button className={`${styles.button} ${styles["button--upload"]}`}>
+      <button
+        className={`${styles.button} ${styles["button--upload"]}`}
+        onClick={handleUploadClick}
+      >
         <UploadCloud className={styles["button__icon"]} />
         <span className={styles["button__text"]}>
           Upload
         </span>
       </button>
+
+      {/*
+      */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
     </div>
   );
 }
