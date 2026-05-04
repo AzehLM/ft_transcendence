@@ -34,7 +34,7 @@ RUN curl -fsSLo /usr/local/bin/mc \
 
 COPY infra/services/backup/backup.sh  /usr/local/bin/backup.sh
 COPY infra/services/backup/restore.sh /usr/local/bin/restore.sh
-COPY infra/services/backup/crontab    /etc/supercronic/crontab
+COPY infra/services/backup/crontab.dev    /etc/supercronic/crontab
 
 RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/restore.sh \
     && mkdir -p /backups/daily /backups/weekly /backups/minio

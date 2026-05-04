@@ -1,5 +1,4 @@
 # Crontab for supercronic
-# Format: sec min hour day month weekday command
 
 # Daily PostgreSQL backup — every day at 02:00 UTC
 0 0 2 * * * * /usr/local/bin/backup.sh postgres
