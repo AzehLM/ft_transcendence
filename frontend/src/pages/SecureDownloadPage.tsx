@@ -67,7 +67,6 @@ function useSecureDownload() {
             const baseIv = base64ToUint8Array(metadata.iv);
             const filename = new TextDecoder().decode(base64ToUint8Array(metadata.encrypted_filename));
 
-            // 3. Initialisation du flux
             setStatus("3/4 : Initialisation du flux de téléchargement...");
             const supportsFileSystemAccess = 'showSaveFilePicker' in window;
             let writable: FileSystemWritableFileStream | null = null;
@@ -144,11 +143,11 @@ function useSecureDownload() {
                 URL.revokeObjectURL(downloadUrl);
             }
 
-            setStatus(`✅ Succès ! "${filename}" a été déchiffré et sauvegardé.`);
+            setStatus(`Succès ! "${filename}" a été déchiffré et sauvegardé.`);
         } catch (err) {
             console.error("Erreur de téléchargement :", err);
             const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
-            setStatus(`❌ ${errorMessage}`);
+            setStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
