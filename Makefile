@@ -11,13 +11,15 @@ COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE) --env-file $(ENV_FILE)
 SECRETS_PATH		:= secrets/
 GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 
-DATA_DIR        := $(HOME)/backups/ostrom/
-BACKUP_DIR      := $(DATA_DIR)
-
 $(SECRETS_PATH):
 	mkdir -p $@
 
-$(BACKUP_DIR):
+BACKUP_DIR			:= $(HOME)/backups/ostrom/
+BACKUP_DAILY_DIR	:= $(BACKUP_DIR)/daily
+BACKUP_WEEKLY_DIR	:= $(BACKUP_DIR)/weekly
+BACKUP_MINIO_DIR	:= $(BACKUP_DIR)/minio
+
+$(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR):
 	mkdir -p $@
 	chmod 777 $@
 
@@ -30,7 +32,7 @@ $(ENV_FILE):
 	@echo "$(ENV_FILE) created from $(ENV_EXAMPLE) — edit it before running."
 
 .PHONY: dirs
-dirs: $(BACKUP_DIR)
+dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 
 # ---------------------------------- rules -------------------------------------
 
