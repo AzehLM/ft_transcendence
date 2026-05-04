@@ -52,8 +52,7 @@ export default function LoginPage() {
             const responseData = await response.json();
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || "Login failed!");
+                setError(responseData.message || "Login failed!");
                 setIsLoading(false);
                 return;
             }
@@ -61,11 +60,14 @@ export default function LoginPage() {
             console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
 
+
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
 
             const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
             await storePrivateKey(privateKey);
+
+            sessionStorage.setItem("publicKey", responseData.public_key);
             navigate("/dashboard");
             // navigate("/profile");
 
