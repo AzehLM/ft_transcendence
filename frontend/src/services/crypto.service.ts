@@ -329,39 +329,82 @@ export async function generateLoginData(email: string, password: string) {
 
     console.log("✅ Données de connexion générées:", loginData);
 
-    return loginData;
+    return { masterKey, loginData };
+}
+
+// unwrap private key
+
+function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayBuffer {
+  if (data instanceof ArrayBuffer) return data;
+
+  if (data instanceof Uint8Array) {
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  }
+
+  if (!data.every(n => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    throw new Error("toArrayBuffer: number[] contains invalid byte values (expected 0-255)");
+  }
+
+  return new Uint8Array(data).buffer;
+}
+
+export async function unwrapPrivateKey(
+    encryptedPrivateKey: Uint8Array,
+    masterKey: CryptoKey,
+    iv: Uint8Array
+): Promise<CryptoKey> {
+    
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        masterKey,
+        toArrayBuffer(encryptedPrivateKey)
+    );
+
+    const privateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        decryptedBuffer,
+        {
+            name: "RSA-OAEP",
+            hash: "SHA-256",
+        },
+        true,
+        ["decrypt"]
+    );
+
+    return privateKey;
+}
+
+export async function storePrivateKey(privateKey: CryptoKey) {
+  const exported = await crypto.subtle.exportKey("pkcs8", privateKey);
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
+  sessionStorage.setItem("privateKey", base64);
+}
+
+// rebuild private key
+export async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
+    const base64Key = sessionStorage.getItem("privateKey");
+    if (!base64Key) return null;
+    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+
+    return crypto.subtle.importKey(
+        "pkcs8",
+        keyBuffer,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["decrypt"]
+    );
 }
 
 
-export async function importPublicKey(base64Key: string): Promise<CryptoKey> {
-    const binaryDer = base64ToUint8Array(base64Key);
-    const derBytes = new Uint8Array(binaryDer);
-    return await crypto.subtle.importKey(
+export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
+    const base64Key = sessionStorage.getItem("publicKey");
+    if (!base64Key) return null;
+    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+    return crypto.subtle.importKey(
         "spki",
-        derBytes,
+        keyBuffer,
         { name: "RSA-OAEP", hash: "SHA-256" },
         true,
         ["encrypt"]
     );
-}
-
-
-export async function encryptDEKWithPublicKey(dek: Uint8Array, publicKey: CryptoKey): Promise<Uint8Array> {
-    const dekBytes = new Uint8Array(dek);
-    const encryptedDEK = await crypto.subtle.encrypt(
-        { name: "RSA-OAEP" },
-        publicKey,
-        dekBytes
-    );
-    return new Uint8Array(encryptedDEK);
-}
-
-export async function decryptDEKWithPrivateKey(encryptedDEK: Uint8Array, privateKey: CryptoKey): Promise<Uint8Array> {
-    const encryptedBytes = new Uint8Array(encryptedDEK);
-    const decryptedDEK = await crypto.subtle.decrypt(
-        { name: "RSA-OAEP" },
-        privateKey,
-        encryptedBytes
-    );
-    return new Uint8Array(decryptedDEK);
 }

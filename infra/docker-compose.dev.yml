@@ -25,7 +25,7 @@ services:
     #       exec:
     #         command: ["caddy", "reload", "--config", "/etc/caddy/Caddyfile"]
     healthcheck:
-      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      test: [ "CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile" ]
       interval: 5s # the shorter the better, 10s is too long in dev mode
       timeout: 10s
       retries: 3
@@ -133,7 +133,8 @@ services:
       MINIO_PROMETHEUS_AUTH_TYPE: public # required to access metrics
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9001}
       MINIO_SERVER_URL: http://minio:9000 # passe par l'API S3 (Caddy port 9000 actuellement)
-    ports: # temporary
+    ports:
+      # temporary
       - "127.0.0.1:9000:9000" # to test metrics endpoint
       - "127.0.0.1:9001:9001" # CLI exposed for local debug
     healthcheck:
@@ -176,6 +177,13 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,6 +200,9 @@ services:
       - minio_admin_user
       - minio_admin_pwd
       - redis_pwd
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
     env_file:
       - ../.env
     depends_on:
@@ -214,6 +225,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    secrets:
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
     depends_on:
       postgres:
         condition: service_healthy
@@ -248,6 +264,7 @@ volumes:
   minio_data:
   redis_data:
 
+
 networks:
   dev:
     driver: bridge
@@ -259,7 +276,6 @@ networks:
   tunnel:
     driver: bridge
     name: tunnel-network
-
 
 secrets:
   grafana_admin_user:
@@ -280,3 +296,5 @@ secrets:
     file: ../secrets/redis/redis_pwd.txt
   cloudflare_tunnel_token:
     file: ../secrets/cloudflare_tunnel_token
+  jwt_secret:
+    file: ../secrets/jwt_secret

@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 
+	"backend/shared/config"
 	"backend/storage/internal/service"
 
 	"github.com/gofiber/fiber/v3"
@@ -10,12 +11,14 @@ import (
 )
 
 type StorageHandler struct {
-	svc service.StorageService
+	svc	service.StorageService
+	env	*config.Env
 }
 
-func NewStorageHandler (svc service.StorageService) *StorageHandler {
+func NewStorageHandler (svc service.StorageService, env *config.Env) *StorageHandler {
 	return &StorageHandler{
-		svc: svc,
+		svc:	svc,
+		env:	env,
 	}
 }
 

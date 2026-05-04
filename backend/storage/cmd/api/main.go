@@ -1,18 +1,22 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	files "backend/storage/internal"
 
 	"backend/shared/config"
 	"backend/shared/db"
-	"backend/storage/internal/workers"
-	"backend/storage/internal/service"
 	"backend/storage/internal/handlers"
+	"backend/storage/internal/service"
+	"backend/storage/internal/workers"
 
 	"backend/shared/middleware"
 	"backend/shared/rbac"
@@ -20,6 +24,21 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/redis/go-redis/v9"
 )
+
+func initConsumerGroups(client *redis.Client) {
+	streams := map[string]string{
+		"events:domain:file_orphaned":	"storage-file-orphaned",
+		"events:domain:user_deleted":	"storage-user-deleted",
+		"events:domain:org_deleted":	"storage-org-deleted",
+	}
+	for stream, group := range streams {
+		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "0").Err()
+		if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
+			log.Fatalf("[FATAL] Cannot create consumer group for %s: %v", stream, err)
+		}
+		log.Printf("[INFO] Consumer group ready: %s → %s", stream, group)
+	}
+}
 
 func main() {
 	env, err := config.LoadEnv()
@@ -44,22 +63,25 @@ func main() {
 		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
 	}
 
-	redisPassword, err := config.ReadSecret("redis_pwd")
-	if err != nil {
-		log.Fatalf("[FATAL] Could not read Redis password secret: %v", err)
-	}
-
 	// redisClient used for the business logic
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: redisPassword,
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
 	})
+	initConsumerGroups(redisClient)
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
 	// internal Docker network — SSL not required
 	useSSL := false
-	minioEndpoint := "minio:9000"
+	minioEndpoint := fmt.Sprintf(("minio:%s"), env.MinioPort)
 
 	minioClient, err := files.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
 	if err != nil {
@@ -74,8 +96,15 @@ func main() {
 	checker := rbac.NewDBChecker(database)
 
 	repo := files.NewStorageRepository(database)
-	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker)
-	handler := handlers.NewStorageHandler(svc)
+	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker, env)
+	handler := handlers.NewStorageHandler(svc, env)
+
+	consumer := workers.NewEventConsumer(repo, minioClient)
+	go consumer.ConsumeOrgDeleted(context.TODO(), redisClient)
+	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
+	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
+
+	go consumer.PeriodicSweep(context.TODO(), 15 * time.Minute)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
