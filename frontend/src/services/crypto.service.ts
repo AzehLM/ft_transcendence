@@ -196,6 +196,21 @@ export async function exportPublicKey(
     return new Uint8Array(publicKeyBuffer);
 }
 
+export async function encryptDEKWithPublicKey(
+    dek: Uint8Array,
+    publicKey: CryptoKey
+): Promise<Uint8Array> {
+    const encryptedDek = await crypto.subtle.encrypt(
+        {
+            name: "RSA-OAEP",
+        },
+        publicKey,
+        toArrayBuffer(dek)
+    );
+
+    return new Uint8Array(encryptedDek);
+}
+
 // ============================================================================
 // UTILITAIRE: Convertir Uint8Array en Base64 pour l'envoi HTTP
 // ============================================================================
@@ -353,7 +368,7 @@ export async function unwrapPrivateKey(
     masterKey: CryptoKey,
     iv: Uint8Array
 ): Promise<CryptoKey> {
-    
+
     const decryptedBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
         masterKey,
