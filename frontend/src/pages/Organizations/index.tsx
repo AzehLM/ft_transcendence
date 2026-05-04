@@ -43,11 +43,28 @@ export default function OrganizationsPage() {
   const [orgName, setOrgName] = useState("");
   const handleCreateOrg = async () => {
     if (!orgName.trim()) return;
-    const data = await generateOrganization(orgName);
-    console.log("org data to send:", data);
-    // fetch API to do
-    setShowCreateModal(false);
-    setOrgName("");
+    try {
+      const data = await generateOrganization(orgName);
+      console.log("org data to send:", data);
+
+      const response = await fetchWithRefresh("/api/orgs", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        console.error("Failed to create org:", err);
+        return;
+      }
+
+      const newOrg = await response.json();
+      setOrgs([...orgs, { ...newOrg, role: "admin" }]);
+      setShowCreateModal(false);
+      setOrgName("");
+    } catch (err) {
+      console.error("Error:", err);
+    }
   };
 
 

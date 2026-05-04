@@ -30,8 +30,8 @@ export async function generateOrganization(name: string) {
 
   return {
     name,
-    org_public_key: uint8ArrayToBase64(orgPublicKey),
-    encrypted_org_private_key: uint8ArrayToBase64(encryptedPrivateKey),
+    public_key: uint8ArrayToBase64(orgPublicKey),
+    enc_org_priv_key: uint8ArrayToBase64(encryptedPrivateKey),
     encrypted_aes_key: uint8ArrayToBase64(new Uint8Array(encryptedAesKey)),
     iv: uint8ArrayToBase64(iv),
   };
