@@ -41,17 +41,13 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 
 .PHONY: up
 up: $(ENV_FILE) dirs
-	$(COMPOSE_CMD) up -d --build
+	$(COMPOSE_CMD) up -d --build --remove-orphans
 
 # watch mode beta-test here, not sure how it will look like as it also needs watch configuration in the $(COMPOSE_DEV_FILE)
 # to be defined
 .PHONY: dev
 dev: $(ENV_FILE) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
-
-.PHONY: watch
-watch: $(ENV_FILE)
-	$(COMPOSE_DEV_CMD) up --build --watch --remove-orphans
 
 .PHONY: stop
 stop:
