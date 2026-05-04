@@ -17,6 +17,7 @@ import { SettingsLayout } from "../Profile/SettingsLayout";
 import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
+import { generateOrganization } from "../../services/organizations.service";
 
 interface Organization {
   id: string;
@@ -38,15 +39,59 @@ export default function OrganizationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [orgName, setOrgName] = useState("");
+  const handleCreateOrg = async () => {
+    if (!orgName.trim()) return;
+    const data = await generateOrganization(orgName);
+    console.log("org data to send:", data);
+    // fetch API to do
+    setShowCreateModal(false);
+    setOrgName("");
+  };
+
+
   return (
     <SettingsLayout>
     <div className={styles.mainBox}>
         <h2 className={styles.subtitle}>Organizations</h2>
         <div className={orgaStyles.header}>
-            <button className={`${styles.buttonChange} ${styles.profileButton}`} /*onClick={() => setShowCreateModal(true)}*/ >
+            <button 
+            className={`${styles.buttonChange} ${styles.profileButton}`} 
+            onClick={() => setShowCreateModal(true)}
+            >
             + Create Organization
             </button>
         </div>
+
+{/* Modal temporaire */}
+{showCreateModal && (
+  <>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 999 }}
+      onClick={() => setShowCreateModal(false)}
+    />
+    <div style={{
+      position: "fixed", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)",
+      background: "white", padding: "32px",
+      borderRadius: "12px", zIndex: 1000,
+      display: "flex", flexDirection: "column", gap: "16px",
+      minWidth: "300px"
+    }}>
+      <h3>Create Organization</h3>
+      <input
+        type="text"
+        placeholder="Organization name"
+        value={orgName}
+        onChange={(e) => setOrgName(e.target.value)}
+      />
+      <button onClick={handleCreateOrg}>Create</button>
+      <button onClick={() => setShowCreateModal(false)}>Cancel</button>
+    </div>
+  </>
+)}
+
+
         <div className={orgaStyles.organizations}>
             {loading ? (
                 <p>Loading...</p>
