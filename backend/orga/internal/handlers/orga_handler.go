@@ -61,6 +61,8 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		Name              string `json:"name" validate:"required"`
 		PublicKey         string `json:"public_key" validate:"required"`
 		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
+        EncAesKey         string `json:"encrypted_aes_key" validate:"required"`
+        Iv                string `json:"iv" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -89,6 +91,16 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 			"error": "encrypted private key is required",
 		})
 	}
+    if body.EncAesKey == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "encrypted aes key is required",
+		})
+    }
+    if body.Iv == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "iv is required",
+		})
+    }
 
 	decodedPublicKey, errPublicKey := base64.StdEncoding.DecodeString(body.PublicKey)
 	if errPublicKey != nil {
@@ -121,12 +133,27 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		})
 	}
 
+    decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+    if errAes != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 aes key",
+		})
+    }
+
+    decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+    if errIv != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 iv",
+		})
+    }
+
 	orgaMember := models.OrgaMember{
 		// OrgID:         orga.ID,
 		UserID:        userID,
 		Role:          "admin",
 		EncOrgPrivKey: decodedKey,
-		// EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
+		EncAesKey:     decodedAesKey,
+        Iv:            decodedIv, 
 	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
