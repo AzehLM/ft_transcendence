@@ -39,4 +39,4 @@ COPY infra/services/backup/crontab    /etc/supercronic/crontab
 RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/restore.sh \
     && mkdir -p /backups/daily /backups/weekly /backups/minio
 
-CMD ["supercronic", "/etc/supercronic/crontab"]
+CMD ["supercronic", "-debug", "/etc/supercronic/crontab"]
