@@ -16,7 +16,7 @@ RUN apk add --no-cache \
 ENV SUPERCRONIC_VERSION=v0.2.45 \
     SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.45/supercronic-linux-amd64 \
     SUPERCRONIC_SHA1SUM=e894b193bea75a5ee644e700c59e30eedc804cf7 \
-    SUPERCRONIC_BIN=supercronic-linux-amd64
+    SUPERCRONIC_BIN=supercronic-linux-amd64 \
     # not sure about this one yet, I didn't find any that has been release recently (maybe chainguard has one)
     MC_VERSION=RELEASE.2025-04-03T17-07-56Z
 
