@@ -11,9 +11,9 @@ import { AuthLayout } from './AuthLayout'
 import { MainLayout } from './MainLayout'
 import { MenuSidebar } from './components/MenuSidebar'
 import { ProfileSidebar } from './components/ProfileSidebar'
-import StoragePage from './pages/storage'
-import AccountPage from './pages/account'
-import OrganizationsPage from './pages/organizations'
+import StoragePage from './pages/Storage'
+import AccountPage from './pages/Account'
+import OrganizationsPage from './pages/Organizations'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
