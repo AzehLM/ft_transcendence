@@ -40,15 +40,14 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 up: $(ENV_FILE) dirs
 	$(COMPOSE_CMD) up -d --build --remove-orphans
 
-# watch mode beta-test here, not sure how it will look like as it also needs watch configuration in the $(COMPOSE_DEV_FILE)
-# to be defined
 .PHONY: dev
 dev: $(ENV_FILE) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: stop
 stop:
-	$(COMPOSE_CMD) stop
+	@$(COMPOSE_DEV_CMD) stop
+	@$(COMPOSE_CMD) stop
 
 .PHONY: down
 down:
@@ -58,6 +57,10 @@ down:
 .PHONY: re
 re: down
 	$(MAKE) up
+
+.PHONY: re-dev
+re-dev: down
+	$(MAKE) dev
 
 # --------------------------- logs / exec / debug ------------------------------
 
@@ -91,6 +94,33 @@ saturate-quota:
 	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
 		-c "UPDATE users SET used_space = max_space WHERE email = '\''$(email)'\'';"' 2>/dev/null
 	@echo "[saturate-quota] Quota saturated for $(email)"
+
+.PHONY: backup
+backup:
+	@[ -n "$(type)" ] || (echo "Usage: make backup type=<postgres|minio>" && exit 1)
+	@docker exec backup backup.sh $(type)
+
+.PHONY: backup-list
+backup-list:
+	@echo "\n=== Daily ==="; ls -lht $(BACKUP_DAILY_DIR)/*.dump 2>/dev/null || echo "  (none)"
+	@echo "\n=== Weekly ==="; ls -lht $(BACKUP_WEEKLY_DIR)/*.dump 2>/dev/null || echo "  (none)"
+	@echo "\n=== MinIO mirror ==="; du -sh $(BACKUP_MINIO_DIR) 2>/dev/null || echo "  (none)"
+
+.PHONY: backup-restore
+backup-restore:
+	@[ -n "$(dump)" ] || (echo "Usage: make backup-restore dump=<latest|daily/backup_X.dump|weekly/backup_X.dump>" && exit 1)
+	docker exec -it backup restore.sh $(dump)
+
+.PHONY: backup-test-rotation
+backup-test-rotation:
+	@echo "[test] Creating dummy dump files to test rotation logic..."
+	@for i in 1 2 3 4 5 6 7 8 9; do \
+		touch $(BACKUP_DAILY_DIR)/backup_2026-05-0$${i}.dump; \
+	done
+	@echo "[test] Created 9 dummy daily dumps. Running backup-list:"
+	@$(MAKE) backup-list
+	@echo "[test] Now trigger a real backup to see rotation in action:"
+	@echo "       make backup type=postgres"
 
 # --------------------------------- cleanup ------------------------------------
 
