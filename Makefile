@@ -23,9 +23,6 @@ $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR):
 	mkdir -p $@
 	chmod 777 $@
 
-# List of the microservices in the speficied $(COMPOSE_FILE)
-SERVICES := $(shell docker compose -f $(COMPOSE_FILE) config --services)
-
 $(ENV_FILE):
 	@[ -f $(ENV_EXAMPLE) ] || (echo "Error: $(ENV_EXAMPLE) not found" && exit 1)
 	cp $(ENV_EXAMPLE) $(ENV_FILE)
@@ -108,14 +105,14 @@ fclean: clean
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 
-.PHONY: reset-db
-reset-db:
-	@echo "[reset-db] Truncating all tables..."
+.PHONY: db-reset
+db-reset:
+	@echo "[db-reset] Truncating all tables..."
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
 		-c "TRUNCATE users, organizations, org_members, files, folders CASCADE;" >/dev/null
-	@echo "[reset-db] Done. Current counts:"
+	@echo "[db-reset] Done. Current counts:"
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
@@ -124,6 +121,17 @@ reset-db:
 			UNION ALL SELECT 'org_members', COUNT(*) FROM org_members \
 			UNION ALL SELECT 'folders', COUNT(*) FROM folders \
 			UNION ALL SELECT 'files', COUNT(*) FROM files;"
+
+.PHONY: minio-reset
+minio-reset:
+	@echo "[minio-reset] Removing and recreating bucket 'ostrom'..."
+	@docker exec backup sh -c \
+		'mc alias set ostrom http://$${MINIO_HOST:-minio}:$${MINIO_PORT:-9000} \
+		"$$(cat /run/secrets/minio_admin_user)" \
+		"$$(cat /run/secrets/minio_admin_pwd)" --quiet \
+		&& mc rb --force ostrom/ostrom \
+		&& mc mb ostrom/ostrom'
+	@echo "[minio-reset] Done. Bucket 'ostrom' is empty."
 
 # --------------------------------- CI/CD ------------------------------------
 

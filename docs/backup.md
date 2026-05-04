@@ -112,7 +112,7 @@ docker compose restart auth orga storage
 
 ## Disaster recovery — MinIO
 
-MinIO data lives in `/${HOME}/backups/ostrom/minio/` (local mirror). In the event of MinIO volume loss:
+MinIO data lives in `/${HOME}/backups/ostrom/minio/` (local mirror). In the event of MinIO volume loss.
 
 ### Step 1 — Recreate the bucket
 
