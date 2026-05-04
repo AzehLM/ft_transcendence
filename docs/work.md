@@ -71,12 +71,14 @@ Les JWT sont generes uniquement au register et au login. Toutes les autres reque
 
 1. User clique "Creer l'org" (ex: 42_Projects)
 2. Client genere une OrgKey aleatoire (AES-GCM 256) via Web Crypto
-3. Chiffre cette OrgKey avec sa propre pubkey RSA (RSA-OAEP) -> EncryptedOrgKey
-4. `POST /api/v1/orgs` avec le nom + EncryptedOrgKey
+3. Client génère une clé AES-GCM 256 temporaire
+4. Chiffre Org_Priv_Key avec la clé AES (AES-GCM) -> encrypted_org_private_key + iv
+5. Chiffre la clé AES avec la clé publique RSA du user (RSA-OAEP) -> encrypted_aes_key
+6. `POST /api/orgs` avec le nom, org_public_key, encrypted_org_private_key, encrypted_aes_key, iv
 5. Backend (transaction PG) :
    - Cree l'orga (UUID)
    - Ajoute le createur en tant qu'admin
-   - Stocke l'encrypted_org_key (BYTEA) dans `enc_org_priv_key` dans la table org_members
+   - Stocke encrypted_org_private_key, encrypted_aes_key, iv dans `org_members`
    - Le serveur voit qu'un blob opaque, il peut rien en faire
 6. Publie un event `org_created` sur Redis -> push via WS aux autres sessions du user
 

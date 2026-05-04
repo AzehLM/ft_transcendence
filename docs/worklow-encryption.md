@@ -91,12 +91,14 @@ Le navigateur a été fermé. La RAM est vide. Le client ne possède plus aucune
 
 Lorsqu'un utilisateur (l'Admin) crée une organisation depuis le frontend React :
 
+1. **Génération des clés orga** : React génère une paire de clés RSA dédiée à l'organisation (Org_Pub_Key + Org_Priv_Key)
+2. **Chiffrement de la clé privée orga** :
+   - Génération d'une clé AES-GCM 256 temporaire
+   - Chiffrement de Org_Priv_Key avec la clé AES → encrypted_org_private_key + iv
+   - Chiffrement de la clé AES avec la clé publique RSA du user → encrypted_aes_key
+3. **Envoi au backend** : nom de l'orga, Org_Pub_Key (en clair), encrypted_org_private_key, encrypted_aes_key, iv
+4. **Le serveur** stocke ces blobs opaques — il ne peut rien déchiffrer sans la clé privée du user
 
-    Génération : React génère une nouvelle paire de clés dédiée à l'organisation (ex: Org_Pub_Key et Org_Priv_Key).
-
-    React chiffre la Org_Priv_Key en utilisant la Public_Key de l'Admin.
-
-   Le frontend envoie à Fiber : le nom de l'orga, la Org_Pub_Key (en clair), et la Encrypted_Org_Priv_Key (chiffrée pour l'Admin).
 2. L'Invitation d'un Membre
 
     Le frontend d'Alice(admin) télécharge la Public_Key de Bob depuis l'API Go.

@@ -269,8 +269,10 @@ Body :
 ```json
 {
   "name": "42_Projects",
-  "org_public_key": "<base64>",
-  "encrypted_org_private_key": "<base64>"
+  "public_key": "<base64>",
+  "enc_org_private_key": "<base64>",
+  "encrypted_aes_key": "<base64>",
+  "iv": "<base64>"
 }
 ```
 
