@@ -45,9 +45,10 @@ export default function AccountPage() {
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
+                            <input type="password" style={{ display: "none" }} />
                             <input
                             type="password"
-                            autoComplete="current-password"
+                            autoComplete="password"
                             value={password}
                             placeholder="Enter current password"
                             onChange={(e) => setPassword(e.target.value)}
