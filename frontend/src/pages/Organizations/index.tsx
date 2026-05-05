@@ -6,6 +6,7 @@ import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
 import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { useNavigate } from "react-router-dom";
 
 interface Organization {
   id: string;
@@ -15,6 +16,9 @@ interface Organization {
 }
 
 export default function OrganizationsPage() {
+  const navigate = useNavigate();
+
+
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -213,7 +217,7 @@ const handleAddMember = async () => {
             ) : (
                 <div className={orgaStyles.orgList}>
                 {orgs.map((org) => (
-                    <div key={org.id} className={orgaStyles.orgCard} onClick={() => setSelectedOrg(org)}>
+                    <div key={org.id} className={orgaStyles.orgCard} onClick={() => navigate(`/orgs/${org.id}/files`)}>
                       <div className={orgaStyles.orgInfo}>
                           <p className={orgaStyles.orgName}>{org.name}</p>
                           <p className={orgaStyles.orgRole}>{org.role}</p>

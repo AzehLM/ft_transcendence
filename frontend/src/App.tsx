@@ -15,6 +15,11 @@ import StoragePage from './pages/Storage'
 import AccountPage from './pages/Account'
 import OrganizationsPage from './pages/Organizations'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { OrgSidebar } from './components/OrgSidebar'
+import OrgFilesPage from './pages/Orgs/OrgFilesPage'
+import OrgMembersPage from './pages/Orgs/OrgMembersPage'
+import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
+
 
 function App() {
     return (
@@ -35,6 +40,11 @@ function App() {
                         <Route path="/storage" element={<StoragePage />} />
                         <Route path="/account" element={<AccountPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
+                    </Route>
+                    <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
+                        <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
+                        <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>
                 </Route>
                 <Route path="/" element={<Navigate to="/home" />} />
