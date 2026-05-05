@@ -6,7 +6,7 @@
 #   restore.sh daily/backup_2026-05-03.dump — restore a specific dump
 #   restore.sh weekly/backup_2026-W18.dump  — restore a specific weekly dump
 # This script MUST be run manually (never by cron).
-# It will DROP and recreate the target database — all current data will be lost.
+# All current data will be lost.
 
 set -eu
 

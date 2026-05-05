@@ -35,7 +35,6 @@ backup_postgres() {
 	PGDATABASE="$(read_secret postgres_db)"
 	PGUSER="$(read_secret postgres_user)"
 
-	# Export because pg_dump reads the password from its environment
 	# exporting the password because pg_dump reads the password from the environment (it is executed in a sub-shell and it doesn't herit from the password without it)
 	export PGPASSWORD="$(read_secret postgres_pwd)"
 
