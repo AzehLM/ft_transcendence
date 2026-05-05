@@ -1,7 +1,7 @@
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "../Profile/SettingsLayout";
 import { useState } from "react";
-import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
@@ -85,7 +85,7 @@ export default function AccountPage() {
                     <p className={styles.dangerDescription}>This action cannot be undone</p>
                     </div>
                     <button className={styles.buttonDelete} onClick={() => setShowDeleteConfirm(true)}>Delete Account</button>
-                    <DeleteConfirmationModal
+                    <ConfirmationModal
                     isOpen={showDeleteConfirm}
                     fileName="your account"
                     onConfirm={handleDeleteAccount}

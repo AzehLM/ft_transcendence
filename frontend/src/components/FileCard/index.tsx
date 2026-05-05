@@ -1,7 +1,7 @@
 import { MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import styles from "./FileCard.module.css";
-import { DeleteConfirmationModal } from "../DeleteConfirmationModal";
+import { ConfirmationModal } from "../ConfirmationModal";
 
 interface FileCardProps {
   name: string;
@@ -102,7 +102,7 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
           )}
         </div>
       </div>
-      <DeleteConfirmationModal
+      <ConfirmationModal
         isOpen={showDeleteConfirm}
         fileName={name}
         onConfirm={handleConfirmDelete}
