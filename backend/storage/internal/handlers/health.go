@@ -39,7 +39,7 @@ func (h *HealthHandler) Checker(c fiber.Ctx) error {
 
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		err := h.db.Exec("SELECT 1").Error
+		err := h.db.WithContext(ctx).Exec("SELECT 1").Error
 		mu.Lock()
 		postgresOK = err == nil // true if err == nil, false otherwise
 		mu.Unlock()
