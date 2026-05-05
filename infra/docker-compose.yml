@@ -218,7 +218,7 @@ services:
       context: ../
       dockerfile: ./infra/services/health-aggregator/Dockerfile
     networks:
-      - dev
+      - app
     restart: unless-stopped
     depends_on:
       auth:
