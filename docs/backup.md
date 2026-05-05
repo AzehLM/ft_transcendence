@@ -6,8 +6,8 @@ This document describes our backup strategy, retention policy, and the recovery 
 
 | What | How | Where | Schedule |
 |------|-----|-------|----------|
-| PostgreSQL | `pg_dump --format=custom` | `/${HOME}/backups/ostrom/` on host | Daily at 02:00 UTC |
-| MinIO bucket | `mc mirror` | `/${HOME}/backups/ostrom/minio/` on host | Weekly on Sundays at 03:00 UTC |
+| PostgreSQL | `pg_dump --format=custom` | `${HOME}/backups/ostrom/` on host | Daily at 02:00 UTC |
+| MinIO bucket | `mc mirror` | `${HOME}/backups/ostrom/minio/` on host | Weekly on Sundays at 03:00 UTC |
 
 Backups are managed by a `backup` microservice, scheduled with [supercronic](https://github.com/aptible/supercronic). All jobs log to stdout and are visible via `docker logs backup`. The dev mode has the `-debug` option for verbose outputs.
 
