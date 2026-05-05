@@ -29,7 +29,7 @@ interface Organization {
 export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setSelectedOrg] = useState<Organization | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
 
 
   useEffect(() => {
@@ -39,6 +39,7 @@ export default function OrganizationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Create an orga
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [orgName, setOrgName] = useState("");
   const handleCreateOrg = async () => {
@@ -64,6 +65,41 @@ export default function OrganizationsPage() {
       setOrgName("");
     } catch (err) {
       console.error("Error:", err);
+    }
+  };
+
+  // Add a member
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [memberEmail, setMemberEmail] = useState("");
+  const [addMemberError, setAddMemberError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const handleAddMember = async () => {
+    if (!memberEmail.trim()) return;
+    setAdding(true);
+    setAddMemberError(null);
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${selectedOrg?.id}/members`, {
+        method: "POST",
+        body: JSON.stringify({ user_email: memberEmail }),
+      });
+
+      if (response.status === 404) {
+        setAddMemberError("User not found.");
+        return;
+      }
+      if (!response.ok) {
+        const err = await response.json();
+        setAddMemberError(err.message || "Failed to add member.");
+        return;
+      }
+
+      setMemberEmail("");
+      setShowAddMemberModal(false);
+    } catch (err) {
+      setAddMemberError("Network error, please try again.");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -108,7 +144,39 @@ export default function OrganizationsPage() {
   </>
 )}
 
-
+{showAddMemberModal && (
+  <>
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 999 }}
+      onClick={() => { setShowAddMemberModal(false); setAddMemberError(null); }}
+    />
+    <div style={{
+      position: "fixed", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)",
+      background: "white", padding: "32px",
+      borderRadius: "12px", zIndex: 1000,
+      display: "flex", flexDirection: "column", gap: "16px",
+      minWidth: "300px"
+    }}>
+      <h3>Add Member to {selectedOrg?.name}</h3>
+      <input
+        type="email"
+        placeholder="alice@42lyon.fr"
+        value={memberEmail}
+        onChange={(e) => setMemberEmail(e.target.value)}
+      />
+      {addMemberError && (
+        <p style={{ color: "#d32f2f", fontSize: "14px" }}>{addMemberError}</p>
+      )}
+      <button onClick={handleAddMember} disabled={adding}>
+        {adding ? "Adding..." : "Add Member"}
+      </button>
+      <button onClick={() => { setShowAddMemberModal(false); setAddMemberError(null); }}>
+        Cancel
+      </button>
+    </div>
+  </>
+)}
         <div className={orgaStyles.organizations}>
             {loading ? (
                 <p>Loading...</p>
@@ -129,6 +197,8 @@ export default function OrganizationsPage() {
                             className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
                             onClick={(e) => {
                             e.stopPropagation();
+                              setSelectedOrg(org);
+                              setShowAddMemberModal(true);
                             }}
                         >
                             <UserPlus size={20} />
