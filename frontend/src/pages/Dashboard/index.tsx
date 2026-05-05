@@ -1,5 +1,6 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
+import { CreateFolderModal } from "../../components/CreateFolderModal"
 import { useState, useEffect, useCallback } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService, FileItem } from "../../services/files.service";
@@ -9,6 +10,8 @@ export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
 
     const loadFiles = useCallback(async () => {
         try {
@@ -37,13 +40,27 @@ export default function DashboardPage() {
         loadFiles();
     });
 
+    const handleCreateFolderSubmit = async (folderName: string) => {
+        await FilesService.createFolder(folderName);
+
+        await loadFiles();
+    };
+
     const handleDelete = async (fileName: string) => {
     };
 
     return (
         <div className={styles.page}>
 
-            <ActionButtons onUploadFile={uploadFile} />
+            <CreateFolderModal
+                isOpen={isFolderModalOpen}
+                onClose={() => setIsFolderModalOpen(false)}
+                onSubmit={handleCreateFolderSubmit}
+            />
+
+            <ActionButtons onUploadFile={uploadFile}
+                           onCreateFolder={() => setIsFolderModalOpen(true)}
+             />
 
             {/* Main content area */}
             <div className={styles.contentArea}>

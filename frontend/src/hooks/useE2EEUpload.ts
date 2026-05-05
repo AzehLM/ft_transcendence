@@ -100,7 +100,7 @@ export function useE2EEUpload(onSuccess: () => void) {
                 method: "POST",
                 body: JSON.stringify({
                     object_id: object_id,
-                    encrypted_filename: encryptedFilenameB64,
+                    encrypted_filename: file.name,
                     encrypted_dek: uint8ArrayToBase64(new Uint8Array(encryptedDEK)),
                     iv: uint8ArrayToBase64(baseIv),
                     org_id: null
