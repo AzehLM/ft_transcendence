@@ -17,7 +17,7 @@ import { SettingsLayout } from "../Profile/SettingsLayout";
 import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
-import { generateOrganization } from "../../services/organizations.service";
+import { generateOrganization, encryptOrgKeyForMember } from "../../services/organizations.service";
 
 interface Organization {
   id: string;
@@ -74,34 +74,59 @@ export default function OrganizationsPage() {
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
-  const handleAddMember = async () => {
-    if (!memberEmail.trim()) return;
-    setAdding(true);
-    setAddMemberError(null);
-    try {
-      const response = await fetchWithRefresh(`/api/orgs/${selectedOrg?.id}/members`, {
-        method: "POST",
-        body: JSON.stringify({ user_email: memberEmail }),
-      });
+const handleAddMember = async () => {
+  if (!memberEmail.trim() || !selectedOrg) return;
+  setAdding(true);
+  setAddMemberError(null);
 
-      if (response.status === 404) {
-        setAddMemberError("User not found.");
-        return;
-      }
-      if (!response.ok) {
-        const err = await response.json();
-        setAddMemberError(err.message || "Failed to add member.");
-        return;
-      }
+  try {
+    // Get the keys of user inviting
+    const keysRes = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/keys`);
+    if (!keysRes.ok) throw new Error("Failed to get org keys");
+    const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
 
-      setMemberEmail("");
-      setShowAddMemberModal(false);
-    } catch (err) {
-      setAddMemberError("Network error, please try again.");
-    } finally {
-      setAdding(false);
+    // Get oublic key of user invited
+    const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${memberEmail}`);
+    if (pubKeyRes.status === 404) {
+      setAddMemberError("User not found.");
+      return;
     }
-  };
+    const { public_key } = await pubKeyRes.json();
+
+    // Encrypt
+    console.log("Adding member (3) - encrypt keys")
+    const encryptedData = await encryptOrgKeyForMember(
+      enc_org_priv_key,
+      enc_aes_key,
+      iv,
+      public_key
+    );
+
+    // Send to back
+    console.log("Adding member (4) - send to back")
+    const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members`, {
+      method: "POST",
+      body: JSON.stringify({
+        user_email: memberEmail,
+        ...encryptedData,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      setAddMemberError(err.message || "Failed to add member.");
+      return;
+    }
+
+    setMemberEmail("");
+    setShowAddMemberModal(false);
+  } catch (err) {
+    console.error("Error:", err);
+    setAddMemberError("An error occurred, please try again.");
+  } finally {
+    setAdding(false);
+  }
+};
 
 
   return (
