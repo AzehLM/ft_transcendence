@@ -1,16 +1,3 @@
-// import styles from "../../styles/profile.module.css";
-// import { SettingsLayout } from "../Profile/SettingsLayout";
-
-// export default function ProfilePage() {
-
-//     return (
-
-//         <SettingsLayout>
-//           <h2 className={styles.subtitle}>Your Organizations</h2>
-//         </SettingsLayout>
-//     );
-// }
-
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { SettingsLayout } from "../Profile/SettingsLayout";
@@ -18,7 +5,7 @@ import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
 import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
-import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 
 interface Organization {
   id: string;
@@ -40,6 +27,8 @@ export default function OrganizationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const [modalError, setModalError] = useState<string | null>(null);
+
   // Create an orga
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [orgName, setOrgName] = useState("");
@@ -57,6 +46,7 @@ export default function OrganizationsPage() {
       if (!response.ok) {
         const err = await response.json();
         console.error("Failed to create org:", err);
+        setModalError(err.error || err.message || "Failed to create organization.");
         return;
       }
 
@@ -72,13 +62,10 @@ export default function OrganizationsPage() {
   // Add a member
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
-  const [addMemberError, setAddMemberError] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
 
 const handleAddMember = async () => {
   if (!memberEmail.trim() || !selectedOrg) return;
-  setAdding(true);
-  setAddMemberError(null);
+  setModalError(null);
 
   try {
     // Get the keys of user inviting
@@ -89,7 +76,7 @@ const handleAddMember = async () => {
     // Get oublic key of user invited
     const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${memberEmail}`);
     if (pubKeyRes.status === 404) {
-      setAddMemberError("User not found.");
+      setModalError("User not found");
       return;
     }
     const { public_key } = await pubKeyRes.json();
@@ -115,7 +102,7 @@ const handleAddMember = async () => {
 
     if (!response.ok) {
       const err = await response.json();
-      setAddMemberError(err.message || "Failed to add member.");
+      setModalError(err.error || err.message || "Failed to add member.");
       return;
     }
 
@@ -123,9 +110,7 @@ const handleAddMember = async () => {
     setShowAddMemberModal(false);
   } catch (err) {
     console.error("Error:", err);
-    setAddMemberError("An error occurred, please try again.");
-  } finally {
-    setAdding(false);
+    setModalError("An error occurred, please try again.");
   }
 };
 
@@ -150,7 +135,7 @@ const handleAddMember = async () => {
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
-
+  
   const handleLeaveOrga = async () => {
     try {
       if (!selectedOrg) {
@@ -193,72 +178,33 @@ const handleAddMember = async () => {
         <div className={orgaStyles.header}>
             <button 
             className={`${styles.buttonChange} ${styles.profileButton}`} 
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => { setShowCreateModal(true); setModalError(null); }}
             >
             + Create Organization
             </button>
         </div>
 
-{/* Modal temporaire */}
-{showCreateModal && (
-  <>
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 999 }}
-      onClick={() => setShowCreateModal(false)}
-    />
-    <div style={{
-      position: "fixed", top: "50%", left: "50%",
-      transform: "translate(-50%, -50%)",
-      background: "white", padding: "32px",
-      borderRadius: "12px", zIndex: 1000,
-      display: "flex", flexDirection: "column", gap: "16px",
-      minWidth: "300px"
-    }}>
-      <h3>Create Organization</h3>
-      <input
-        type="text"
-        placeholder="Organization name"
-        value={orgName}
-        onChange={(e) => setOrgName(e.target.value)}
-      />
-      <button onClick={handleCreateOrg}>Create</button>
-      <button onClick={() => setShowCreateModal(false)}>Cancel</button>
-    </div>
-  </>
-)}
+        <ConfirmationModal
+          isOpen={showCreateModal}
+          fileName={orgName}
+          onConfirm={handleCreateOrg}
+          onCancel={() => { setShowCreateModal(false); setModalError(null); }}
+          isCreateOrga={true}
+          inputValue={orgName}
+          onInputChange={setOrgName}
+          errorMessage={modalError ?? undefined}
+        />
 
-{showAddMemberModal && (
-  <>
-    <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 999 }}
-      onClick={() => { setShowAddMemberModal(false); setAddMemberError(null); }}
-    />
-    <div style={{
-      position: "fixed", top: "50%", left: "50%",
-      transform: "translate(-50%, -50%)",
-      background: "white", padding: "32px",
-      borderRadius: "12px", zIndex: 1000,
-      display: "flex", flexDirection: "column", gap: "16px",
-      minWidth: "300px"
-    }}>
-      <h3>Add Member to {selectedOrg?.name}</h3>
-      <input
-        type="email"
-        placeholder="alice@42lyon.fr"
-        value={memberEmail}
-        onChange={(e) => setMemberEmail(e.target.value)}
-      />
-      {addMemberError && (
-        <p style={{ color: "#d32f2f", fontSize: "14px" }}>{addMemberError}</p>
-      )}
-      <button onClick={handleAddMember} disabled={adding}>
-        {adding ? "Adding..." : "Add Member"}
-      </button>
-      <button onClick={() => { setShowAddMemberModal(false); setAddMemberError(null); }}>
-        Cancel
-      </button>
-    </div>
-  </>
-)}
+        <ConfirmationModal
+          isOpen={showAddMemberModal}
+          fileName={memberEmail}
+          onConfirm={handleAddMember}
+          onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
+          isAddMember={true}
+          inputValue={memberEmail}
+          onInputChange={setMemberEmail}
+          errorMessage={modalError ?? undefined}
+        />
         <div className={orgaStyles.organizations}>
             {loading ? (
                 <p>Loading...</p>
@@ -282,6 +228,7 @@ const handleAddMember = async () => {
                               e.stopPropagation();
                                 setSelectedOrg(org);
                                 setShowAddMemberModal(true);
+                                setModalError(null);
                               }}
                           >
                               <UserPlus size={20} />
@@ -305,14 +252,14 @@ const handleAddMember = async () => {
                     </div>
                 ))}
                 {selectedOrg && (
-                  <DeleteConfirmationModal
+                  <ConfirmationModal
                     isOpen={showLeaveConfirm}
                     fileName={selectedOrg.name}
                     onConfirm={handleLeaveOrga}
                     onCancel={() => setShowLeaveConfirm(false)}
                     isTrash={false}
                     isAccount={false}
-                    isOrga={true}
+                    isLeaveOrga={true}
                     isMe={true}
                   />
                 )}
