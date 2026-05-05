@@ -209,3 +209,19 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 		"avatar_url": avatarURL,
 	})
 }
+
+func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
+    email := c.Query("email")
+    if email == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
+    }
+
+    var user models.User
+    if err := h.DB.Where("email = ?", email).First(&user).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+    })
+}
