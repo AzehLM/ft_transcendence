@@ -43,9 +43,7 @@ jobs:
           echo "${{ secrets.SECRET_JWT_TOKEN }}"      > secrets/jwt_secret
 
       - name: Launch Ostrom in dev mode
-        run: make dev
-        env:
-          HOME: /root
+        run: make dev BACKUP_DIR=/tmp/ostrom-backups/
 
       - name: Run Postman tests
         id: tests
