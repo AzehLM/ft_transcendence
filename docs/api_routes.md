@@ -380,23 +380,26 @@ Response `200 OK` :
 ## Org Members
 
 ### `POST /orgs/{org_id}/members`
-
-Invite un membre. L'admin wrape l'OrgKey avec la PubKey du nouveau membre.
+Invite un membre. L'admin chiffre la clé privée de l'orga pour le nouveau membre via chiffrement hybride RSA+AES.
 
 Body :
 ```json
 {
   "user_email": "alice@42lyon.fr",
-  "encrypted_org_key": "<base64>"
+  "enc_org_priv_key": "<base64>",
+  "encrypted_aes_key": "<base64>",
+  "iv": "<base64>"
 }
 ```
 
-Reponse : `201 Created`
+Response `201 Created` :
 ```json
 {
-  "message": "member added to organization",
+  "message": "member added to organization"
 }
 ```
+
+Response `404` : user not found
 
 ---
 
