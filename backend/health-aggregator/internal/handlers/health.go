@@ -89,5 +89,11 @@ func (h *HealthHandler) checkService(url string) *serviceStatus {
 		}
 	}
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		status.Liveness = true
+		status.Readiness = false
+		status.Degraded = resp.StatusCode >= 500
+	}
+
 	return &status
 }
