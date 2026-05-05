@@ -44,6 +44,8 @@ jobs:
 
       - name: Launch Ostrom in dev mode
         run: make dev
+        env:
+          HOME: /root
 
       - name: Run Postman tests
         id: tests
