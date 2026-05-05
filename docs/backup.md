@@ -9,7 +9,7 @@ This document describes our backup strategy, retention policy, and the recovery 
 | PostgreSQL | `pg_dump --format=custom` | `${HOME}/backups/ostrom/` on host | Daily at 02:00 UTC |
 | MinIO bucket | `mc mirror` | `${HOME}/backups/ostrom/minio/` on host | Weekly on Sundays at 03:00 UTC |
 
-Backups are managed by a `backup` microservice, scheduled with [supercronic](https://github.com/aptible/supercronic). All jobs log to stdout and are visible via `docker logs backup`. The dev mode has the `-debug` option for verbose outputs.
+Backups are managed by a `backup` microservice, scheduled with [supercronic](https://github.com/aptible/supercronic). All jobs log to stdout and are visible via `docker logs backup`. The dev mode have the `-debug` option for verbose outputs.
 
 ### MinIO mirror
 
@@ -104,7 +104,7 @@ SELECT COUNT(*) FROM folders;
 
 After a restore, restart the microservices to clear any in-memory state:
 The restart is not mandatory, if testing in dev mode, check via adminer interface if everything is fine.
-If the backup and the restore has been made manually there is no need for restarting.
+If the backup and the restore have been made manually there is no need for restarting.
 
 ```sh
 docker compose restart auth orga storage
@@ -155,5 +155,5 @@ The backup directory must exist on the host before starting the stack. It is cre
 ## Known limitations & tradeoffs
 
 - **Local-only**: backups are on the same machine as the database. A full host failure (hardware, fire, etc.) loses both the live data and the backups.
-- **No encryption at rest for dumps**: `pg_dump` files are not encrypted on disk. The host filesystem permissions (`/${HOME}/backups/ostrom`, owned by the service user) are the only protection. This is acceptable given that the database already stores all sensitive fields encrypted at the application layer — the plaintext fields (UUIDs, timestamps, `used_space`) carry low sensitivity.
+- **No encryption at rest for dumps**: `pg_dump` files are not encrypted on disk. The host filesystem permissions (`${HOME}/backups/ostrom`, owned by the service user) are the only protection. This is acceptable given that the database already stores all sensitive fields encrypted at the application layer — the plaintext fields (UUIDs, timestamps, `used_space`) carry low sensitivity.
 - **MinIO mirror is not versioned**: `mc mirror --remove` keeps the mirror in sync with the live bucket. If a file is deleted from MinIO, it is also deleted from the mirror at the next run.
