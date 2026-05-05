@@ -398,3 +398,31 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 		"used_space": newSpace,
 	})
 }
+
+func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
+    orgIDParam := c.Params("org_id")
+    if orgIDParam == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "org_id is required in path",
+		})
+    }
+    orgID, err := uuid.Parse(orgIDParam)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+    }
+
+    repo := repository.NewOrganizationRepository(h.DB)
+    var orga models.Orga
+	orga, errOrg := repo.GetOrgaByID(orgID)
+	if errOrg != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "organization not found",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"public_key": base64.StdEncoding.EncodeToString(orga.PublicKey),
+	})
+}

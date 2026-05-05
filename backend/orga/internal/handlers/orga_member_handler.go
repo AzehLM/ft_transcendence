@@ -388,7 +388,7 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(orgaMembers)
 }
 
-func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
+func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
@@ -422,6 +422,8 @@ func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
+		"enc_aes_key":      base64.StdEncoding.EncodeToString(member.EncAesKey),
+    	"iv":               base64.StdEncoding.EncodeToString(member.Iv),
 		// "enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})
 }
