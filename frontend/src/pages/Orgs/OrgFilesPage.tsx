@@ -1,7 +1,45 @@
+import { useState, useEffect } from "react";
+import { FileItem } from "../../services/files.service";
+import { FileGrid } from "../../components/FileGrid";
+import { fetchWithRefresh } from "../../services/api.service";
+import { useParams } from "react-router-dom";
+
 export default function OrgFilesPage() {
+  const { id } = useParams();
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWithRefresh(`/api/orgs/${id}/files`)
+      .then(res => res.json())
+      .then(data => setFiles(data.files || []))
+      .catch(() => {
+        setError("Failed to load org files.");
+        setFiles([
+          { id: "1", name: "Org document", file_size: 0, created_at: new Date().toISOString() },
+          { id: "2", name: "Org report", file_size: 0, created_at: new Date().toISOString() },
+        ]);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleDelete = async (fileName: string) => {
+    const file = files.find(f => f.name === fileName);
+    if (file) {
+      await fetchWithRefresh(`/api/orgs/${id}/files/${file.id}`, { method: "DELETE" });
+      setFiles(files.filter(f => f.name !== fileName));
+    }
+  };
+
   return (
-    <div>
-      <h1>Org Files</h1>
-    </div>
+    <FileGrid
+      title="Organization files"
+      subtitle="All files"
+      files={files}
+      loading={loading}
+      error={error}
+      onDelete={handleDelete}
+    />
   );
 }
