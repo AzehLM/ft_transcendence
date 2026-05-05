@@ -135,6 +135,19 @@ Invalide les refresh tokens des autres sessions.
 
 ---
 
+### `GET /users/public-key?email=alice@42lyon.fr`
+Récupère la clé publique d'un user par email.
+
+Response `200 OK` :
+```json
+{
+  "public_key": "<base64>"
+}
+```
+Response `404` : user not found
+
+---
+
 ## 2FA
 
 ### `POST /auth/2fa/enable`
