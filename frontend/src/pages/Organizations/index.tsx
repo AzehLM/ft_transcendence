@@ -18,6 +18,7 @@ import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
 import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
+import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
 
 interface Organization {
   id: string;
@@ -147,6 +148,43 @@ const handleAddMember = async () => {
   //   }
   // };
 
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
+
+  const handleLeaveOrga = async () => {
+    try {
+      if (!selectedOrg) {
+        setShowLeaveConfirm(false);
+        return;
+      }
+      const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to leave organization:", data);
+        setShowLeaveConfirm(false);
+        setOrgErrors(prev => ({
+          ...prev,
+          [selectedOrg.id]: data.error || data.message || "Failed to leave organization."
+        }));
+        return;
+      }
+
+      setShowLeaveConfirm(false);
+      setOrgs(orgs.filter(o => o.id !== selectedOrg.id));
+      setSelectedOrg(null);
+
+    } catch (err) {
+      console.error("Network error:", err);
+      setShowLeaveConfirm(false);
+      if (selectedOrg) {
+        setOrgErrors(prev => ({
+          ...prev,
+          [selectedOrg.id]: "Network error, please try again."
+        }));
+      }
+    }
+  };
 
   return (
     <SettingsLayout>
@@ -230,36 +268,55 @@ const handleAddMember = async () => {
                 <div className={orgaStyles.orgList}>
                 {orgs.map((org) => (
                     <div key={org.id} className={orgaStyles.orgCard} onClick={() => setSelectedOrg(org)}>
-                    <div className={orgaStyles.orgInfo}>
-                        <p className={orgaStyles.orgName}>{org.name}</p>
-                        <p className={orgaStyles.orgRole}>{org.role}</p>
-                        {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
-                    </div>
+                      <div className={orgaStyles.orgInfo}>
+                          <p className={orgaStyles.orgName}>{org.name}</p>
+                          <p className={orgaStyles.orgRole}>{org.role}</p>
+                          {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
+                      </div>
 
-                    <div className={orgaStyles.orgActions}>
-                        {org.role === "admin" && (
-                        <button
-                            className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
-                            onClick={(e) => {
-                            e.stopPropagation();
+                      <div className={orgaStyles.orgActions}>
+                          {org.role === "admin" && (
+                          <button
+                              className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
+                              onClick={(e) => {
+                              e.stopPropagation();
+                                setSelectedOrg(org);
+                                setShowAddMemberModal(true);
+                              }}
+                          >
+                              <UserPlus size={20} />
+                              Add
+                          </button>
+                          )}
+                          <button
+                          className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
+                          onClick={(e) => 
+                            {e.stopPropagation()
                               setSelectedOrg(org);
-                              setShowAddMemberModal(true);
-                            }}
-                        >
-                            <UserPlus size={20} />
-                            Add
-                        </button>
+                            setShowLeaveConfirm(true);}}
+                          >
+                          <UserMinus size={20} />
+                          Leave
+                          </button>
+                      </div>
+                        {orgErrors[org.id] && (
+                          <p className={orgaStyles.orgErrorMessage}>{orgErrors[org.id]}</p>
                         )}
-                        <button
-                        className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
-                        onClick={(e) => e.stopPropagation()}
-                        >
-                        <UserMinus size={20} />
-                        Leave
-                        </button>
-                    </div>
                     </div>
                 ))}
+                {selectedOrg && (
+                  <DeleteConfirmationModal
+                    isOpen={showLeaveConfirm}
+                    fileName={selectedOrg.name}
+                    onConfirm={handleLeaveOrga}
+                    onCancel={() => setShowLeaveConfirm(false)}
+                    isTrash={false}
+                    isAccount={false}
+                    isOrga={true}
+                    isMe={true}
+                  />
+                )}
+
                 </div>
             )}    
         </div>
