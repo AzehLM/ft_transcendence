@@ -17,7 +17,7 @@ import { SettingsLayout } from "../Profile/SettingsLayout";
 import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
-import { generateOrganization, encryptOrgKeyForMember } from "../../services/organizations.service";
+import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
 
 interface Organization {
   id: string;
@@ -128,6 +128,25 @@ const handleAddMember = async () => {
   }
 };
 
+  // Debug org key
+  // const handleDebugOrgKey = async () => {
+  //   if (!selectedOrg) return;
+  //   try {
+  //     const keysRes = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/keys`);
+  //     // const keysData = await keysRes.json();
+  //     // console.log("raw keys data:", keysData);
+  //     // console.log("enc_org_priv_key:", keysData.enc_org_priv_key);
+  //     // console.log("encrypted_aes_key:", keysData.encrypted_aes_key);
+  //     // console.log("iv:", keysData.iv);
+  //     const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
+
+  //     const orgPrivKey = await decryptOrgPrivateKey(enc_org_priv_key, enc_aes_key, iv);
+  //     console.log("🔑 Org Private Key (base64):", orgPrivKey);
+  //   } catch (err) {
+  //     console.error("Error:", err);
+  //   }
+  // };
+
 
   return (
     <SettingsLayout>
@@ -214,6 +233,7 @@ const handleAddMember = async () => {
                     <div className={orgaStyles.orgInfo}>
                         <p className={orgaStyles.orgName}>{org.name}</p>
                         <p className={orgaStyles.orgRole}>{org.role}</p>
+                        {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
                     </div>
 
                     <div className={orgaStyles.orgActions}>
@@ -244,23 +264,6 @@ const handleAddMember = async () => {
             )}    
         </div>
     </div>
-      {/* <div className={styles.mainBox}>
-        <h2 className={styles.subtitle}>Organizations</h2>
-        {loading ? (
-          <p>Loading...</p>
-        ) : orgs.length === 0 ? (
-          <p>You are not part of any organization.</p>
-        ) : (
-          orgs.map((org) => (
-            <div key={org.id} className={styles.dangerRow}>
-              <div>
-                <p className={styles.dangerLabel}>{org.name}</p>
-                <p className={styles.dangerDescription}>{org.role}</p>
-              </div>
-            </div>
-          ))
-        )}
-      </div> */}
     </SettingsLayout>
   );
 }

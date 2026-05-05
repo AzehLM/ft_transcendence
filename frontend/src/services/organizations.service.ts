@@ -125,3 +125,38 @@ export async function encryptOrgKeyForMember(
     iv: uint8ArrayToBase64(newIv),
   };
 }
+
+export async function decryptOrgPrivateKey(
+  encOrgPrivKey: string,
+  encAesKey: string,
+  iv: string
+): Promise<string> {
+  // Get user private key
+  const userPrivateKey = await getPrivateKeyFromSession();
+  if (!userPrivateKey) throw new Error("No private key in session");
+
+  // Decrypt AES key
+  const aesKeyRaw = await crypto.subtle.decrypt(
+    { name: "RSA-OAEP" },
+    userPrivateKey,
+    toArrayBuffer(base64ToUint8Array(encAesKey))
+  );
+
+  // Import AES key
+  const aesKey = await crypto.subtle.importKey(
+    "raw",
+    aesKeyRaw,
+    { name: "AES-GCM" },
+    false,
+    ["decrypt"]
+  );
+
+  // Decrypt Orga private key
+  const orgPrivKeyRaw = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(base64ToUint8Array(iv)) },
+    aesKey,
+    toArrayBuffer(base64ToUint8Array(encOrgPrivKey))
+  );
+
+  return uint8ArrayToBase64(new Uint8Array(orgPrivKeyRaw));
+}
