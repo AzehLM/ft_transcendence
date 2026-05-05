@@ -63,7 +63,7 @@ func (h *HealthHandler) Checker(c fiber.Ctx) error {
 	}
 
 	return c.Status(status).JSON(fiber.Map{
-		"service":		"storage",
+		"service":		"auth",
 		"liveness":		true,
 		"readiness":	readiness,
 		"degraded":		degraded,
