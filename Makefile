@@ -12,16 +12,16 @@ SECRETS_PATH		:= secrets/
 GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 
 $(SECRETS_PATH):
-	mkdir -p $@
+	@mkdir -p $@
 
 BACKUP_DIR			:= $(HOME)/backups/ostrom/
-BACKUP_DAILY_DIR	:= $(BACKUP_DIR)/daily
-BACKUP_WEEKLY_DIR	:= $(BACKUP_DIR)/weekly
-BACKUP_MINIO_DIR	:= $(BACKUP_DIR)/minio
+BACKUP_DAILY_DIR	:= $(BACKUP_DIR)daily
+BACKUP_WEEKLY_DIR	:= $(BACKUP_DIR)weekly
+BACKUP_MINIO_DIR	:= $(BACKUP_DIR)minio
 
 $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR):
-	mkdir -p $@
-	chmod 777 $@
+	@mkdir -p $@
+	@chmod 777 $@
 
 $(ENV_FILE):
 	@[ -f $(ENV_EXAMPLE) ] || (echo "Error: $(ENV_EXAMPLE) not found" && exit 1)
