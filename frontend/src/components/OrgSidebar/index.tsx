@@ -24,7 +24,7 @@ export function OrgSidebar() {
   return (
     <Sidebar>
       <SidebarLink to="/organizations" icon={<ArrowLeft />} label="Back" />
-      <SidebarLink to={`/orgs/${id}/files`} icon={<Files />} label="Files" />
+      <SidebarLink to={`/orgs/${id}/files`} icon={<Files />} label="All files" />
       <SidebarMenu
         label="Folders"
         icon={<Folder />}
