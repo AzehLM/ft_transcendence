@@ -5,10 +5,9 @@ import styles from "./ActionButtons.module.css";
 interface ActionButtonsProps {
   onUploadFile?: (file: File) => void;
   onCreateFolder?: () => void;
-  onCreateFile?: () => void;
 }
 
-export function ActionButtons({ onUploadFile, onCreateFolder, onCreateFile }: ActionButtonsProps) {
+export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -28,16 +27,6 @@ export function ActionButtons({ onUploadFile, onCreateFolder, onCreateFile }: Ac
 
   return (
     <div className={styles.container}>
-      {/* Create files button */}
-      <button
-        className={`${styles.button} ${styles["button--create-files"]}`}
-        onClick={onCreateFile}
-      >
-        <FilePlus className={styles["button__icon"]} />
-        <span className={styles["button__text"]}>
-          Create file
-        </span>
-      </button>
 
       {/* Create folder button */}
       <button
