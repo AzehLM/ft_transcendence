@@ -273,7 +273,7 @@ services:
       - dev
     restart: unless-stopped
     volumes:
-      - ${BACKUP_DIR}:/backups
+      - ${BACKUP_DIR:-/tmp/backups/ostrom}:/backups
     env_file:
       - ../.env
     secrets:
