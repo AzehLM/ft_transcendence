@@ -14,7 +14,8 @@ GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 $(SECRETS_PATH):
 	@mkdir -p $@
 
-BACKUP_DIR			:= $(HOME)/backups/ostrom/
+BACKUP_DIR			:= $(or $(HOME),/tmp)/backups/ostrom/
+# BACKUP_DIR			:= $(HOME)/backups/ostrom/
 BACKUP_DAILY_DIR	:= $(BACKUP_DIR)daily
 BACKUP_WEEKLY_DIR	:= $(BACKUP_DIR)weekly
 BACKUP_MINIO_DIR	:= $(BACKUP_DIR)minio
