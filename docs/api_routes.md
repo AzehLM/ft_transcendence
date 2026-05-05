@@ -352,6 +352,16 @@ Reponse (200) :
 }
 ```
 
+### `GET /orgs/{org_id}/public-key`
+Récupère la clé publique de l'organisation.
+
+Response `200 OK` :
+```json
+{
+  "public_key": ""
+}
+```
+
 ---
 
 ## Org Members
@@ -426,15 +436,15 @@ Reponse : `204 No content`
 
 ---
 
-### `GET /orgs/{org_id}/members/key`
+### `GET /orgs/{org_id}/members/keys`
+Récupère les clés chiffrées du membre connecté pour cette organisation.
 
-Récupérer la clé privée encryptée
-
-Reponse : `200 OK`
+Response `200 OK` :
 ```json
 {
-		"enc_org_priv_key_b64": keyb64,
-		"enc_org_priv_key_brut": keybrut,
+  "enc_org_priv_key": "",
+  "enc_aes_key": "",
+  "iv": ""
 }
 ```
 
