@@ -18,7 +18,7 @@ The MinIO mirror is a local synchronization, not an independent backup service. 
 ## Retention policy
 
 ```
-/${HOME}/backups/ostrom/
+${HOME}/backups/ostrom/
 ├── daily/
 │   ├── backup_2026-05-03.dump   ← pg_dump custom format, compressed
 │   ├── backup_2026-05-04.dump
@@ -45,8 +45,8 @@ docker exec backup backup.sh minio
 ### List available backups
 
 ```sh
-ls -lh /${HOME}/backups/ostrom/daily/
-ls -lh /${HOME}/backups/ostrom/weekly/
+ls -lh ${HOME}/backups/ostrom/daily/
+ls -lh ${HOME}/backups/ostrom/weekly/
 ```
 
 ## Disaster recovery — PostgreSQL
@@ -112,7 +112,7 @@ docker compose restart auth orga storage
 
 ## Disaster recovery — MinIO
 
-MinIO data lives in `/${HOME}/backups/ostrom/minio/` (local mirror). In the event of MinIO volume loss.
+MinIO data lives in `${HOME}/backups/ostrom/minio/` (local mirror). In the event of MinIO volume loss.
 
 ### Step 1 — Recreate the bucket
 
