@@ -217,7 +217,8 @@ const handleAddMember = async () => {
             ) : (
                 <div className={orgaStyles.orgList}>
                 {orgs.map((org) => (
-                    <div key={org.id} className={orgaStyles.orgCard} onClick={() => navigate(`/orgs/${org.id}/files`)}>
+                    <div key={org.id} className={orgaStyles.orgCard} 
+                      onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
                       <div className={orgaStyles.orgInfo}>
                           <p className={orgaStyles.orgName}>{org.name}</p>
                           <p className={orgaStyles.orgRole}>{org.role}</p>

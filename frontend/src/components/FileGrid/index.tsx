@@ -18,12 +18,18 @@ interface FileGridProps {
   onDelete: (fileName: string) => void;
   showActionButtons?: boolean;
   isTrash?: boolean;
+  orgName?: string;
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName }: FileGridProps) {
   return (
     <div className={styles.page}>
-      {showActionButtons && <ActionButtons />}
+        <div className={styles.pageHeader}>
+            {orgName && (
+            <p className={styles.orgBadge}>Organization: {orgName}</p>
+            )}
+            {showActionButtons && <ActionButtons />}
+        </div>
       <div className={showActionButtons ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>

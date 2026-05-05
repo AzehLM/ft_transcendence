@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { FileItem } from "../../services/files.service";
 import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const orgName = location.state?.orgName ?? "Organization";
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}/files`)
@@ -40,6 +42,7 @@ export default function OrgFilesPage() {
       loading={loading}
       error={error}
       onDelete={handleDelete}
+      orgName={orgName}
     />
   );
 }
