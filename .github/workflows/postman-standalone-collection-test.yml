@@ -90,4 +90,8 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: make fclean
+        run: |
+          docker compose -f infra/docker-compose.dev.yml --env-file .env down --volumes --remove-orphans
+          docker compose -f infra/docker-compose.yml --env-file .env down --volumes --remove-orphans
+          docker system prune -af
+          docker volume prune -f
