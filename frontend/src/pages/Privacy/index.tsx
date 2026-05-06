@@ -1,4 +1,3 @@
-import { Footer } from "../../components/footer";
 import styles from "../../styles/legal.module.css";
 
 function PrivacyPage() {
@@ -184,7 +183,6 @@ function PrivacyPage() {
 
                 <hr className={styles.divider} />
             </main>
-            <Footer />
         </div>
     );
 }

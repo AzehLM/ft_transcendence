@@ -1,4 +1,3 @@
-import { Footer } from "../../components/footer";
 import styles from "../../styles/legal.module.css";
 
 function TermsPage() {
@@ -200,7 +199,6 @@ function TermsPage() {
 
                 <hr className={styles.divider} />
             </main>
-            <Footer />
         </div>
     );
 }
