@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"errors"
+	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -208,4 +210,24 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 		"message":    "avatar_uploaded_successfully",
 		"avatar_url": avatarURL,
 	})
+}
+
+func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
+    email := c.Query("email")
+    if email == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
+    }
+
+    var user models.User
+	err := h.DB.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+	}
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+    })
 }

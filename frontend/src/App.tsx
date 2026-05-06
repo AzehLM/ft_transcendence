@@ -15,7 +15,12 @@ import StoragePage from './pages/Storage'
 import AccountPage from './pages/Account'
 import OrganizationsPage from './pages/Organizations'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { OrgSidebar } from './components/OrgSidebar'
+import OrgFilesPage from './pages/Orgs/OrgFilesPage'
+import OrgMembersPage from './pages/Orgs/OrgMembersPage'
+import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
 import StatusPage from './pages/Status'
+import NotFoundPage from './pages/NotFound'
 
 function App() {
     return (
@@ -37,12 +42,19 @@ function App() {
                         <Route path="/account" element={<AccountPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
                     </Route>
+                    <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
+                        <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
+                        <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
+                    </Route>
                 </Route>
                 <Route path="/" element={<Navigate to="/home" />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/status" element={<StatusPage />} />
+                <Route path="/404" element={<NotFoundPage />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     )

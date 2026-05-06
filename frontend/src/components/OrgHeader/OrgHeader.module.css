@@ -1,0 +1,17 @@
+.orgBadge {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 24px;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5%;
+  padding-top: 2%;
+}
