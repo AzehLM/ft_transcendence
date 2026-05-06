@@ -34,12 +34,22 @@ export default function OrgMembersPage() {
     const [modalError, setModalError] = useState<string | null>(null);
 
   const handleAddMember = async () => {
-    if (!memberEmail.trim() || !id) return;
+    if (!memberEmail.trim()) return;
     setModalError(null);
 
-    const { success, error } = await addMemberToOrg(id, memberEmail);
+    const { success, error } = await addMemberToOrg(id!, memberEmail);
     if (!success) {
       setModalError(error ?? "Failed to add member.");
+      return;
+    }
+
+    // Refresh members list -> might be modified with websocket
+    try {
+      const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
+      const data = await res.json();
+      setMembers(data);
+    } catch {
+      setModalError("Member added, but failed to refresh members.");
       return;
     }
 
