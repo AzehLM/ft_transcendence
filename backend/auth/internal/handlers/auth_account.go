@@ -219,7 +219,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
     }
 
     var user models.User
-	err := h.DB.Where("email = ?", email).First(&user).Error;
+	err := h.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
