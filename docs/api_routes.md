@@ -274,6 +274,20 @@ Reponse (200) :
 
 ---
 
+### `GET /orgs/{org_id}`
+Récupère les informations d'une organisation.
+
+Response `200 OK` :
+```json
+{
+  "id": "",
+  "name": "42_Projects"
+}
+```
+Response `404` : organization not found
+
+---
+
 ### `POST /orgs`
 
 Cree une orga. Le createur devient admin.
