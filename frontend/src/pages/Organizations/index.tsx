@@ -49,9 +49,15 @@ export default function OrganizationsPage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        console.error("Failed to create org:", err);
-        setModalError(err.error || err.message || "Failed to create organization.");
+        const text = await response.text();
+        let message = "Failed to create organization.";
+        try {
+          if (text) {
+            const err = JSON.parse(text);
+            message = err.error || err.message || message;
+          }
+        } catch {}
+        setModalError(message);
         return;
       }
 
@@ -61,6 +67,7 @@ export default function OrganizationsPage() {
       setOrgName("");
     } catch (err) {
       console.error("Error:", err);
+      setModalError("An error occurred, please try again.");
     }
   };
 
@@ -112,14 +119,18 @@ const handleAddMember = async () => {
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
       
+
       if (!response.ok) {
-        const data = await response.json();
-        console.error("Failed to leave organization:", data);
+        const text = await response.text();
+        let message = "Failed to leave organization.";
+        try {
+          if (text) {
+            const data = JSON.parse(text);
+            message = data.error || data.message || message;
+          }
+        } catch {}
         setShowLeaveConfirm(false);
-        setOrgErrors(prev => ({
-          ...prev,
-          [selectedOrg.id]: data.error || data.message || "Failed to leave organization."
-        }));
+        setOrgErrors(prev => ({ ...prev, [selectedOrg.id]: message }));
         return;
       }
 
