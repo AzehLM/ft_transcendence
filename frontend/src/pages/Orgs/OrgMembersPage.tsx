@@ -93,8 +93,15 @@ export default function OrgMembersPage() {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      setModalError(data.error || data.message || "Failed to change role.");
+      const text = await response.text();
+      let message = "Failed to change role.";
+      try {
+        if (text) {
+          const data = JSON.parse(text);
+          message = data.error || data.message || message;
+        }
+      } catch {}
+      setModalError(message);
       return;
     }
 
@@ -111,10 +118,17 @@ export default function OrgMembersPage() {
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
     const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
-    
+
     if (!response.ok) {
-      const data = await response.json();
-      setModalError(data.error || data.message || "Failed to remove member.");
+      const text = await response.text();
+      let message = "Failed to remove member.";
+      try {
+        if (text) {
+          const data = JSON.parse(text);
+          message = data.error || data.message || message;
+        }
+      } catch {}
+      setModalError(message);
       return;
     }
 
