@@ -1,7 +1,6 @@
 import { FileCard } from "../FileCard";
-import { ActionButtons } from "../ActionButtons";
 import styles from "./FileGrid.module.css";
-import { OrgBadge } from "../OrgBadge";
+import { OrgHeader } from "../OrgHeader";
 
 interface FileItem {
   id: string;
@@ -25,10 +24,7 @@ interface FileGridProps {
 export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName }: FileGridProps) {
   return (
     <div className={styles.page}>
-        <div className={styles.pageHeader}>
-            {orgName && <OrgBadge orgName={orgName} />}
-            {showActionButtons && <ActionButtons />}
-        </div>
+      <OrgHeader orgName={orgName} showActionButtons={showActionButtons}></OrgHeader>
       <div className={showActionButtons ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>

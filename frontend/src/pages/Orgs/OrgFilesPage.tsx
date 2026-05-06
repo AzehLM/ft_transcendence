@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FileItem } from "../../services/files.service";
 import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -47,6 +47,7 @@ export default function OrgFilesPage() {
       error={error}
       onDelete={handleDelete}
       orgName={orgName}
+      showActionButtons={true}
     />
   );
 }
