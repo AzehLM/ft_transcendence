@@ -14,6 +14,9 @@ interface ConfirmationModalProps {
     inputValue?: string;
     onInputChange?: (value: string) => void;
     errorMessage?: string;
+    isChangeRole?: boolean;
+    newRole?: string;
+    isRemoveMember?: boolean;
 }
 
 export function ConfirmationModal({
@@ -29,7 +32,10 @@ export function ConfirmationModal({
     isCreateOrga = false,
     inputValue,
     onInputChange,
-    errorMessage
+    errorMessage,
+    isChangeRole = false,
+    newRole,
+    isRemoveMember = false
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -44,6 +50,10 @@ export function ConfirmationModal({
     title = "Add Member?";
     } else if (isCreateOrga) {
     title = "Create Organization?";
+    } else if (isChangeRole) {
+    title = "Change Role?";
+    } else if (isRemoveMember) {
+    title = "Remove Member?";
     } else if (isTrash) {
     title = "Delete File?";
     } else {
@@ -56,7 +66,11 @@ export function ConfirmationModal({
     ? `Are you sure you want to permanently delete "${fileName}"? This action cannot be undone.`
     : isLeaveOrga && isMe
     ? `Are you sure you want to leave "${fileName}"?`
-    : undefined;
+    : isChangeRole
+    ? `Change ${fileName}'s role to ${newRole}?`
+    : isRemoveMember
+    ? `Are you sure you want to remove "${fileName}" from this organization?`
+    : undefined
 
     const buttonText = isAccount
     ? "Delete Account"
@@ -68,8 +82,12 @@ export function ConfirmationModal({
     ? "Add Member"
     : isCreateOrga
     ? "Create Organization"
+    : isChangeRole
+    ? "Change Role"
+    : isRemoveMember
+    ? "Remove"
     : "Move to Trash";
-
+    
     return (
         <>
             <div className={styles.modal__overlay} onClick={onCancel} />

@@ -6,6 +6,14 @@ import profileStyles from "../../styles/profile.module.css";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import orgaStyles from "../Organizations/Organizations.module.css"
+import { UserMinus, Shield } from "lucide-react";
+
+
+interface Member {
+  user_id: string;
+  email: string;
+  role: string;
+}
 
 export default function OrgMembersPage() {
 
@@ -19,7 +27,6 @@ export default function OrgMembersPage() {
     .catch(() => setOrgName("Unknown"));
 
   }, [id]);
-
 
     // Add a member
     const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -38,6 +45,72 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+  };
+
+  const [members, setMembers] = useState<Member[]>([]);
+  const [myRole, setMyRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWithRefresh(`/api/orgs/${id}/members`)
+      .then(res => res.json())
+      .then(data => {
+        setMembers(data);
+
+        fetchWithRefresh("/api/auth/me")
+          .then(res => res.json())
+          .then(me => {
+            const myMember = data.find((m: Member) => m.email === me.email);
+            if (myMember) setMyRole(myMember.role);
+          });
+      })
+      .catch(() => {
+        setMembers([]);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+
+  const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [newRole, setNewRole] = useState<string>("");
+
+  const handleChangeRole = async () => {
+    if (!selectedMember) return;
+    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ role: newRole }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      setModalError(data.error || data.message || "Failed to change role.");
+      return;
+    }
+
+    setMembers(members.map(m =>
+      m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
+    ));
+    setShowChangeRoleModal(false);
+    setSelectedMember(null);
+  };
+
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
+
+  const handleRemoveMember = async () => {
+    if (!memberToRemove) return;
+    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
+    
+    if (!response.ok) {
+      const data = await response.json();
+      setModalError(data.error || data.message || "Failed to remove member.");
+      return;
+    }
+
+    setMembers(members.filter(m => m.user_id !== memberToRemove.user_id));
+    setShowRemoveModal(false);
+    setMemberToRemove(null);
   };
 
   return (
@@ -60,6 +133,68 @@ export default function OrgMembersPage() {
           onInputChange={setMemberEmail}
           errorMessage={modalError ?? undefined}
         />
+
+      <div className={orgaStyles.organizations}>
+        {loading ? (
+          <p>Loading...</p>
+        ) : members.length === 0 ? (
+          <p className={orgaStyles.empty}>No members found.</p>
+        ) : (
+          <div className={orgaStyles.orgList}>
+            {members.map((member) => (
+              <div key={member.user_id} className={orgaStyles.orgCard}>
+                <div className={orgaStyles.orgInfo}>
+                  <p className={orgaStyles.orgName}>{member.email}</p>
+                  <p className={orgaStyles.orgRole}>{member.role}</p>
+                </div>
+
+              {myRole === "admin" && (
+                <div className={orgaStyles.orgActions}>
+                  <button
+                    className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setNewRole(member.role === "admin" ? "member" : "admin");
+                      setShowChangeRoleModal(true);
+                    }}
+                  >
+                    <Shield size={20} />
+                    {member.role === "admin" ? "Make Member" : "Make Admin"}
+                  </button>
+                  <button
+                    className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
+                    onClick={() => {
+                      setMemberToRemove(member);
+                      setShowRemoveModal(true);
+                    }}
+                  >
+                    <UserMinus size={20} />
+                    Remove
+                  </button>
+                </div>
+              )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+        <ConfirmationModal
+          isOpen={showChangeRoleModal}
+          fileName={selectedMember?.email ?? ""}
+          onConfirm={handleChangeRole}
+          errorMessage={modalError ?? undefined}
+          onCancel={() => { setShowChangeRoleModal(false); setSelectedMember(null); setModalError(null); }}    isChangeRole={true}
+          newRole={newRole}
+        />
+        <ConfirmationModal
+        isOpen={showRemoveModal}
+        errorMessage={modalError ?? undefined}
+        onCancel={() => { setShowRemoveModal(false); setMemberToRemove(null); setModalError(null); }}
+        fileName={memberToRemove?.email ?? ""}
+        onConfirm={handleRemoveMember}
+        isRemoveMember={true}
+      />
     </OrgLayout>
   );
 }
