@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService, FileItem } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
+import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -40,13 +41,15 @@ export default function DashboardPage() {
         loadFiles();
     });
 
+    const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
+
     const handleCreateFolderSubmit = async (folderName: string) => {
         await FilesService.createFolder(folderName);
 
         await loadFiles();
     };
 
-    const handleDelete = async (fileName: string) => {
+    const handleDelete = async () => {
     };
 
     return (
@@ -88,13 +91,24 @@ export default function DashboardPage() {
                     </div>
                 )}
 
+                {downloadStatus && (
+                    <div style={{
+                        padding: '12px', marginBottom: '16px', borderRadius: '6px',
+                        backgroundColor: downloadStatus.includes('❌') ? '#fee2e2' : '#e0f2fe',
+                        color: downloadStatus.includes('❌') ? '#991b1b' : '#075985',
+                        fontWeight: 'bold'
+                    }}>
+                        {downloadStatus}
+                    </div>
+                )}
+
                 {loading ? (
                     <p>Loading files...</p>
                 ) : (
                     /* Files grid */
-                    <div className={styles.fileGrid} style={{ opacity: isUploading ? 0.5 : 1 }}>
+                    <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {files.map((file) => (
-                            <FileCard key={file.id} name={file.name} isTrash={false} onDelete={handleDelete} />
+                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDelete} onDownload={downloadAndDecrypt} />
                         ))}
                     </div>
                 )}
