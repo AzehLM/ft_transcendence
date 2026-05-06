@@ -80,6 +80,9 @@ func main() {
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
+	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
+	app.Get("/health", healthHandler.Checker)
+
 	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)

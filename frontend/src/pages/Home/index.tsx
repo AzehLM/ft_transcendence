@@ -8,6 +8,7 @@ function HomePage() {
                 <a href="/login" style={{ border: "1px solid black", padding: "4px 8px" }}>Login</a>
                 <a href="/dashboard" style={{ border: "1px solid black", padding: "4px 8px" }}>Dashboard</a>
                 <a href="/profile" style={{ border: "1px solid black", padding: "4px 8px" }}>Profile</a>
+                <a href="/status" style={{ border: "1px solid black", padding: "4px 8px" }}>Status</a>
             </nav>
         </div>
     )

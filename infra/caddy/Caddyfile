@@ -85,6 +85,11 @@
         reverse_proxy orga:8082
     }
 
+    @health path /api/health
+    handle @health {
+        reverse_proxy health-aggregator:8084
+    }
+
     @ws path /ws/*
     handle @ws {
         reverse_proxy orga:8082

@@ -43,7 +43,7 @@ jobs:
           echo "${{ secrets.SECRET_JWT_TOKEN }}"      > secrets/jwt_secret
 
       - name: Launch Ostrom in dev mode
-        run: make dev
+        run: make dev BACKUP_DIR=/tmp/ostrom-backups/
 
       - name: Run Postman tests
         id: tests
@@ -90,4 +90,8 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: make fclean
+        run: |
+          docker compose -f infra/docker-compose.dev.yml --env-file .env down --volumes --remove-orphans
+          docker compose -f infra/docker-compose.yml --env-file .env down --volumes --remove-orphans
+          docker system prune -af
+          docker volume prune -f
