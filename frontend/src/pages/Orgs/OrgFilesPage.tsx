@@ -31,7 +31,19 @@ export default function OrgFilesPage() {
   }, [id]);
 
   const handleDelete = async (fileId: string) => {
-      await fetchWithRefresh(`/api/orgs/${id}/files/${fileId}`, { method: "DELETE" });
+      const response = await fetchWithRefresh(`/api/orgs/${id}/files/${fileId}`, { method: "DELETE" });
+      if (!response.ok) {
+        const text = await response.text();
+        let message = "Failed to delete file.";
+        try {
+          if (text) {
+            const data = JSON.parse(text);
+            message = data.error || data.message || message;
+          }
+        } catch {}
+        setError(message);
+        return;
+      }
       setFiles(files.filter(f => f.id !== fileId));
   };
 
