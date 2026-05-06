@@ -71,7 +71,7 @@ export async function encryptOrgKeyForMember(
     ["decrypt"]
   );
 
-  console.log("Encrypt Key for orga member (4) - dery[t private key of orga")
+  console.log("Encrypt Key for orga member (4) - derypt private key of orga")
 
   // console.log("encOrgPrivKey raw:", encOrgPrivKey);
   // console.log("iv raw:", iv); 
