@@ -171,7 +171,7 @@ export async function addMemberToOrg(
     if (!keysRes.ok) throw new Error("Failed to get org keys");
     const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
 
-    const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${memberEmail}`);
+    const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${encodeURIComponent(memberEmail)}`);
     if (pubKeyRes.status === 404) {
       return { success: false, error: "User not found" };
     }
