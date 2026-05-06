@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 // import styles from "./Dashboard.module.css";
 import { FilesService, FileItem } from "../../services/files.service";
-import { FileGrid
+import { FileGrid } from "../../components/FileGrid";
 
- } from "../../components/FileGrid";
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
