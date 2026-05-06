@@ -30,12 +30,9 @@ export default function OrgFilesPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleDelete = async (fileName: string) => {
-    const file = files.find(f => f.name === fileName);
-    if (file) {
-      await fetchWithRefresh(`/api/orgs/${id}/files/${file.id}`, { method: "DELETE" });
-      setFiles(files.filter(f => f.name !== fileName));
-    }
+  const handleDelete = async (fileId: string) => {
+      await fetchWithRefresh(`/api/orgs/${id}/files/${fileId}`, { method: "DELETE" });
+      setFiles(files.filter(f => f.id !== fileId));
   };
 
   return (
