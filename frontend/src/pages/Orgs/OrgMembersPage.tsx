@@ -139,14 +139,17 @@ export default function OrgMembersPage() {
 
   return (
     <OrgLayout title="Organization members" orgName={orgName} showActionButtons={false}>
-      <div className={orgaStyles.header}>
+        { myRole === "admin" && (
+          <div className={orgaStyles.header}>
             <button 
             className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`} 
             onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
             >
             + Add a member
             </button>
-      </div>
+          </div>
+        )}
+            
         <ConfirmationModal
           isOpen={showAddMemberModal}
           fileName={memberEmail}
