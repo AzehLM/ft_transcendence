@@ -15,7 +15,7 @@ interface FileGridProps {
   files: FileItem[];
   loading: boolean;
   error: string | null;
-  onDelete: (fileName: string) => void;
+  onDelete: (id: string) => void;
   showActionButtons?: boolean;
   isTrash?: boolean;
   orgName?: string;
@@ -34,8 +34,7 @@ export function FileGrid({ title, subtitle, files, loading, error, onDelete, sho
         ) : (
           <div className={styles.fileGrid}>
             {files.map((file) => (
-              <FileCard key={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} />
-            ))}
+            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} />            ))}
           </div>
         )}
       </div>
