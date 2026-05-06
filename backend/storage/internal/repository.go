@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -21,6 +22,15 @@ type StorageRepository interface {
 	FindByID(fileID uuid.UUID) (*File, error)									// GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)		// PATCH /files/{file_id}
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
+
+	FindFilesByUserID(userID uuid.UUID) ([]File, error)	// used for user_deleted event handling
+	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)	// used for org_deleted event handling
+	DeleteOrgData(orgID uuid.UUID) error
+	DeleteUserData(userID uuid.UUID) error
+
+	// periodic sweep utils
+	FindAllActiveFiles() ([]File, error)
+	FindStalePendingFiles(age time.Duration) ([]File, error)
 
 	// Folder part
 	CreateFolder(folder *Folder) error											// POST /folders
@@ -296,4 +306,63 @@ func (r *storageRepository) ListOrgFolderContents(orgID uuid.UUID, folderID uuid
 	}
 
 	return folders, files, nil
+}
+
+func (r *storageRepository) FindFilesByOrgID(orgID uuid.UUID) ([]File, error) {
+	var files []File
+	err := r.db.Where("org_id = ?", orgID).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r *storageRepository) FindFilesByUserID(userID uuid.UUID) ([]File, error) {
+	var files []File
+	err := r.db.Where("owner_user_id = ?", userID).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r *storageRepository) DeleteOrgData(orgID uuid.UUID) error {
+	// files first because it can have FK to folders
+	if err := r.db.Where("org_id = ?", orgID).Delete(&File{}).Error; err != nil {
+		return err
+	}
+	if err := r.db.Where("org_id = ?", orgID).Delete(&Folder{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *storageRepository) DeleteUserData(userID uuid.UUID) error {
+	if err := r.db.Where("owner_user_id = ?", userID).Delete(&File{}).Error; err != nil {
+		return err
+	}
+	if err := r.db.Where("owner_user_id = ?", userID).Delete(&Folder{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *storageRepository) FindAllActiveFiles() ([]File, error) {
+	var files []File
+	err := r.db.Where("status = 'ACTIVE'").Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+
+}
+
+func (r *storageRepository) FindStalePendingFiles(age time.Duration) ([]File, error) {
+	var files []File
+	cutoff := time.Now().Add(-age)
+	err := r.db.Where("status = 'PENDING' AND created_at < ?", cutoff).Find(&files).Error
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
 }

@@ -2,13 +2,15 @@ services:
   caddy:
     container_name: caddy
     build:
-      context: ./caddy
+      context: ../
+      dockerfile: ./infra/caddy/Dockerfile
       args:
-        - CADDY_CONFIG=Caddyfile
+        - CADDY_CONFIG=./infra/caddy/Caddyfile
     image: caddy
     networks:
       - app
       - monitoring
+      - tunnel
     restart: unless-stopped
     ports:
       - "127.0.0.1:${PORT}:443"
@@ -42,7 +44,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 5s
 
   grafana:
       container_name: grafana
@@ -151,9 +153,81 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    secrets:
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
     depends_on:
       postgres:
         condition: service_healthy
+
+  storage:
+    container_name: storage
+    build:
+      context: ../
+      dockerfile: ./infra/services/storage/Dockerfile
+    networks:
+      - app
+    restart: unless-stopped
+    secrets:
+      - minio_admin_user
+      - minio_admin_pwd
+      - redis_pwd
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+    env_file:
+      - ../.env
+    depends_on:
+      auth:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  orga:
+    container_name: orga
+    build:
+      context: ../
+      dockerfile: ./infra/services/orga/Dockerfile
+    networks:
+      - app
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    secrets:
+      - postgres_pwd
+      - postgres_user
+      - jwt_secret
+      - redis_pwd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_started
+
+  cloudflared:
+    container_name: cloudflared
+    image: cloudflare/cloudflared:1826-d2a87e9b9345@sha256:6b599ca3e974349ead3286d178da61d291961182ec3fe9c505e1dd02c8ac31b0
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - tunnel
+    restart: unless-stopped
+    secrets:
+      - cloudflare_tunnel_token
+    depends_on:
+      caddy:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflare_tunnel_token
 
 volumes:
   caddy_data:
@@ -172,6 +246,9 @@ networks:
     driver: bridge
     name: monitoring-network
     internal: true
+  tunnel:
+    driver: bridge
+    name: tunnel-network
 
 secrets:
   grafana_admin_user:
@@ -190,3 +267,7 @@ secrets:
     file: ../secrets/minio/minio_admin_pwd.txt
   redis_pwd:
     file: ../secrets/redis/redis_pwd.txt
+  cloudflare_tunnel_token:
+    file: ../secrets/cloudflare_tunnel_token
+  jwt_secret:
+    file: ../secrets/jwt_secret

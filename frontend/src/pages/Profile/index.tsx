@@ -1,93 +1,72 @@
-// import styles from "../../styles/auth.module.css"
-import styles from "./Profile.module.css";
-// import { Link } from "react-router-dom";
-// import { Package } from "lucide-react";
-// import { useEffect, useState } from "react";
-
-
-
-// async function fetchWithRefresh(url: string, options: RequestInit = {}) {
-//     let token = localStorage.getItem("token") || "";
-
-//     const headers: HeadersInit = {
-//         "Content-Type": "application/json",
-//         "Authorization": `Bearer ${token}`,
-//     };
-
-//     let response = await fetch(url, { ...options, headers });
-
-//     if (response.status === 401) {
-//         const refreshResponse = await fetch("/api/auth/refresh", {
-//             method: "POST",
-//             credentials: "include", // cookie HttpOnly
-//         });
-
-//         let data: any;
-//         try {
-//             data = await refreshResponse.json();
-//         } catch {
-//             const text = await refreshResponse.text();
-//             data = { error: text || "Invalid JSON" };
-//         }
-
-//         if (!refreshResponse.ok) {
-//             console.error("Error backend:", data);
-//         }
-
-//         if (!refreshResponse.ok) {
-//             throw new Error("Session Expired, cannot refresh token");
-//         }
-
-//         token = data.access_token;
-
-//         localStorage.setItem("token", token);
-
-//         const newHeaders = {
-//             ...options.headers,
-//             "Authorization": `Bearer ${token}`,
-//             "Content-Type": "application/json",
-//         };
-
-//         response = await fetch(url, { ...options, headers: newHeaders });
-//     }
-
-//     return response;
-// }
+import { useState } from "react";
+// import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "./SettingsLayout";
+import avatar from './assets/temp-avatar.png';
 
 export default function ProfilePage() {
-    // const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    // const [user, setUser] = useState(null);
+//   const [privateKey, setPrivateKey] = useState<string | null>(null);
 
-    // useEffect(() => {
-    //     const fetchUser = async () => {
-    //         try {
-    //             const response = await fetchWithRefresh("/api/users/me");
+// useEffect(() => {
+//   const init = async () => {
+//     const key = await getPrivateKeyFromSession();
+//     if (!key) return;
+//     const exported = await crypto.subtle.exportKey("pkcs8", key);
+//     const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
+//     setPrivateKey(base64);
+//   };
+//   init();
 
-    //             let data: any;
-    //             try {
-    //                 data = await response.json();
-    //             } catch {
-    //                 const text = await response.text();
-    //                 data = { error: text || "Invalid JSON" };
-    //             }
-
-    //             if (response.ok) {
-    //                 setUser(data);
-    //             } else {
-    //                 console.error("Error backend:", data);
-    //             }
-    //         } catch (err) {
-    //             console.error("Error:", err);
-    //         }
-    //     };
-
-    //     fetchUser();
-    // }, []);
+// }, []);
+const [name] = useState<string>("Jean");
+const [sirname] = useState<string>("Dupont");
+const [email] = useState<string>("jeannot@gmail.com");
 
     return (
 
-        <div className={styles.page}>
-          <h2>profile</h2>
-        </div>
-    )
+        <SettingsLayout>
+          <div className={styles.mainBox}>
+            <h2 className={styles.subtitle}>Personal information</h2>
+            <div className={styles.profileBox}>
+              <div className={styles.profileAvatarCol}>
+                <img src={avatar} alt="Avatar" />
+                <button className={`${styles.buttonChange} ${styles.profileButton}`}>Change Avatar</button>
+              </div>
+              <div className={styles.infoBox}>
+                <div className={styles.nameBox}>
+                  <div className={styles.inputBox}>
+                    <p>First Name</p>
+                    <input
+                      type="text"
+                      value={name}
+                      // onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.inputBox}>
+                    <p>Last Name</p>
+                    <input
+                      type="text"
+                      value={sirname}
+                    />
+                  </div>
+                </div>
+                <div className={styles.inputBox}>
+                  <p>Email</p>
+                  <input
+                    type="text"
+                    value={email}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className={styles.buttons}>
+            <button className={`${styles.buttonChange} ${styles.profileButton}`}>Save Changes</button>
+            <button className={`${styles.buttonCancel} ${styles.profileButton}`}>Cancel</button>
+          </div>
+          {/* <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
+            {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Key not found"}
+          </div> */}
+        </SettingsLayout>
+    );
 }

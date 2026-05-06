@@ -9,14 +9,16 @@ import (
 )
 
 type Env struct {
-	PostgresHost     string
-	PostgresPort     string
-	PostgresUser     string
-	PostgresPassword string
-	PostgresDBname   string
-	JwtSecret        string
-	RedisPassword    string
-	RedisPort        string
+	PostgresHost		string
+	PostgresPort		string
+	PostgresUser		string
+	PostgresPassword	string
+	PostgresDBname		string
+	JwtSecret			string
+	RedisPassword		string
+	RedisPort			string
+	MinioPort			string
+	AppPort				string
 	WebAuthnRPID     string
 	WebAuthnRPName   string
 	WebAuthnOrigin   string
@@ -25,22 +27,46 @@ type Env struct {
 func LoadEnv() (*Env, error) {
 	_ = godotenv.Load()
 
+	postgresPassword, err := ReadSecret("postgres_pwd")
+	if  err != nil {
+		return nil, fmt.Errorf("secret postgres_pwd: %v", err)
+	}
+
+	postgresUser, err := ReadSecret("postgres_user")
+	if  err != nil {
+		return nil, fmt.Errorf("secret postgres_user: %v", err)
+	}
+
+	jwtSecret, err := ReadSecret("jwt_secret")
+	if  err != nil {
+		return nil, fmt.Errorf("secret jwt_secret: %v", err)
+	}
+
+	redisPassword, err := ReadSecret("redis_pwd")
+	if  err != nil {
+		return nil, fmt.Errorf("secret redis_pwd: %v", err)
+	}
+
 	env := &Env{
-		PostgresHost:     os.Getenv("POSTGRES_HOST"),
-		PostgresPort:     os.Getenv("POSTGRES_PORT"),
-		PostgresUser:     os.Getenv("POSTGRES_USER"),
-		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
-		PostgresDBname:   os.Getenv("POSTGRES_DB_NAME"),
-		JwtSecret:        os.Getenv("JWT_SECRET"),
-		RedisPassword:    os.Getenv("REDIS_PASSWORD"),
-		RedisPort:        os.Getenv("REDIS_PORT"),
+		PostgresHost:		os.Getenv("POSTGRES_HOST"),
+		PostgresPort:		os.Getenv("POSTGRES_PORT"),
+		PostgresDBname:		os.Getenv("POSTGRES_DB_NAME"),
+		PostgresUser:		postgresUser,
+		PostgresPassword:	postgresPassword,
+		JwtSecret:			jwtSecret,
+		RedisPassword:		redisPassword,
+		RedisPort:			os.Getenv("REDIS_PORT"),
+		MinioPort:			os.Getenv("MINIO_PORT"),
+		AppPort:			os.Getenv("PORT"),
 		WebAuthnRPID:     os.Getenv("WEBAUTHN_RP_ID"),
 		WebAuthnRPName:   os.Getenv("WEBAUTHN_RP_NAME"),
 		WebAuthnOrigin:   os.Getenv("WEBAUTHN_ORIGIN"),
 	}
 
-	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" || env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" || env.WebAuthnRPID == "" || env.WebAuthnRPName == "" || env.WebAuthnOrigin == "" {
-		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret, WebAuthnRPID, WebAuthnRPName, WebAuthnOrigin")
+	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" ||
+		env.PostgresPort == "" || env.PostgresUser == "" || env.JwtSecret == "" ||
+		env.RedisPassword == "" || env.RedisPort == "" || env.MinioPort == "" || env.AppPort == "" || env.WebAuthnRPID == "" || env.WebAuthnRPName == "" || env.WebAuthnOrigin == "" {
+		return nil, fmt.Errorf("missing required environment variable(s): PostgresHost, PostgresPort, PostgresUser, PostgresPassword, PostgresDBname, JwtSecret, RedisPassword, RedisPort, MinioPort, AppPort, WebAuthnRPID, WebAuthnRPName, WebAuthnOrigin")
 	}
 
 	return env, nil

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 
 	"backend/auth/internal"
 	"backend/auth/internal/handlers"
+	"backend/auth/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
 
@@ -16,6 +18,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -27,7 +30,7 @@ func main() {
 	dbConn := db.InitDB(env)
 
 	app := fiber.New(fiber.Config{
-		AppName:   "ft_box_auth v1.0",
+		AppName:   "ostrom_auth v1.0",
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
 	})
 
@@ -63,7 +66,21 @@ func main() {
 		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
 	}
 
-	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient)
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
+	})
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
+
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
