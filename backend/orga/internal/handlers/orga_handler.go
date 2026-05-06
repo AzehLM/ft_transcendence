@@ -415,11 +415,11 @@ func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
 	var orga models.Orga
 	orga, errOrg := repo.GetOrgaByID(orgID)
 	if errOrg != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "organization not found",
-		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"public_key": base64.StdEncoding.EncodeToString(orga.PublicKey),
 	})
@@ -442,9 +442,10 @@ func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	orga, err := repo.GetOrgaByID(orgID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "organization not found",
-		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
