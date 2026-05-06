@@ -33,7 +33,7 @@ export async function generateOrganization(name: string) {
     name,
     public_key: uint8ArrayToBase64(orgPublicKey),
     enc_org_priv_key: uint8ArrayToBase64(encryptedPrivateKey),
-    encrypted_aes_key: uint8ArrayToBase64(new Uint8Array(encryptedAesKey)),
+    enc_aes_key: uint8ArrayToBase64(new Uint8Array(encryptedAesKey)),
     iv: uint8ArrayToBase64(iv),
   };
 }
@@ -45,7 +45,7 @@ export async function encryptOrgKeyForMember(
   memberPublicKeyB64: string
 ): Promise<{
   enc_org_priv_key: string;
-  encrypted_aes_key: string;
+  enc_aes_key: string;
   iv: string;
 }> {
   console.log("Encrypt Key for orga member (1) - get private key")
@@ -122,7 +122,7 @@ export async function encryptOrgKeyForMember(
 
   return {
     enc_org_priv_key: uint8ArrayToBase64(new Uint8Array(newEncOrgPrivKey)),
-    encrypted_aes_key: uint8ArrayToBase64(new Uint8Array(newEncAesKey)),
+    enc_aes_key: uint8ArrayToBase64(new Uint8Array(newEncAesKey)),
     iv: uint8ArrayToBase64(newIv),
   };
 }

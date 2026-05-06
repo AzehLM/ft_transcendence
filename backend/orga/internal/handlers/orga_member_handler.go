@@ -15,10 +15,10 @@ import (
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
-		Email           string `json:"user_email" validate:"required"`
+		Email             string `json:"user_email" validate:"required"`
 		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-        EncAesKey         string `json:"encrypted_aes_key" validate:"required"`
-        Iv                string `json:"iv" validate:"required"`
+		EncAesKey         string `json:"enc_aes_key" validate:"required"`
+		Iv                string `json:"iv" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -45,16 +45,16 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-    if body.EncAesKey == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	if body.EncAesKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "encrypted aes key is required",
 		})
-    }
-    if body.Iv == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	}
+	if body.Iv == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "iv is required",
 		})
-    }
+	}
 
 	// fmt.Println("mail: ", body.Email, "and key: ", body.EncOrgaPrivateKey)
 	orgIDParam := c.Params("org_id")
@@ -100,19 +100,19 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-    decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
-    if errAes != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+	if errAes != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 aes key",
 		})
-    }
+	}
 
-    decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
-    if errIv != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+	if errIv != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 iv",
 		})
-    }
+	}
 
 	// create orga member
 	orgaMember := models.OrgaMember{
@@ -121,7 +121,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		Role:          "member",
 		EncOrgPrivKey: decodedKey,
 		EncAesKey:     decodedAesKey,
-        Iv:            decodedIv, 
+		Iv:            decodedIv,
 	}
 
 	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
@@ -452,7 +452,7 @@ func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"enc_org_priv_key": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
 		"enc_aes_key":      base64.StdEncoding.EncodeToString(member.EncAesKey),
-    	"iv":               base64.StdEncoding.EncodeToString(member.Iv),
+		"iv":               base64.StdEncoding.EncodeToString(member.Iv),
 		// "enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})
 }

@@ -90,7 +90,7 @@ const handleAddMember = async () => {
   //     // const keysData = await keysRes.json();
   //     // console.log("raw keys data:", keysData);
   //     // console.log("enc_org_priv_key:", keysData.enc_org_priv_key);
-  //     // console.log("encrypted_aes_key:", keysData.encrypted_aes_key);
+  //     // console.log("enc_aes_key:", keysData.enc_aes_key);
   //     // console.log("iv:", keysData.iv);
   //     const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
 
