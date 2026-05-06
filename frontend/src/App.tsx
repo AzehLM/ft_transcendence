@@ -19,7 +19,7 @@ import { OrgSidebar } from './components/OrgSidebar'
 import OrgFilesPage from './pages/Orgs/OrgFilesPage'
 import OrgMembersPage from './pages/Orgs/OrgMembersPage'
 import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
-
+import StatusPage from './pages/Status'
 
 function App() {
     return (
@@ -51,6 +51,7 @@ function App() {
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/status" element={<StatusPage />} />
             </Routes>
         </BrowserRouter>
     )

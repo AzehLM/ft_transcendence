@@ -154,6 +154,8 @@ services:
     env_file:
       - ../.env
     secrets:
+      - minio_admin_user
+      - minio_admin_pwd
       - postgres_pwd
       - postgres_user
       - jwt_secret
@@ -210,6 +212,22 @@ services:
       auth:
         condition: service_started
 
+  health-aggregator:
+    container_name: health-aggregator
+    build:
+      context: ../
+      dockerfile: ./infra/services/health-aggregator/Dockerfile
+    networks:
+      - app
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_started
+      orga:
+        condition: service_started
+      storage:
+        condition: service_started
+
   cloudflared:
     container_name: cloudflared
     image: cloudflare/cloudflared:1826-d2a87e9b9345@sha256:6b599ca3e974349ead3286d178da61d291961182ec3fe9c505e1dd02c8ac31b0
@@ -228,6 +246,30 @@ services:
       caddy:
         condition: service_healthy
     command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflare_tunnel_token
+
+  backup:
+    container_name: backup
+    build:
+      context: ../
+      dockerfile: ./infra/services/backup/Dockerfile.prod
+    networks:
+      - app
+    restart: unless-stopped
+    volumes:
+      - ${BACKUP_DIR}:/backups
+    env_file:
+      - ../.env
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_pwd
+      - minio_admin_user
+      - minio_admin_pwd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
 volumes:
   caddy_data:
