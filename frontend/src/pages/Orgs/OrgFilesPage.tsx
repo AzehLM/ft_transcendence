@@ -44,7 +44,7 @@ export default function OrgFilesPage() {
         setError(message);
         return;
       }
-      setFiles(files.filter(f => f.id !== fileId));
+      setFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
   return (
