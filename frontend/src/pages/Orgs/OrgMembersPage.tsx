@@ -132,7 +132,7 @@ export default function OrgMembersPage() {
       return;
     }
 
-    setMembers(members.filter(m => m.user_id !== memberToRemove.user_id));
+    setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
     setShowRemoveModal(false);
     setMemberToRemove(null);
   };
