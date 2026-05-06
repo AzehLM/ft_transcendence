@@ -99,6 +99,9 @@ func main() {
 	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker, env)
 	handler := handlers.NewStorageHandler(svc, env)
 
+	healthHandler := handlers.NewHealthHandler(database, redisClient, minioClient)
+	app.Get("/health", healthHandler.Checker)
+
 	consumer := workers.NewEventConsumer(repo, minioClient)
 	go consumer.ConsumeOrgDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
