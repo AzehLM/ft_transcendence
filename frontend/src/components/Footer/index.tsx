@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import styles from "../styles/footer.module.css";
+import styles from "./Footer.module.css";
 
 const FOOTER_COLUMNS = [
     {
@@ -7,6 +7,7 @@ const FOOTER_COLUMNS = [
         links: [
             { label: "Privacy Policy", to: "/privacy" },
             { label: "Terms of Service", to: "/terms" },
+            { label: "Status", to: "/status"},
         ],
     },
     {
