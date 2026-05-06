@@ -7,6 +7,7 @@ import { UserPlus, UserMinus } from "lucide-react";
 import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
+import { addMemberToOrg } from "../../services/organizations.service";
 
 interface Organization {
   id: string;
@@ -40,7 +41,7 @@ export default function OrganizationsPage() {
     if (!orgName.trim()) return;
     try {
       const data = await generateOrganization(orgName);
-      console.log("org data to send:", data);
+      // console.log("org data to send:", data);
 
       const response = await fetchWithRefresh("/api/orgs", {
         method: "POST",
@@ -71,51 +72,14 @@ const handleAddMember = async () => {
   if (!memberEmail.trim() || !selectedOrg) return;
   setModalError(null);
 
-  try {
-    // Get the keys of user inviting
-    const keysRes = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/keys`);
-    if (!keysRes.ok) throw new Error("Failed to get org keys");
-    const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
-
-    // Get oublic key of user invited
-    const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${memberEmail}`);
-    if (pubKeyRes.status === 404) {
-      setModalError("User not found");
-      return;
-    }
-    const { public_key } = await pubKeyRes.json();
-
-    // Encrypt
-    console.log("Adding member (3) - encrypt keys")
-    const encryptedData = await encryptOrgKeyForMember(
-      enc_org_priv_key,
-      enc_aes_key,
-      iv,
-      public_key
-    );
-
-    // Send to back
-    console.log("Adding member (4) - send to back")
-    const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members`, {
-      method: "POST",
-      body: JSON.stringify({
-        user_email: memberEmail,
-        ...encryptedData,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      setModalError(err.error || err.message || "Failed to add member.");
-      return;
-    }
-
-    setMemberEmail("");
-    setShowAddMemberModal(false);
-  } catch (err) {
-    console.error("Error:", err);
-    setModalError("An error occurred, please try again.");
+  const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
+  if (!success) {
+    setModalError(error ?? "Failed to add member.");
+    return;
   }
+
+  setMemberEmail("");
+  setShowAddMemberModal(false);
 };
 
   // Debug org key
