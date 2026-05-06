@@ -21,10 +21,13 @@ export default function OrgMembersPage() {
   const [orgName, setOrgName] = useState<string>("");
 
   useEffect(() => {
-  fetchWithRefresh(`/api/orgs/${id}`)
-    .then(res => res.json())
-    .then(data => setOrgName(data.name))
-    .catch(() => setOrgName("Unknown"));
+    fetchWithRefresh(`/api/orgs/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch org name.");
+        return res.json();
+      })
+      .then(data => setOrgName(data.name))
+      .catch(() => setOrgName("Unknown"));
 
   }, [id]);
 
@@ -60,22 +63,31 @@ export default function OrgMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch members.");
+        return res.json();
+      })
       .then(data => {
         setMembers(data);
 
         fetchWithRefresh("/api/auth/me")
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch user.");
+            return res.json();
+          })
           .then(me => {
             const myMember = data.find((m: Member) => m.email === me.email);
             if (myMember) setMyRole(myMember.role);
-          });
+          })
+          .catch(() => setMyRole(null));
       })
       .catch(() => {
         setMembers([]);
+        setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -162,6 +174,7 @@ export default function OrgMembersPage() {
         />
 
       <div className={orgaStyles.organizations}>
+        {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
         {loading ? (
           <p>Loading...</p>
         ) : members.length === 0 ? (
