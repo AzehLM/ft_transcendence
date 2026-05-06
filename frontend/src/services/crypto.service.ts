@@ -423,3 +423,16 @@ export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
         ["encrypt"]
     );
 }
+
+export async function decryptDEKWithPrivateKey(
+    encryptedDek: Uint8Array,
+    privateKey: CryptoKey
+): Promise<Uint8Array> {
+    const decryptedDek = await crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        privateKey,
+        toArrayBuffer(encryptedDek)
+    );
+
+    return new Uint8Array(decryptedDek);
+}
