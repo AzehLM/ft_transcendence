@@ -426,3 +426,31 @@ func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
 		"public_key": base64.StdEncoding.EncodeToString(orga.PublicKey),
 	})
 }
+
+func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
+    orgIDParam := c.Params("org_id")
+    if orgIDParam == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "org_id is required",
+		})
+    }
+    orgID, err := uuid.Parse(orgIDParam)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid org id",
+		})
+    }
+
+	repo := repository.NewOrganizationRepository(h.DB)
+    orga, err := repo.GetOrgaByID(orgID)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "organization not found",
+		})
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "id":   orga.ID,
+        "name": orga.Name,
+    })
+}

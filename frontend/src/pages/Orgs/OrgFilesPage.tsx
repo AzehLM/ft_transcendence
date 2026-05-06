@@ -9,10 +9,14 @@ export default function OrgFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const location = useLocation();
-  const orgName = location.state?.orgName ?? "Organization";
+  const [orgName, setOrgName] = useState<string>("");
 
   useEffect(() => {
+  fetchWithRefresh(`/api/orgs/${id}`)
+    .then(res => res.json())
+    .then(data => setOrgName(data.name))
+    .catch(() => setOrgName("Unknown"));
+
     fetchWithRefresh(`/api/orgs/${id}/files`)
       .then(res => res.json())
       .then(data => setFiles(data.files || []))
