@@ -6,7 +6,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
       <Link to="/" className={styles.sidebar__logo}>
-        <Package className="size-9" />
+        <Package className="size-7" />
         ft_box
       </Link>
       <div className={styles.sidebar__links}>
