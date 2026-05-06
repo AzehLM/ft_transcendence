@@ -415,7 +415,7 @@ func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
 	var orga models.Orga
 	orga, errOrg := repo.GetOrgaByID(orgID)
 	if errOrg != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(errOrg, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
