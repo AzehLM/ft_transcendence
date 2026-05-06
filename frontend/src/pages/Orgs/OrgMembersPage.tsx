@@ -7,6 +7,7 @@ import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import orgaStyles from "../Organizations/Organizations.module.css"
 import { UserMinus, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 
 interface Member {
@@ -19,6 +20,7 @@ export default function OrgMembersPage() {
 
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -68,6 +70,10 @@ export default function OrgMembersPage() {
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
       .then(res => {
+        if (res.status === 404 || res.status === 400) {
+          navigate("/404");
+          return;
+        }
         if (!res.ok) throw new Error("Failed to fetch members.");
         return res.json();
       })

@@ -20,6 +20,7 @@ import OrgFilesPage from './pages/Orgs/OrgFilesPage'
 import OrgMembersPage from './pages/Orgs/OrgMembersPage'
 import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
 import StatusPage from './pages/Status'
+import NotFoundPage from './pages/NotFound'
 
 function App() {
     return (
@@ -52,6 +53,8 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/status" element={<StatusPage />} />
+                <Route path="/404" element={<NotFoundPage />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     )

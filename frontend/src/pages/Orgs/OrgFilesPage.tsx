@@ -3,6 +3,7 @@ import { FileItem } from "../../services/files.service";
 import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -10,11 +11,16 @@ export default function OrgFilesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
   fetchWithRefresh(`/api/orgs/${id}`)
     .then(res => {
-      if (!res.ok) throw new Error("Failed to fetch org name.");
+      if (res.status === 404 || res.status === 400) {
+        navigate("/404");
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to fetch org.");
       return res.json();
     })
     .then(data => setOrgName(data.name))
