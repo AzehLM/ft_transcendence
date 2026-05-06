@@ -56,7 +56,7 @@ export default function OrganizationsPage() {
       }
 
       const newOrg = await response.json();
-      setOrgs([...orgs, { ...newOrg, role: "admin" }]);
+      setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
       setShowCreateModal(false);
       setOrgName("");
     } catch (err) {
@@ -124,7 +124,7 @@ const handleAddMember = async () => {
       }
 
       setShowLeaveConfirm(false);
-      setOrgs(orgs.filter(o => o.id !== selectedOrg.id));
+      setOrgs(prev => prev.filter(o => o.id !== selectedOrg.id));
       setSelectedOrg(null);
 
     } catch (err) {
