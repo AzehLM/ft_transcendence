@@ -98,7 +98,7 @@ export default function OrgMembersPage() {
       return;
     }
 
-    setMembers(members.map(m =>
+    setMembers(prev => prev.map(m =>
       m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
     ));
     setShowChangeRoleModal(false);
