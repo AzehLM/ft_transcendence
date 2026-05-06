@@ -224,7 +224,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
