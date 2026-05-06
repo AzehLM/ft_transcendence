@@ -4,7 +4,7 @@ import { SettingsLayout } from "../Profile/SettingsLayout";
 import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
-import { generateOrganization, encryptOrgKeyForMember, decryptOrgPrivateKey } from "../../services/organizations.service";
+import { generateOrganization } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
