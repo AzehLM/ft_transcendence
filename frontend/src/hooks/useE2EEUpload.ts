@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
-import { encryptDEKWithPublicKey, uint8ArrayToBase64 } from '../services/crypto.service';
-import { setTemporaryPrivateKey } from '../services/temp-e2ee-key.service';
+import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession } from '../services/crypto.service';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
 
@@ -15,12 +14,8 @@ export function useE2EEUpload(onSuccess: () => void) {
 
         try {
 
-            const temporaryKeyPair = await window.crypto.subtle.generateKey(
-                { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
-                true, ["encrypt", "decrypt"]
-            );
-            setTemporaryPrivateKey(temporaryKeyPair.privateKey);
-            const publicKey = temporaryKeyPair.publicKey;
+            const publicKey = await getPublicKeyFromSession();
+            if (!publicKey) throw new Error("Clé publique introuvable. Assurez-vous d'être connecté.");
 
             const dek = window.crypto.getRandomValues(new Uint8Array(32)); // Clé AES 256
             const baseIv = window.crypto.getRandomValues(new Uint8Array(12)); // IV de base
@@ -29,15 +24,6 @@ export function useE2EEUpload(onSuccess: () => void) {
                 "raw", dek, "AES-GCM", false, ["encrypt"]
             );
             const encryptedDEK = await encryptDEKWithPublicKey(dek, publicKey);
-
-
-            const encoder = new TextEncoder();
-            const encryptedFilenameBuffer = await window.crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: baseIv },
-                cryptoKey,
-                encoder.encode(file.name)
-            );
-            const encryptedFilenameB64 = uint8ArrayToBase64(new Uint8Array(encryptedFilenameBuffer));
 
 
             setUploadStatus("Requesting upload authorization from the server...");
