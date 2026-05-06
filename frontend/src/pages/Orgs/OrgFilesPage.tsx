@@ -13,12 +13,18 @@ export default function OrgFilesPage() {
 
   useEffect(() => {
   fetchWithRefresh(`/api/orgs/${id}`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Failed to fetch org name.");
+      return res.json();
+    })
     .then(data => setOrgName(data.name))
     .catch(() => setOrgName("Unknown"));
 
     fetchWithRefresh(`/api/orgs/${id}/files`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch files.");
+        return res.json();
+      })
       .then(data => setFiles(data.files || []))
       .catch(() => {
         setError("Failed to load org files.");
