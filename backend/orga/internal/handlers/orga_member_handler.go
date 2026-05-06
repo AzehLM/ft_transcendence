@@ -15,8 +15,10 @@ import (
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
-		Email           string `json:"user_email" validate:"required"`
-		EncryptedOrgKey string `json:"encrypted_org_key" validate:"required"`
+		Email             string `json:"user_email" validate:"required"`
+		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
+		EncAesKey         string `json:"enc_aes_key" validate:"required"`
+		Iv                string `json:"iv" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -37,9 +39,20 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	if body.EncryptedOrgKey == "" {
+	if body.EncOrgaPrivateKey == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "encrypted org key required",
+			"error": "encrypted org private key required",
+		})
+	}
+
+	if body.EncAesKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "encrypted aes key is required",
+		})
+	}
+	if body.Iv == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "iv is required",
 		})
 	}
 
@@ -80,10 +93,24 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": memberErr.Error()})
 	}
 
-	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncryptedOrgKey)
+	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
 	if errKey != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 encrypted private key",
+		})
+	}
+
+	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+	if errAes != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 aes key",
+		})
+	}
+
+	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+	if errIv != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 iv",
 		})
 	}
 
@@ -93,6 +120,8 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		UserID:        user.ID,
 		Role:          "member",
 		EncOrgPrivKey: decodedKey,
+		EncAesKey:     decodedAesKey,
+		Iv:            decodedIv,
 	}
 
 	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
@@ -197,7 +226,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	if member.Role == "admin" && body.Role != "admin" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "cannot remove the last admin",
+				"error": "cannot demote the last admin",
 			})
 		}
 	}
@@ -263,7 +292,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	if member.Role == "admin" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "cannot remove the last admin",
+				"error": "you are the last admin, you can't leave the organization",
 			})
 		}
 	}
@@ -330,7 +359,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	if member.Role == "admin" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "cannot remove the last admin",
+				"error": "you can't delete the last admin",
 			})
 		}
 	}
@@ -388,7 +417,7 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(orgaMembers)
 }
 
-func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
+func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
@@ -421,7 +450,9 @@ func (h *OrgaHandler) GetMemberPrivateKey(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"enc_org_priv_key_b64": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
+		"enc_org_priv_key": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
+		"enc_aes_key":      base64.StdEncoding.EncodeToString(member.EncAesKey),
+		"iv":               base64.StdEncoding.EncodeToString(member.Iv),
 		// "enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})
 }

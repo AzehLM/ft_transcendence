@@ -1,17 +1,18 @@
 import { MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import styles from "./FileCard.module.css";
-import { DeleteConfirmationModal } from "../DeleteConfirmationModal";
+import { ConfirmationModal } from "../ConfirmationModal";
 
 interface FileCardProps {
+  id: string;
   name: string;
   isTrash?: boolean;
-  onDelete?: (name: string) => void;
-  onAddToFolder?: (fileName: string, folderName: string) => void;
+  onDelete?: (id: string) => void;
+  onAddToFolder?: (fileName: string, folderName: string) => void; // maybe need to change to id
   onCreateFolder?: (fileName: string, folderName: string) => void;
 }
 
-export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCreateFolder }: FileCardProps) {
+export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onCreateFolder }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -59,7 +60,7 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
 
   const handleConfirmDelete = () => {
     setShowDeleteConfirm(false);
-    onDelete?.(name);
+    onDelete?.(id);
   };
 
   return (
@@ -102,7 +103,7 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
           )}
         </div>
       </div>
-      <DeleteConfirmationModal
+      <ConfirmationModal
         isOpen={showDeleteConfirm}
         fileName={name}
         onConfirm={handleConfirmDelete}

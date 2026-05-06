@@ -80,6 +80,9 @@ func main() {
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
+	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
+	app.Get("/health", healthHandler.Checker)
+
 	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
@@ -102,6 +105,7 @@ func main() {
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
 	api.Patch("/auth/avatar", authHandler.UploadAvatar)
+	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8081...")
