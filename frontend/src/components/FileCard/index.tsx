@@ -5,13 +5,14 @@ import { DeleteConfirmationModal } from "../DeleteConfirmationModal";
 
 interface FileCardProps {
   name: string;
+  id?: string;
   isTrash?: boolean;
   onDelete?: (name: string) => void;
   onAddToFolder?: (fileName: string, folderName: string) => void;
-  onCreateFolder?: (fileName: string, folderName: string) => void;
+  onDownload?: (fileId: string) => void;
 }
 
-export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCreateFolder }: FileCardProps) {
+export function FileCard({ name, id = "", isTrash = false, onDelete, onAddToFolder, onDownload }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -44,12 +45,9 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
     }
   };
 
-  const handleCreateFolder = () => {
-    const folderName = prompt("Enter new folder name:");
-    if (folderName) {
-      onCreateFolder?.(name, folderName);
-      setShowMenu(false);
-    }
+  const handleDownload = () => {
+    onDownload?.(id);
+    setShowMenu(false);
   };
 
   const handleDelete = () => {
@@ -87,10 +85,10 @@ export function FileCard({ name, isTrash = false, onDelete, onAddToFolder, onCre
                 Add to Folder
               </button>
               <button
-                onClick={handleCreateFolder}
+                onClick={handleDownload}
                 className={styles.fileCard__menu__item}
               >
-                Create Folder
+                Download
               </button>
               <button
                 onClick={handleDelete}
