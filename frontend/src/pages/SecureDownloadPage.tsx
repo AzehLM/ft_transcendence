@@ -3,8 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
+    getPrivateKeyFromSession,
 } from '../services/crypto.service';
-import { getTemporaryPrivateKey } from '../services/temp-e2ee-key.service';
 
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
@@ -51,7 +51,7 @@ function useSecureDownload() {
             const tempPrivateKey = await decryptAndImportPrivateKey(b64PrivKey, masterKey);
             */
 
-            const tempPrivateKey = getTemporaryPrivateKey();
+            const tempPrivateKey = await getPrivateKeyFromSession();
             if (!tempPrivateKey) throw new Error("Clé privée introuvable. Ne rafraîchissez pas la page.");
 
             const encryptedDekBytes = base64ToUint8Array(metadata.encrypted_dek);
