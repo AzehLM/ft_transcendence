@@ -48,7 +48,7 @@ export default function AccountPage() {
                             <input type="password" style={{ display: "none" }} />
                             <input
                             type="password"
-                            autoComplete="password"
+                            autoComplete="current-password"
                             value={password}
                             placeholder="Enter current password"
                             onChange={(e) => setPassword(e.target.value)}
