@@ -226,7 +226,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	if member.Role == "admin" && body.Role != "admin" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "you are the last admin, you can't change role",
+				"error": "cannot demote the last admin",
 			})
 		}
 	}
