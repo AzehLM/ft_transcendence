@@ -27,8 +27,12 @@ export default function OrganizationsPage() {
 
   useEffect(() => {
     fetchWithRefresh("/api/orgs")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch organizations.");
+        return res.json();
+      })
       .then(data => setOrgs(data))
+      .catch(() => setOrgs([]))
       .finally(() => setLoading(false));
   }, []);
 
