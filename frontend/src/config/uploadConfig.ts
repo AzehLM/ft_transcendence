@@ -32,8 +32,8 @@ export const UPLOAD_MESSAGES = {
 
     ERROR_VALIDATION_SIZE: (max: string, current: string) =>
         `Fichier trop volumineux. Taille max: ${max}, votre fichier: ${current}`,
-    ERROR_VALIDATION_TYPE: (type: string) =>
-        `Type de fichier non autorisé: ${type}. Fichiers autorisés: images, vidéos, documents, archives.`,
+    ERROR_VALIDATION_TYPE: () =>
+        `Type de fichier non autorisé: Fichiers autorisés: images, vidéos, documents, archives.`,
     ERROR_PUBLIC_KEY: 'Clé publique introuvable. Assurez-vous d\'être connecté.',
     ERROR_SERVER_AUTH: 'Impossible de préparer l\'upload sur le serveur.',
     ERROR_STORAGE_REJECTED: 'Le fichier chiffré a été rejeté par le stockage.',

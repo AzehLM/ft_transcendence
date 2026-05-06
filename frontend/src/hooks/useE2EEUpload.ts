@@ -19,16 +19,14 @@ export function useE2EEUpload(onSuccess: () => void) {
     const [fileInfo, setFileInfo] = useState<{ name: string; size: string; type: string } | null>(null);
 
     const validateFile = (file: File): string | null => {
-        // Vérifier la taille
         if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
             const max = FileValidationService.formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
             const current = FileValidationService.formatFileSize(file.size);
             return UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current);
         }
 
-        // Vérifier le type
         if (!UPLOAD_CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
-            return UPLOAD_MESSAGES.ERROR_VALIDATION_TYPE(file.type || 'inconnu');
+            return UPLOAD_MESSAGES.ERROR_VALIDATION_TYPE();
         }
 
         return null;
@@ -131,7 +129,6 @@ export function useE2EEUpload(onSuccess: () => void) {
 
             const finalBlob = new Blob(encryptedChunks, { type: "application/octet-stream" });
 
-            // Animation: passage de "Envoi du fichier" à "Sauvegarde des métadonnées"
             setUploadStatus(UPLOAD_MESSAGES.UPLOADING);
             await new Promise(resolve => setTimeout(resolve, 500)); // Petite animation
 
