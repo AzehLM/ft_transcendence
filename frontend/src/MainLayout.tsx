@@ -10,8 +10,7 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       {sidebar}
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Topbar */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
         <SearchBar />
         <div style={{ marginLeft: "auto", position: "relative" }}>
@@ -26,8 +25,7 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Contenu de la page */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
           <Outlet />
         </div>
       </div>

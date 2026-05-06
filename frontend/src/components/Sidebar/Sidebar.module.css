@@ -4,16 +4,18 @@
 
 .sidebar {
     position: relative;
-    height: 100%;
+    height: auto;
     left: 0;
     top: 0;
-    width: 260px;
+    width: 220px;
     background: var(--brand-light);
     box-shadow: inset -4px 0px 3.5px var(--color-dark-shadow);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
 }
 
 .sidebar__logo {
-    position: absolute;
     left: 12px;
     top: 12px;
     font-family: 'IBM Plex Sans', sans-serif;
@@ -24,7 +26,7 @@
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    padding: 16px 20px;
+    padding: 24px 20px;
 }
 
 .sidebar__button {
@@ -66,7 +68,6 @@
 .sidebar__links {
     display: flex;
     flex-direction: column;
-    margin-top: 120px;
     gap: 16px;
     padding: 8px 16px;
 }

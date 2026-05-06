@@ -64,10 +64,12 @@ func main() {
 	member := middleware.RequireRole(dbConn, "admin", "member")
 
 	// org routes
+	org.Get("/", member, orgaHandler.GetOrgaName)
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
 	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
 	org.Patch("/usedspace", member, orgaHandler.PatchUsedSpace)
+	org.Get("/public-key", member, orgaHandler.GetOrgaPublicKey)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
@@ -75,7 +77,8 @@ func main() {
 	org.Delete("/members/me", member, orgaHandler.LeaveOrga)
 	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
 	org.Get("/members", member, orgaHandler.GetMembers)
-	org.Get("/members/key", member, orgaHandler.GetMemberPrivateKey)
+	org.Get("/members/keys", member, orgaHandler.GetMemberKeys)
+	
 
 	app.Get("/ws/notifications",
 		middleware.ProtectedRoute(env.JwtSecret),

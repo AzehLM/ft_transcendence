@@ -1,5 +1,5 @@
 /* ============================================================================
-   DELETE CONFIRMATION MODAL COMPONENT
+   CONFIRMATION MODAL COMPONENT
    ============================================================================ */
 
 .modal__overlay {
@@ -20,7 +20,12 @@
     box-shadow: 0px 10px 40px var(--color-dark-shadow);
     z-index: 101;
     max-width: 400px;
+    min-width: 280px;
     width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
 }
 
 .modal__title {
@@ -29,6 +34,7 @@
     font-size: 24px;
     color: var(--brand-dark);
     margin: 0 0 16px 0;
+    text-align: center;
 }
 
 .modal__message {
@@ -37,15 +43,18 @@
     color: #555;
     margin: 0 0 24px 0;
     line-height: 1.5;
+    text-align: center;
 }
 
 .modal__actions {
     display: flex;
     gap: 12px;
-    justify-content: flex-end;
+    justify-content: center;
+    margin-top: 8px;
 }
 
 .modal__button {
+    flex: 1;
     padding: 12px 24px;
     border: none;
     border-radius: 10px;
@@ -72,4 +81,22 @@
 
 .modal__button--delete:hover {
     background: var(--brand-primary-hover);
+}
+
+.modal__input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--brand-primary);
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal__error {
+  font-size: 14px;
+  color: #d32f2f;
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
 }

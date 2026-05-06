@@ -38,6 +38,8 @@ CREATE TABLE org_members (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'member')),
     enc_org_priv_key BYTEA NOT NULL,
+    enc_aes_key     BYTEA NOT NULL,
+    iv              BYTEA NOT NULL,
     joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (org_id, user_id)
 );
