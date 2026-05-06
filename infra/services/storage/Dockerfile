@@ -6,22 +6,23 @@ RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY ./backend/storage/go.mod ./backend/storage/go.sum ./storage/
 COPY ./backend/shared/go.mod ./backend/shared/go.sum ./shared/
+COPY ./backend/storage/go.mod ./backend/storage/go.sum ./storage/
 
 RUN go work init ./shared ./storage && go work sync
 
-COPY ./backend/storage ./storage/
 COPY ./backend/shared ./shared/
+COPY ./backend/storage ./storage/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o storage-test ./storage/cmd/api/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o ostrom-storage ./storage/cmd/api/
+
 
 FROM alpine:3.23.3
 
 WORKDIR /app
 
-COPY --from=builder /app/storage-test .
+COPY --from=builder /app/ostrom-storage .
 
 EXPOSE 8083
 
-CMD ["./storage-test"]
+CMD ["./ostrom-storage"]

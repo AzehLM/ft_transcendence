@@ -15,9 +15,9 @@ CREATE TABLE users (
     max_space BIGINT NOT NULL DEFAULT 5368709120,
     refresh_token VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    avatar_url VARCHAR(255)
     -- username VARCHAR(50) UNIQUE
-    -- avatar
     -- two_factor_secret VARCHAR(255)
     -- two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -57,7 +57,7 @@ CREATE TABLE files (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     org_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    folder_id UUID REFERENCES folders(id) ON DELETE RESTRICT,
+    folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
     name VARCHAR(100) NOT NULL,
     file_size BIGINT NOT NULL,
     minio_object_key UUID UNIQUE NOT NULL,

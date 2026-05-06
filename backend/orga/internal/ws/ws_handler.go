@@ -12,7 +12,11 @@ import (
 )
 
 func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
-	defer c.Close()
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("[WS] Error closing websocket connection: %v", err)
+		}
+	}()
 
 	userIDRaw := c.Locals("user_id")
 	if userIDRaw == nil {
@@ -51,7 +55,11 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	ctx := context.Background()
 	pubsub := h.Redis.Subscribe(ctx, channels...)
 
-	defer pubsub.Close()
+	defer func() {
+		if err := pubsub.Close(); err != nil {
+			log.Printf("[WS] Error closing Redis pubsub: %v", err)
+		}
+	}()
 
 	if _, err := pubsub.Receive(ctx); err != nil {
 		log.Printf("[WS] Redis subscribe error for %s: %v", userID, err)

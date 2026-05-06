@@ -173,3 +173,15 @@ func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files
 
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
+
+func (p *EventPublisher) PublishFileOrphaned(ctx context.Context, fileID uuid.UUID, minioObjectKey uuid.UUID, ownerID uuid.UUID) error {
+	return p.redis.XAdd(ctx, &redis.XAddArgs{
+		Stream:	"events:domain:file_orphaned",
+		ID:		"*",
+		Values: map[string]interface{}{
+			"file_id":			fileID.String(),
+			"minio_object_key":	minioObjectKey.String(),
+			"owner_id":			ownerID.String(),
+		},
+	}).Err()
+}

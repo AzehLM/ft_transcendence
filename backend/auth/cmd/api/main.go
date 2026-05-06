@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"backend/auth/internal"
 	"backend/auth/internal/handlers"
+	"backend/auth/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
 
@@ -15,6 +18,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -26,7 +30,7 @@ func main() {
 	dbConn := db.InitDB(env)
 
 	app := fiber.New(fiber.Config{
-		AppName:   "ft_box_auth v1.0",
+		AppName:   "ostrom_auth v1.0",
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
 	})
 
@@ -44,7 +48,42 @@ func main() {
 		},
 	})
 
-	authHandler := handlers.NewAuthHandler(dbConn, env)
+	minioUser, err := config.ReadSecret("minio_admin_user")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO user secret: %v", err)
+	}
+
+	minioPassword, err := config.ReadSecret("minio_admin_pwd")
+	if err != nil {
+		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
+	}
+
+	useSSL := false
+	minioEndpoint := "minio:9000"
+
+	minioClient, err := internal.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
+	if err != nil {
+		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
+	}
+
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:		redisAddr,
+		Password:	env.RedisPassword,
+	})
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
+
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
+	app.Get("/health", healthHandler.Checker)
+
+	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
@@ -58,6 +97,7 @@ func main() {
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
+	api.Patch("/auth/avatar", authHandler.UploadAvatar)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8081...")

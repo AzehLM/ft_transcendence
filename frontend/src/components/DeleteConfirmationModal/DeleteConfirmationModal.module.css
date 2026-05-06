@@ -1,0 +1,75 @@
+/* ============================================================================
+   DELETE CONFIRMATION MODAL COMPONENT
+   ============================================================================ */
+
+.modal__overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-dark-overlay);
+    z-index: 100;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--color-white);
+    border-radius: 17px;
+    padding: 32px;
+    box-shadow: 0px 10px 40px var(--color-dark-shadow);
+    z-index: 101;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal__title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--brand-dark);
+    margin: 0 0 16px 0;
+}
+
+.modal__message {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    color: #555;
+    margin: 0 0 24px 0;
+    line-height: 1.5;
+}
+
+.modal__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal__button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.modal__button--cancel {
+    background: #f0f0f0;
+    color: #2b1008;
+}
+
+.modal__button--cancel:hover {
+    background: #e0e0e0;
+}
+
+.modal__button--delete {
+    background: var(--brand-primary);
+    color: var(--color-white);
+}
+
+.modal__button--delete:hover {
+    background: var(--brand-primary-hover);
+}

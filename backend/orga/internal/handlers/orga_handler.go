@@ -3,7 +3,9 @@ package handlers
 import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
+	"backend/orga/internal/workers"
 	"log"
+	"context"
 
 	"backend/orga/internal/ws"
 	"encoding/base64"
@@ -17,12 +19,15 @@ import (
 type OrgaHandler struct {
 	DB  *gorm.DB
 	Hub *ws.Hub
+	Publisher	*workers.EventPublisher
+
 }
 
-func NewOrgaHandler(db *gorm.DB, hub *ws.Hub) *OrgaHandler {
+func NewOrgaHandler(db *gorm.DB, hub *ws.Hub, publisher *workers.EventPublisher) *OrgaHandler {
 	return &OrgaHandler{
 		DB:  db,
 		Hub: hub,
+		Publisher:	publisher,
 	}
 }
 
@@ -37,16 +42,18 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
-	var orgas []models.Orga
 	repo := repository.NewOrganizationRepository(h.DB)
-	orgas, resErr := repo.GetMemberOrga(userID)
+
+
+	var orgResponses []models.OrgResponse
+	orgResponses, resErr := repo.GetMemberOrga(userID)
 	if resErr != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": resErr.Error(),
 		})
 	}
-	return c.JSON(orgas)
 
+	return c.JSON(orgResponses)
 }
 
 func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
@@ -140,6 +147,13 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
+
+	if err := h.Publisher.PublishOrgDeleted(context.TODO(), orgID); err != nil {
+		log.Printf("[EVENT] failed to publish org_deleted for org %s: %v", orgID.String(), err)
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "failed to enqueue organization cleanup",
+		})
+	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
 	deleted, err := repo.DeleteOrganization(orgID)
@@ -282,7 +296,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 			"max space": newSpace,
 		},
 	}
-	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"max_space": newSpace,
@@ -351,7 +365,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 			"used_space": newSpace,
 		},
 	}
-	h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"used_space": newSpace,
