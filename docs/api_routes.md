@@ -281,7 +281,10 @@ Response `200 OK` :
 ```json
 {
   "id": "",
-  "name": "42_Projects"
+  "name": "42_Projects",
+  "used_space" : "",
+  "max_space" : "",
+  "role": "member/admin",
 }
 ```
 Response `404` : organization not found
