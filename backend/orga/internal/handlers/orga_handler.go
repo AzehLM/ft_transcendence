@@ -425,7 +425,7 @@ func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
 	})
 }
 
-func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
+func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -439,6 +439,18 @@ func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
 		})
 	}
 
+	userIDLocals := c.Locals("user_id").(string)
+	if userIDLocals == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user_id not found"})
+	}
+
+	userID, err := uuid.Parse(userIDLocals)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user id format",
+		})
+	}
+
 	repo := repository.NewOrganizationRepository(h.DB)
 	orga, err := repo.GetOrgaByID(orgID)
 	if err != nil {
@@ -448,8 +460,20 @@ func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
 
+    role, err := repo.GetMemberRole(orgID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "you are not a member of this organization"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id":   orga.ID,
 		"name": orga.Name,
+		"used_space" : orga.UsedSpace,
+		"max_space" : orga.MaxSpace,
+		"role": role,
+
 	})
 }

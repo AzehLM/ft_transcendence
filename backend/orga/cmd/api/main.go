@@ -64,7 +64,7 @@ func main() {
 	member := middleware.RequireRole(dbConn, "admin", "member")
 
 	// org routes
-	org.Get("/", member, orgaHandler.GetOrgaName)
+	org.Get("/", member, orgaHandler.GetOrgaInfo)
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
 	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
