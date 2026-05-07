@@ -10,30 +10,30 @@
 
 ### [ ] Section 1.1: TOTP Service Package
 
-- [ ] Create file: `backend/auth/internal/service/totp_service.go`
-  - [ ] Struct: `TOTPService`
-  - [ ] Function: `GenerateTOTPSecret(userEmail string) (secret, qrCodeURL string, error)`
+- [x] Create file: `backend/auth/internal/service/totp_service.go`
+  - [x] Struct: `TOTPService`
+  - [x] Function: `GenerateTOTPSecret(userEmail string) (secret, qrCodeURL string, error)`
     - Generate random 32-byte secret
     - Create QR code data
     - Return both secret and QR URL
-  - [ ] Function: `VerifyTOTPCode(secret, userCode string) bool`
+  - [x] Function: `VerifyTOTPCode(secret, userCode string) bool`
     - Verify 6-digit code matches current time window
     - Allow ±1 time window (for clock skew)
-  - [ ] Function: `GenerateRecoveryCodes(count int) []string`
+  - [x] Function: `GenerateRecoveryCodes(count int) []string`
     - Generate 10 random recovery codes
     - Format: ABC-123-DEF (user-friendly)
     - Return as plaintext array
-  - [ ] Function: `HashRecoveryCodes(codes []string) []byte`
+  - [x] Function: `HashRecoveryCodes(codes []string) []byte`
     - Hash each code individually
     - Store as JSON blob or delimited format
     - Return hashed bytes for database
 
 ### [ ] Section 1.2: Encryption Service Integration
 
-- [ ] Check: `backend/shared/crypto/` for existing encryption functions
-  - [ ] Use existing `encryptWithUserKey()` for TOTP secret
-  - [ ] Use existing `decryptWithUserKey()` for verification
-  - [ ] Ensure TOTP secret encrypted before database storage
+- [x] Check: `backend/shared/crypto/` for existing encryption functions
+  - [x] Use existing `encryptWithUserKey()` for TOTP secret
+  - [x] Use existing `decryptWithUserKey()` for verification
+  - [x] Ensure TOTP secret encrypted before database storage
 
 ### [ ] Section 1.3: Create Auth Handlers - TOTP Endpoints
 
