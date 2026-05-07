@@ -1,174 +1,119 @@
 # 2FA Implementation Guide
 
----
+## Overview
 
-## 1. Overview
+This project implements **Time-based One-Time Password (TOTP) 2FA with QR code** - the modern, secure, and user-friendly approach to two-factor authentication.
 
-We use **password + biometric (WebAuthn)** as our two factors. The biometric never leaves the device, our server only ever stores a public key.
+### Key Features
 
----
-
-## 2. Registration Flow
-
-When a user sets up biometric authentication for the first time:
-
-```
-User submits email + password
-        ↓
-Server prompts: "Set up biometric"
-        ↓
-Server generates a challenge and sends it to the browser
-        ↓
-Browser asks the device (Phone, Computer...): "Authenticate this user"
-        ↓
-Device prompts the user for his biometric (Face ID, fingerprint scan..)
-        ↓
-Device generates a random key pair:
-    Private key → locked inside the device secure chip (never leaves)
-    Public key  → sent to the server
-        ↓
-Server stores: { user_id, public_key, credential_id }
-        ↓
-Registration complete ✓
-```
-
-### -> What is a Challenge?
-
-A challenge is a short random string (typically 32 bytes) that the server generates fresh for every single registration or login attempt. It is stored temporarily in the session, and expects the device to sign it. The signed response is only valid for that one request. It has three properties that matter:
-
-- **Unique:** generated from a secure random source, so no two challenges are ever the same.
-- **One-time:** once the device signs it and the server verifies it, the challenge is consumed and can never be used again.
-- **Proves liveness:** because the device must sign that exact random value, an attacker who intercepted a previous login cannot replay the captured signature, the server would reject it immediately since the challenge it belongs to no longer exists.
-
-In short, the challenge is what ties a biometric response to a specific, live, server-initiated request, making the whole exchange tamper-proof.
+✅ **Based on QR Code:** Users scan a QR code once with their authenticator app (Google Authenticator, Authy, Microsoft Authenticator, etc.)  
+✅ **Time-Based Codes:** Unique 6-digit code changes every 30 seconds  
+✅ **Zero-Knowledge:** Secret encrypted with user's key, server can't decrypt it  
+✅ **Offline Support:** Works without internet - app generates codes locally  
+✅ **Recovery Codes:** 10 backup codes for emergency access if phone is lost  
+✅ **Industry Standard:** Used by Google, GitHub, AWS, Facebook, and thousands of apps
 
 ---
 
-## 3. Login Flow
+## 📚 Documentation
 
-On every subsequent login:
+Complete TOTP 2FA implementation documentation is available in these files:
 
-```
-User enters email + password
-        ↓
-Server finds the user → fetches all their registered credential IDs
-        ↓
-Server generates a new challenge (unique to this login attempt)
-        ↓
-Browser receives the challenge + credential IDs
-        ↓
-Browser finds the matching credential on the current device
-        ↓
-Device prompts the user for his biometric (Face ID, fingerprint scan..)
-        ↓
-Device signs the challenge with the private key
-        ↓
-Signed response sent to server
-        ↓
-Server verifies: verify(signature, challenge, public_key) → ✓ or ✗
-        ↓
-Access granted ✓
-```
+### 1. **TOTP_HOW_IT_WORKS.md** - Understand the Concept
+- Learn what TOTP is and why it's secure
+- Real-world examples (Google Authenticator)
+- Visual timelines and flowcharts
+- Q&A for common questions
+- **Start here if:** You're new to TOTP and want deep understanding
 
-> **Note:** The browser automatically picks the right credential, the user never manually selects a device.
+### 2. **TOTP_QUICK_REFERENCE.md** - Visual Architecture
+- Quick lookup reference
+- All 6 endpoints at a glance
+- Database schema
+- Security layers
+- Decision tree for endpoint calls
+- **Use this when:** You need quick reference while building
 
----
+### 3. **TOTP_IMPLEMENTATION_TODO.md** - Build Step-by-Step
+- Detailed implementation checklist
+- 5 phases of implementation
+- All 6 endpoint specifications
+- Testing procedures
+- Timeline and success criteria
+- **Follow this when:** Actually building the feature
 
-## 4. Database Structure
-
-Two tables are required because one user can register **multiple devices**.
-
-**Users table** — unchanged from standard auth
-```
-id | email | password_hash | recovery_key_hash [.....]
-```
-
-**Credentials table** — one row per registered device
-```
-id | user_id | credential_id | public_key | device_name | last_used_at
-```
-
-> **Note:** The `user_id` column in the credentials table is a **foreign key**, every value in `credentials.user_id` must match an existing `id` in the users table.
-
-After a user registers multiple devices it looks like:
-
-| device_name | last_used_at |
-|-------------|--------------|
-| iPhone 15   | 2026-04-27   |
-| MacBook Pro | 2026-04-24   |
-| Windows PC  | 2026-02-10   |
+### 4. **TOTP_IMPLEMENTATION_PACKAGE.md** - Project Overview
+- Overview of all documentation
+- Getting started guide
+- Learning paths (fast/deep/build-first)
+- Timeline and success criteria
+- **Use this when:** You want an orientation overview
 
 ---
 
-## 5. Adding a New Device
+## 🚀 Quick Start
 
-The normal flow, user already has an active session:
+### Phase 1: Learning (1-2 hours)
+1. Read [TOTP_HOW_IT_WORKS.md](../TOTP_HOW_IT_WORKS.md) - Understand what TOTP is
+2. Review [TOTP_QUICK_REFERENCE.md](../TOTP_QUICK_REFERENCE.md) - See all 6 endpoints
+3. Skim [TOTP_IMPLEMENTATION_TODO.md](../TOTP_IMPLEMENTATION_TODO.md) - Get overview
+
+### Phase 2: Build Backend (5-6 hours)
+1. Follow [TOTP_IMPLEMENTATION_TODO.md](../TOTP_IMPLEMENTATION_TODO.md) Phase 1
+   - Create `backend/auth/internal/service/totp_service.go`
+   - Implement 6 handler functions
+2. Follow Phase 2
+   - Update login flow
+   - Create temp session middleware
+3. Test with Postman
+
+### Phase 3: Security & Polish (1-2 hours)
+1. Add error handling
+2. Add logging
+3. Verify HTTPS enforcement
+
+---
+
+## The 6 Endpoints
 
 ```
-User is logged in
-        ↓
-Settings → Security → "Add new device"
-        ↓
-Server generates a new registration challenge
-        ↓
-New device prompts for biometric
-        ↓
-New key pair generated on the new device
-        ↓
-New public key stored in credentials table (same user_id)
-        ↓
-Both devices work independently ✓
-```
+Setup Phase (User enables 2FA):
+├─ POST /api/auth/2fa/totp/generate        Generate QR code
+└─ POST /api/auth/2fa/totp/verify          Verify setup code
 
-The only difficult case is **losing the last registered device** handled by the recovery key below.
+Login Phase (User logs in with 2FA):
+├─ POST /api/auth/2fa/verify               Verify TOTP code
+└─ POST /api/auth/2fa/recovery-code        Use recovery code
+
+Management Phase (User manages 2FA):
+├─ GET /api/auth/2fa/recovery-codes        Check remaining codes
+└─ POST /api/auth/2fa/disable              Turn off 2FA
+```
 
 ---
 
-## 6. Recovery Key
+## Summary
 
-### Why the recovery key is the right choice for a ZK app
+The TOTP 2FA implementation in this project provides:
 
-The recovery key fits the constraint of a Zero Knowledge app precisely: it is generated entirely in the browser, the server only stores its hash, and verification is nothing more than a hash comparison. The server has no ability to impersonate the user, reconstruct the key, or even learn what the key is. The user retains full and exclusive control over their recovery material, exactly what a ZK architecture demands.
-
-### How the recovery key works
-
-The key is generated **entirely in the browser** — the server only ever stores its hash.
-
-**At registration:**
-```
-Browser generates a random 128-bit key
-        ↓
-Key displayed to user: e.g. "A3F2-91BC-4E07-D812-..."
-        ↓
-User is prompted to save it offline (print it / password manager)
-        ↓
-Browser hashes the key: SHA-256(recovery_key)
-        ↓
-Only the hash is sent to and stored on the server
-        ↓
-Original key is never transmitted ✓
-```
-
-**On recovery (lost device):**
-```
-User enters email + password on new device
-        ↓
-User enters their recovery key
-        ↓
-Browser hashes it: SHA-256(recovery_key)
-        ↓
-Server compares the hash → match confirmed
-        ↓
-Recovery key immediately invalidated (one-time use)
-        ↓
-Limited session granted for new device registration only
-        ↓
-User registers new device biometric (see Registration Flow)
-        ↓
-User prompted to save a new recovery key
-        ↓
-Access restored ✓
-```
+| Aspect | Benefit |
+|--------|---------|
+| **Security** | Codes change every 30 seconds, encrypted storage |
+| **Privacy** | Zero-knowledge - server can't decrypt secret |
+| **Usability** | Scan QR once, then just type 6-digit codes |
+| **Access** | Works on any device, no biometric required |
+| **Backup** | 10 recovery codes for emergencies |
 
 ---
+
+## Need More Details?
+
+- **What is TOTP?** → Read [TOTP_HOW_IT_WORKS.md](../TOTP_HOW_IT_WORKS.md)
+- **How do I build it?** → Follow [TOTP_IMPLEMENTATION_TODO.md](../TOTP_IMPLEMENTATION_TODO.md)
+- **Quick reference?** → Check [TOTP_QUICK_REFERENCE.md](../TOTP_QUICK_REFERENCE.md)
+- **Project overview?** → See [TOTP_IMPLEMENTATION_PACKAGE.md](../TOTP_IMPLEMENTATION_PACKAGE.md)
+
+---
+
+**Status:** Ready to implement - all documentation and technical specifications complete ✅
 
