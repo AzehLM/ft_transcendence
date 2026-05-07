@@ -1,12 +1,12 @@
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "../Profile/SettingsLayout";
+import { StorageBar } from "../../components/StorageBar";
 
 export default function StoragePage() {
 
     // GET FROM BACK
     const used = 3;
     const total = 10;
-    const percent = (used / total) * 100;
 
     // GET FROM BACK
     const USAGE_TYPES = [
@@ -22,13 +22,7 @@ export default function StoragePage() {
             <div className={styles.storageBoxes}>
                 <div className={styles.mainBox}>
                     <h2 className={styles.subtitle}>Storage Usage</h2>
-                <div className={styles.storageBar}>
-                <div
-                    className={styles.storageBarFill}
-                    style={{ width: `${percent}%` }}
-                />
-                </div>
-                <p className={styles.spaceUsage}>{used} GB / {total} GB</p>
+                    <StorageBar usedBytes={used} totalBytes={total} />
                 </div>
                 <div className={styles.mainBox}>
                     <h2 className={styles.subtitle}>Storage by Type</h2>

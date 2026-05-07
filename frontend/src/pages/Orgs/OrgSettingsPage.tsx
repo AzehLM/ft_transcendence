@@ -3,15 +3,17 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { OrgLayout } from "./OrgLayout";
+import { StorageBar } from "../../components/StorageBar";
 
 export default function OrgSettingsPage() {
 
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
   const [myRole, setMyRole] = useState<string | null>(null);
-  const [usedSpace, setUsedSpace] = useState<string | null>(null);
-  const [maxSpace, setMaxSpace] = useState<string | null>(null);
+  const [usedSpace, setUsedSpace] = useState<number>(0);
+  const [maxSpace, setMaxSpace] = useState<number>(0);
   const navigate = useNavigate();
+  const toGB = (bytes: number) => (bytes / 1024 / 1024 / 1024).toFixed(2);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -39,8 +41,7 @@ export default function OrgSettingsPage() {
       <p>Org name: {orgName}</p>
       <p>My role: {myRole}</p>
       <p>Org ID: {id}</p>
-      <p>Used space: {usedSpace}</p>
-      <p>Max space: {maxSpace}</p>
+      <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} ></StorageBar>
     </OrgLayout>
   );
 }
