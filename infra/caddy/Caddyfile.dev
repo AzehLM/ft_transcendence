@@ -93,6 +93,7 @@
 	# internal links and redirects are prefix-aware.
     @prometheus path /prometheus /prometheus/*
     handle @prometheus {
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
         uri strip_prefix /prometheus
         reverse_proxy prometheus:9090
     }
