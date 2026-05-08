@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var tempTOTPStore = make(map[string]tempTOTPData)
@@ -15,6 +16,15 @@ type tempTOTPData struct {
 	ExpiresAt time.Time
 }
 
+type failedAttempt struct {
+	Count       int
+	LockedUntil time.Time
+}
+
+var failedAttempts = make(map[string]failedAttempt)
+
+const maxAttempts = 3
+const lockoutDuration = 5 * time.Minute
 
 func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
@@ -68,6 +78,17 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
 	}
 
+	// Check if user is locked out
+	if attempt, exists := failedAttempts[userID]; exists {
+		if time.Now().Before(attempt.LockedUntil) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error":   "too_many_attempts",
+				"message": "Too many failed attempts. Generate a new QR code.",
+			})
+		}
+		delete(failedAttempts, userID)
+	}
+
 	req := new(VerifyTOTPRequest)
 
 	if err := c.Bind().Body(req); err != nil {
@@ -98,9 +119,29 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	secret := data.Secret
 
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
-		delete(tempTOTPStore, userID)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_code"})
+		attempt := failedAttempts[userID]
+		attempt.Count++
+		failedAttempts[userID] = attempt
+
+		if attempt.Count >= maxAttempts {
+			failedAttempts[userID] = failedAttempt{
+				Count:       attempt.Count,
+				LockedUntil: time.Now().Add(lockoutDuration),
+			}
+			delete(tempTOTPStore, userID)
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_attempts",
+			})
+		}
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":              "invalid_code",
+			"attempts_remaining": maxAttempts - attempt.Count,
+		})
 	}
+
+	// On success, reset failed attempts
+	delete(failedAttempts, userID)
 
 	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, userID)
 	if err != nil {
@@ -136,18 +177,94 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
-	
+	userID := c.Locals("user_id").(string)
 
+	var user models.User
+
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	if attempt, exists := failedAttempts[userID]; exists {
+		if time.Now().Before(attempt.LockedUntil) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error":   "too_many_attempts",
+				"message": "Too many failed attempts. Try again later.",
+			})
+		}
+		delete(failedAttempts, userID) // Reset after lockout expires
+	}
+
+	req := new(VerifyTOTPRequest)
+
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	}
+
+	if len(req.Code) != 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code_must_be_6_digits"})
+	}
+
+	code := req.Code
+
+	secret, err := decryptTOTPSecret(user.TOTPSecretEncrypted, user.ClientSalt, userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
+	}
+
+	if !h.TOTPService.VerifyTOTPCode(secret, code) {
+		attempt := failedAttempts[userID]
+		attempt.Count++
+		failedAttempts[userID] = attempt
+
+		if attempt.Count >= maxAttempts {
+			failedAttempts[userID] = failedAttempt{
+				Count:       attempt.Count,
+				LockedUntil: time.Now().Add(lockoutDuration),
+			}
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_attempts",
+			})
+		}
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":              "invalid_code",
+			"attempts_remaining": maxAttempts - attempt.Count,
+		})
+	}
+
+	delete(failedAttempts, userID)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID.String(),
+		"user_email": user.Email,
+		"exp":        time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	jwtSecret := []byte(h.Env.JwtSecret)
+	fullToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"token":   fullToken,
+		"message": "Logged in successfully",
+	})
 }
 
 func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
-
+	return nil
 }
 
 func (h *AuthHandler) GetRecoveryCodes(c fiber.Ctx) error {
-
+	return nil
 }
 
 func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
-
+	return nil
 }

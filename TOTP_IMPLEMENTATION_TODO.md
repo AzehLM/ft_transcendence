@@ -59,26 +59,26 @@
 
 #### Endpoint 2: Verify TOTP Setup
 
-- [ ] Function: `VerifyTOTPSetup(c fiber.Ctx) error`
-  - [ ] Extract user_id from JWT
-  - [ ] Parse request: `{ "code": "123456" }`
-  - [ ] Get temp secret from store: `tempTOTPStore[userID]`
-  - [ ] Check: Secret exists and not expired
-  - [ ] Call: `totp_service.VerifyTOTPCode(secret, code)`
-  - [ ] If invalid: Return 401 with error
-  - [ ] If valid:
-    - [ ] Encrypt secret: `encrypted = encryptWithUserKey(secret, user.PublicKey)`
-    - [ ] Generate recovery codes: `recoveryCodes = totp_service.GenerateRecoveryCodes(10)`
-    - [ ] Hash recovery codes: `hashedCodes = totp_service.HashRecoveryCodes(recoveryCodes)`
-    - [ ] Update user:
+- [x] Function: `VerifyTOTPSetup(c fiber.Ctx) error`
+  - [x] Extract user_id from JWT
+  - [x] Parse request: `{ "code": "123456" }`
+  - [x] Get temp secret from store: `tempTOTPStore[userID]`
+  - [x] Check: Secret exists and not expired
+  - [x] Call: `totp_service.VerifyTOTPCode(secret, code)`
+  - [x] If invalid: Return 401 with error
+  - [x] If valid:
+    - [x] Encrypt secret: `encrypted = encryptWithUserKey(secret, user.PublicKey)`
+    - [x] Generate recovery codes: `recoveryCodes = totp_service.GenerateRecoveryCodes(10)`
+    - [x] Hash recovery codes: `hashedCodes = totp_service.HashRecoveryCodes(recoveryCodes)`
+    - [x] Update user:
       ```go
       user.TwoFactorEnabled = true
       user.TOTPSecretEncrypted = encrypted
       user.RecoveryCodesHashed = hashedCodes
       db.Save(user)
       ```
-    - [ ] Delete temp secret: `delete(tempTOTPStore, userID)`
-    - [ ] Response: Return recovery codes (ONE-TIME display!)
+    - [x] Delete temp secret: `delete(tempTOTPStore, userID)`
+    - [x] Response: Return recovery codes (ONE-TIME display!)
       ```json
       {
         "success": true,
@@ -89,20 +89,20 @@
 
 #### Endpoint 3: Verify TOTP During Login
 
-- [ ] Function: `VerifyTOTPLogin(c fiber.Ctx) error`
-  - [ ] Parse request: `{ "code": "123456" }`
-  - [ ] Get temp_user_id from temporary session (from login step)
-  - [ ] Fetch user from database
-  - [ ] Decrypt TOTP secret: `secret = decryptWithUserKey(user.TOTPSecretEncrypted, derivedKey)`
-  - [ ] Verify code: `totp_service.VerifyTOTPCode(secret, code)`
-  - [ ] If invalid:
-    - [ ] Increment failed attempts counter
-    - [ ] If > 3 attempts: Lock for 5 minutes
-    - [ ] Return 401 with error
-  - [ ] If valid:
-    - [ ] Delete temp session
-    - [ ] Generate full JWT
-    - [ ] Response:
+- [x] Function: `VerifyTOTPLogin(c fiber.Ctx) error`
+  - [x] Parse request: `{ "code": "123456" }`
+  - [x] Get temp_user_id from temporary session (from login step)
+  - [x] Fetch user from database
+  - [x] Decrypt TOTP secret: `secret = decryptWithUserKey(user.TOTPSecretEncrypted, derivedKey)`
+  - [x] Verify code: `totp_service.VerifyTOTPCode(secret, code)`
+  - [x] If invalid:
+    - [x] Increment failed attempts counter
+    - [x] If > 3 attempts: Lock for 5 minutes
+    - [x] Return 401 with error
+  - [x] If valid:
+    - [x] Delete temp session
+    - [x] Generate full JWT
+    - [x] Response:
       ```json
       {
         "token": "eyJhbGciOiJIUzI1NiIs...",
