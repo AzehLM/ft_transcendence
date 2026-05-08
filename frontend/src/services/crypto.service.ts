@@ -349,7 +349,7 @@ export async function generateLoginData(email: string, password: string) {
 
 // unwrap private key
 
-function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayBuffer {
+export function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayBuffer {
   if (data instanceof ArrayBuffer) return data;
 
   if (data instanceof Uint8Array) {

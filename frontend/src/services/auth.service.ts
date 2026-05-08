@@ -9,6 +9,7 @@ export async function logout(navigate: (path: string) => void) {
   } finally {
     localStorage.removeItem("token");
     sessionStorage.removeItem("privateKey");
+    sessionStorage.removeItem("publicKey");
 
     navigate("/login");
   }

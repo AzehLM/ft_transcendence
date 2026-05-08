@@ -4,8 +4,8 @@ import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
 	"backend/orga/internal/workers"
-	"log"
 	"context"
+	"log"
 
 	"backend/orga/internal/ws"
 	"encoding/base64"
@@ -17,17 +17,16 @@ import (
 )
 
 type OrgaHandler struct {
-	DB  *gorm.DB
-	Hub *ws.Hub
-	Publisher	*workers.EventPublisher
-
+	DB        *gorm.DB
+	Hub       *ws.Hub
+	Publisher *workers.EventPublisher
 }
 
 func NewOrgaHandler(db *gorm.DB, hub *ws.Hub, publisher *workers.EventPublisher) *OrgaHandler {
 	return &OrgaHandler{
-		DB:  db,
-		Hub: hub,
-		Publisher:	publisher,
+		DB:        db,
+		Hub:       hub,
+		Publisher: publisher,
 	}
 }
 
@@ -43,7 +42,6 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
-
 
 	var orgResponses []models.OrgResponse
 	orgResponses, resErr := repo.GetMemberOrga(userID)
@@ -61,6 +59,8 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		Name              string `json:"name" validate:"required"`
 		PublicKey         string `json:"public_key" validate:"required"`
 		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
+		EncAesKey         string `json:"enc_aes_key" validate:"required"`
+		Iv                string `json:"iv" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -87,6 +87,16 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	if body.EncOrgaPrivateKey == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "encrypted private key is required",
+		})
+	}
+	if body.EncAesKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "encrypted aes key is required",
+		})
+	}
+	if body.Iv == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "iv is required",
 		})
 	}
 
@@ -121,12 +131,27 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		})
 	}
 
+	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+	if errAes != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 aes key",
+		})
+	}
+
+	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+	if errIv != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid base64 iv",
+		})
+	}
+
 	orgaMember := models.OrgaMember{
 		// OrgID:         orga.ID,
 		UserID:        userID,
 		Role:          "admin",
 		EncOrgPrivKey: decodedKey,
-		// EncOrgPrivKey: []byte(body.EncOrgaPrivateKey),
+		EncAesKey:     decodedAesKey,
+		Iv:            decodedIv,
 	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
@@ -165,7 +190,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "ORGA_DELETED",
+		Event:   "ORGA_DELETED",
 		OrgID:   orgID.String(),
 		Message: "Organization has been permanently deleted",
 	}
@@ -215,7 +240,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "ORGA_RENAMED",
+		Event:   "ORGA_RENAMED",
 		OrgID:   orgID.String(),
 		Message: "Organization name updated",
 		Data: fiber.Map{
@@ -289,7 +314,7 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "QUOTA_UPDATED",
+		Event:   "QUOTA_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "Organization max space updated",
 		Data: fiber.Map{
@@ -358,7 +383,7 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 	}
 
 	event := ws.WSEvent{
-		Event:    "QUOTA_UPDATED",
+		Event:   "QUOTA_UPDATED",
 		OrgID:   orgID.String(),
 		Message: "Organization space usage updated",
 		Data: fiber.Map{
@@ -369,5 +394,62 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"used_space": newSpace,
+	})
+}
+
+func (h *OrgaHandler) GetOrgaPublicKey(c fiber.Ctx) error {
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "org_id is required in path",
+		})
+	}
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid orga id format",
+		})
+	}
+
+	repo := repository.NewOrganizationRepository(h.DB)
+	var orga models.Orga
+	orga, errOrg := repo.GetOrgaByID(orgID)
+	if errOrg != nil {
+		if errors.Is(errOrg, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"public_key": base64.StdEncoding.EncodeToString(orga.PublicKey),
+	})
+}
+
+func (h *OrgaHandler) GetOrgaName(c fiber.Ctx) error {
+	orgIDParam := c.Params("org_id")
+	if orgIDParam == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "org_id is required",
+		})
+	}
+	orgID, err := uuid.Parse(orgIDParam)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid org id",
+		})
+	}
+
+	repo := repository.NewOrganizationRepository(h.DB)
+	orga, err := repo.GetOrgaByID(orgID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id":   orga.ID,
+		"name": orga.Name,
 	})
 }
