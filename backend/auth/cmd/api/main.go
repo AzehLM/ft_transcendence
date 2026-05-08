@@ -94,7 +94,7 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
-	// 2FA endpoints (TOTP)
+
 	api.Post("/auth/2fa/totp/generate", authHandler.GenerateTOTPSecret)
 	api.Post("/auth/2fa/totp/verify", authHandler.VerifyTOTPSetup)
 	api.Post("/auth/2fa/verify", authHandler.VerifyTOTPLogin)

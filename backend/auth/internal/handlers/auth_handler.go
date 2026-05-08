@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/auth/internal/workers"
+	"backend/auth/internal/service" 
 	"backend/shared/config"
 
 	"github.com/minio/minio-go/v7"
@@ -27,6 +28,7 @@ type AuthHandler struct {
 	Env         *config.Env
 	MinioClient *minio.Client
 	Publisher   *workers.EventPublisher
+	TOTPService  *service.TOTPService
 }
 
 type LoginRequest struct {
@@ -42,11 +44,18 @@ type UpdatePasswordRequest struct {
 	NewEncryptedPrivKey string `json:"new_encrypted_private_key"`
 }
 
+type VerifyTOTPRequest struct {
+	Code string `json:"code"`
+}
+
+
+
 func NewAuthHandler(db *gorm.DB, env *config.Env, minioClient *minio.Client, publisher *workers.EventPublisher) *AuthHandler {
 	return &AuthHandler{
 		DB:          db,
 		Env:         env,
 		MinioClient: minioClient,
 		Publisher:   publisher,
+		TOTPService: &service.TOTPService{},
 	}
 }

@@ -41,13 +41,13 @@
 
 #### Endpoint 1: Generate TOTP Secret
 
-- [ ] Function: `GenerateTOTPSecret(c fiber.Ctx) error`
-  - [ ] Extract user_id from JWT context
-  - [ ] Fetch user from database
-  - [ ] Check: If 2FA already enabled, return error
-  - [ ] Call: `totp_service.GenerateTOTPSecret(user.Email)`
-  - [ ] Store temp secret in memory (5 min expiry): `tempTOTPStore[userID] = secret`
-  - [ ] Response:
+- [x] Function: `GenerateTOTPSecret(c fiber.Ctx) error`
+  - [x] Extract user_id from JWT context
+  - [x] Fetch user from database
+  - [x] Check: If 2FA already enabled, return error
+  - [x] Call: `totp_service.GenerateTOTPSecret(user.Email)`
+  - [x] Store temp secret in memory (5 min expiry): `tempTOTPStore[userID] = secret`
+  - [x] Response:
     ```json
     {
       "qrCode": "data:image/png;base64,...",
