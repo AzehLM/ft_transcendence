@@ -1,4 +1,4 @@
-import { Folder, Trash2, Files} from "lucide-react";
+import { Folder, Trash2, Files, Network} from "lucide-react";
 import { useState, useEffect } from "react";
 import { FilesService, FolderItem } from "../../services/files.service";
 import { Sidebar } from "../Sidebar/Sidebar";
@@ -28,7 +28,7 @@ export function MenuSidebar() {
         items={folders}
         loading={loading}
       />
-      <SidebarLink to="/trash" icon={<Trash2 />} label="Trash" />
+      <SidebarLink to="/organizations" icon={<Network />} label="Organizations" />
     </Sidebar>
   );
 }
