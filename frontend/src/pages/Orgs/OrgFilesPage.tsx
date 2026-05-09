@@ -4,6 +4,8 @@ import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useE2EEUpload } from "../../hooks/useE2EEUpload";
+import { OrgHeader } from "../../components/OrgHeader";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -12,6 +14,17 @@ export default function OrgFilesPage() {
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
   const navigate = useNavigate();
+
+  const loadFiles = async () => {
+    try {
+      const res = await fetchWithRefresh(`/api/orgs/${id}/files`);
+      if (!res.ok) throw new Error("Failed to fetch files.");
+      const data = await res.json();
+      setFiles(data.files || []);
+    } catch (err) {
+      setError("Failed to load org files.");
+    }
+  };
 
   useEffect(() => {
   fetchWithRefresh(`/api/orgs/${id}`)
@@ -26,21 +39,13 @@ export default function OrgFilesPage() {
     .then(data => setOrgName(data.name))
     .catch(() => setOrgName("Unknown"));
 
-    fetchWithRefresh(`/api/orgs/${id}/files`)
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch files.");
-        return res.json();
-      })
-      .then(data => setFiles(data.files || []))
-      .catch(() => {
-        setError("Failed to load org files.");
-        setFiles([
-          { id: "1", name: "Org document", file_size: 0, created_at: new Date().toISOString() },
-          { id: "2", name: "Org report", file_size: 0, created_at: new Date().toISOString() },
-        ]);
-      })
+    loadFiles()
       .finally(() => setLoading(false));
   }, [id]);
+
+  const { uploadFile } = useE2EEUpload(() => {
+    loadFiles();
+  }, id);
 
   const handleDelete = async (fileId: string) => {
       const response = await fetchWithRefresh(`/api/orgs/${id}/files/${fileId}`, { method: "DELETE" });
@@ -69,6 +74,7 @@ export default function OrgFilesPage() {
       onDelete={handleDelete}
       orgName={orgName}
       showActionButtons={true}
+      onUploadFile={uploadFile}
     />
   );
 }

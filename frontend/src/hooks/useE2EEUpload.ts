@@ -12,7 +12,7 @@ interface UploadProgress {
     remainingTime: number;
 }
 
-export function useE2EEUpload(onSuccess: () => void) {
+export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState<string>("");
     const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -77,7 +77,7 @@ export function useE2EEUpload(onSuccess: () => void) {
                 body: JSON.stringify({
                     file_size: totalEncryptedSize,
                     folder_id: null,
-                    org_id: null
+                    org_id: orgId || null
                 })
             });
 
@@ -148,7 +148,7 @@ export function useE2EEUpload(onSuccess: () => void) {
                     encrypted_filename: file.name,
                     encrypted_dek: uint8ArrayToBase64(new Uint8Array(encryptedDEK)),
                     iv: uint8ArrayToBase64(baseIv),
-                    org_id: null
+                    org_id: orgId || null
                 })
             });
 
