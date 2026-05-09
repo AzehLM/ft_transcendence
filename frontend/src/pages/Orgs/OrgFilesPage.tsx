@@ -16,8 +16,10 @@ export default function OrgFilesPage() {
 
   const loadFiles = async () => {
     try {
+      console.log("test oh zebi");
       const res = await fetchWithRefresh(`/api/orgs/${id}/files`);
       if (!res.ok) throw new Error("Failed to fetch files.");
+      console.log("test v2");
       const data = await res.json();
       setFiles(data.files || []);
     } catch (err) {
@@ -42,7 +44,7 @@ export default function OrgFilesPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const { uploadFile } = useE2EEUpload(() => {
+  const { uploadFile, isUploading, uploadStatus, uploadProgress } = useE2EEUpload(() => {
     loadFiles();
   }, id);
 
@@ -64,16 +66,50 @@ export default function OrgFilesPage() {
   };
 
   return (
-    <FileGrid
-      title="Organization files"
-      subtitle="All files"
-      files={files}
-      loading={loading}
-      error={error}
-      onDelete={handleDelete}
-      orgName={orgName}
-      showActionButtons={true}
-      onUploadFile={uploadFile}
-    />
+    <>
+      {uploadStatus && (
+        <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          background: "#2a2a2a",
+          color: "#fff",
+          padding: "16px 20px",
+          borderRadius: "8px",
+          zIndex: 1000,
+          maxWidth: "400px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
+        }}>
+          <div>{uploadStatus}</div>
+          {uploadProgress && (
+            <div style={{ marginTop: "12px" }}>
+              <div style={{ background: "#444", height: "4px", borderRadius: "2px", marginBottom: "8px" }}>
+                <div style={{
+                  background: "#4CAF50",
+                  height: "100%",
+                  width: `${uploadProgress.percentage}%`,
+                  borderRadius: "2px",
+                  transition: "width 0.3s"
+                }} />
+              </div>
+              <div style={{ fontSize: "12px", color: "#aaa" }}>
+                {uploadProgress.percentage}% - {(uploadProgress.speed / (1024 * 1024)).toFixed(1)} MB/s
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <FileGrid
+        title="Organization files"
+        subtitle="All files"
+        files={files}
+        loading={loading}
+        error={error}
+        onDelete={handleDelete}
+        orgName={orgName}
+        showActionButtons={true}
+        onUploadFile={uploadFile}
+      />
+    </>
   );
 }
