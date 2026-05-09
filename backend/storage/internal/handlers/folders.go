@@ -311,3 +311,43 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 		"files":	filesItems,
 	})
 }
+
+// ListOrgRootFiles returns all files at the root of an organization (no folder nesting)
+func (h *StorageHandler) ListOrgRootFiles(c fiber.Ctx) error {
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	orgID, err := uuid.Parse(c.Params("org_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid org_id",
+		})
+	}
+
+	folders, files, err := h.svc.ListOrgContents(userID, orgID, uuid.Nil)
+	if err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	var filesItems	[]storage.FilesItem
+
+	filesItems = make([]storage.FilesItem, len(files))
+	for i, f := range files {
+		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"files":	filesItems,
+	})
+}
