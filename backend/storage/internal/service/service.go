@@ -19,14 +19,14 @@ import (
 )
 
 var (
-	ErrForbidden = errors.New("forbidden")
-	ErrNotFound = errors.New("not found")
+	ErrForbidden     = errors.New("forbidden")
+	ErrNotFound      = errors.New("not found")
 	ErrQuotaExceeded = errors.New("quota exceeded")
 
 	ErrFolderNotEmpty = errors.New("folder not empty")
-	ErrCyclicMove = errors.New("cannot move folder into itself or one of its descendants")
-	ErrInvalidParent = errors.New("invalid parent")
-	ErrInvalidName = errors.New("invalid folder name")
+	ErrCyclicMove     = errors.New("cannot move folder into itself or one of its descendants")
+	ErrInvalidParent  = errors.New("invalid parent")
+	ErrInvalidName    = errors.New("invalid folder name")
 )
 
 // business logic contract
@@ -50,20 +50,20 @@ type StorageService interface {
 }
 
 type storageService struct {
-	repo		storage.StorageRepository
-	minioClient	*minio.Client
-	publisher	*workers.EventPublisher
-	rbac		rbac.Checker
-	env			*config.Env
+	repo        storage.StorageRepository
+	minioClient *minio.Client
+	publisher   *workers.EventPublisher
+	rbac        rbac.Checker
+	env         *config.Env
 }
 
 func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker, env *config.Env) StorageService {
 	return &storageService{
-		repo:			repo,
-		minioClient:	minioClient,
-		publisher:		publisher,
-		rbac:			checker,
-		env:			env,
+		repo:        repo,
+		minioClient: minioClient,
+		publisher:   publisher,
+		rbac:        checker,
+		env:         env,
 	}
 }
 
@@ -93,7 +93,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	if used + fileSize > max {
+	if used+fileSize > max {
 		return "", uuid.Nil, ErrQuotaExceeded
 	}
 
@@ -121,11 +121,10 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
 
 	return presignedURL, objectID, err
 }
-
 
 // FinalizeUpload activates an object uploaded to the minio storage service and updates the user used space
 // It fetches twice the data of the objectID as we need updated data to publish the correct values to the redis client
@@ -195,13 +194,13 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
 	// generate presigned URL (GET)
 	// leaving comments for now until it works with the front
-	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5 * time.Minute, nil)
+	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5*time.Minute, nil)
 	if err != nil {
 		return "", nil, nil, "", err
 	}
 
 	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:" + s.env.MinioPort, "https://localhost:" + s.env.AppPort + "/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
@@ -307,8 +306,6 @@ func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *
 	return file, nil
 }
 
-
-
 // folders
 
 func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error) {
@@ -328,11 +325,11 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 	}
 
 	folder := storage.Folder{
-		ID:				uuid.New(),
-		OwnerUserID:	userID,
-		OrgID:			orgID,
-		ParentID:		parentID,
-		Name:			name,
+		ID:          uuid.New(),
+		OwnerUserID: userID,
+		OrgID:       orgID,
+		ParentID:    parentID,
+		Name:        name,
 	}
 
 	if err := s.repo.CreateFolder(&folder); err != nil {
@@ -445,7 +442,6 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 		updates["parent_id"] = target
 	}
 
-
 	if len(updates) == 0 {
 		return nil
 	}
@@ -541,25 +537,35 @@ func (s *storageService) ListFolderContents(userID uuid.UUID, folderID *uuid.UUI
 	return folders, files, nil
 }
 
-func (s * storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error) {
-	folder, err := s.repo.FindFolderByID(folderID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil, ErrNotFound
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if folder.OrgID == nil || *folder.OrgID != orgID {
-		return nil, nil, ErrNotFound
-	}
-
-	if err := s.rbac.CanReadFile(userID, folder.OwnerUserID, folder.OrgID); err != nil {
-		if errors.Is(err, rbac.ErrForbidden) {
-			return nil, nil, ErrForbidden
+func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error) {
+	// If folderID is nil/zero, user is accessing the organization root
+	if folderID != uuid.Nil {
+		folder, err := s.repo.FindFolderByID(folderID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrNotFound
 		}
-		return nil, nil, err
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if folder.OrgID == nil || *folder.OrgID != orgID {
+			return nil, nil, ErrNotFound
+		}
+
+		if err := s.rbac.CanReadFile(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+			if errors.Is(err, rbac.ErrForbidden) {
+				return nil, nil, ErrForbidden
+			}
+			return nil, nil, err
+		}
+	} else {
+		if err := s.rbac.CanReadFile(userID, uuid.Nil, &orgID); err != nil {
+			if errors.Is(err, rbac.ErrForbidden) {
+				return nil, nil, ErrForbidden
+			}
+			return nil, nil, err
+		}
 	}
 
 	folders, files, err := s.repo.ListOrgFolderContents(orgID, folderID)
