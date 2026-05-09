@@ -10,6 +10,7 @@ import (
 
 	"backend/auth/internal"
 	"backend/auth/internal/handlers"
+	"backend/auth/internal/models"
 	"backend/auth/internal/workers"
 	"backend/shared/config"
 	"backend/shared/db"
@@ -28,6 +29,11 @@ func main() {
 	}
 
 	dbConn := db.InitDB(env)
+
+	if err := db.MigrateModels(dbConn, &models.User{}); err != nil {
+		fmt.Fprintf(os.Stderr, "[FATAL] Failed to migrate database: %v\n", err)
+		os.Exit(1)
+	}
 
 	app := fiber.New(fiber.Config{
 		AppName:   "ostrom_auth v1.0",
@@ -68,8 +74,8 @@ func main() {
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:		redisAddr,
-		Password:	env.RedisPassword,
+		Addr:     redisAddr,
+		Password: env.RedisPassword,
 	})
 
 	defer func() {

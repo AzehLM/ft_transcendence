@@ -48,6 +48,11 @@ func main() {
 
 	database := db.InitDB(env)
 
+	if err := db.MigrateModels(database, &files.File{}, &files.Folder{}); err != nil {
+		fmt.Fprintf(os.Stderr, "[FATAL] Failed to migrate database: %v\n", err)
+		os.Exit(1)
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName: "ostrom_storage_service v1.0",
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per requests

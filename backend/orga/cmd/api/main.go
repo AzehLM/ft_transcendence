@@ -8,8 +8,9 @@ import (
 	"syscall"
 
 	"backend/orga/internal/handlers"
-	"backend/orga/internal/ws"
+	"backend/orga/internal/models"
 	"backend/orga/internal/workers"
+	"backend/orga/internal/ws"
 	"backend/shared/config"
 	"backend/shared/db"
 	"backend/shared/middleware"
@@ -35,6 +36,10 @@ func main() {
 	}()
 
 	dbConn := db.InitDB(env)
+
+	if err := db.MigrateModels(dbConn, &models.Orga{}, &models.OrgaMember{}); err != nil {
+	}
+
 	wsHub := ws.NewHub(redisClient, dbConn)
 
 	app := fiber.New(fiber.Config{
@@ -78,7 +83,6 @@ func main() {
 	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
 	org.Get("/members", member, orgaHandler.GetMembers)
 	org.Get("/members/keys", member, orgaHandler.GetMemberKeys)
-	
 
 	app.Get("/ws/notifications",
 		middleware.ProtectedRoute(env.JwtSecret),
