@@ -33,6 +33,8 @@ export function FileGrid({ title, subtitle, files, loading, error, onDelete, sho
         {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
         {loading ? (
           <p>Loading...</p>
+        ) : files.length === 0 ? (
+          <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
         ) : (
           <div className={styles.fileGrid}>
             {files.map((file) => (
