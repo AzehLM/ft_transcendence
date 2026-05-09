@@ -74,8 +74,7 @@ function useSecureDownload() {
 
             if (supportsFileSystemAccess) {
                 try {
-                    // @ts-ignore :
-                    const fileHandle = await window.showSaveFilePicker({ suggestedName: filename });
+                    const fileHandle = await (window as any).showSaveFilePicker({ suggestedName: filename });
                     writable = await fileHandle.createWritable();
                 } catch (err) {
                     throw new Error("Sauvegarde annulée par l'utilisateur.");

@@ -22,11 +22,7 @@ export default function DashboardPage() {
             setFiles(response.files || []);
         } catch (err) {
             console.error("Failed to load files:", err);
-            setError("Failed to load files. Using local data for now.");
-            setFiles([
-                { id: "1", name: "January invoice", file_size: 0, created_at: new Date().toISOString() },
-                { id: "2", name: "February report", file_size: 0, created_at: new Date().toISOString() },
-            ]);
+            setError("Failed to load files.");
         } finally {
             setLoading(false);
         }

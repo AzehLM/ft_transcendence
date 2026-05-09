@@ -1,4 +1,5 @@
 import styles from "../../styles/auth.module.css"
+import { ReactNode } from "react";
 
 export function InputField({
     label,
@@ -10,7 +11,7 @@ export function InputField({
 }: {
     label: string;
     type?: string;
-    icon: any;
+    icon: React.ComponentType<{ className: string }>;
     placeholder: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
