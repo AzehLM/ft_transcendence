@@ -328,7 +328,7 @@ func (h *StorageHandler) ListOrgRootFiles(c fiber.Ctx) error {
 		})
 	}
 
-	folders, files, err := h.svc.ListOrgContents(userID, orgID, uuid.Nil)
+	_, files, err := h.svc.ListOrgContents(userID, orgID, uuid.Nil)
 	if err != nil {
 		switch {
 			case errors.Is(err, service.ErrNotFound):
