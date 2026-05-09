@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { FilePlus, UploadCloud, FolderPlus } from "lucide-react";
+import { UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
 
 interface ActionButtonsProps {

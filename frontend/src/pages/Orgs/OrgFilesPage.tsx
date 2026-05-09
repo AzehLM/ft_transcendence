@@ -5,7 +5,6 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
-import { OrgHeader } from "../../components/OrgHeader";
 
 export default function OrgFilesPage() {
   const { id } = useParams();

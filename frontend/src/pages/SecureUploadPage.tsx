@@ -1,12 +1,10 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    generateRSAKeyPair,
     encryptDEKWithPublicKey,
     uint8ArrayToBase64,
     // importPublicKey // À décommenter pour la prod
 } from '../services/crypto.service';
-import { setTemporaryPrivateKey } from '../services/temp-e2ee-key.service';
 
 interface UploadUrlResponse {
     presigned_url: string;
@@ -57,7 +55,7 @@ export default function SecureUploadPage() {
                 { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
                 true, ["encrypt", "decrypt"]
             );
-            setTemporaryPrivateKey(temporaryKeyPair.privateKey); // Sauvegarde en RAM pour le Download
+            // setTemporaryPrivateKey(temporaryKeyPair.privateKey); // Sauvegarde en RAM pour le Download
             const publicKey = temporaryKeyPair.publicKey;
 
             // ====================================================================

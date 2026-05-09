@@ -9,11 +9,10 @@ interface FileCardProps {
   isTrash?: boolean;
   onDelete?: (id: string) => void;
   onAddToFolder?: (fileName: string, folderName: string) => void; // maybe need to change to id
-  onCreateFolder?: (fileName: string, folderName: string) => void;
   onDownload?: (id: string) => void;
 }
 
-export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onCreateFolder, onDownload }: FileCardProps) {
+export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onDownload }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

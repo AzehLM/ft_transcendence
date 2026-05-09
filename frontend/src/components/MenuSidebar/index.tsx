@@ -1,4 +1,4 @@
-import { Folder, Trash2, Files, Network} from "lucide-react";
+import { Folder, Files, Network} from "lucide-react";
 import { useState, useEffect } from "react";
 import { FilesService, FolderItem } from "../../services/files.service";
 import { Sidebar } from "../Sidebar/Sidebar";
