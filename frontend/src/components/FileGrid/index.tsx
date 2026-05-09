@@ -22,10 +22,12 @@ interface FileGridProps {
 }
 
 export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName }: FileGridProps) {
+  const isOrgPage = !!orgName;
+
   return (
     <div className={styles.page}>
-      <OrgHeader orgName={orgName} showActionButtons={showActionButtons}></OrgHeader>
-      <div className={showActionButtons ? styles.contentArea : styles.contentAreaNoButtons}>
+      {isOrgPage && <OrgHeader orgName={orgName} showActionButtons={showActionButtons}></OrgHeader>}
+      <div className={showActionButtons && !isOrgPage ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>
         {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
