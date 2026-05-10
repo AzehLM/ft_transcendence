@@ -108,7 +108,7 @@ func main() {
 	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
 
-	go consumer.PeriodicSweep(context.TODO(), 1 * time.Minute)
+	go consumer.PeriodicSweep(context.TODO(), 15 * time.Minute)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
