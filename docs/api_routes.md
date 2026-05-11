@@ -669,6 +669,61 @@ Reponse : `204 No Content`
 
 ---
 
+## Misc
+
+### `GET /metrics`
+
+> Cette route est spécifique au micro-service `storage`. Elle sert intérieurement Prometheus pour récupérer les métriques d'alertes.
+
+Pas de réponse JSON ni de status code - retourne les métriques au format texte Prometheus.
+
+---
+
+### `GET /health`
+
+> Exposée par le micro-service `health-aggregator` (`:8084`). Ce service poll `GET /health` sur `auth` (`:8081`), `orga` (`:8082`) et `storage` (`:8083`) et agrège les résultats. Les routes `/health` internes à chaque micro-service ne sont pas exposées publiquement.
+
+Récupère le statut des services utilisés par les micro-services du backend.
+
+Réponse : `200 OK`
+```json
+{
+    "services": {
+        "auth": {
+            "liveness": true | false,
+            "readiness": true | false,
+            "degraded": true | false,
+            "dependencies": {
+                "postgres": true | false,
+                "redis": true | false
+            }
+        },
+        "orga": {
+            "liveness": true | false,
+            "readiness": true | false,
+            "degraded": true | false,
+            "dependencies": {
+                "postgres": true | false,
+                "redis": true | false
+            }
+        },
+        "storage": {
+            "liveness": true | false,
+            "readiness": true | false,
+            "degraded": true | false,
+            "dependencies": {
+                "minio": true | false,
+                "postgres": true | false,
+                "redis": true | false
+            }
+        }
+    },
+    "status": "ok" | "error" | "degraded"
+}
+```
+
+--- 
+
 ## WebSocket
 
 ### Connexion : `wss://api.../ws`
