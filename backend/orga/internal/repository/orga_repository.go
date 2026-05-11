@@ -36,7 +36,7 @@ func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.OrgRe
     var orgResponses []models.OrgResponse
     
     result := r.DB.Table("organizations").
-        Select("organizations.id, organizations.name, organizations.public_key, organizations.used_space, organizations.max_space, organizations.created_at, org_members.role").
+        Select("organizations.id, organizations.name, organizations.public_key, organizations.used_space, organizations.max_space, organizations.created_at, org_members.role, org_members.description").
         Joins("JOIN org_members ON org_members.org_id = organizations.id").
         Where("org_members.user_id = ?", userID).
         Scan(&orgResponses)
@@ -161,4 +161,21 @@ func (r* OrganizationRepository) GetMemberRole(orgID uuid.UUID, userID uuid.UUID
         return "", result.Error
     }
     return member.Role, nil
+}
+
+func (r* OrganizationRepository) GetDescription(orgID uuid.UUID, userID uuid.UUID) (string, error) {
+    var member models.OrgaMember
+    result := r.DB.Where("org_id = ? AND user_id = ?", orgID, userID).First(&member)
+    if result.Error != nil {
+        return "", result.Error
+    }
+    return member.Description, nil
+}
+
+func (r *OrganizationRepository) UpdateDescription(orgID uuid.UUID, userID uuid.UUID, description string) (bool, error) {
+    result := r.DB.Model(&models.OrgaMember{}).Where("org_id = ? AND user_id = ?", orgID, userID).Update("description", description)
+    if result.Error != nil {
+        return false, result.Error
+    }
+    return result.RowsAffected > 0, nil
 }

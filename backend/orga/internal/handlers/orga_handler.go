@@ -468,12 +468,73 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
 
+    description, err := repo.GetDescription(orgID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "you are not a member of this organization"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id":   orga.ID,
 		"name": orga.Name,
 		"used_space" : orga.UsedSpace,
 		"max_space" : orga.MaxSpace,
 		"role": role,
+		"description": description,
 
+	})
+}
+
+
+
+func (h *OrgaHandler) ChangeDescription(c fiber.Ctx) error {
+	var body struct {
+		Description string `json:"description" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if body.Description == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "description required",
+		})
+	}
+
+	orgIDParam := c.Params("org_id")
+	orgID, _ := uuid.Parse(orgIDParam)
+
+		userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	repo := repository.NewOrganizationRepository(h.DB)
+	updated, errRepo := repo.UpdateDescription(orgID, userID, body.Description)
+	if errRepo != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": errRepo.Error()})
+	}
+	if !updated {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "organization description updated",
 	})
 }

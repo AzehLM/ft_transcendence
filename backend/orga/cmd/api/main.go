@@ -74,6 +74,7 @@ func main() {
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)
 	org.Patch("/members/:user_id", admin, orgaHandler.ChangeRole)
+	org.Patch("/members/me/description", member, orgaHandler.ChangeDescription)
 	org.Delete("/members/me", member, orgaHandler.LeaveOrga)
 	org.Delete("/members/:user_id", admin, orgaHandler.DeleteMember)
 	org.Get("/members", member, orgaHandler.GetMembers)
