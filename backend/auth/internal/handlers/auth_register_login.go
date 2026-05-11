@@ -34,6 +34,31 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_credentials"})
 	}
 
+	// If 2FA is enabled, return temporary token instead of full JWT
+	if user.TwoFactorEnabled {
+		tempToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"user_id": user.ID.String(),
+			"scope":   "2fa",
+			"exp":     time.Now().Add(5 * time.Minute).Unix(),
+		})
+
+		jwtSecret := []byte(h.Env.JwtSecret)
+		tempTokenString, err := tempToken.SignedString(jwtSecret)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+		}
+
+		log.Printf("[INFO] User %s requires 2FA verification", user.Email)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"require_2fa": true,
+			"temp_token":  tempTokenString,
+			"methods":     []string{"totp", "recovery"},
+			"expires_in":  300,
+		})
+	}
+
+	// No 2FA - proceed with normal login
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    user.ID.String(),
 		"user_email": user.Email,

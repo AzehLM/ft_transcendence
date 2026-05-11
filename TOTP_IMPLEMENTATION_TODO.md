@@ -8,7 +8,7 @@
 
 ## Phase 1: Backend Core Services
 
-### [ ] Section 1.1: TOTP Service Package
+### [x] Section 1.1: TOTP Service Package
 
 - [x] Create file: `backend/auth/internal/service/totp_service.go`
   - [x] Struct: `TOTPService`
@@ -28,14 +28,14 @@
     - Store as JSON blob or delimited format
     - Return hashed bytes for database
 
-### [ ] Section 1.2: Encryption Service Integration
+### [x] Section 1.2: Encryption Service Integration
 
 - [x] Check: `backend/shared/crypto/` for existing encryption functions
   - [x] Use existing `encryptWithUserKey()` for TOTP secret
   - [x] Use existing `decryptWithUserKey()` for verification
   - [x] Ensure TOTP secret encrypted before database storage
 
-### [ ] Section 1.3: Create Auth Handlers - TOTP Endpoints
+### [x] Section 1.3: Create Auth Handlers - TOTP Endpoints
 
 **File:** `backend/auth/internal/handlers/auth_handler.go` (extend existing)
 
@@ -153,20 +153,20 @@
 
 #### Endpoint 6: Disable 2FA
 
-- [ ] Function: `DisableTwoFactor(c fiber.Ctx) error`
-  - [ ] Extract user_id from JWT
-  - [ ] Parse request: `{ "password": "current_password" }`
-  - [ ] Verify current password
-  - [ ] If invalid: Return 401
-  - [ ] If valid:
-    - [ ] Update user:
+- [x] Function: `DisableTwoFactor(c fiber.Ctx) error`
+  - [x] Extract user_id from JWT
+  - [x] Parse request: `{ "password": "current_password" }`
+  - [x] Verify current password
+  - [x] If invalid: Return 401
+  - [x] If valid:
+    - [x] Update user:
       ```go
       user.TwoFactorEnabled = false
       user.TOTPSecretEncrypted = nil
       user.RecoveryCodesHashed = nil
       db.Save(user)
       ```
-    - [ ] Response:
+    - [x] Response:
       ```json
       {
         "success": true,
@@ -178,19 +178,19 @@
 
 ## Phase 2: Update Login Flow
 
-### [ ] Section 2.1: Modify Login Handler
+### [] Section 2.1: Modify Login Handler
 
-- [ ] File: `backend/auth/internal/handlers/auth_handler.go`
-- [ ] Function: `LoginUser(c fiber.Ctx)` - UPDATE
-  - [ ] After password verification:
-    - [ ] Check: `if user.TwoFactorEnabled`
-    - [ ] If NO 2FA:
-      - [ ] Generate full JWT
-      - [ ] Return JWT directly
-    - [ ] If YES 2FA:
-      - [ ] Generate temporary session token (5 min expiry)
-      - [ ] Store in memory: `tempSessions[tempToken] = userID`
-      - [ ] Response:
+- [x] File: `backend/auth/internal/handlers/auth_handler.go`
+- [x] Function: `LoginUser(c fiber.Ctx)` - UPDATE
+  - [x] After password verification:
+    - [x] Check: `if user.TwoFactorEnabled`
+    - [x] If NO 2FA:
+      - [x] Generate full JWT
+      - [x] Return JWT directly
+    - [x] If YES 2FA:
+      - [x] Generate temporary session token (5 min expiry)
+      - [x] Store in memory: `tempSessions[tempToken] = userID`
+      - [x] Response:
         ```json
         {
           "require2FA": true,
@@ -363,10 +363,10 @@ go get github.com/skip2/go2-qr/qr
 
 ### Backend Core
 - [x] TOTP Service created
-- [ ] 6 HTTP handlers created
+- [x] 6 HTTP handlers created
 - [ ] Login flow updated
 - [ ] Temporary session middleware created
-- [ ] Routes registered in main.go
+- [x] Routes registered in main.go
 
 ### Testing
 - [ ] All 6 endpoints tested manually
