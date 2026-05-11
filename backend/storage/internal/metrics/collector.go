@@ -74,9 +74,16 @@ func (c *StorageCollector) Collect(ch chan<- prometheus.Metric) {
 // compile-time check.
 var _ prometheus.Collector = (*StorageCollector)(nil)
 /*
-	Forces the compilator to check the *StorageCollector interface implementation really has a Describe and Collect method
-	No other way around this is how it works, this can be confusing at first but here is a schema of how prometheus Go library works:
+	Forces the compiler to check that the *StorageCollector interface implementation
+	really has Describe and Collect methods.
+	There is no other way around this; this is how it works. It can be confusing at first,
+	but here is a schema of how the Prometheus Go library works:
+
 	NewMetricsHandler(db) creates the struct -> prometheus.MustRegister registers the handler
-	Then, when prometheus scraps, it internally does: promhttp.Handler() -> registre.Gather() -> StorageCollector.Describe() then .Collect()
-	Those are called aumatocally via metricsHandler.Serve in the main and returned in the fiber context.
+
+	Then, when Prometheus scrapes, it internally does:
+	promhttp.Handler() -> registry.Gather() -> StorageCollector.Describe() then .Collect()
+
+	Those methods are called automatically via metricsHandler.Serve in main
+	and returned in the Fiber context.
 */
