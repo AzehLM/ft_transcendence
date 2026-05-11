@@ -7,10 +7,13 @@ interface EditableFieldProps {
   value: string;
   role: string | null;
   maxCarac: number;
+  isOrgaName?: boolean;
+  isOrgaDesc?: boolean;
   onSave: (newValue: string) => Promise<void>;
+  handleReset?: () => Promise<void>;
 }
 
-export function EditableField({ label, value, role, maxCarac, onSave }: EditableFieldProps) {
+export function EditableField({ label, value, role, maxCarac, isOrgaName = false, isOrgaDesc = false, onSave, handleReset }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
@@ -46,7 +49,7 @@ export function EditableField({ label, value, role, maxCarac, onSave }: Editable
   return (
     <div className={styles.container}>
       <p className={styles.label}>{label}</p>
-      { role === "admin" && (<div className={styles.row}>
+      { ((isOrgaName && role === "admin") || isOrgaDesc) && (<div className={styles.row}>
         {editing ? (
           <>
             <input
@@ -64,14 +67,27 @@ export function EditableField({ label, value, role, maxCarac, onSave }: Editable
           </>
         ) : (
           <>
-            <p className={styles.value}>{value}</p>
+            { isOrgaName  && (
+              <p className={styles.value}>{value}</p> 
+            )}
+            { (isOrgaDesc && value !== "") && (
+              <>
+                <p className={styles.value}>{value}</p>
+                <button className={styles.iconButton} onClick={handleReset}>
+                  <X size={18} />
+                </button> 
+              </>
+            )}
+            { isOrgaDesc && value === "" && (
+              <p className={styles.novalue}>No description yet, you can add one!</p>
+            )}
             <button className={styles.iconButton} onClick={() => setEditing(true)}>
               <Pencil size={18} />
             </button>
           </>
         )}
       </div>)}
-        { role !== "admin" && (<div className={styles.row}>
+        { (role !== "admin" && isOrgaName) && (<div className={styles.row}>
             <p className={styles.value}>{value}</p>
       </div>)}
       {error && <p className={styles.error}>{error}</p>}

@@ -20,6 +20,7 @@ export default function OrgMembersPage() {
 
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +29,12 @@ export default function OrgMembersPage() {
         if (!res.ok) throw new Error("Failed to fetch org name.");
         return res.json();
       })
-      .then(data => setOrgName(data.name))
+      .then(data => {
+        if (data) {
+          setOrgName(data.name);
+          setOrgDesc(data.description);
+        }
+      })
       .catch(() => setOrgName("Unknown"));
 
   }, [id]);
@@ -156,7 +162,7 @@ export default function OrgMembersPage() {
   };
 
   return (
-    <OrgLayout title="Organization members" orgName={orgName} showActionButtons={false}>
+    <OrgLayout title="Organization members" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
         { myRole === "admin" && (
           <div className={orgaStyles.header}>
             <button 

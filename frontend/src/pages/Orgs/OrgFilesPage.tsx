@@ -11,6 +11,7 @@ export default function OrgFilesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +24,12 @@ export default function OrgFilesPage() {
       if (!res.ok) throw new Error("Failed to fetch org.");
       return res.json();
     })
-    .then(data => setOrgName(data.name))
+    .then(data => {
+      if (data) {
+        setOrgName(data.name);
+        setOrgDesc(data.description);
+      }
+    })
     .catch(() => setOrgName("Unknown"));
 
     fetchWithRefresh(`/api/orgs/${id}/files`)
@@ -68,6 +74,7 @@ export default function OrgFilesPage() {
       error={error}
       onDelete={handleDelete}
       orgName={orgName}
+      orgDesc={orgDesc}
       showActionButtons={true}
     />
   );

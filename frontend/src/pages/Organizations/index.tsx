@@ -14,6 +14,7 @@ interface Organization {
   name: string;
   role: string;
   enc_org_priv_key: string;
+  description: string;
 }
 
 export default function OrganizationsPage() {
@@ -204,6 +205,7 @@ const handleAddMember = async () => {
                       onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
                       <div className={orgaStyles.orgInfo}>
                           <p className={orgaStyles.orgName}>{org.name}</p>
+                          <p className={orgaStyles.orgDesc}>{org.description}</p>
                           <p className={orgaStyles.orgRole}>{org.role}</p>
                           {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
                       </div>

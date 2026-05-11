@@ -19,12 +19,13 @@ interface FileGridProps {
   showActionButtons?: boolean;
   isTrash?: boolean;
   orgName?: string;
+  orgDesc?: string;
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgDesc }: FileGridProps) {
   return (
     <div className={styles.page}>
-      <OrgHeader orgName={orgName} showActionButtons={showActionButtons}></OrgHeader>
+      <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons}></OrgHeader>
       <div className={showActionButtons ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>

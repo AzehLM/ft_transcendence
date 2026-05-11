@@ -28,6 +28,16 @@
   flex: 1;
 }
 
+.novalue {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--brand-dark);
+  word-break: break-word;
+  flex: 1;
+  font-style: italic;
+  color: rgb(120, 120, 120);
+}
+
 .input {
   font-size: 18px;
   padding: 4px 10px;

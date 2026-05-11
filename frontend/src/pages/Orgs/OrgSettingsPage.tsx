@@ -12,6 +12,7 @@ export default function OrgSettingsPage() {
 
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const [myRole, setMyRole] = useState<string | null>(null);
   const [usedSpace, setUsedSpace] = useState<number>(0);
   const [maxSpace, setMaxSpace] = useState<number>(0);
@@ -33,6 +34,7 @@ export default function OrgSettingsPage() {
           setMyRole(data.role);
           setUsedSpace(data.used_space);
           setMaxSpace(data.max_space);
+          setOrgDesc(data.description);
         }
       })
       .catch(() => setOrgName("Unknown"));
@@ -68,8 +70,26 @@ export default function OrgSettingsPage() {
       setOrgName(newName);
     };
 
+    const handleChangeDescription = async (newDescription: string) => {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
+        method: "PATCH",
+        body: JSON.stringify({ description: newDescription }),
+      });
+      if (!response.ok) throw new Error("Failed to change description.");
+      setOrgDesc(newDescription);
+    };
+
+    const handleResetDescription = async () => {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
+        method: "PATCH",
+        body: JSON.stringify({ description: "" }),
+      });
+      if (!response.ok) throw new Error("Failed to change description.");
+      setOrgDesc("");
+    };
+
   return (
-    <OrgLayout title="Organization settings" orgName={orgName} showActionButtons={false}>
+    <OrgLayout title="Organization settings" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
       <div className={styles.mainBox}>
         <h2 className={styles.subtitle}>Informations</h2>
         <EditableField
@@ -78,6 +98,16 @@ export default function OrgSettingsPage() {
           role={myRole}
           maxCarac={100}
           onSave={handleRenameOrg}
+          isOrgaName={true}
+        />
+        <EditableField
+          label="Organization description"
+          value={orgDesc}
+          role={myRole}
+          maxCarac={250}
+          onSave={handleChangeDescription}
+          handleReset={handleResetDescription}
+          isOrgaDesc={true}
         />
       </div>
       <div className={styles.mainBox}>

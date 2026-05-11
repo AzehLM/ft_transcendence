@@ -506,11 +506,11 @@ func (h *OrgaHandler) ChangeDescription(c fiber.Ctx) error {
 		})
 	}
 
-	if body.Description == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "description required",
-		})
-	}
+	// if body.Description == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "description required",
+	// 	})
+	// }
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam)
