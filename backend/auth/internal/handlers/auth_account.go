@@ -199,6 +199,31 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 	})
 }
 
+// method for authenticated user's avatar bytes with the correct Content-Type.
+func (h *AuthHandler) GetMyAvatar(c fiber.Ctx) error {
+	userIDStr := c.Locals("user_id").(string)
+	return serveAvatar(c, h.DB, userIDStr)
+}
+
+func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
+	var avatar models.UserAvatar
+
+	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no_avatar"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_error"})
+	}
+
+	// Content-type so the frontend can sanitize again the output of the API call
+	// Last-Modified and Cache-Control for cache purposes
+	c.Set("Content-Type", avatar.ContentType)
+	c.Set("Cache-Control", "public, max-age=3600")
+	c.Set("Last-Modified", avatar.UpdatedAt.UTC().Format(http.TimeFormat))
+	return c.Status(fiber.StatusOK).Send(avatar.Data)
+}
+
 func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 	email := c.Query("email")
 	if email == "" {
