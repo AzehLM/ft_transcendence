@@ -146,6 +146,33 @@ Response `200 OK` :
 ```
 Response `404` : user not found
 
+### `PATCH /auth/avatar`
+
+Met a jour l'avatar d'un user
+
+Response `200 OK`:
+```json
+{
+  "message": "avatar_uploaded_successfully"
+}
+```
+
+--- 
+
+### `GET /auth/me/avatar`
+
+User connecté recupère (en bytes) son avatar ainsi que le `Content-Type` de son avatar
+
+Response `200 OK`
+
+---
+
+### `GET /auth/users/{user_id}/avatar`
+
+N'importe quel user recupère l'avatar d'un user spécifique ainsi que le `Content-Type` de l'avatar
+
+Response `200 OK`
+
 ---
 
 ## 2FA
