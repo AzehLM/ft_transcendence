@@ -301,7 +301,7 @@ Body :
   "name": "42_Projects",
   "public_key": "<base64>",
   "enc_org_private_key": "<base64>",
-  "encrypted_aes_key": "<base64>",
+  "enc_aes_key": "<base64>",
   "iv": "<base64>"
 }
 ```
@@ -404,7 +404,7 @@ Body :
 {
   "user_email": "alice@42lyon.fr",
   "enc_org_priv_key": "<base64>",
-  "encrypted_aes_key": "<base64>",
+  "enc_aes_key": "<base64>",
   "iv": "<base64>"
 }
 ```
