@@ -12,6 +12,23 @@ interface UploadProgress {
     remainingTime: number;
 }
 
+async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
+    const res = await fetchWithRefresh(`/api/orgs/${orgId}/public-key`);
+    if (!res.ok) {
+        throw new Error("Failed to fetch organization public key");
+    }
+    const data = await res.json();
+    const publicKeyBase64 = data.public_key;
+    const keyBuffer = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
+    return crypto.subtle.importKey(
+        "spki",
+        keyBuffer,
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+    );
+}
+
 export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState<string>("");
@@ -56,8 +73,14 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
                 throw new Error(magicNumberValidation.error);
             }
 
-            const publicKey = await getPublicKeyFromSession();
-            if (!publicKey) throw new Error(UPLOAD_MESSAGES.ERROR_PUBLIC_KEY);
+            let publicKey: CryptoKey;
+            if (orgId) {
+                publicKey = await getOrgPublicKey(orgId);
+            } else {
+                const key = await getPublicKeyFromSession();
+                if (!key) throw new Error(UPLOAD_MESSAGES.ERROR_PUBLIC_KEY);
+                publicKey = key;
+            }
 
             const dek = window.crypto.getRandomValues(new Uint8Array(32));
             const baseIv = window.crypto.getRandomValues(new Uint8Array(12));
