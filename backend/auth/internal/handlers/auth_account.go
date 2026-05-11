@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
-	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -15,7 +13,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
-	"github.com/minio/minio-go/v7"
 )
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
@@ -136,89 +133,79 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
-	var user models.User
+	userIDStr := c.Locals("user_id").(string)
 
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
 	}
 
 	file, err := c.FormFile("avatar")
-
-	if (err != nil) {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "no file uploaded"})
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "no_file_uploaded"})
 	}
 
-	maxSize := int64(5 * 1024 * 1024)
-	fileSize := file.Size
-
-	if (file.Size > maxSize) {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "file too large, bigger than 5MB"})
+	const maxSize = int64(4 * 1024 * 1024)
+	if file.Size > maxSize {
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "file_too_large_max_4mb"})
 	}
-
-	filename := fmt.Sprintf("avatars/%s-%d.jpg", userID, time.Now().Unix())
 
 	src, err := file.Open()
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_open_file"})
 	}
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			log.Printf("[WARN] Failed to close avatar upload source: %v", err)
+		}
+	}()
 
-	buffer := make([]byte, 512)
-	src.Read(buffer)
-
-	realType := http.DetectContentType(buffer)
-
-	if realType != "image/jpeg" && realType != "image/png" {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "invalid file type, should be png or jpeg"})
+	findExtension := make([]byte, 512)
+	if _, err := src.Read(findExtension); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
 	}
 
-	src.Seek(0, 0)
-	fullBuffer, err := io.ReadAll(src)
+	// trying to sniff the extension type by reading bytes values, double security (MIME type has to be check in the front first)
+	contentType := http.DetectContentType(findExtension)
+
+	// only accepting jpeg or png for now
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return c.Status(fiber.StatusUnsupportedMediaType).JSON(fiber.Map{"error": "invalid_file_type_jpeg_or_png_only"})
+	}
+
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
+	}
+	data, err := io.ReadAll(src)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
 	}
 
-	ctx := context.TODO()
-	_, err = h.MinioClient.PutObject(
-		ctx,
-		"ostrom",
-		filename,
-		bytes.NewReader(fullBuffer),
-		fileSize,
-		minio.PutObjectOptions{},
-	)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed_to_upload_avatar",
-		})
+	avatar := models.UserAvatar{
+		UserID:      userID,
+		Data:        data,
+		ContentType: contentType,
+		UpdatedAt:   time.Now(),
 	}
 
-	avatarURL := fmt.Sprintf("https://minio/ostrom/%s", filename)
-
-	err = h.DB.Model(&user).Updates(map[string]interface{}{
-		"avatar_url": avatarURL,
-	}).Error
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	result := h.DB.Save(&avatar)
+	if result.Error != nil {
+		log.Printf("[ERROR] Failed to save avatar for user %s: %v", userIDStr, result.Error)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_error"})
 	}
 
-	log.Printf("[INFO] Avatar successfully uploaded for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":    "avatar_uploaded_successfully",
-		"avatar_url": avatarURL,
+		"message": "avatar_uploaded_successfully",
 	})
 }
 
 func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
-    email := c.Query("email")
-    if email == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
-    }
+	email := c.Query("email")
+	if email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
+	}
 
-    var user models.User
+	var user models.User
 	err := h.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -227,7 +214,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+	})
 }
