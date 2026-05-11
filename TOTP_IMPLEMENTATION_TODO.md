@@ -178,7 +178,7 @@
 
 ## Phase 2: Update Login Flow
 
-### [] Section 2.1: Modify Login Handler
+### [x] Section 2.1: Modify Login Handler
 
 - [x] File: `backend/auth/internal/handlers/auth_handler.go`
 - [x] Function: `LoginUser(c fiber.Ctx)` - UPDATE
@@ -200,21 +200,21 @@
         }
         ```
 
-### [ ] Section 2.2: Create Middleware for Temp Sessions
+### [x] Section 2.2: Create Middleware for Temp Sessions
 
-- [ ] File: `backend/shared/middleware/temp_session.go` (new)
-- [ ] Function: `VerifyTempSession()` middleware
-  - [ ] Extract tempToken from request header
-  - [ ] Check: Token exists in `tempSessions`
-  - [ ] Check: Token not expired
-  - [ ] Extract userID
-  - [ ] Set in context: `c.Locals("temp_user_id", userID)`
-  - [ ] Continue
-  - [ ] If invalid: Return 401
+- [x] File: `backend/shared/middleware/temp_session.go` (new)
+- [x] Function: `VerifyTempSession()` middleware
+  - [x] Extract tempToken from request header
+  - [x] Check: Token exists in `tempSessions`
+  - [x] Check: Token not expired
+  - [x] Extract userID
+  - [x] Set in context: `c.Locals("temp_user_id", userID)`
+  - [x] Continue
+  - [x] If invalid: Return 401
 
-### [ ] Section 2.3: Route Updates in main.go
+### [x] Section 2.3: Route Updates in main.go
 
-- [ ] Add temp session middleware to TOTP endpoints:
+- [x] Add temp session middleware to TOTP endpoints:
   ```go
   api.Post("/auth/2fa/totp/verify", middleware.VerifyTempSession(), authHandler.VerifyTOTPLogin)
   api.Post("/auth/2fa/recovery-code", middleware.VerifyTempSession(), authHandler.VerifyRecoveryCode)

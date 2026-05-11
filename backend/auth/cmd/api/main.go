@@ -94,12 +94,16 @@ func main() {
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
-
 	api.Post("/auth/2fa/totp/generate", authHandler.GenerateTOTPSecret)
 	api.Post("/auth/2fa/totp/verify", authHandler.VerifyTOTPSetup)
-	api.Post("/auth/2fa/verify", authHandler.VerifyTOTPLogin)
 	api.Get("/auth/2fa/recovery-codes", authHandler.GetRecoveryCodes)
 	api.Post("/auth/2fa/disable", authHandler.DisableTwoFactor)
+
+	tempSessionApi := app.Group("/api")
+	tempSessionApi.Use(middleware.VerifyTempSession(env.JwtSecret))
+
+	tempSessionApi.Post("/auth/2fa/verify", authHandler.VerifyTOTPLogin)
+	tempSessionApi.Post("/auth/2fa/recovery-code", authHandler.VerifyRecoveryCode)
 
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
