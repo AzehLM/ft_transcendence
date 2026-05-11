@@ -116,7 +116,11 @@ export function ConfirmationModal({
                 <p className={styles.modal__error}>{errorMessage}</p>
                 )}
                 <div className={styles.modal__actions}>
-                    <button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} onClick={onCancel}>
+                    <button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
+                          onClick={() => {
+                            onInputChange?.("");
+                            onCancel();
+                        }}>
                         Cancel
                     </button>
                     <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={onConfirm}>
