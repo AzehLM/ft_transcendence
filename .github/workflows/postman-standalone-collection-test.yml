@@ -41,7 +41,7 @@ jobs:
           echo "${{ secrets.SECRET_GRAFANA_PWD }}"          > secrets/grafana/grafana_admin_pwd.txt
           echo "${{ secrets.SECRET_CF_TOKEN }}"             > secrets/cloudflare_tunnel_token
           echo "${{ secrets.SECRET_JWT_TOKEN }}"            > secrets/jwt_secret
-          echo "${{ secrets.SECRET_DISCORD_WEBHOOK_URL }}"  > secrets/discord_webhook_url
+          echo "${{ secrets.DISCORD_WEBHOOK_URL }}"         > secrets/discord_webhook_url
 
       - name: Launch Ostrom in dev mode
         run: make dev BACKUP_DIR=/tmp/ostrom-backups/
@@ -53,6 +53,7 @@ jobs:
           postman collection run "52021088-2aa6dd73-8db1-40c8-a401-ddfac3f45319" \
             -e "52021088-580ece52-37d3-4dd2-9ca1-a242d70d68b0" \
             --ignore-redirects \
+            --insecure \
             -r cli,json --reporter-json-export report.json
 
       - name: Show detailed results
