@@ -16,9 +16,10 @@ type MetricsHandler struct {
 
 func NewMetricsHandler(db *gorm.DB) *MetricsHandler {
 	collector := metrics.NewStorageCollector(db)
-	prometheus.MustRegister(collector)
+ 	registry := prometheus.NewRegistry()
+ 	registry.MustRegister(collector)
 
-	h := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
+	h := fasthttpadaptor.NewFastHTTPHandler(promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	return &MetricsHandler{
 		handler: func(c fiber.Ctx) error {
 			h(c.RequestCtx())
