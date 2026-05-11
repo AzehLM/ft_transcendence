@@ -205,7 +205,7 @@ func (h *AuthHandler) GetMyAvatar(c fiber.Ctx) error {
 	return serveAvatar(c, h.DB, userIDStr)
 }
 
-// mothod for any user's avatar bytes — public endpoint (already behind JWT middleware).
+// method for any user's avatar bytes — public endpoint (already behind JWT middleware).
 func (h *AuthHandler) GetUserAvatar(c fiber.Ctx) error {
 	targetID := c.Params("id")
 	if _, err := uuid.Parse(targetID); err != nil {

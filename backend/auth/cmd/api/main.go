@@ -78,9 +78,9 @@ func main() {
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
-	api.Patch("/auth/avatar", authHandler.UploadAvatar)
-	api.Get("/auth/me/avatar", authHandler.GetMyAvatar)
-	api.Get("/auth/users/:id/avatar", authHandler.GetUserAvatar)
+	api.Patch("/user/avatar", authHandler.UploadAvatar)
+	api.Get("/user/me/avatar", authHandler.GetMyAvatar)
+	api.Get("/users/:id/avatar", authHandler.GetUserAvatar)
 	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
 
 	go func() {
