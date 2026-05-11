@@ -65,13 +65,11 @@ services:
       secrets:
         - grafana_admin_user
         - grafana_admin_pwd
-        - discord_webhook_url
       environment:
         - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
         - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
         - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
         - GF_SERVER_SERVE_FROM_SUB_PATH=true
-        - DISCORD_WEBHOOK_URL__FILE=/run/secrets/discord_webhook_url
       healthcheck:
         test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
         interval: 10s
