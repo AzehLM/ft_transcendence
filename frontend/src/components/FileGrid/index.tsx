@@ -20,9 +20,10 @@ interface FileGridProps {
   isTrash?: boolean;
   orgName?: string;
   onUploadFile?: (file: File) => void;
+  onDownloadFile?: (id: string) => void;
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, onUploadFile }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, onUploadFile, onDownloadFile }: FileGridProps) {
   const isOrgPage = !!orgName;
 
   return (
@@ -39,7 +40,7 @@ export function FileGrid({ title, subtitle, files, loading, error, onDelete, sho
         ) : (
           <div className={styles.fileGrid}>
             {files.map((file) => (
-            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} />            ))}
+            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} onDownload={onDownloadFile} />            ))}
           </div>
         )}
       </div>
