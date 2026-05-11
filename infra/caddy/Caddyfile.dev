@@ -137,7 +137,7 @@
 
 
     # API routes
-    @auth path /api/auth /api/auth/*
+    @auth path /api/auth /api/user/ /api/users/ /api/auth/* /api/user/* /api/users/*
     handle @auth {
         reverse_proxy auth:8081
     }

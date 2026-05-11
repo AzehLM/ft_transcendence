@@ -80,7 +80,7 @@ func main() {
 	api.Put("/auth/password", authHandler.UpdatePassword)
 	api.Patch("/user/avatar", authHandler.UploadAvatar)
 	api.Get("/user/me/avatar", authHandler.GetMyAvatar)
-	api.Get("/users/:id/avatar", authHandler.GetUserAvatar)
+	api.Get("/user/:id/avatar", authHandler.GetUserAvatar)
 	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
 
 	go func() {
