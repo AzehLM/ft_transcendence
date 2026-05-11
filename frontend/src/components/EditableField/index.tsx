@@ -5,15 +5,16 @@ import styles from "./EditableField.module.css";
 interface EditableFieldProps {
   label: string;
   value: string;
-  role: string | null;
+  role?: string | null;
   maxCarac: number;
   isOrgaName?: boolean;
   isOrgaDesc?: boolean;
+  isUserNames?: boolean;
   onSave: (newValue: string) => Promise<void>;
   handleReset?: () => Promise<void>;
 }
 
-export function EditableField({ label, value, role, maxCarac, isOrgaName = false, isOrgaDesc = false, onSave, handleReset }: EditableFieldProps) {
+export function EditableField({ label, value, role, maxCarac, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,7 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
   return (
     <div className={styles.container}>
       <p className={styles.label}>{label}</p>
-      { ((isOrgaName && role === "admin") || isOrgaDesc) && (<div className={styles.row}>
+      { ((isOrgaName && role === "admin") || isOrgaDesc || isUserNames) && (<div className={styles.row}>
         {editing ? (
           <>
             <input
@@ -70,7 +71,7 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
             { isOrgaName  && (
               <p className={styles.value}>{value}</p> 
             )}
-            { (isOrgaDesc && value !== "") && (
+            { ((isOrgaDesc || isUserNames) && value !== "") && (
               <>
                 <p className={styles.value}>{value}</p>
                 <button className={styles.iconButton} onClick={handleReset}>
@@ -80,6 +81,9 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
             )}
             { isOrgaDesc && value === "" && (
               <p className={styles.novalue}>No description yet, you can add one!</p>
+            )}
+            { isUserNames && value === "" && (
+              <p className={styles.novalue}>No name yet, you can add one!</p>
             )}
             <button className={styles.iconButton} onClick={() => setEditing(true)}>
               <Pencil size={18} />

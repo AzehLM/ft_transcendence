@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "./SettingsLayout";
 import avatar from './assets/temp-avatar.png';
+import { EditableField } from "../../components/EditableField";
+import { fetchWithRefresh } from "../../services/api.service";
+import fieldStyles from "../../components/EditableField/EditableField.module.css"
 
 export default function ProfilePage() {
 //   const [privateKey, setPrivateKey] = useState<string | null>(null);
@@ -18,9 +21,65 @@ export default function ProfilePage() {
 //   init();
 
 // }, []);
-const [name] = useState<string>("Jean");
-const [sirname] = useState<string>("Dupont");
-const [email] = useState<string>("jeannot@gmail.com");
+// const [name] = useState<string>("Jean");
+// const [sirname] = useState<string>("Dupont");
+// const [email] = useState<string>("jeannot@gmail.com");
+
+  const [firstName, setFirstName] = useState<string>("")
+  const [familyName, setFamilyName] = useState<string>("")
+  const [email, setEmail] = useState<string>("")
+
+  useEffect(() => {
+    fetchWithRefresh(`/api/auth/me`)
+      .then(res => {
+        // navigate to 404 if not found ?
+        if (!res.ok) throw new Error("Failed to fetch user");
+        return res.json()
+      })
+      .then(data => {
+        if (data) {
+          setFirstName(data.first_name);
+          setFamilyName(data.family_name);
+          setEmail(data.email);
+        }
+      })
+  });
+
+  const handleChangeFirstName = async (newFirstName: string) => {
+    const response = await fetchWithRefresh(`/api/auth/first-name`, {
+      method: "PATCH",
+      body: JSON.stringify({firstName: newFirstName}),
+    });
+    if (!response.ok) throw new Error("Failed to change first name");
+    setFirstName(newFirstName)
+  };
+
+  const handleResetFirstName = async () => {
+    const response = await fetchWithRefresh(`/api/auth/first-name`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: "" }),
+    });
+    if (!response.ok) throw new Error("Failed to change first name.");
+    setFirstName("");
+  };
+
+  const handleChangeFamilyName = async (newFamilyName: string) => {
+    const response = await fetchWithRefresh(`/api/auth/family-name`, {
+      method: "PATCH",
+      body: JSON.stringify({familyName: newFamilyName}),
+    });
+    if (!response.ok) throw new Error("Failed to change family name");
+    setFirstName(newFamilyName)
+  };
+
+  const handleResetFamilyName = async () => {
+    const response = await fetchWithRefresh(`/api/auth/family-name`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: "" }),
+    });
+    if (!response.ok) throw new Error("Failed to change family name.");
+    setFamilyName("");
+  };
 
     return (
 
@@ -33,29 +92,25 @@ const [email] = useState<string>("jeannot@gmail.com");
                 <button className={`${styles.buttonChange} ${styles.profileButton}`}>Change Avatar</button>
               </div>
               <div className={styles.infoBox}>
-                <div className={styles.nameBox}>
-                  <div className={styles.inputBox}>
-                    <p>First Name</p>
-                    <input
-                      type="text"
-                      value={name}
-                      // onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.inputBox}>
-                    <p>Last Name</p>
-                    <input
-                      type="text"
-                      value={sirname}
-                    />
-                  </div>
-                </div>
-                <div className={styles.inputBox}>
-                  <p>Email</p>
-                  <input
-                    type="text"
-                    value={email}
-                  />
+                <EditableField
+                  label="First Name"
+                  value={firstName}
+                  maxCarac={250}
+                  onSave={handleChangeFirstName}
+                  isUserNames={true}
+                  handleReset={handleResetFirstName}
+                ></EditableField>
+                <EditableField
+                  label="Family Name"
+                  value={familyName}
+                  maxCarac={250}
+                  onSave={handleChangeFamilyName}
+                  isUserNames={true}
+                  handleReset={handleResetFamilyName}
+                ></EditableField>
+                <div className={fieldStyles.container}>
+                  <p className={fieldStyles.label}>Email</p>
+                  <p className={fieldStyles.value}>{email}</p>
                 </div>
               </div>
             </div>

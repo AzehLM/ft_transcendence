@@ -40,7 +40,7 @@
     background-color: var(--brand-light);
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
     border-radius: 8px;
-    width: 90%;
+    width: 100%;
 }
 
 .profileBox {
@@ -97,17 +97,13 @@
     margin: 5%;
     width: 100%;
     gap: 8%;
+    max-width: 600px;
+    flex: 1;
 }
 
-.infoBox p {
+/* .infoBox p {
     font-weight: 500;
-}
-
-.nameBox {
-    display: flex;
-    gap: 30px;
-    /* flex-direction: ; */
-}
+} */
 
 .inputBox {
     display: flex;
@@ -199,4 +195,35 @@
   text-align: center;
   font-weight: 500;
   font-size: 20px;
+}
+
+
+
+/* still need to be checked */
+@media (max-width: 768px) {
+    .profileBox {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .profileAvatarCol {
+        width: 100%;
+    }
+    
+    .infoBox {
+        width: 100%;
+    }
+    
+    .mainBox {
+        padding: 20px;
+    }
+    
+    .buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .profileButton {
+        width: 100%;
+    }
 }
