@@ -35,6 +35,7 @@ type StorageService interface {
 	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
 	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
+	DownloadOrgFile(userID uuid.UUID, orgID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
@@ -200,6 +201,38 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 	}
 
 	// replace hardcoded values with env var ?
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
+
+	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
+}
+
+func (s *storageService) DownloadOrgFile(userID uuid.UUID, orgID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
+
+	ctx := context.TODO()
+
+	file, err := s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil, nil, "", ErrNotFound
+	} else if err != nil {
+		return "", nil, nil, "", err
+	}
+
+	if file.OrgID == nil || *file.OrgID != orgID {
+		return "", nil, nil, "", ErrForbidden
+	}
+
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return "", nil, nil, "", ErrForbidden
+		}
+		return "", nil, nil, "", err
+	}
+
+	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5*time.Minute, nil)
+	if err != nil {
+		return "", nil, nil, "", err
+	}
+
 	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil

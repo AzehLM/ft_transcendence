@@ -130,6 +130,7 @@ func main() {
 
 	// organization files
 	api.Get("/orgs/:org_id/files", handler.ListOrgRootFiles)
+	api.Get("/orgs/:org_id/files/:file_id/download", handler.DownloadOrgFile)
 	api.Delete("/orgs/:org_id/files/:file_id", handler.DeleteOrgFile)
 
 	go func() {

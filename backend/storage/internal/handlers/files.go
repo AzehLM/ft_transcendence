@@ -141,6 +141,49 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 	})
 }
 
+func (h *StorageHandler) DownloadOrgFile(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	orgID, err := uuid.Parse(c.Params("org_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid org_id",
+		})
+	}
+
+	fileID, err := uuid.Parse(c.Params("file_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid file_id",
+		})
+	}
+
+	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadOrgFile(userID, orgID, fileID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"presigned_url":      presignedURL,
+		"encrypted_dek":      encryptedDEK,
+		"iv":                 iv,
+		"encrypted_filename": fileName,
+	})
+}
+
 func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
 
 	userID, err := h.extractUserID(c)
