@@ -35,7 +35,7 @@
 }
 
 .mainBox {
-    margin : 20px;
+    margin : 20px 0;
     padding : 20px;
     background-color: var(--brand-light);
     box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
@@ -54,6 +54,8 @@
     align-items: center;
     padding: 5%;
     width: 50%;
+    min-width: 200px;
+    max-width: 600px;
 }
 
 .profileAvatarCol img {
@@ -93,8 +95,8 @@
 .infoBox {
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
-    margin: 5%;
+    justify-content: center;
+    margin: 10px;
     width: 100%;
     gap: 8%;
     max-width: 600px;
@@ -200,7 +202,7 @@
 
 
 /* still need to be checked */
-@media (max-width: 768px) {
+@media (max-width: 1080px) {
     .profileBox {
         flex-direction: column;
         align-items: center;
@@ -225,5 +227,12 @@
     
     .profileButton {
         width: 100%;
+    }
+}
+
+
+@media (max-width: 1200px) {
+    .profileAvatarCol img {
+        width: 200px;
     }
 }

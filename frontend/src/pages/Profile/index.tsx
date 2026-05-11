@@ -115,10 +115,10 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          <div className={styles.buttons}>
+          {/* <div className={styles.buttons}>
             <button className={`${styles.buttonChange} ${styles.profileButton}`}>Save Changes</button>
             <button className={`${styles.buttonCancel} ${styles.profileButton}`}>Cancel</button>
-          </div>
+          </div> */}
           {/* <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
             {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Key not found"}
           </div> */}

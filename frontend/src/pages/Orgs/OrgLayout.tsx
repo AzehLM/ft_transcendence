@@ -1,6 +1,7 @@
 import styles from "../../components/FileGrid/FileGrid.module.css";
 import type { ReactNode } from "react";
 import { OrgHeader } from "../../components/OrgHeader";
+import orgaStyles from "./OrgLayout.module.css"
 
 interface OrgLayoutProps {
   title: string;
@@ -18,7 +19,7 @@ export function OrgLayout({ title, orgName, orgDesc, showActionButtons = false, 
           <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} />
           <div className={styles.contentArea}>
             <h1 className={styles.title}>{title}</h1>
-            <div>
+            <div className={orgaStyles.childrenArea}>
                 {children}
             </div>
           </div>

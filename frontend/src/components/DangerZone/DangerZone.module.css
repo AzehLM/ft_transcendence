@@ -1,12 +1,12 @@
 
 .deleteBox {
-  margin: 20px;
+  margin: 20px 0;
   padding: 3%;
   background-color: var(--brand-light);
   box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
   border-radius: 8px;
   border: 2px solid var(--brand-primary);
-  width: 90%;
+  width: 100%;
 }
 
 .dangerTitle {
