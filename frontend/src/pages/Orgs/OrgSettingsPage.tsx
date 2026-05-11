@@ -6,6 +6,7 @@ import { OrgLayout } from "./OrgLayout";
 import { StorageBar } from "../../components/StorageBar";
 import styles from "../../styles/profile.module.css"
 import { DangerZone } from "../../components/DangerZone";
+import { EditableField } from "../../components/EditableField";
 
 export default function OrgSettingsPage() {
 
@@ -58,9 +59,26 @@ export default function OrgSettingsPage() {
     }
     };
 
+    const handleRenameOrg = async (newName: string) => {
+      const response = await fetchWithRefresh(`/api/orgs/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!response.ok) throw new Error("Failed to rename.");
+      setOrgName(newName);
+    };
+
   return (
     <OrgLayout title="Organization settings" orgName={orgName} showActionButtons={false}>
-      <p>Org name: {orgName}</p>
+      <div className={styles.mainBox}>
+        <h2 className={styles.subtitle}>Informations</h2>
+        <EditableField
+          label="Organization name"
+          value={orgName}
+          role={myRole}
+          onSave={handleRenameOrg}
+        />
+      </div>
       <div className={styles.mainBox}>
         <h2 className={styles.subtitle}>Storage Usage</h2>
         <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} ></StorageBar>
