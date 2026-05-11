@@ -13,4 +13,4 @@ EXPOSE 9093
 
 ENTRYPOINT ["./entrypoint.sh"]
 
-CMD ["--storage.path=/alertmanager"]
+CMD ["/bin/alertmanager", "--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
