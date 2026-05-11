@@ -205,6 +205,17 @@ func (h *AuthHandler) GetMyAvatar(c fiber.Ctx) error {
 	return serveAvatar(c, h.DB, userIDStr)
 }
 
+// mothod for any user's avatar bytes — public endpoint (already behind JWT middleware).
+func (h *AuthHandler) GetUserAvatar(c fiber.Ctx) error {
+	targetID := c.Params("id")
+	if _, err := uuid.Parse(targetID); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+	}
+	return serveAvatar(c, h.DB, targetID)
+}
+
+// do we really want to keep both GetMyAvatar and GetUserAvatar ? Both returns the same values
+
 func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	var avatar models.UserAvatar
 
