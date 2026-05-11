@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
+	"encoding/json"
 	"log"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
@@ -139,8 +142,6 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 			"attempts_remaining": maxAttempts - attempt.Count,
 		})
 	}
-
-	// On success, reset failed attempts
 	delete(failedAttempts, userID)
 
 	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, userID)
@@ -196,7 +197,7 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 				"message": "Too many failed attempts. Try again later.",
 			})
 		}
-		delete(failedAttempts, userID) // Reset after lockout expires
+		delete(failedAttempts, userID)
 	}
 
 	req := new(VerifyTOTPRequest)
@@ -257,14 +258,190 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	})
 }
 
+func parseRecoveryCodes(hashedCodesJSON []byte) [][]byte {
+	var codes [][]byte
+	err := json.Unmarshal(hashedCodesJSON, &codes)
+	if err != nil {
+		log.Printf("[ERROR] Failed to parse recovery codes: %v", err)
+		return [][]byte{}
+	}
+	return codes
+}
+
 func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
-	return nil
+
+	userID := c.Locals("user_id").(string)
+
+	var user models.User
+
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	req := new(VerifyTOTPRequest)
+
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	}
+
+	if len(req.Code) != 11 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code_must_be_11_characters"})
+	}
+
+	givenCode := req.Code
+	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
+
+	if attempt, exists := failedAttempts[userID]; exists {
+		if time.Now().Before(attempt.LockedUntil) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error":   "too_many_attempts",
+				"message": "Too many failed attempts. Try again later.",
+			})
+		}
+		delete(failedAttempts, userID)
+	}
+
+	var remainingCodes [][]byte
+	codeFound := false
+
+	for i, storedHash := range userCodes {
+		if bcrypt.CompareHashAndPassword(storedHash, []byte(givenCode)) == nil {
+			remainingCodes = append(userCodes[:i], userCodes[i+1:]...)
+			codeFound = true
+			break
+		}
+	}
+
+	if !codeFound {
+		attempt := failedAttempts[userID]
+		attempt.Count++
+		failedAttempts[userID] = attempt
+
+		if attempt.Count >= maxAttempts {
+			failedAttempts[userID] = failedAttempt{
+				Count:       attempt.Count,
+				LockedUntil: time.Now().Add(lockoutDuration),
+			}
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_attempts",
+			})
+		}
+
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error":              "invalid_recovery_code",
+			"attempts_remaining": maxAttempts - attempt.Count,
+		})
+	}
+	delete(failedAttempts, userID)
+
+	remainingCodesJSON, err := json.Marshal(remainingCodes)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "serialization_failed"})
+	}
+
+	err = h.DB.Model(&user).Update("RecoveryCodesHashed", remainingCodesJSON).Error
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID.String(),
+		"user_email": user.Email,
+		"exp":        time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	jwtSecret := []byte(h.Env.JwtSecret)
+	fullToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"token":     fullToken,
+		"remaining": len(remainingCodes),
+		"warning":   "Use an authenticator app to add a new recovery code",
+	})
+
 }
 
 func (h *AuthHandler) GetRecoveryCodes(c fiber.Ctx) error {
-	return nil
+
+	userID := c.Locals("user_id").(string)
+
+	var user models.User
+
+	err := h.DB.Select("id", "email", "two_factor_enabled", "recovery_codes_hashed").
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	if !user.TwoFactorEnabled {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "two_factor_not_enabled"})
+	}
+
+	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
+
+	remaining := len(userCodes)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"enabled":   true,
+		"remaining": remaining,
+		"message":   "You have backup codes remaining",
+	})
+}
+
+type DisableTwoFactorRequest struct {
+	Password string `json:"password"`
 }
 
 func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
-	return nil
+
+	userID := c.Locals("user_id").(string)
+
+	var user models.User
+
+	err := h.DB.Select("id", "email", "auth_hash", "server_salt").
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	}
+
+	req := new(DisableTwoFactorRequest)
+
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	}
+
+	if req.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "password_required"})
+	}
+
+	if !verifyArgon2idHash(req.Password, user.ServerSalt, user.AuthHash) {
+		log.Printf("[WARN] Failed to disable 2FA for %s: wrong password", user.ID)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_password"})
+	}
+
+	err = h.DB.Model(&user).Updates(map[string]interface{}{
+		"TwoFactorEnabled":    false,
+		"TOTPSecretEncrypted": nil,
+		"RecoveryCodesHashed": nil,
+	}).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "2FA has been disabled",
+	})
 }

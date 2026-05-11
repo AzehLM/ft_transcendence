@@ -112,21 +112,21 @@
 
 #### Endpoint 4: Verify Recovery Code
 
-- [ ] Function: `VerifyRecoveryCode(c fiber.Ctx) error`
-  - [ ] Parse request: `{ "code": "ABC-123-DEF" }`
-  - [ ] Get temp_user_id from temporary session
-  - [ ] Fetch user from database
-  - [ ] Parse recovery codes: `codes = parseRecoveryCodes(user.RecoveryCodesHashed)`
-  - [ ] Find and verify code:
-    - [ ] For each code:
-      - [ ] Hash provided code
-      - [ ] Compare with stored hash
-    - [ ] If no match: Return 401
-    - [ ] If match:
-      - [ ] Mark as used (remove from list)
-      - [ ] Re-hash remaining codes
-      - [ ] Save updated codes to database
-  - [ ] Response:
+- [x] Function: `VerifyRecoveryCode(c fiber.Ctx) error`
+  - [x] Parse request: `{ "code": "ABC-123-DEF" }`
+  - [x] Get temp_user_id from temporary session
+  - [x] Fetch user from database
+  - [x] Parse recovery codes: `codes = parseRecoveryCodes(user.RecoveryCodesHashed)`
+  - [x] Find and verify code:
+    - [x] For each code:
+      - [x] Hash provided code
+      - [x] Compare with stored hash
+    - [x] If no match: Return 401
+    - [x] If match:
+      - [x] Mark as used (remove from list)
+      - [x] Re-hash remaining codes
+      - [x] Save updated codes to database
+  - [x] Response:
     ```json
     {
       "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -137,12 +137,12 @@
 
 #### Endpoint 5: Get Recovery Codes Status
 
-- [ ] Function: `GetRecoveryCodesStatus(c fiber.Ctx) error`
-  - [ ] Extract user_id from JWT
-  - [ ] Fetch user from database
-  - [ ] Parse recovery codes
-  - [ ] Count remaining
-  - [ ] Response:
+- [x] Function: `GetRecoveryCodesStatus(c fiber.Ctx) error`
+  - [x] Extract user_id from JWT
+  - [x] Fetch user from database
+  - [x] Parse recovery codes
+  - [x] Count remaining
+  - [x] Response:
     ```json
     {
       "enabled": true,
@@ -362,7 +362,7 @@ go get github.com/skip2/go2-qr/qr
 ## Checklist Summary
 
 ### Backend Core
-- [ ] TOTP Service created
+- [x] TOTP Service created
 - [ ] 6 HTTP handlers created
 - [ ] Login flow updated
 - [ ] Temporary session middleware created
