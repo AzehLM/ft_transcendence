@@ -31,16 +31,17 @@ jobs:
 
           mkdir -p secrets/postgres secrets/redis secrets/minio secrets/grafana
 
-          echo "${{ secrets.SECRET_POSTGRES_USER }}"  > secrets/postgres/postgres_user.txt
-          echo "${{ secrets.SECRET_POSTGRES_PWD }}"   > secrets/postgres/postgres_pwd.txt
-          echo "${{ secrets.SECRET_POSTGRES_DB }}"    > secrets/postgres/postgres_db.txt
-          echo "${{ secrets.SECRET_REDIS_PWD }}"      > secrets/redis/redis_pwd.txt
-          echo "${{ secrets.SECRET_MINIO_USER }}"     > secrets/minio/minio_admin_user.txt
-          echo "${{ secrets.SECRET_MINIO_PWD }}"      > secrets/minio/minio_admin_pwd.txt
-          echo "${{ secrets.SECRET_GRAFANA_USER }}"   > secrets/grafana/grafana_admin_user.txt
-          echo "${{ secrets.SECRET_GRAFANA_PWD }}"    > secrets/grafana/grafana_admin_pwd.txt
-          echo "${{ secrets.SECRET_CF_TOKEN }}"       > secrets/cloudflare_tunnel_token
-          echo "${{ secrets.SECRET_JWT_TOKEN }}"      > secrets/jwt_secret
+          echo "${{ secrets.SECRET_POSTGRES_USER }}"        > secrets/postgres/postgres_user.txt
+          echo "${{ secrets.SECRET_POSTGRES_PWD }}"         > secrets/postgres/postgres_pwd.txt
+          echo "${{ secrets.SECRET_POSTGRES_DB }}"          > secrets/postgres/postgres_db.txt
+          echo "${{ secrets.SECRET_REDIS_PWD }}"            > secrets/redis/redis_pwd.txt
+          echo "${{ secrets.SECRET_MINIO_USER }}"           > secrets/minio/minio_admin_user.txt
+          echo "${{ secrets.SECRET_MINIO_PWD }}"            > secrets/minio/minio_admin_pwd.txt
+          echo "${{ secrets.SECRET_GRAFANA_USER }}"         > secrets/grafana/grafana_admin_user.txt
+          echo "${{ secrets.SECRET_GRAFANA_PWD }}"          > secrets/grafana/grafana_admin_pwd.txt
+          echo "${{ secrets.SECRET_CF_TOKEN }}"             > secrets/cloudflare_tunnel_token
+          echo "${{ secrets.SECRET_JWT_TOKEN }}"            > secrets/jwt_secret
+          echo "${{ secrets.SECRET_DISCORD_WEBHOOK_URL }}"  > secrets/discord_webhook_url
 
       - name: Launch Ostrom in dev mode
         run: make dev BACKUP_DIR=/tmp/ostrom-backups/
