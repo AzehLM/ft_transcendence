@@ -43,6 +43,10 @@ export default function OrganizationsPage() {
   const [orgName, setOrgName] = useState("");
   const handleCreateOrg = async () => {
     if (!orgName.trim()) return;
+    if (orgName.length > 100) {
+      setModalError(`The organization name cannot exceed 100 caracters`)
+      return;
+    }
     try {
       const data = await generateOrganization(orgName);
       // console.log("org data to send:", data);
