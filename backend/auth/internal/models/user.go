@@ -21,7 +21,8 @@ type User struct {
 	CreatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"updatedAt"`
 	AvatarURL 			*string `gorm:"type:varchar(255)" json:"avatarUrl,omitempty"`
-
+	FirstName			string	   `gorm:"size:255" json:"firstName"`
+	FamilyName			string	   `gorm:"size:255" json:"familyName"`
 	// Username  *string `gorm:"type:varchar(50);uniqueIndex" json:"username,omitempty"`
 	
 
