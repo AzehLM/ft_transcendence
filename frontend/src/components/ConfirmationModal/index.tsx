@@ -17,6 +17,7 @@ interface ConfirmationModalProps {
     isChangeRole?: boolean;
     newRole?: string;
     isRemoveMember?: boolean;
+    isDeleteOrga?: boolean;
 }
 
 export function ConfirmationModal({
@@ -35,7 +36,8 @@ export function ConfirmationModal({
     errorMessage,
     isChangeRole = false,
     newRole,
-    isRemoveMember = false
+    isRemoveMember = false, 
+    isDeleteOrga = false
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -54,6 +56,8 @@ export function ConfirmationModal({
     title = "Change Role?";
     } else if (isRemoveMember) {
     title = "Remove Member?";
+    } else if (isDeleteOrga) {
+    title = "Delete Organization?";
     } else if (isTrash) {
     title = "Delete File?";
     } else {
@@ -70,6 +74,8 @@ export function ConfirmationModal({
     ? `Change ${fileName}'s role to ${newRole}?`
     : isRemoveMember
     ? `Are you sure you want to remove "${fileName}" from this organization?`
+    : isDeleteOrga
+    ? `Are you sure you want to permanently delete the organization, "${fileName}"? This action cannot be undone.`
     : undefined
 
     const buttonText = isAccount
@@ -86,6 +92,8 @@ export function ConfirmationModal({
     ? "Change Role"
     : isRemoveMember
     ? "Remove"
+    : isDeleteOrga
+    ? "Delete Organization"
     : "Move to Trash";
     
     return (

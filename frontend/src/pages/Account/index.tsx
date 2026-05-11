@@ -1,11 +1,10 @@
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "../Profile/SettingsLayout";
 import { useState } from "react";
-import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
-
+import { DangerZone } from "../../components/DangerZone";
 
 export default function AccountPage() {
     const navigate = useNavigate();
@@ -18,7 +17,6 @@ export default function AccountPage() {
         if (!response.ok) {
         const data = await response.json();
         console.error("Failed to delete account:", data);
-        setShowDeleteConfirm(false);
         setError(data.message || "Failed to delete account, please try again.");
         return;
         }
@@ -26,7 +24,6 @@ export default function AccountPage() {
         logout(navigate);
     } catch (err) {
         console.error("Network error:", err);
-        setShowDeleteConfirm(false);
         setError("Network error, please try again.");
     }
     };
@@ -34,7 +31,6 @@ export default function AccountPage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
     return (
 
@@ -77,25 +73,15 @@ export default function AccountPage() {
                         <button className={`${styles.buttonChange} ${styles.profileButton}`}>Update Password</button>
                     </div>
                 </div>
-                <div className={styles.deleteBox}>
-                <p className={styles.dangerTitle}>Danger Zone</p>
-                <div className={styles.dangerRow}>
-                    <div>
-                    <p className={styles.dangerLabel}>If you want to delete your account, click on the button</p>
-                    <p className={styles.dangerDescription}>This action cannot be undone</p>
-                    </div>
-                    <button className={styles.buttonDelete} onClick={() => setShowDeleteConfirm(true)}>Delete Account</button>
-                    <ConfirmationModal
-                    isOpen={showDeleteConfirm}
-                    fileName="your account"
-                    onConfirm={handleDeleteAccount}
-                    onCancel={() => setShowDeleteConfirm(false)}
-                    isTrash={false}
-                    isAccount={true}
-                    />
-                </div>
-                    {error && <p className={styles.errorMessage}>{error}</p>}
-                </div>
+                <DangerZone
+                label="If you want to delete your account, click on the button"
+                description="This action cannot be undone"
+                buttonText="Delete Account"
+                fileName="your account"
+                onConfirm={handleDeleteAccount}
+                isAccount={true}
+                error={error}
+                />
             </div>
         </SettingsLayout>
     );

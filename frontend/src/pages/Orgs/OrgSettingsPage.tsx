@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { OrgLayout } from "./OrgLayout";
 import { StorageBar } from "../../components/StorageBar";
+import styles from "../../styles/profile.module.css"
+import { DangerZone } from "../../components/DangerZone";
 
 export default function OrgSettingsPage() {
 
@@ -13,7 +15,6 @@ export default function OrgSettingsPage() {
   const [usedSpace, setUsedSpace] = useState<number>(0);
   const [maxSpace, setMaxSpace] = useState<number>(0);
   const navigate = useNavigate();
-  const toGB = (bytes: number) => (bytes / 1024 / 1024 / 1024).toFixed(2);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -36,12 +37,44 @@ export default function OrgSettingsPage() {
       .catch(() => setOrgName("Unknown"));
   }, [id]);
 
+
+    const [error, setError] = useState<string | null>(null);
+
+    const handleDeleteOrga = async () => {
+    try {
+        const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
+        
+        if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to delete organization:", data);
+        setError(data.message || "Failed to delete organization, please try again.");
+        return;
+        }
+        navigate("/organizations");
+
+    } catch (err) {
+        console.error("Network error:", err);
+        setError("Network error, please try again.");
+    }
+    };
+
   return (
     <OrgLayout title="Organization settings" orgName={orgName} showActionButtons={false}>
       <p>Org name: {orgName}</p>
-      <p>My role: {myRole}</p>
-      <p>Org ID: {id}</p>
-      <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} ></StorageBar>
+      <div className={styles.mainBox}>
+        <h2 className={styles.subtitle}>Storage Usage</h2>
+        <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} ></StorageBar>
+      </div>
+      { myRole === "admin" && (
+        <DangerZone
+        label="Delete this organization"
+        description="This action cannot be undone and will remove all members."
+        buttonText="Delete Organization"
+        fileName={orgName}
+        onConfirm={handleDeleteOrga}
+        error={error}
+        isDeleteOrga={true}
+      /> )}
     </OrgLayout>
   );
 }
