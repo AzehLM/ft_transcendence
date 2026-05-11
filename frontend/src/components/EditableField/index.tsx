@@ -6,10 +6,11 @@ interface EditableFieldProps {
   label: string;
   value: string;
   role: string | null;
+  maxCarac: number;
   onSave: (newValue: string) => Promise<void>;
 }
 
-export function EditableField({ label, value, role, onSave }: EditableFieldProps) {
+export function EditableField({ label, value, role, maxCarac, onSave }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,10 @@ export function EditableField({ label, value, role, onSave }: EditableFieldProps
     if (!inputValue.trim() || inputValue === value) {
       setEditing(false);
       return;
+    }
+    if (inputValue.length > 100) {
+        setError(`The input cannot exceed ${maxCarac} caracters`)
+        return;
     }
     setLoading(true);
     setError(null);

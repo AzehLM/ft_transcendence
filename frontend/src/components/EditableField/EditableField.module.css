@@ -24,6 +24,8 @@
   font-size: 18px;
   font-weight: 500;
   color: var(--brand-dark);
+  word-break: break-word;
+  flex: 1;
 }
 
 .input {

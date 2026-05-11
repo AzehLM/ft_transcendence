@@ -76,6 +76,7 @@ export default function OrgSettingsPage() {
           label="Organization name"
           value={orgName}
           role={myRole}
+          maxCarac={100}
           onSave={handleRenameOrg}
         />
       </div>
