@@ -124,7 +124,7 @@ func (r *OrganizationRepository) DeleteOrgaMember(orgID uuid.UUID, userID uuid.U
 func (r *OrganizationRepository) GetAllMembersFromOrga(orgID uuid.UUID) ([]models.OrgaMemberResponse, error) {
     var members []models.OrgaMemberResponse
     result := r.DB.Model(&models.OrgaMember{}).
-		Select("org_members.user_id, org_members.role, users.email").
+		Select("org_members.user_id, org_members.role, users.email, users.family_name, users.first_name").
 		Joins("JOIN users ON users.id = org_members.user_id").
 		Where("org_members.org_id = ?", orgID).
 		Scan(&members)
