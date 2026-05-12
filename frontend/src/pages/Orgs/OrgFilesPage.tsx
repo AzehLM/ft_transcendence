@@ -55,7 +55,7 @@ export default function OrgFilesPage() {
   };
 
   const handleDelete = async (fileId: string) => {
-      const response = await fetchWithRefresh(`/api/orgs/${id}/files/${fileId}`, { method: "DELETE" });
+      const response = await fetchWithRefresh(`/api/files/${fileId}`, { method: "DELETE" });
       if (!response.ok) {
         const text = await response.text();
         let message = "Failed to delete file.";

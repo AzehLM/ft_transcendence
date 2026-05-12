@@ -128,8 +128,6 @@ func main() {
 	api.Get("/folders/:folder_id/contents", handler.ListFolderContents)
 	api.Get("/orgs/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
 
-	// organization files
-
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
 			log.Fatalf("[FATAL] Server error: %v", err)
