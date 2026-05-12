@@ -38,6 +38,8 @@ func main() {
 	dbConn := db.InitDB(env)
 
 	if err := db.MigrateModels(dbConn, &models.Orga{}, &models.OrgaMember{}); err != nil {
+		fmt.Fprintf(os.Stderr, "[FATAL] Failed to migrate database models: %v\n", err)
+		os.Exit(1)
 	}
 
 	wsHub := ws.NewHub(redisClient, dbConn)
