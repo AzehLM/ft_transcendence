@@ -45,7 +45,15 @@ export default function DashboardPage() {
         await loadFiles();
     };
 
-    const handleDelete = async () => {
+     const handleDelete = async (id: string) => {
+         try {
+             setError(null);
+             await FilesService.deleteFile(id);
+             setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
+         } catch (err) {
+             console.error("Failed to delete file:", err);
+             setError("Failed to delete file.");
+         }
     };
 
     return (

@@ -88,8 +88,8 @@ export default function OrgFilesPage() {
         )}
 
         {downloadStatus && (
-          <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') || downloadStatus.includes('') ? styles.error : downloadStatus.includes('Succès') ? styles.success : styles.loading}`}>
-            {!downloadStatus.includes('Erreur') && !downloadStatus.includes('') && !downloadStatus.includes('Succès') && <span className={styles.statusDot}></span>}
+           <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') ? styles.error : downloadStatus.includes('Succès') ? styles.success : styles.loading}`}>
+            {!downloadStatus.includes('Erreur') && !downloadStatus.includes('Succès') && <span className={styles.statusDot}></span>}
             {downloadStatus}
           </div>
         )}
