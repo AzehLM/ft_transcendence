@@ -130,7 +130,6 @@ func main() {
 
 	// organization files
 	api.Get("/orgs/:org_id/files", handler.ListOrgRootFiles)
-	api.Delete("/orgs/:org_id/files/:file_id", handler.DeleteOrgFile)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
