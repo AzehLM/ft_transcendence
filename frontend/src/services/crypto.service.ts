@@ -408,3 +408,39 @@ export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
         ["encrypt"]
     );
 }
+
+
+export async function generateChangePasswordData(
+    password: string,
+    privateKey: CryptoKey,
+) {
+
+    // ÉTAPE 1: Générer Salt
+    console.log("1 -  Génération du Salt...");
+    const salt = generateSalt();
+
+    // ÉTAPE 2: Dériver Master Key
+    console.log("2 -  Dérivation de la Master Key...");
+    const masterKey = await deriveMasterKey(password, salt);
+
+    // ÉTAPE 3: Envelopper la clé privée
+    console.log("3 -  Enveloppe de la clé privée (AES-GCM)...");
+    const wrappedPrivateKey = await wrapPrivateKey(
+        privateKey,
+        masterKey
+    );
+
+    // ÉTAPE 4: Générer AuthHash
+    console.log("4 -  Génération de l'AuthHash...");
+    const authHash = await generateAuthHash(masterKey);
+
+    // Créer l'objet à envoyer au serveur
+    const passwordData = {
+        new_client_salt: uint8ArrayToBase64(salt),
+        new_auth_hash: uint8ArrayToBase64(authHash),
+        new_encrypted_private_key: uint8ArrayToBase64(wrappedPrivateKey.encryptedPrivateKey),
+        new_iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
+    };
+
+    return passwordData;
+}

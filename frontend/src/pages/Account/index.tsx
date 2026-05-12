@@ -5,6 +5,10 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
 import { DangerZone } from "../../components/DangerZone";
+import { generateChangePasswordData, getPrivateKeyFromSession, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
+import { useEffect } from "react";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
+
 
 export default function AccountPage() {
     const navigate = useNavigate();
@@ -30,8 +34,153 @@ export default function AccountPage() {
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    
-    
+    const [pwdError, setPwdError] = useState<string | null>(null);
+    const [isReset, setIsReset] = useState(false);
+
+    const [email, setEmail] = useState<string>("");
+
+    useEffect(() => {
+    fetchWithRefresh("/api/auth/me")
+        .then(res => res.json())
+        .then(data => setEmail(data.email));
+    }, []);
+
+    const handleChangePassword = async () => {
+    setPwdError(null);
+    setIsReset(false);
+    console.log(password, " --- ", newPassword, " --- ", confirmPassword);
+    if (!password || !newPassword || !confirmPassword) {
+        setPwdError("All fields are required!");
+        setPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        return;
+    }
+    if (newPassword !== confirmPassword) {
+        setPwdError("The new passwords do not match.");
+        setPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        setPwdError("Password must be at least 8 characters!");
+        setPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        return;
+    }
+
+    if (newPassword === password) {
+        setPwdError("New password cannot be the same as the previous one.");
+        setPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        return;
+    }
+    try {
+        // const privateKey = await getPrivateKeyFromSession();
+        // if (!privateKey) {
+        //     setPwdError("No private key found, please log in again."); 
+        //     return;
+        // }
+
+        const { masterKey, loginData } = await generateLoginData(email, password);
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(loginData),
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            setPwdError(responseData.message || "Error !");
+            return;
+        }
+
+
+        const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
+        const iv = base64ToUint8Array(responseData.iv);
+
+        const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+
+        const data = await generateChangePasswordData(newPassword, privateKey);
+        const passwordData = {
+            old_auth_hash: loginData.auth_hash,
+            new_client_salt: data.new_client_salt,
+            new_auth_hash: data.new_auth_hash,
+            new_encrypted_private_key: data.new_encrypted_private_key,
+            new_iv: data.new_iv,
+        };
+        console.log("Send to change password : ", passwordData);
+        const responsePut = await fetchWithRefresh("/api/auth/password", {
+        method: "PUT",
+        body: JSON.stringify(passwordData),
+        });
+
+        if (!responsePut.ok) {
+            const text = await responsePut.text();
+            let message = "Failed to change password.";
+            try {
+                if (text) {
+                const data = JSON.parse(text);
+                message = data.error || data.message || message;
+                }
+            } catch {}
+                setPwdError(message);
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                return;
+        }
+
+        setPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setPwdError(null);
+        sessionStorage.setItem("passwordChanged", "true");
+        setIsReset(true);
+
+    } catch {
+        setPwdError("Network error, please try again.");
+    }
+    };
+
+    useEffect(() => {
+        if (!isReset) return;
+
+        const handlePopState = () => {
+        sessionStorage.removeItem("passwordChanged");
+        logout(navigate);
+        };
+
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, [isReset]);
+
+    useEffect(() => {
+        if (sessionStorage.getItem("passwordChanged") === "true") {
+        sessionStorage.removeItem("passwordChanged");
+        logout(navigate);
+        }
+    }, []);
+
+    useEffect(() => {
+    if (!isReset) return;
+
+    const handlePopState = () => {
+        sessionStorage.removeItem("passwordChanged");
+        logout(navigate);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+    }, [isReset]);
+
     return (
 
         <SettingsLayout>
@@ -70,9 +219,19 @@ export default function AccountPage() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             />
                         </div>
-                        <button className={`${styles.buttonChange} ${styles.profileButton}`}>Update Password</button>
+                        {pwdError && <p className={styles.errorMessage}>{pwdError}</p>}
+                        <button className={`${styles.buttonChange} ${styles.profileButton}`}
+                            onClick={handleChangePassword}
+                        >Update Password</button>
                     </div>
                 </div>
+                <ConfirmationModal
+                    isOpen={isReset}
+                    fileName=""
+                    onConfirm={() => logout(navigate)}
+                    onCancel={() => logout(navigate)}
+                    isPasswordChanged={true}
+                />
                 <DangerZone
                 label="If you want to delete your account, click on the button"
                 description="This action cannot be undone"

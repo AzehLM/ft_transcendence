@@ -18,6 +18,7 @@ interface ConfirmationModalProps {
     newRole?: string;
     isRemoveMember?: boolean;
     isDeleteOrga?: boolean;
+    isPasswordChanged?: boolean;
 }
 
 export function ConfirmationModal({
@@ -37,7 +38,8 @@ export function ConfirmationModal({
     isChangeRole = false,
     newRole,
     isRemoveMember = false, 
-    isDeleteOrga = false
+    isDeleteOrga = false,
+    isPasswordChanged = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -60,6 +62,8 @@ export function ConfirmationModal({
     title = "Delete Organization?";
     } else if (isTrash) {
     title = "Delete File?";
+    } else if (isPasswordChanged) {
+    title = "Password Updated";
     } else {
     title = "Move to Trash?";
     }
@@ -76,6 +80,8 @@ export function ConfirmationModal({
     ? `Are you sure you want to remove "${fileName}" from this organization?`
     : isDeleteOrga
     ? `Are you sure you want to permanently delete the organization, "${fileName}"? This action cannot be undone.`
+    : isPasswordChanged
+    ? "Your password has been updated. Please log in again with your new password."
     : undefined
 
     const buttonText = isAccount
@@ -94,11 +100,18 @@ export function ConfirmationModal({
     ? "Remove"
     : isDeleteOrga
     ? "Delete Organization"
+    : isPasswordChanged
+    ? "Log out"
     : "Move to Trash";
     
     return (
         <>
+            {!isPasswordChanged && (
             <div className={styles.modal__overlay} onClick={onCancel} />
+            )}
+            {isPasswordChanged && (
+            <div className={styles.modal__overlay} />
+            )}
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
@@ -116,13 +129,13 @@ export function ConfirmationModal({
                 <p className={styles.modal__error}>{errorMessage}</p>
                 )}
                 <div className={styles.modal__actions}>
-                    <button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
+                    { !isPasswordChanged && (<button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
                           onClick={() => {
                             onInputChange?.("");
                             onCancel();
                         }}>
                         Cancel
-                    </button>
+                    </button>)}
                     <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={onConfirm}>
                         {buttonText}
                     </button>
