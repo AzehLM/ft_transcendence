@@ -18,7 +18,7 @@ export default function OrgFilesPage() {
 
   const loadFiles = async () => {
     try {
-      const res = await fetchWithRefresh(`/api/orgs/${id}/folders/00000000-0000-0000-0000-000000000000/contents`);
+      const res = await fetchWithRefresh(`/api/storage/${id}/folders/00000000-0000-0000-0000-000000000000/contents`);
       if (!res.ok) throw new Error("Failed to fetch files.");
       const data = await res.json();
       setFiles(data.files || []);
