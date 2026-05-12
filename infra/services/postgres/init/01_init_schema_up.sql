@@ -18,7 +18,9 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     avatar_url VARCHAR(255),
     recovery_key_hash BYTEA,
-    two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE
+    two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_secret_encrypted BYTEA,
+    recovery_codes_hashed BYTEA
     -- username VARCHAR(50) UNIQUE
 );
 
