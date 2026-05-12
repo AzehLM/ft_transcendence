@@ -24,7 +24,7 @@ interface FileGridProps {
 }
 
 export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, onUploadFile, onDownloadFile }: FileGridProps) {
-  const isOrgPage = !!orgName;
+  const isOrgPage = orgName !== undefined;
 
   return (
     <div className={styles.page}>
