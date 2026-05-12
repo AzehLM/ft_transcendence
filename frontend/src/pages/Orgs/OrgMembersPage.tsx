@@ -14,6 +14,8 @@ interface Member {
   user_id: string;
   email: string;
   role: string;
+  family_name: string;
+  first_name: string;
 }
 
 export default function OrgMembersPage() {
@@ -196,7 +198,14 @@ export default function OrgMembersPage() {
             {members.map((member) => (
               <div key={member.user_id} className={orgaStyles.orgCard}>
                 <div className={orgaStyles.orgInfo}>
-                  <p className={orgaStyles.orgName}>{member.email}</p>
+                  <p className={orgaStyles.orgName}>
+                    {member.first_name || member.family_name
+                      ? `${member.first_name ?? ""} ${member.family_name ?? ""}`.trim()
+                      : member.email}
+                    {(member.first_name || member.family_name) && (
+                      <span> ({member.email})</span>
+                    )}
+                  </p>
                   <p className={orgaStyles.orgRole}>{member.role}</p>
                 </div>
 
