@@ -5,7 +5,7 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
 import { DangerZone } from "../../components/DangerZone";
-import { generateChangePasswordData, getPrivateKeyFromSession, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
+import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { useEffect } from "react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 
@@ -80,11 +80,6 @@ export default function AccountPage() {
         return;
     }
     try {
-        // const privateKey = await getPrivateKeyFromSession();
-        // if (!privateKey) {
-        //     setPwdError("No private key found, please log in again."); 
-        //     return;
-        // }
 
         const { masterKey, loginData } = await generateLoginData(email, password);
         const response = await fetch("/api/auth/login", {

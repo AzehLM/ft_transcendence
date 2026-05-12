@@ -48,7 +48,7 @@ function App() {
                         <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>
                 </Route>
-                <Route path="/" element={<Navigate to="/home" />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
