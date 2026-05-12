@@ -50,6 +50,12 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     };
 
     const uploadFile = async (file: File) => {
+        if (isUploading) {
+            setUploadStatus("Erreur: Un upload est déjà en cours. Veuillez attendre la fin.");
+            setTimeout(() => setUploadStatus(""), 5000);
+            return;
+        }
+
         const error = validateFile(file);
         if (error) {
             setUploadStatus(`Erreur: ${error}`);
