@@ -129,7 +129,6 @@ func main() {
 	api.Get("/orgs/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
 
 	// organization files
-	api.Get("/orgs/:org_id/files", handler.ListOrgRootFiles)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {

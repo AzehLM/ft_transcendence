@@ -253,4 +253,3 @@ func (h *StorageHandler) GetFileInfo(c fiber.Ctx) error {
 		"encrypted_filename": file.Name,
 	})
 }
-
