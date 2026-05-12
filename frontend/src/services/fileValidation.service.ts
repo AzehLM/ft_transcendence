@@ -12,6 +12,7 @@ const MAGIC_NUMBERS: { [key: string]: Uint8Array | null } = {
     'video/webm': new Uint8Array([0x1A, 0x45, 0xDF, 0xA3]),
     'video/mpeg': new Uint8Array([0x00, 0x00, 0x01, 0xB3]),
     'video/quicktime': new Uint8Array([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]),
+    'video/x-msvideo': new Uint8Array([0x52, 0x49, 0x46, 0x46]),
 
     // Archives
     'application/zip': new Uint8Array([0x50, 0x4B, 0x03, 0x04]),
@@ -98,6 +99,7 @@ export class FileValidationService {
             'video/webm': 'Vidéo WebM',
             'video/mpeg': 'Vidéo MPEG',
             'video/quicktime': 'Vidéo QuickTime',
+            'video/x-msvideo': 'Vidéo AVI',
             'application/pdf': 'Document PDF',
             'text/plain': 'Fichier texte',
             'text/csv': 'Fichier CSV',
