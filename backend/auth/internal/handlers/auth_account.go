@@ -25,7 +25,7 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -43,17 +43,17 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		log.Printf("[WARN] invalid user_id %s: %v", userIDStr, err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
 	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_publish_user_deleted_event"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not publish user deleted event"})
 	}
 
 	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
 	clearRefreshTokenCookie(c)
@@ -62,50 +62,50 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "account_deleted_successfully",
+		"message": "account deleted successfully",
 	})
 }
 
 func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 	req := new(UpdatePasswordRequest)
 	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
 
 	if req.OldAuthHash == "" || req.NewAuthHash == "" || req.NewClientSalt == "" || req.NewIv == "" || req.NewEncryptedPrivKey == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing parameters"})
 	}
 
 	userID := c.Locals("user_id").(string)
 	var user models.User
 
 	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	if !verifyArgon2idHash(req.OldAuthHash, user.ServerSalt, user.AuthHash) {
 		log.Printf("[WARN] Failed password update attempt for user %s", user.Email)
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "invalid_old_password"})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "invalid old password"})
 	}
 
 	newServerHash, newServerSaltHex, err := hashWithArgon2id(req.NewAuthHash)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	newClientSalt, err := base64.StdEncoding.DecodeString(req.NewClientSalt)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_client_salt_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new client salt format"})
 	}
 
 	newIV, err := base64.StdEncoding.DecodeString(req.NewIv)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_iv_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new iv format"})
 	}
 
 	newPrivKey, err := base64.StdEncoding.DecodeString(req.NewEncryptedPrivKey)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_private_key_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new private key format"})
 	}
 
 	newServerSalt, _ := base64.StdEncoding.DecodeString(newServerSaltHex)
@@ -120,7 +120,7 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 	}).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
 
 	//TODO: generate a new jwt and refresh token maybe
@@ -128,7 +128,7 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 
 	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "password_updated_please_login_again",
+		"message": "password updated please login again",
 	})
 }
 
@@ -137,22 +137,22 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
 	file, err := c.FormFile("avatar")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "no_file_uploaded"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "no file uploaded"})
 	}
 
 	const maxSize = int64(4 * 1024 * 1024)
 	if file.Size > maxSize {
-		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "file_too_large_max_4mb"})
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "file too large max 4mb"})
 	}
 
 	src, err := file.Open()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_open_file"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not open file"})
 	}
 	defer func() {
 		if err := src.Close(); err != nil {
@@ -162,7 +162,7 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 
 	findExtension := make([]byte, 512)
 	if _, err := src.Read(findExtension); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
 	}
 
 	// trying to sniff the extension type by reading bytes values, double security (MIME type has to be check in the front first)
@@ -170,15 +170,15 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 
 	// only accepting jpeg or png for now
 	if contentType != "image/jpeg" && contentType != "image/png" {
-		return c.Status(fiber.StatusUnsupportedMediaType).JSON(fiber.Map{"error": "invalid_file_type_jpeg_or_png_only"})
+		return c.Status(fiber.StatusUnsupportedMediaType).JSON(fiber.Map{"error": "invalid file type jpeg or png only"})
 	}
 
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
 	}
 	data, err := io.ReadAll(src)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_read_file"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
 	}
 
 	avatar := models.UserAvatar{
@@ -191,11 +191,11 @@ func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
 	result := h.DB.Save(&avatar)
 	if result.Error != nil {
 		log.Printf("[ERROR] Failed to save avatar for user %s: %v", userIDStr, result.Error)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "avatar_uploaded_successfully",
+		"message": "avatar uploaded successfully",
 	})
 }
 
@@ -209,7 +209,7 @@ func (h *AuthHandler) GetMyAvatar(c fiber.Ctx) error {
 func (h *AuthHandler) GetUserAvatar(c fiber.Ctx) error {
 	targetID := c.Params("id")
 	if _, err := uuid.Parse(targetID); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 	return serveAvatar(c, h.DB, targetID)
 }
@@ -222,9 +222,9 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no_avatar"})
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no avatar"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
 	}
 
 	// Content-type so the frontend can sanitize again the output of the API call
@@ -247,7 +247,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
