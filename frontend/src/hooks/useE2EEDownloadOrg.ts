@@ -23,7 +23,7 @@ export function useE2EEDownloadOrg() {
     const downloadAndDecryptOrg = async (fileId: string, orgId: string) => {
         const token = localStorage.getItem("token");
         if (!token) {
-            setDownloadStatus("❌ Session expirée. Veuillez vous reconnecter.");
+            setDownloadStatus("Session expirée. Veuillez vous reconnecter.");
             return;
         }
 
@@ -153,7 +153,7 @@ export function useE2EEDownloadOrg() {
             setDownloadStatus(`Succès ! "${filename}" a été déchiffré et sauvegardé.`);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
-            setDownloadStatus(`❌ ${errorMessage}`);
+            setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }

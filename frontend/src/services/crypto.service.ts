@@ -305,7 +305,7 @@ export async function generateLoginData(email: string, password: string) {
     console.log("🔐 Démarrage du processus de connexion cryptographique...");
 
     // ÉTAPE 1: Récupérer le salt du serveur
-    console.log("1️⃣ Récupération du salt depuis le serveur...");
+    console.log("Récupération du salt depuis le serveur...");
     let saltResponse;
     try {
         saltResponse = await fetch("/api/auth/salt", {
@@ -321,7 +321,7 @@ export async function generateLoginData(email: string, password: string) {
             throw new Error(errorData.message || "Failed to retrieve salt");
         }
     } catch (err: any) {
-        console.error("❌ Erreur lors de la récupération du salt:", err);
+        console.error("Erreur lors de la récupération du salt:", err);
         throw err;
     }
 
@@ -329,14 +329,13 @@ export async function generateLoginData(email: string, password: string) {
     const salt = base64ToUint8Array(saltData.salt);
 
     // ÉTAPE 2: Dériver Master Key
-    console.log("2️⃣ Dérivation de la Master Key...");
+    console.log("Dérivation de la Master Key...");
     const masterKey = await deriveMasterKey(password, salt);
 
     // ÉTAPE 3: Générer AuthHash
-    console.log("3️⃣ Génération de l'AuthHash...");
+    console.log("Génération de l'AuthHash...");
     const authHash = await generateAuthHash(masterKey);
 
-    // Créer l'objet à envoyer au serveur
     const loginData = {
         email,
         auth_hash: uint8ArrayToBase64(authHash),

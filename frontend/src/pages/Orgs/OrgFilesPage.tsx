@@ -18,7 +18,7 @@ export default function OrgFilesPage() {
 
   const loadFiles = async () => {
     try {
-      const res = await fetchWithRefresh(`/api/orgs/${id}/files`);
+      const res = await fetchWithRefresh(`/api/orgs/${id}/folders/00000000-0000-0000-0000-000000000000/contents`);
       if (!res.ok) throw new Error("Failed to fetch files.");
       const data = await res.json();
       setFiles(data.files || []);
@@ -88,8 +88,8 @@ export default function OrgFilesPage() {
         )}
 
         {downloadStatus && (
-          <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') || downloadStatus.includes('❌') ? styles.error : downloadStatus.includes('Succès') ? styles.success : styles.loading}`}>
-            {!downloadStatus.includes('Erreur') && !downloadStatus.includes('❌') && !downloadStatus.includes('Succès') && <span className={styles.statusDot}></span>}
+          <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') || downloadStatus.includes('') ? styles.error : downloadStatus.includes('Succès') ? styles.success : styles.loading}`}>
+            {!downloadStatus.includes('Erreur') && !downloadStatus.includes('') && !downloadStatus.includes('Succès') && <span className={styles.statusDot}></span>}
             {downloadStatus}
           </div>
         )}
