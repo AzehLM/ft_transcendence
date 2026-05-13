@@ -70,7 +70,8 @@ export function useE2EEDownload() {
             if (!response.ok || !response.body) throw new Error("Erreur d'accès au stockage distant (MinIO).");
 
             const reader = response.body.getReader();
-            let buffer = new Uint8Array(0);
+            const chunks: Uint8Array[] = [];
+            let bufferedBytes = 0;
             let chunkIndex = 1;
 
             const processDecryption = async (dataToDecrypt: Uint8Array) => {
@@ -95,19 +96,45 @@ export function useE2EEDownload() {
                 const { done, value } = await reader.read();
 
                 if (value) {
-                    const newBuffer = new Uint8Array(buffer.length + value.length);
-                    newBuffer.set(buffer, 0);
-                    newBuffer.set(value, buffer.length);
-                    buffer = newBuffer;
+                    chunks.push(new Uint8Array(value));
+                    bufferedBytes += value.length;
                 }
 
-                while (buffer.length >= CIPHER_CHUNK_SIZE) {
-                    await processDecryption(buffer.slice(0, CIPHER_CHUNK_SIZE));
-                    buffer = buffer.slice(CIPHER_CHUNK_SIZE);
+                while (bufferedBytes >= CIPHER_CHUNK_SIZE) {
+                    const dataToDecrypt = new Uint8Array(CIPHER_CHUNK_SIZE);
+                    let offset = 0;
+                    let remaining = CIPHER_CHUNK_SIZE;
+
+                    while (offset < CIPHER_CHUNK_SIZE && chunks.length > 0) {
+                        const chunk = chunks[0];
+                        const toCopy = Math.min(remaining, chunk.length);
+                        dataToDecrypt.set(chunk.subarray(0, toCopy), offset);
+
+                        if (toCopy === chunk.length) {
+                            chunks.shift();
+                        } else {
+                            chunks[0] = chunk.subarray(toCopy);
+                        }
+
+                        offset += toCopy;
+                        remaining -= toCopy;
+                    }
+
+                    await processDecryption(dataToDecrypt);
+                    bufferedBytes -= CIPHER_CHUNK_SIZE;
                 }
 
                 if (done) {
-                    if (buffer.length > 0) await processDecryption(buffer);
+                    if (bufferedBytes > 0) {
+                        const dataToDecrypt = new Uint8Array(bufferedBytes);
+                        let offset = 0;
+                        while (chunks.length > 0) {
+                            const chunk = chunks.shift()!;
+                            dataToDecrypt.set(chunk, offset);
+                            offset += chunk.length;
+                        }
+                        await processDecryption(dataToDecrypt);
+                    }
                     break;
                 }
             }
