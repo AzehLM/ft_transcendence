@@ -8,7 +8,8 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import orgaStyles from "../Organizations/Organizations.module.css"
 import { UserMinus, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import { resetKeys } from "../../services/auth.service";
 
 interface Member {
   user_id: string;
@@ -50,6 +51,12 @@ export default function OrgMembersPage() {
     if (!memberEmail.trim()) return;
     setModalError(null);
 
+    const userPrivateKey = await getPrivateKeyFromSession();
+    if (!userPrivateKey) {
+      setPublicKeyMissing(true)
+      return;
+    }
+
     const { success, error } = await addMemberToOrg(id!, memberEmail);
     if (!success) {
       setModalError(error ?? "Failed to add member.");
@@ -68,6 +75,32 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+  };
+
+
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
+
+    useEffect(() => {
+    fetchWithRefresh("/api/auth/me")
+        .then(res => res.json())
+        .then(data => setEmail(data.email));
+    }, []);
+
+  const handleResetKeys = async () => {
+    setModalError(null);
+    if (!password) return;
+
+    const { success, error } = await resetKeys(email, password);
+    if (!success) {
+      setModalError(error ?? "Error !");
+      return;
+    }
+
+    setPassword("");
+    setPublicKeyMissing(false);
+    setModalError(null);
   };
 
   const [members, setMembers] = useState<Member[]>([]);
@@ -184,6 +217,17 @@ export default function OrgMembersPage() {
           isAddMember={true}
           inputValue={memberEmail}
           onInputChange={setMemberEmail}
+          errorMessage={modalError ?? undefined}
+        />
+
+        <ConfirmationModal
+          isOpen={publicKeyMissing}
+          fileName={orgName}
+          onConfirm={handleResetKeys}
+          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          isKeyMissing={true}
+          inputValue={password}
+          onInputChange={setPassword}
           errorMessage={modalError ?? undefined}
         />
 
