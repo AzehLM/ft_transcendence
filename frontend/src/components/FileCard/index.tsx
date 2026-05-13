@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
-import { useDecryptFilenameOrg } from "../../hooks/useDecryptFilenameOrg";
 
 interface FileCardProps {
   id: string;
@@ -19,12 +18,9 @@ export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, o
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { decryptedName: personalName, loading: personalLoading } = useDecryptFilename(id);
-  const { decryptedName: orgName, loading: orgLoading } = useDecryptFilenameOrg(id, orgId || "");
+  const { decryptedName, loading } = useDecryptFilename(id, orgId);
 
-  const loading = orgId ? orgLoading : personalLoading;
-  const displayName = orgId ? (loading ? "..." : orgName || name) : (loading ? "..." : personalName || name);
-
+  const displayName = loading ? "..." : (decryptedName || name);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
