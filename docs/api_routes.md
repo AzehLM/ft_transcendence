@@ -290,7 +290,7 @@ Supprime le secret TOTP + les recovery codes.
 
 ## Users
 
-### `GET /users/me`
+### `GET /auth/me`
 
 Reponse (200) :
 ```json
@@ -299,7 +299,9 @@ Reponse (200) :
   "email": "student@42lyon.fr",
   "used_space": 2463129600,
   "max_space": 5368709120,
-  "created_at": "2026-01-15T10:30:00Z"
+  "created_at": "2026-01-15T10:30:00Z",
+  "first_name": "name",
+  "family_name": "name"
 }
 ```
 
