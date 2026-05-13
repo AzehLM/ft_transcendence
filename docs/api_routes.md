@@ -135,6 +135,46 @@ Invalide les refresh tokens des autres sessions.
 
 ---
 
+### `PATCH /auth/first-name`
+
+Change le prénom de l'utilisateur.
+
+Body :
+```json
+{
+  "firstName": "new name",
+}
+```
+
+Reponse (200) :
+```json
+{
+  "message": "first name updated"
+}
+```
+
+---
+
+### `PATCH /auth/family-name`
+
+Change le nom de l'utilisateur.
+
+Body :
+```json
+{
+  "familyName": "new name",
+}
+```
+
+Reponse (200) :
+```json
+{
+  "message": "family name updated"
+}
+```
+
+---
+
 ### `GET /users/public-key?email=alice@42lyon.fr`
 Récupère la clé publique d'un user par email.
 
