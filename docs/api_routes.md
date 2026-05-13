@@ -142,7 +142,7 @@ Change le prénom de l'utilisateur.
 Body :
 ```json
 {
-  "firstName": "new name",
+  "first_name": "new name",
 }
 ```
 
@@ -162,7 +162,7 @@ Change le nom de l'utilisateur.
 Body :
 ```json
 {
-  "familyName": "new name",
+  "family_name": "new name",
 }
 ```
 
