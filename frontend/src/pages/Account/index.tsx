@@ -48,7 +48,6 @@ export default function AccountPage() {
     const handleChangePassword = async () => {
     setPwdError(null);
     setIsReset(false);
-    console.log(password, " --- ", newPassword, " --- ", confirmPassword);
     if (!password || !newPassword || !confirmPassword) {
         setPwdError("All fields are required!");
         setPassword("");
