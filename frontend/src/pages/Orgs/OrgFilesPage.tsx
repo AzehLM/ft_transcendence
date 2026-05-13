@@ -71,6 +71,26 @@ export default function OrgFilesPage() {
       setFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
+  const handleCreateFolder = async () => {
+    const folderName = prompt("Enter folder name:");
+    if (!folderName) return;
+
+    try {
+      setError(null);
+      await fetchWithRefresh(`/api/folders`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: folderName,
+          org_id: id,
+        }),
+      });
+      await loadFiles();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(`Failed to create folder: ${errorMessage}`);
+    }
+  };
+
   return (
     <>
       <div className={styles.uploadContainer} style={{ margin: "20px 5%", marginTop: 0 }}>
@@ -150,6 +170,7 @@ export default function OrgFilesPage() {
         orgId={id}
         showActionButtons={true}
         onUploadFile={uploadFile}
+        onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}
       />
     </>
