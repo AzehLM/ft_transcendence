@@ -68,6 +68,13 @@ export default function RegisterPage() {
                 return;
             }
 
+            const data = await response.json();
+
+            // Store the access token from registration
+            if (data.access_token) {
+                localStorage.setItem("token", data.access_token);
+            }
+
             console.log("✅ Enregistrement réussi!");
             setShowTwoFAPrompt(true);
 
@@ -214,9 +221,13 @@ export default function RegisterPage() {
             {showSetupTOTP && (
                 <SetupTOTP
                     onSuccess={() => {
+                        // Clear the registration token and go to login
+                        localStorage.removeItem("token");
                         navigate("/login");
                     }}
                     onCancel={() => {
+                        // Clear the registration token and go to login
+                        localStorage.removeItem("token");
                         navigate("/login");
                     }}
                 />

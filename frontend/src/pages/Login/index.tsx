@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { VerifyTOTP } from "../../components/VerifyTOTP/VerifyTOTP";
 
 
 export default function LoginPage() {
@@ -13,6 +14,12 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [show2FA, setShow2FA] = useState(false);
+    const [tempToken, setTempToken] = useState("");
+    const [masterKey, setMasterKey] = useState<CryptoKey | null>(null);
+    const [userEncryptedPrivateKey, setUserEncryptedPrivateKey] = useState("");
+    const [userIv, setUserIv] = useState("");
+    const [userPublicKey, setUserPublicKey] = useState("");
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +45,7 @@ export default function LoginPage() {
         setIsLoading(true);
         try {
             console.log("🔐 Génération des données cryptographiques pour la connexion...");
-            const { masterKey, loginData } = await generateLoginData(email, password);
+            const { masterKey: mk, loginData } = await generateLoginData(email, password);
 
             console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/login", {
@@ -57,19 +64,32 @@ export default function LoginPage() {
                 return;
             }
 
+            // Check if 2FA is required
+            if (responseData.require_2fa) {
+                console.log("ℹ️ 2FA required for this account");
+                // Store the necessary data for after 2FA verification
+                setMasterKey(mk);
+                setUserEncryptedPrivateKey(responseData.encrypted_private_key);
+                setUserIv(responseData.iv);
+                setUserPublicKey(responseData.public_key);
+                setTempToken(responseData.tempToken);
+                setShow2FA(true);
+                setIsLoading(false);
+                return;
+            }
+
+            // No 2FA - proceed with normal login
             console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
-
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
 
-            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, mk, iv);
             await storePrivateKey(privateKey);
 
             sessionStorage.setItem("publicKey", responseData.public_key);
             navigate("/dashboard");
-            // navigate("/profile");
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
@@ -78,100 +98,138 @@ export default function LoginPage() {
         }
     };
 
-    return (
-        <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
-            <div className={styles.login_page_container} style={{ maxWidth: "448px" }}>
-                {/* Logo */}
-                <div className={styles.logo_section}>
-                    <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
-                        <div className={styles.logo_box}>
-                            <Package className="w-11 h-11 text-white" strokeWidth={2} />
-                        </div>
-                        <span className={styles.logo_title}>
-                            ft_box
-                        </span>
-                    </Link>
-                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
-                        Welcome Back
-                    </h1>
-                    <p className={styles.logo_subtitle}>
-                        Log in to access your secure files
-                    </p>
-                </div>
+    const handle2FASuccess = async (token: string) => {
+        try {
+            console.log("✅ 2FA verification successful!");
+            localStorage.setItem("token", token);
 
-                {/* Login Form */}
-                <div className={styles.login_form}>
-                    <form className={styles.login_form_inner} onSubmit={handleSubmit}>
-                        <InputField
-                            label="Email Address"
-                            type="email"
-                            icon={Mail}
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+            // Use the stored masterKey and encrypted data to complete login
+            if (masterKey && userEncryptedPrivateKey && userIv && userPublicKey) {
+                const encryptedPrivateKey = base64ToUint8Array(userEncryptedPrivateKey);
+                const iv = base64ToUint8Array(userIv);
 
-                        <InputField
-                            label="Password"
-                            type="password"
-                            icon={Lock}
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+                await storePrivateKey(privateKey);
 
-                        {/* Security Notice */}
-                        <div className={styles.security_notice}>
-                            <Shield className={`${styles.security_notice_icon} w-5 h-5`} style={{ color: "var(--brand-primary)" }} />
-                            <p className={styles.security_notice_text}>
-                                <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
-                            </p>
-                        </div>
+                sessionStorage.setItem("publicKey", userPublicKey);
+                navigate("/dashboard");
+            } else {
+                throw new Error("Missing required data for login completion");
+            }
+        } catch (err: any) {
+            console.error("❌ Erreur lors du traitement 2FA:", err);
+            setError(err.message || "Failed to process 2FA verification");
+        }
+    };
 
-                        {/* Error Message */}
-                        {error && (
-                            <div className={styles.error_message}>
-                                {error}
-                            </div>
-                        )}
+    // Show 2FA verification if required
+    if (show2FA) {
+        return (
+            <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
+                <VerifyTOTP
+                    tempToken={tempToken}
+                    onSuccess={handle2FASuccess}
+                    onCancel={() => {
+                        setShow2FA(false);
+                        setTempToken("");
+                        setError("");
+                    }}
+                />
+            </div>
+        );
+    }
+    <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
+        <div className={styles.login_page_container} style={{ maxWidth: "448px" }}>
+            {/* Logo */}
+            <div className={styles.logo_section}>
+                <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
+                    <div className={styles.logo_box}>
+                        <Package className="w-11 h-11 text-white" strokeWidth={2} />
+                    </div>
+                    <span className={styles.logo_title}>
+                        ft_box
+                    </span>
+                </Link>
+                <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
+                    Welcome Back
+                </h1>
+                <p className={styles.logo_subtitle}>
+                    Log in to access your secure files
+                </p>
+            </div>
 
-                        <Button type="submit" variant="primary" disabled={isLoading}>
-                            {isLoading ? "Logging In..." : "Log In"}
-                            <ArrowRight className="inline-block ml-2 w-5 h-5" />
-                        </Button>
-                    </form>
+            {/* Login Form */}
+            <div className={styles.login_form}>
+                <form className={styles.login_form_inner} onSubmit={handleSubmit}>
+                    <InputField
+                        label="Email Address"
+                        type="email"
+                        icon={Mail}
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
 
-                    {/* Divider */}
-                    <div className={styles.divider}>
-                        <div className={styles.divider_line}>
-                            <div className={styles.divider_border}></div>
-                        </div>
-                        <div className={styles.divider_text_container}>
-                            <span className={styles.divider_text}>
-                                Don't have an account?
-                            </span>
-                        </div>
+                    <InputField
+                        label="Password"
+                        type="password"
+                        icon={Lock}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+
+                    {/* Security Notice */}
+                    <div className={styles.security_notice}>
+                        <Shield className={`${styles.security_notice_icon} w-5 h-5`} style={{ color: "var(--brand-primary)" }} />
+                        <p className={styles.security_notice_text}>
+                            <span className={styles.security_notice_title}>Secure Login:</span> Your credentials are encrypted locally before being sent to our servers. We never see your actual password.
+                        </p>
                     </div>
 
-                    {/* Sign Up Link */}
-                    <Link
-                        to="/register"
-                        className={styles.signup_link}
-                    >
-                        Create Account
-                    </Link>
+                    {/* Error Message */}
+                    {error && (
+                        <div className={styles.error_message}>
+                            {error}
+                        </div>
+                    )}
+
+                    <Button type="submit" variant="primary" disabled={isLoading}>
+                        {isLoading ? "Logging In..." : "Log In"}
+                        <ArrowRight className="inline-block ml-2 w-5 h-5" />
+                    </Button>
+                </form>
+
+                {/* Divider */}
+                <div className={styles.divider}>
+                    <div className={styles.divider_line}>
+                        <div className={styles.divider_border}></div>
+                    </div>
+                    <div className={styles.divider_text_container}>
+                        <span className={styles.divider_text}>
+                            Don't have an account?
+                        </span>
+                    </div>
                 </div>
 
-                {/* Back to Home */}
-                <div className={styles.back_home_container}>
-                    <Link
-                        to="/"
-                        className={styles.back_home_link}
-                    >
-                        ← Back to Home
-                    </Link>
-                </div>
+                {/* Sign Up Link */}
+                <Link
+                    to="/register"
+                    className={styles.signup_link}
+                >
+                    Create Account
+                </Link>
+            </div>
+
+            {/* Back to Home */}
+            <div className={styles.back_home_container}>
+                <Link
+                    to="/"
+                    className={styles.back_home_link}
+                >
+                    ← Back to Home
+                </Link>
             </div>
         </div>
-    );
+    </div>
 }

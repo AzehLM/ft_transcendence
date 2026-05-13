@@ -4,6 +4,9 @@ import { fetchWithRefresh } from "./api.service";
 export async function generateTOTPSecret() {
     const response = await fetchWithRefresh("/api/auth/2fa/totp/generate", {
         method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
     });
 
     if (!response.ok) {
@@ -18,6 +21,9 @@ export async function generateTOTPSecret() {
 export async function verifyTOTPSetup(code: string) {
     const response = await fetchWithRefresh("/api/auth/2fa/totp/verify", {
         method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
         body: JSON.stringify({ code }),
     });
 

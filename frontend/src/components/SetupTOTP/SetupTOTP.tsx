@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { generateTOTPSecret, verifyTOTPSetup } from "../../services/totp.service";
+import { QRCodeSVG } from "qrcode.react";
 import styles from "./SetupTOTP.module.css";
 
 interface SetupTOTPProps {
@@ -9,7 +10,7 @@ interface SetupTOTPProps {
 
 export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
     const [step, setStep] = useState<"qr" | "verify" | "recovery">("qr");
-    const [qrCode, setQrCode] = useState<string>("");
+    const [qrValue, setQrValue] = useState<string>("");
     const [secret, setSecret] = useState<string>("");
     const [verificationCode, setVerificationCode] = useState<string>("");
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
@@ -24,7 +25,7 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                 setLoading(true);
                 setError("");
                 const data = await generateTOTPSecret();
-                setQrCode(data.qrCode);
+                setQrValue(data.qrCodeURL);
                 setSecret(data.secret);
             } catch (err) {
                 setError(
@@ -106,17 +107,19 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                                 Authenticator, Authy, Microsoft Authenticator, etc.)
                             </p>
 
-                            {qrCode && (
+                            {qrValue && (
                                 <div className={styles.totp_setup__qr_code_container}>
-                                    <img
-                                        src={qrCode}
-                                        alt="TOTP QR Code"
+                                    <QRCodeSVG
+                                        value={qrValue}
+                                        size={256}
+                                        level="H"
+                                        includeMargin={true}
                                         className={styles.totp_setup__qr_code_image}
                                     />
                                 </div>
                             )}
 
-                            {!qrCode && loading && (
+                            {!qrValue && loading && (
                                 <div className={styles.totp_setup__loading_spinner}>
                                     <div className={styles.totp_setup__spinner} />
                                 </div>
