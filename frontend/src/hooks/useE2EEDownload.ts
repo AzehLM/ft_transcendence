@@ -4,6 +4,7 @@ import {
     decryptDEKWithPrivateKey,
     getPrivateKeyFromSession,
 } from '../services/crypto.service';
+import { fetchWithRefresh } from '../services/api.service';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
 const CIPHER_CHUNK_SIZE = CHUNK_SIZE + 16;
@@ -20,19 +21,11 @@ export function useE2EEDownload() {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const downloadAndDecrypt = async (fileId: string) => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            setDownloadStatus("Session expirée. Veuillez vous reconnecter.");
-            return;
-        }
-
         setIsDownloading(true);
         setDownloadStatus(null);
         try {
             setDownloadStatus("1/4 : Récupération des métadonnées sécurisées...");
-            const metaRes = await fetch(`/api/files/${fileId}/download`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
+            const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
 
             if (!metaRes.ok) {
                 throw new Error(metaRes.status === 404 ? "Fichier introuvable sur le serveur." : `Impossible de récupérer les métadonnées (${metaRes.status}).`);

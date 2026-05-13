@@ -20,7 +20,7 @@ export function OrgHeader({
         {showActionButtons && (
           <ActionButtons
             onUploadFile={onUploadFile}
-            onCreateFolder={onCreateFolder} // 3. On la passe à ActionButtons
+            onCreateFolder={onCreateFolder}
           />
         )}
     </div>
