@@ -236,7 +236,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 
 func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	var body struct {
-		FirstName string `json:"FirstName" validate:"required"`
+		FirstName string `json:"first_name" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -284,7 +284,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 
 func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	var body struct {
-		FamilyName string `json:"FamilyName" validate:"required"`
+		FamilyName string `json:"family_name" validate:"required"`
 	}
 
 	if len(c.Body()) == 0 {

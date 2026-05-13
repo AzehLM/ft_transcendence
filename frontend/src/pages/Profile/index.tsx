@@ -48,7 +48,7 @@ export default function ProfilePage() {
   const handleChangeFirstName = async (newFirstName: string) => {
     const response = await fetchWithRefresh(`/api/auth/first-name`, {
       method: "PATCH",
-      body: JSON.stringify({firstName: newFirstName}),
+      body: JSON.stringify({first_name: newFirstName}),
     });
     if (!response.ok) throw new Error("Failed to change first name");
     setFirstName(newFirstName)
@@ -66,7 +66,7 @@ export default function ProfilePage() {
   const handleChangeFamilyName = async (newFamilyName: string) => {
     const response = await fetchWithRefresh(`/api/auth/family-name`, {
       method: "PATCH",
-      body: JSON.stringify({familyName: newFamilyName}),
+      body: JSON.stringify({family_name: newFamilyName}),
     });
     if (!response.ok) throw new Error("Failed to change family name");
     setFirstName(newFamilyName)
