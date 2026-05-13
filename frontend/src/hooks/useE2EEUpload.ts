@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
-import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession } from '../services/crypto.service';
+import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
 import { FileValidationService } from '../services/fileValidation.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
 
@@ -174,7 +174,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
                 method: "POST",
                 body: JSON.stringify({
                     object_id: object_id,
-                    encrypted_filename: file.name,
+                    encrypted_filename: await encryptFilename(file.name, dek, baseIv),
                     encrypted_dek: uint8ArrayToBase64(new Uint8Array(encryptedDEK)),
                     iv: uint8ArrayToBase64(baseIv),
                     org_id: orgId || null

@@ -147,6 +147,7 @@ export default function OrgFilesPage() {
         error={error}
         onDelete={handleDelete}
         orgName={orgName}
+        orgId={id}
         showActionButtons={true}
         onUploadFile={uploadFile}
         onDownloadFile={handleDownload}

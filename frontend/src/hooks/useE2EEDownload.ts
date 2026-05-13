@@ -3,6 +3,7 @@ import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
     getPrivateKeyFromSession,
+    decryptFilename,
 } from '../services/crypto.service';
 import { fetchWithRefresh } from '../services/api.service';
 
@@ -48,7 +49,15 @@ export function useE2EEDownload() {
             );
 
             const baseIv = base64ToUint8Array(metadata.iv);
-            const filename = metadata.encrypted_filename;
+
+            const encryptedFilenameBase64 = metadata.encrypted_filename;
+            let filename: string;
+            try {
+                filename = await decryptFilename(encryptedFilenameBase64, dek, baseIv);
+            } catch (err) {
+                console.error("Failed to decrypt filename:", err);
+                filename = "downloaded_file";
+            }
 
             setDownloadStatus("3/4 : Initialisation du flux de téléchargement...");
             const supportsFileSystemAccess = 'showSaveFilePicker' in window;

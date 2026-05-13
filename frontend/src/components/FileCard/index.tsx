@@ -2,6 +2,8 @@ import { MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
+import { useDecryptFilename } from "../../hooks/useDecryptFilename";
+import { useDecryptFilenameOrg } from "../../hooks/useDecryptFilenameOrg";
 
 interface FileCardProps {
   id: string;
@@ -10,12 +12,18 @@ interface FileCardProps {
   onDelete?: (id: string) => void;
   onAddToFolder?: (fileName: string, folderName: string) => void; // maybe need to change to id
   onDownload?: (id: string) => void;
+  orgId?: string;
 }
 
-export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onDownload }: FileCardProps) {
+export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onDownload, orgId }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { decryptedName: personalName, loading: personalLoading } = useDecryptFilename(id);
+  const { decryptedName: orgName, loading: orgLoading } = useDecryptFilenameOrg(id, orgId || "");
+
+  const loading = orgId ? orgLoading : personalLoading;
+  const displayName = orgId ? (loading ? "..." : orgName || name) : (loading ? "..." : personalName || name);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -40,7 +48,7 @@ export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, o
   const handleAddToFolder = () => {
     const folderName = prompt("Enter existing folder name:");
     if (folderName) {
-      onAddToFolder?.(name, folderName);
+      onAddToFolder?.(displayName, folderName);
       setShowMenu(false);
     }
   };
@@ -66,7 +74,7 @@ export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, o
         <div className={styles.fileCard__background} />
         <div className={styles.fileCard__blur} />
         <div className={styles.fileCard__name}>
-          {name}
+          {displayName}
         </div>
         <div className={styles.fileCard__menu} ref={menuRef}>
           <button
@@ -102,7 +110,7 @@ export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, o
       </div>
       <ConfirmationModal
         isOpen={showDeleteConfirm}
-        fileName={name}
+        fileName={displayName}
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteConfirm(false)}
         isTrash={isTrash}
