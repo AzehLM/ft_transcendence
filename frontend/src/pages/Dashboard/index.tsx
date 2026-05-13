@@ -49,10 +49,11 @@ export default function DashboardPage() {
          try {
              setError(null);
              await FilesService.deleteFile(id);
-             setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
+             await loadFiles();
          } catch (err) {
+             const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete file:", err);
-             setError("Failed to delete file.");
+             setError(`Failed to delete file: ${errorMessage}`);
          }
     };
 

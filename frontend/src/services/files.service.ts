@@ -48,7 +48,11 @@ async function authenticatedRequest<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const response = await fetchWithRefresh(`${API_BASE_URL}${endpoint}`, options);
+    const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        ...options.headers,
+    };
+    const response = await fetchWithRefresh(`${API_BASE_URL}${endpoint}`, { ...options, headers });
 
     if (!response.ok) {
         let errorMsg = `API Error: ${response.status}`;

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { fetchWithRefresh } from '../services/api.service';
 import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
-    getPrivateKeyFromSession,
 } from '../services/crypto.service';
+import { decryptOrgPrivateKey } from '../services/organizations.service';
+import { fetchWithRefresh } from '../services/api.service';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
 const CIPHER_CHUNK_SIZE = CHUNK_SIZE + 16;
@@ -16,15 +16,40 @@ interface DownloadMetadata {
     encrypted_filename: string;
 }
 
-export function useE2EEOrgDownload() {
+export function useE2EEDownloadOrg() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const downloadAndDecrypt = async (fileId: string) => {
+    const downloadAndDecryptOrg = async (fileId: string, orgId: string) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setDownloadStatus("Session expirée. Veuillez vous reconnecter.");
+            return;
+        }
+
         setIsDownloading(true);
         setDownloadStatus(null);
         try {
-            setDownloadStatus("1/4 : Récupération des métadonnées sécurisées...");
+            setDownloadStatus("1/5 : Récupération des clés d'organisation...");
+            const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`);
+            if (!keysRes.ok) {
+                throw new Error("Impossible de récupérer les clés d'organisation.");
+            }
+            const { enc_org_priv_key, enc_aes_key, iv: orgIv } = await keysRes.json();
+
+            setDownloadStatus("2/5 : Déchiffrement de la clé privée d'organisation...");
+            const orgPrivKeyB64 = await decryptOrgPrivateKey(enc_org_priv_key, enc_aes_key, orgIv);
+
+            const orgPrivKeyBuffer = base64ToUint8Array(orgPrivKeyB64);
+            const orgPrivateKey = await window.crypto.subtle.importKey(
+                "pkcs8",
+                orgPrivKeyBuffer.buffer as ArrayBuffer,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                false,
+                ["decrypt"]
+            );
+
+            setDownloadStatus("3/5 : Récupération des métadonnées du fichier...");
             const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
 
             if (!metaRes.ok) {
@@ -32,13 +57,10 @@ export function useE2EEOrgDownload() {
             }
             const metadata: DownloadMetadata = await metaRes.json();
 
-            setDownloadStatus("2/4 : Déchiffrement de la clé de session (Zero-Knowledge)...");
-
-            const tempPrivateKey = await getPrivateKeyFromSession();
-            if (!tempPrivateKey) throw new Error("Clé privée introuvable. Assurez-vous d'être connecté.");
-
+            // Decrypt DEK with organization private key
+            setDownloadStatus("4/5 : Déchiffrement de la clé de session (Zero-Knowledge)...");
             const encryptedDekBytes = base64ToUint8Array(metadata.encrypted_dek);
-            const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, tempPrivateKey);
+            const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, orgPrivateKey);
             const cryptoKey = await window.crypto.subtle.importKey(
                 "raw",
                 dek as unknown as BufferSource,
@@ -50,7 +72,7 @@ export function useE2EEOrgDownload() {
             const baseIv = base64ToUint8Array(metadata.iv);
             const filename = metadata.encrypted_filename;
 
-            setDownloadStatus("3/4 : Initialisation du flux de téléchargement...");
+            setDownloadStatus("5/5 : Initialisation du flux de téléchargement...");
             const supportsFileSystemAccess = 'showSaveFilePicker' in window;
             let writable: FileSystemWritableFileStream | null = null;
             const firefoxFallbackChunks: BlobPart[] = [];
@@ -65,7 +87,7 @@ export function useE2EEOrgDownload() {
                 }
             }
 
-            setDownloadStatus("4/4 : Déchiffrement des données à la volée...");
+            setDownloadStatus("Déchiffrement et téléchargement des données à la volée...");
             const response = await fetch(metadata.presigned_url);
             if (!response.ok || !response.body) throw new Error("Erreur d'accès au stockage distant (MinIO).");
 
@@ -129,11 +151,11 @@ export function useE2EEOrgDownload() {
             setDownloadStatus(`Succès ! "${filename}" a été déchiffré et sauvegardé.`);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
-            setDownloadStatus(`❌ ${errorMessage}`);
+            setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
     };
 
-    return { downloadAndDecrypt, downloadStatus, isDownloading };
+    return { downloadAndDecryptOrg, downloadStatus, isDownloading };
 }
