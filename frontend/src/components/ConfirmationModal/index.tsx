@@ -19,6 +19,7 @@ interface ConfirmationModalProps {
     isRemoveMember?: boolean;
     isDeleteOrga?: boolean;
     isPasswordChanged?: boolean;
+    isKeyMissing?: boolean;
 }
 
 export function ConfirmationModal({
@@ -40,6 +41,7 @@ export function ConfirmationModal({
     isRemoveMember = false, 
     isDeleteOrga = false,
     isPasswordChanged = false,
+    isKeyMissing = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -64,6 +66,8 @@ export function ConfirmationModal({
     title = "Delete File?";
     } else if (isPasswordChanged) {
     title = "Password Updated";
+    } else if (isKeyMissing) {
+    title = "Enter your password";
     } else {
     title = "Move to Trash?";
     }
@@ -82,6 +86,12 @@ export function ConfirmationModal({
     ? `Are you sure you want to permanently delete the organization, "${fileName}"? This action cannot be undone.`
     : isPasswordChanged
     ? "Your password has been updated. Please log in again with your new password."
+    : isKeyMissing
+    ? "To complete this action, enter your password."
+    : isAddMember
+    ? "Enter the email of the new member."
+    : isCreateOrga
+    ? "Enter the name of the new organization"
     : undefined
 
     const buttonText = isAccount
@@ -102,6 +112,8 @@ export function ConfirmationModal({
     ? "Delete Organization"
     : isPasswordChanged
     ? "Log out"
+    : isKeyMissing
+    ? "Confirm"
     : "Move to Trash";
     
     return (
@@ -115,10 +127,10 @@ export function ConfirmationModal({
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember) && (
+                {(isCreateOrga || isAddMember || isKeyMissing) && (
                 <input
-                    type={isAddMember ? "email" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : "User email"}
+                    type={isAddMember ? "email" : isKeyMissing ? "password" : "text"}
+                    placeholder={isCreateOrga ? "Organization name" : isKeyMissing ? "Password" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}
