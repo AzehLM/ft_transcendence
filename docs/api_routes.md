@@ -335,8 +335,12 @@ Reponse (200) :
   {
     "id": "<uuid>",
     "name": "42_Projects",
+    "public_key": "",
+    "used_space" : "",
+    "max_space" : "",
     "role": "admin",
-    "enc_org_priv_key": "<base64>"
+    "created_at": "",
+    "description": "description"
   }
 ]
 ```
@@ -354,6 +358,7 @@ Response `200 OK` :
   "used_space" : "",
   "max_space" : "",
   "role": "member/admin",
+  "description": "description"
 }
 ```
 Response `404` : organization not found
@@ -451,6 +456,8 @@ Reponse (200) :
 }
 ```
 
+---
+
 ### `GET /orgs/{org_id}/public-key`
 Récupère la clé publique de l'organisation.
 
@@ -521,6 +528,25 @@ Reponse : `200 OK`
 ```
 
 ---
+
+### `PATCH /orgs/{org_id}/members/me/description`
+
+Ajoute une description propre au membre pour l'organisation.
+
+Body :
+```json
+{ "description": "description" }
+```
+
+Reponse : `200 OK`
+```json
+{
+  "message":  "organization description updated"
+}
+```
+
+---
+
 
 ### `DELETE /orgs/{org_id}/members/me`
 
