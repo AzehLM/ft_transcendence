@@ -1,0 +1,182 @@
+/* ============================================================================
+   VERIFY TOTP COMPONENT
+   ============================================================================ */
+
+.totp_verify__overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-dark-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    z-index: 50;
+}
+
+.totp_verify__modal {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 400px;
+    width: 100%;
+    padding: var(--spacing-3xl);
+    box-sizing: border-box;
+}
+
+.totp_verify__title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin: 0 0 var(--spacing-3xl) 0;
+    text-align: center;
+}
+
+.totp_verify__method_buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-3xl);
+}
+
+.totp_verify__method_button {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: var(--text-base);
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.totp_verify__method_button--active {
+    background-color: var(--brand-primary);
+    color: var(--color-white);
+}
+
+.totp_verify__method_button--inactive {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_verify__method_button--inactive:hover {
+    opacity: 0.8;
+}
+
+.totp_verify__input_group {
+    margin-bottom: var(--spacing-3xl);
+}
+
+.totp_verify__label {
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--brand-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.totp_verify__input {
+    width: 100%;
+    border: 1px solid var(--brand-dark);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-base);
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--brand-dark);
+    background-color: var(--color-white);
+    box-sizing: border-box;
+}
+
+.totp_verify__input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.totp_verify__input:disabled {
+    opacity: 0.5;
+    background-color: var(--brand-light);
+    cursor: not-allowed;
+}
+
+.totp_verify__input_code {
+    text-align: center;
+    font-size: 32px;
+    letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.totp_verify__hint {
+    margin-top: var(--spacing-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.totp_verify__error_message {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: var(--radius-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+}
+
+.totp_verify__warning_message {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fef3c7;
+    color: #92400e;
+    border-radius: var(--radius-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+}
+
+.totp_verify__actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.totp_verify__action_button {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.totp_verify__action_button--primary {
+    background-color: var(--brand-primary);
+    color: var(--color-white);
+}
+
+.totp_verify__action_button--primary:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+.totp_verify__action_button--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.totp_verify__action_button--cancel {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_verify__action_button--cancel:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.totp_verify__action_button--cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

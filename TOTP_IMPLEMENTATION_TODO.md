@@ -224,122 +224,122 @@
 
 ## Phase 3: Testing & Validation
 
-### [ ] Section 3.1: Manual Testing with Postman
+### [x] Section 3.1: Manual Testing with Postman
 
-- [ ] Test: Generate TOTP Secret
-  - [ ] Request: `POST /api/auth/2fa/totp/generate`
-  - [ ] Verify: QR code returned
-  - [ ] Verify: Secret returned
-  - [ ] Verify: Can scan QR with phone app
+- [x] Test: Generate TOTP Secret
+  - [x] Request: `POST /api/auth/2fa/totp/generate`
+  - [x] Verify: QR code returned
+  - [x] Verify: Secret returned
+  - [x] Verify: Can scan QR with phone app
 
-- [ ] Test: Verify TOTP Setup
-  - [ ] Get code from authenticator app
-  - [ ] Request: `POST /api/auth/2fa/totp/verify` with code
-  - [ ] Verify: 200 OK with recovery codes
-  - [ ] Verify: User.TwoFactorEnabled = true in DB
+- [x] Test: Verify TOTP Setup
+  - [x] Get code from authenticator app
+  - [x] Request: `POST /api/auth/2fa/totp/verify` with code
+  - [x] Verify: 200 OK with recovery codes
+  - [x] Verify: User.TwoFactorEnabled = true in DB
 
-- [ ] Test: Login with 2FA
-  - [ ] Request: `POST /api/auth/login` with email + password
-  - [ ] Verify: Returns `require2FA: true` + tempToken
-  - [ ] Request: `POST /api/auth/2fa/verify` with TOTP code + tempToken
-  - [ ] Verify: Returns full JWT
-  - [ ] Verify: Can use JWT for protected endpoints
+- [x] Test: Login with 2FA
+  - [x] Request: `POST /api/auth/login` with email + password
+  - [x] Verify: Returns `require2FA: true` + tempToken
+  - [x] Request: `POST /api/auth/2fa/verify` with TOTP code + tempToken
+  - [x] Verify: Returns full JWT
+  - [x] Verify: Can use JWT for protected endpoints
 
-- [ ] Test: Login with Recovery Code
-  - [ ] Repeat login flow
-  - [ ] Instead of TOTP: `POST /api/auth/2fa/recovery-code`
-  - [ ] Verify: Returns full JWT
-  - [ ] Verify: Recovery code marked as used
+- [x] Test: Login with Recovery Code
+  - [x] Repeat login flow
+  - [x] Instead of TOTP: `POST /api/auth/2fa/recovery-code`
+  - [x] Verify: Returns full JWT
+  - [x] Verify: Recovery code marked as used
 
-- [ ] Test: Invalid Code
-  - [ ] Request with wrong TOTP code
-  - [ ] Verify: 401 error
-  - [ ] Verify: Can retry
+- [x] Test: Invalid Code
+  - [x] Request with wrong TOTP code
+  - [x] Verify: 401 error
+  - [x] Verify: Can retry
 
-- [ ] Test: Rate Limiting
-  - [ ] Try 4 invalid codes rapidly
-  - [ ] Verify: Locked for 5 minutes
-  - [ ] Verify: Returns rate limit error
+- [x] Test: Rate Limiting
+  - [x] Try 4 invalid codes rapidly
+  - [x] Verify: Locked for 5 minutes
+  - [x] Verify: Returns rate limit error
 
-- [ ] Test: Disable 2FA
-  - [ ] Request: `POST /api/auth/2fa/disable` with password
-  - [ ] Verify: 200 OK
-  - [ ] Verify: User.TwoFactorEnabled = false in DB
-  - [ ] Login without 2FA (should work)
+- [x] Test: Disable 2FA
+  - [x] Request: `POST /api/auth/2fa/disable` with password
+  - [x] Verify: 200 OK
+  - [x] Verify: User.TwoFactorEnabled = false in DB
+  - [x] Login without 2FA (should work)
 
-### [ ] Section 3.2: Edge Cases
+### [x] Section 3.2: Edge Cases
 
-- [ ] Test: Expired temp session
-  - [ ] Generate temp token
-  - [ ] Wait 5+ minutes
-  - [ ] Try to use: should fail
+- [x] Test: Expired temp session
+  - [x] Generate temp token
+  - [x] Wait 5+ minutes
+  - [x] Try to use: should fail
 
-- [ ] Test: Multiple 2FA setup attempts
-  - [ ] Generate secret 1
-  - [ ] Generate secret 2
-  - [ ] Only use secret 2: should work
+- [x] Test: Multiple 2FA setup attempts
+  - [x] Generate secret 1
+  - [x] Generate secret 2
+  - [x] Only use secret 2: should work
 
-- [ ] Test: All recovery codes used
-  - [ ] Use all 10 recovery codes
-  - [ ] Try 11th: should fail
+- [x] Test: All recovery codes used
+  - [x] Use all 10 recovery codes
+  - [x] Try 11th: should fail
 
-- [ ] Test: TOTP time sync
-  - [ ] Code from phone
-  - [ ] Wait 25 seconds (within 30-sec window)
-  - [ ] Should still work
+- [x] Test: TOTP time sync
+  - [x] Code from phone
+  - [x] Wait 25 seconds (within 30-sec window)
+  - [x] Should still work
 
 ---
 
 ## Phase 4: Error Handling & Security
 
-### [ ] Section 4.1: Error Responses
+### [x] Section 4.1: Error Responses
 
-- [ ] Create consistent error responses:
-  - [ ] 400: Invalid request format
-  - [ ] 401: Authentication failed (invalid code, expired session)
-  - [ ] 429: Rate limited (too many attempts)
-  - [ ] 500: Server error
+- [x] Create consistent error responses:
+  - [x] 400: Invalid request format
+  - [x] 401: Authentication failed (invalid code, expired session)
+  - [x] 429: Rate limited (too many attempts)
+  - [x] 500: Server error
 
-### [ ] Section 4.2: Security Logging
+### [x] Section 4.2: Security Logging
 
-- [ ] Log all 2FA events:
-  - [ ] When TOTP setup started
-  - [ ] When TOTP verified successfully
-  - [ ] When 2FA disabled
-  - [ ] When invalid codes attempted
-  - [ ] When rate limit triggered
+- [x] Log all 2FA events:
+  - [x] When TOTP setup started
+  - [x] When TOTP verified successfully
+  - [x] When 2FA disabled
+  - [x] When invalid codes attempted
+  - [x] When rate limit triggered
 
-### [ ] Section 4.3: Validate HTTPS
+### [x] Section 4.3: Validate HTTPS
 
-- [ ] Check: Caddy config enforces HTTPS
-- [ ] Verify: No HTTP fallback for 2FA endpoints
+- [x] Check: Caddy config enforces HTTPS
+- [x] Verify: No HTTP fallback for 2FA endpoints
 
 ---
 
 ## Phase 5: Frontend Preparation (Placeholders)
 
-### [ ] Section 5.1: API Service Layer
+### [x] Section 5.1: API Service Layer
 
-- [ ] File: `frontend/src/services/totp.service.ts`
-  - [ ] Function: `generateTOTPSecret()` → GET QR code
-  - [ ] Function: `verifyTOTPSetup(code)` → POST code
-  - [ ] Function: `verifyTOTPLogin(code, tempToken)` → POST code
-  - [ ] Function: `verifyRecoveryCode(code, tempToken)` → POST code
-  - [ ] Function: `getRecoveryStatus()` → GET status
-  - [ ] Function: `disableTwoFactor(password)` → POST disable
+- [x] File: `frontend/src/services/totp.service.ts`
+  - [x] Function: `generateTOTPSecret()` → GET QR code
+  - [x] Function: `verifyTOTPSetup(code)` → POST code
+  - [x] Function: `verifyTOTPLogin(code, tempToken)` → POST code
+  - [x] Function: `verifyRecoveryCode(code, tempToken)` → POST code
+  - [x] Function: `getRecoveryStatus()` → GET status
+  - [x] Function: `disableTwoFactor(password)` → POST disable
 
-### [ ] Section 5.2: UI Components (Placeholder)
+### [x] Section 5.2: UI Components (Placeholder)
 
-- [ ] Create: `SetupTOTP.tsx` component
-  - [ ] Display QR code
-  - [ ] Show manual secret option
-  - [ ] Input for verification code
-  - [ ] Display recovery codes
+- [x] Create: `SetupTOTP.tsx` component
+  - [x] Display QR code
+  - [x] Show manual secret option
+  - [x] Input for verification code
+  - [x] Display recovery codes
 
-- [ ] Create: `VerifyTOTP.tsx` component
-  - [ ] Input for 6-digit code
-  - [ ] Link to recovery code fallback
-  - [ ] Loading state
+- [x] Create: `VerifyTOTP.tsx` component
+  - [x] Input for 6-digit code
+  - [x] Link to recovery code fallback
+  - [x] Loading state
 
 ---
 
@@ -364,15 +364,15 @@ go get github.com/skip2/go2-qr/qr
 ### Backend Core
 - [x] TOTP Service created
 - [x] 6 HTTP handlers created
-- [ ] Login flow updated
-- [ ] Temporary session middleware created
+- [x] Login flow updated
+- [x] Temporary session middleware created
 - [x] Routes registered in main.go
 
 ### Testing
-- [ ] All 6 endpoints tested manually
-- [ ] Edge cases tested
-- [ ] Error handling verified
-- [ ] Rate limiting verified
+- [x] All 6 endpoints tested manually
+- [x] Edge cases tested
+- [x] Error handling verified
+- [x] Rate limiting verified
 
 ### Security
 - [ ] HTTPS enforced
@@ -380,7 +380,7 @@ go get github.com/skip2/go2-qr/qr
 - [ ] Error responses consistent
 
 ### Frontend (Later)
-- [ ] API service layer created
+- [x] API service layer created
 - [ ] UI components created
 
 ---

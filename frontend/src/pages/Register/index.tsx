@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { TwoFAPrompt } from "../../components/TwoFAPrompt";
+import { SetupTOTP } from "../../components/SetupTOTP/SetupTOTP";
 
 
 export default function RegisterPage() {
@@ -14,6 +16,8 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showTwoFAPrompt, setShowTwoFAPrompt] = useState(false);
+    const [showSetupTOTP, setShowSetupTOTP] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +69,7 @@ export default function RegisterPage() {
             }
 
             console.log("✅ Enregistrement réussi!");
-            navigate("/login");
+            setShowTwoFAPrompt(true);
 
         } catch (err: any) {
             console.error("❌ Erreur:", err);
@@ -191,6 +195,32 @@ export default function RegisterPage() {
                     </p>
                 </div>
             </div>
+
+            {/* 2FA Prompt Modal */}
+            {showTwoFAPrompt && !showSetupTOTP && (
+                <TwoFAPrompt
+                    onEnable={() => {
+                        setShowTwoFAPrompt(false);
+                        setShowSetupTOTP(true);
+                    }}
+                    onSkip={() => {
+                        setShowTwoFAPrompt(false);
+                        navigate("/login");
+                    }}
+                />
+            )}
+
+            {/* Setup TOTP Modal */}
+            {showSetupTOTP && (
+                <SetupTOTP
+                    onSuccess={() => {
+                        navigate("/login");
+                    }}
+                    onCancel={() => {
+                        navigate("/login");
+                    }}
+                />
+            )}
         </div>
     );
 }
