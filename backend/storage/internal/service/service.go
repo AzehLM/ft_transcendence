@@ -576,8 +576,8 @@ func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, fold
 
 
 func (s *storageService) presignedBaseURL(hostname string) string {
-	if hostname == "ostrom.cloud" {
-		return "https://ostrom.cloud"
+	if hostname == s.env.DomainName {
+		return "https://" + s.env.DomainName
 	}
 	return "https://" + hostname + ":" + s.env.AppPort
 }
