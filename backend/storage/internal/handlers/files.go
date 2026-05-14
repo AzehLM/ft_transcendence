@@ -41,7 +41,8 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 		})
 	}
 
-	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID)
+    hostname := c.Hostname()
+	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -121,7 +122,8 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 		})
 	}
 
-	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(userID, fileID)
+    hostname := c.Hostname()
+	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(userID, fileID, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
