@@ -92,9 +92,9 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
         const startTime = Date.now();
 
         try {
-            const magicNumberValidation = await FileValidationService.validateMagicNumber(file);
-            if (!magicNumberValidation.valid) {
-                throw new Error(magicNumberValidation.error);
+            const validation = await FileValidationService.validateFile(file);
+            if (!validation.valid) {
+                throw new Error(validation.error);
             }
 
             let publicKey: CryptoKey;

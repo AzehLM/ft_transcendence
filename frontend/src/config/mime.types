@@ -1,30 +1,35 @@
-# Format: mime/type extension1 extension2 ...
+# Format: mime/type [extensions...] # Label
 
-image/jpeg jpg jpeg
-image/png png
-image/gif gif
-image/webp webp
-image/bmp bmp
-image/svg+xml svg
+# Images
+image/jpeg jpg jpeg # Image JPEG
+image/png png # Image PNG
+image/gif gif # Image GIF
+image/webp webp # Image WebP
+image/bmp bmp # Image BMP
+image/svg+xml svg # Image SVG
 
-video/mp4 mp4
-video/webm webm
-video/mpeg mpeg mpg
-video/quicktime mov
-video/x-msvideo avi
+# Videos
+video/mp4 mp4 # Vidéo MP4
+video/webm webm # Vidéo WebM
+video/mpeg mpeg mpg # Vidéo MPEG
+video/quicktime mov # Vidéo QuickTime
+video/x-msvideo avi # Vidéo AVI
 
-application/pdf pdf
-text/plain txt
-text/csv csv
-application/json json
+# Documents
+application/pdf pdf # Document PDF
+text/plain txt # Fichier texte
+text/csv csv # Fichier CSV
+application/json json # Fichier JSON
 
-application/msword doc
-application/vnd.openxmlformats-officedocument.wordprocessingml.document docx
-application/vnd.ms-excel xls
-application/vnd.openxmlformats-officedocument.spreadsheetml.sheet xlsx
-application/vnd.ms-powerpoint ppt
-application/vnd.openxmlformats-officedocument.presentationml.presentation pptx
+# MS Office
+application/msword doc # Document Word
+application/vnd.openxmlformats-officedocument.wordprocessingml.document docx # Document Word
+application/vnd.ms-excel xls # Classeur Excel
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet xlsx # Classeur Excel
+application/vnd.ms-powerpoint ppt # Présentation PowerPoint
+application/vnd.openxmlformats-officedocument.presentationml.presentation pptx # Présentation PowerPoint
 
-application/zip zip
-application/x-rar-compressed rar
-application/x-7z-compressed 7z
+# Archives
+application/zip zip # Archive ZIP
+application/x-rar-compressed rar # Archive RAR
+application/x-7z-compressed 7z # Archive 7z
