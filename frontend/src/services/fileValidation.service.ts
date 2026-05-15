@@ -1,40 +1,5 @@
-// Magic numbers (file signatures)
-const MAGIC_NUMBERS: { [key: string]: Uint8Array | null } = {
-    // Images
-    'image/jpeg': new Uint8Array([0xFF, 0xD8, 0xFF]),
-    'image/png': new Uint8Array([0x89, 0x50, 0x4E, 0x47]),
-    'image/gif': new Uint8Array([0x47, 0x49, 0x46]),
-    'image/webp': new Uint8Array([0x52, 0x49, 0x46, 0x46]),
-    'image/bmp': new Uint8Array([0x42, 0x4D]),
-
-    // Videos
-    'video/mp4': new Uint8Array([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]),
-    'video/webm': new Uint8Array([0x1A, 0x45, 0xDF, 0xA3]),
-    'video/mpeg': new Uint8Array([0x00, 0x00, 0x01, 0xB3]),
-    'video/quicktime': new Uint8Array([0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70]),
-    'video/x-msvideo': new Uint8Array([0x52, 0x49, 0x46, 0x46]),
-
-    // Archives
-    'application/zip': new Uint8Array([0x50, 0x4B, 0x03, 0x04]),
-    'application/x-rar-compressed': new Uint8Array([0x52, 0x61, 0x72, 0x21]),
-    'application/x-7z-compressed': new Uint8Array([0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C]),
-
-    // Documents
-    'application/pdf': new Uint8Array([0x25, 0x50, 0x44, 0x46]),
-    'text/plain': null, // No specific magic number
-    'text/csv': null, // No specific magic number
-
-    // Microsoft Office
-    'application/msword': new Uint8Array([0xD0, 0xCF, 0x11, 0xE0]),
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': new Uint8Array([0x50, 0x4B, 0x03, 0x04]),
-    'application/vnd.ms-excel': new Uint8Array([0xD0, 0xCF, 0x11, 0xE0]),
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': new Uint8Array([0x50, 0x4B, 0x03, 0x04]),
-    'application/vnd.ms-powerpoint': new Uint8Array([0xD0, 0xCF, 0x11, 0xE0]),
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': new Uint8Array([0x50, 0x4B, 0x03, 0x04]),
-
-    // JSON
-    'application/json': null, // No specific magic number
-};
+import { fileTypeFromBlob } from 'file-type';
+import { MimeTypesLoader } from '../config/mimeTypesLoader';
 
 export interface FileValidationResult {
     valid: boolean;
@@ -43,6 +8,7 @@ export interface FileValidationResult {
 
 export class FileValidationService {
     static async validateMagicNumber(file: File): Promise<FileValidationResult> {
+        await MimeTypesLoader.load();
         const mimeType = file.type;
 
         if (!mimeType) {
@@ -52,32 +18,58 @@ export class FileValidationService {
             };
         }
 
-        const magicNumber = MAGIC_NUMBERS[mimeType];
-
-        if (magicNumber === undefined) {
-            return {
+        const allowedMimes = MimeTypesLoader.getAllowedMimes();
+        if (!allowedMimes.includes(mimeType)) {
+             return {
                 valid: false,
                 error: `Type de fichier non autorisé: ${mimeType}`
             };
         }
 
-        if (magicNumber === null) {
-            return { valid: true };
-        }
-
-        const buffer = await file.slice(0, magicNumber.length).arrayBuffer();
-        const fileSignature = new Uint8Array(buffer);
-
-        const isValid = fileSignature.every((byte, index) => byte === magicNumber[index]);
-
-        if (!isValid) {
+        if (!MimeTypesLoader.isValid(mimeType, file.name)) {
             return {
                 valid: false,
-                error: `Signature du fichier invalide. Le fichier peut être corrompu ou du mauvais type.`
+                error: `L'extension du fichier ne correspond pas à son type MIME déclaré (${mimeType}).`
             };
         }
 
-        return { valid: true };
+        if (['text/plain', 'text/csv', 'application/json', 'image/svg+xml'].includes(mimeType)) {
+            return { valid: true };
+        }
+
+        try {
+            const typeInfo = await fileTypeFromBlob(file);
+
+            if (!typeInfo) {
+                return {
+                    valid: false,
+                    error: `Signature du fichier non reconnue ou format non supporté.`
+                };
+            }
+
+            if (typeInfo.mime !== mimeType && !this.isCompatibleMime(mimeType, typeInfo.mime)) {
+                 return {
+                    valid: false,
+                    error: `La signature réelle du fichier (${typeInfo.mime}) ne correspond pas au type déclaré (${mimeType}).`
+                };
+            }
+
+            return { valid: true };
+        } catch (e) {
+            return {
+                valid: false,
+                error: `Erreur lors de la lecture de la signature du fichier.`
+            };
+        }
+    }
+
+    private static isCompatibleMime(expected: string, actual: string): boolean {
+        if (expected.includes('vnd.openxmlformats-officedocument') && actual === 'application/zip') return true;
+        if (expected === 'application/msword' && actual === 'application/x-cfb') return true;
+        if (expected.includes('vnd.ms-excel') && actual === 'application/x-cfb') return true;
+        if (expected.includes('vnd.ms-powerpoint') && actual === 'application/x-cfb') return true;
+        if (expected === 'video/quicktime' && actual === 'video/mp4') return true;
+        return false;
     }
 
     static formatFileSize(bytes: number): string {
