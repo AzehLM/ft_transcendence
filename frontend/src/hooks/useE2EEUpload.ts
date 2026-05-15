@@ -49,20 +49,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
         }));
     };
 
-    const validateFile = (file: File): string | null => {
-        if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
-            const max = FileValidationService.formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
-            const current = FileValidationService.formatFileSize(file.size);
-            return UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current);
-        }
-
-        if (!UPLOAD_CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
-            return UPLOAD_MESSAGES.ERROR_VALIDATION_TYPE();
-        }
-
-        return null;
-    };
-
     const uploadFile = async (file: File) => {
         const id = Math.random().toString(36).substring(2, 9);
 
@@ -72,18 +58,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
             type: FileValidationService.getFileTypeLabel(file.type) || 'Fichier'
         };
 
-        const error = validateFile(file);
-        if (error) {
-            setUploads(prev => ({
-                ...prev,
-                [id]: { id, file, fileInfo, status: `Erreur: ${error}`, progress: null, isUploading: false, error }
-            }));
-            setTimeout(() => {
-                setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
-            }, 5000);
-            return;
-        }
-
         setUploads(prev => ({
             ...prev,
             [id]: { id, file, fileInfo, status: UPLOAD_MESSAGES.INITIALIZING(file.name), progress: null, isUploading: true, error: null }
@@ -92,6 +66,13 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
         const startTime = Date.now();
 
         try {
+            // Validation de taille et de contenu (MIME + Extension + Magic Numbers)
+            if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
+                const max = FileValidationService.formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
+                const current = FileValidationService.formatFileSize(file.size);
+                throw new Error(UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current));
+            }
+
             const validation = await FileValidationService.validateFile(file);
             if (!validation.valid) {
                 throw new Error(validation.error);

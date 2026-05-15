@@ -1,75 +1,104 @@
 import { fileTypeFromBlob } from 'file-type';
-import { MimeTypesLoader } from '../config/mimeTypesLoader';
+
 
 export interface FileValidationResult {
     valid: boolean;
     error?: string;
 }
 
+
+interface MimeInfo {
+    mime: string;
+    extensions: string[];
+    label: string;
+}
+
+
+const ALLOWED_MIMES_CONFIG: MimeInfo[] = [
+    // Images
+    { mime: 'image/jpeg', extensions: ['jpg', 'jpeg'], label: 'Image JPEG' },
+    { mime: 'image/png', extensions: ['png'], label: 'Image PNG' },
+    { mime: 'image/gif', extensions: ['gif'], label: 'Image GIF' },
+    { mime: 'image/webp', extensions: ['webp'], label: 'Image WebP' },
+    { mime: 'image/bmp', extensions: ['bmp'], label: 'Image BMP' },
+    { mime: 'image/svg+xml', extensions: ['svg'], label: 'Image SVG' },
+
+    // Vidéos
+    { mime: 'video/mp4', extensions: ['mp4'], label: 'Vidéo MP4' },
+    { mime: 'video/webm', extensions: ['webm'], label: 'Vidéo WebM' },
+    { mime: 'video/mpeg', extensions: ['mpeg', 'mpg'], label: 'Vidéo MPEG' },
+    { mime: 'video/quicktime', extensions: ['mov'], label: 'Vidéo QuickTime' },
+    { mime: 'video/x-msvideo', extensions: ['avi'], label: 'Vidéo AVI' },
+
+    // Documents
+    { mime: 'application/pdf', extensions: ['pdf'], label: 'Document PDF' },
+    { mime: 'text/plain', extensions: ['txt'], label: 'Fichier texte' },
+    { mime: 'text/csv', extensions: ['csv'], label: 'Fichier CSV' },
+    { mime: 'application/json', extensions: ['json'], label: 'Fichier JSON' },
+
+    // MS Office
+    { mime: 'application/msword', extensions: ['doc'], label: 'Document Word' },
+    { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extensions: ['docx'], label: 'Document Word' },
+    { mime: 'application/vnd.ms-excel', extensions: ['xls'], label: 'Classeur Excel' },
+    { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extensions: ['xlsx'], label: 'Classeur Excel' },
+    { mime: 'application/vnd.ms-powerpoint', extensions: ['ppt'], label: 'Présentation PowerPoint' },
+    { mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extensions: ['pptx'], label: 'Présentation PowerPoint' },
+
+    // Archives
+    { mime: 'application/zip', extensions: ['zip'], label: 'Archive ZIP' },
+    { mime: 'application/x-rar-compressed', extensions: ['rar'], label: 'Archive RAR' },
+    { mime: 'application/x-7z-compressed', extensions: ['7z'], label: 'Archive 7z' },
+];
+
+
 export class FileValidationService {
-    static async validateMagicNumber(file: File): Promise<FileValidationResult> {
-        await MimeTypesLoader.load();
-        const mimeType = file.type;
+    private static mimeInfoMap = new Map<string, MimeInfo>(
+        ALLOWED_MIMES_CONFIG.map(info => [info.mime, info])
+    );
 
-        if (!mimeType) {
+
+    static async validateFile(file: File): Promise<FileValidationResult> {
+        const declaredMime = file.type;
+        const filename = file.name.toLowerCase();
+        const extension = filename.split('.').pop() || '';
+
+        const allowedInfo = this.mimeInfoMap.get(declaredMime);
+        if (!allowedInfo) {
             return {
                 valid: false,
-                error: 'Type MIME du fichier non détecté. Impossible de valider le fichier.'
+                error: `Type de fichier non autorisé : ${declaredMime || 'inconnu'}`
             };
         }
 
-        const allowedMimes = MimeTypesLoader.getAllowedMimes();
-        if (!allowedMimes.includes(mimeType)) {
-             return {
-                valid: false,
-                error: `Type de fichier non autorisé: ${mimeType}`
-            };
-        }
-
-        if (!MimeTypesLoader.isValid(mimeType, file.name)) {
+        if (!allowedInfo.extensions.includes(extension)) {
             return {
                 valid: false,
-                error: `L'extension du fichier ne correspond pas à son type MIME déclaré (${mimeType}).`
+                error: `L'extension .${extension} ne correspond pas au type de fichier déclaré (${declaredMime}).`
             };
         }
 
-        if (['text/plain', 'text/csv', 'application/json', 'image/svg+xml'].includes(mimeType)) {
-            return { valid: true };
-        }
+        const skipMagicNumbers = ['text/plain', 'text/csv', 'application/json', 'image/svg+xml'];
+        if (!skipMagicNumbers.includes(declaredMime)) {
+            try {
+                const realType = await fileTypeFromBlob(file);
 
-        try {
-            const typeInfo = await fileTypeFromBlob(file);
+                if (!realType) {
 
-            if (!typeInfo) {
-                return {
-                    valid: false,
-                    error: `Signature du fichier non reconnue ou format non supporté.`
-                };
+                    return { valid: true };
+                }
+
+                if (realType.mime !== declaredMime) {
+                    return {
+                        valid: false,
+                        error: `Sécurité : Le contenu réel du fichier (${realType.mime}) ne correspond pas à ce qui est annoncé (${declaredMime}).`
+                    };
+                }
+            } catch (err) {
+                return { valid: false, error: "Impossible d'analyser la signature technique du fichier." };
             }
-
-            if (typeInfo.mime !== mimeType && !this.isCompatibleMime(mimeType, typeInfo.mime)) {
-                 return {
-                    valid: false,
-                    error: `La signature réelle du fichier (${typeInfo.mime}) ne correspond pas au type déclaré (${mimeType}).`
-                };
-            }
-
-            return { valid: true };
-        } catch (e) {
-            return {
-                valid: false,
-                error: `Erreur lors de la lecture de la signature du fichier.`
-            };
         }
-    }
 
-    private static isCompatibleMime(expected: string, actual: string): boolean {
-        if (expected.includes('vnd.openxmlformats-officedocument') && actual === 'application/zip') return true;
-        if (expected === 'application/msword' && actual === 'application/x-cfb') return true;
-        if (expected.includes('vnd.ms-excel') && actual === 'application/x-cfb') return true;
-        if (expected.includes('vnd.ms-powerpoint') && actual === 'application/x-cfb') return true;
-        if (expected === 'video/quicktime' && actual === 'video/mp4') return true;
-        return false;
+        return { valid: true };
     }
 
     static formatFileSize(bytes: number): string {
@@ -77,36 +106,14 @@ export class FileValidationService {
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     static getFileTypeLabel(mimeType: string): string {
-        const typeMap: { [key: string]: string } = {
-            'image/jpeg': 'Image JPEG',
-            'image/png': 'Image PNG',
-            'image/gif': 'Image GIF',
-            'image/webp': 'Image WebP',
-            'image/bmp': 'Image BMP',
-            'video/mp4': 'Vidéo MP4',
-            'video/webm': 'Vidéo WebM',
-            'video/mpeg': 'Vidéo MPEG',
-            'video/quicktime': 'Vidéo QuickTime',
-            'video/x-msvideo': 'Vidéo AVI',
-            'application/pdf': 'Document PDF',
-            'text/plain': 'Fichier texte',
-            'text/csv': 'Fichier CSV',
-            'application/msword': 'Document Word',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Document Word',
-            'application/vnd.ms-excel': 'Classeur Excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Classeur Excel',
-            'application/vnd.ms-powerpoint': 'Présentation PowerPoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'Présentation PowerPoint',
-            'application/zip': 'Archive ZIP',
-            'application/x-rar-compressed': 'Archive RAR',
-            'application/x-7z-compressed': 'Archive 7z',
-            'application/json': 'Fichier JSON',
-        };
+        return this.mimeInfoMap.get(mimeType)?.label || mimeType;
+    }
 
-        return typeMap[mimeType] || mimeType;
+    static getAllowedMimeTypes(): string[] {
+        return Array.from(this.mimeInfoMap.keys());
     }
 }
