@@ -27,13 +27,3 @@ func InitDB(env *config.Env) *gorm.DB {
 
 	return db
 }
-
-// MigrateModels runs migrations for all models
-func MigrateModels(db *gorm.DB, models ...interface{}) error {
-	if err := db.AutoMigrate(models...); err != nil {
-		return fmt.Errorf("failed to migrate models: %w", err)
-	}
-
-	log.Printf("[INFO] Database migrations completed successfully")
-	return nil
-}

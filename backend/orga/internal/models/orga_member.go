@@ -10,8 +10,8 @@ type OrgaMember struct {
 	UserID				uuid.UUID `gorm:"type:uuid;primaryKey;not null;foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE" json:"user_id"`
     Role				string    `gorm:"size:20;not null;check:role IN ('admin','member')" json:"role"`
     EncOrgPrivKey	[]byte    `gorm:"type:bytea;not null" json:"enc_org_priv_key"`
-    EncAesKey    	[]byte    `gorm:"type:bytea;not null" json:"enc_aes_key"`  
-    Iv            	[]byte    `gorm:"type:bytea;not null" json:"iv"`             
+    EncAesKey    	[]byte    `gorm:"type:bytea;not null" json:"enc_aes_key"`
+    Iv            	[]byte    `gorm:"type:bytea;not null" json:"iv"`
 	JoinedAt			time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"joined_at"`
 }
 
@@ -24,4 +24,3 @@ type OrgaMemberResponse struct {
 	Role  		string `json:"role"`
 	Email		string `json:"email"` // not sure
 }
-	

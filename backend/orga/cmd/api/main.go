@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"backend/orga/internal/handlers"
-	"backend/orga/internal/models"
 	"backend/orga/internal/workers"
 	"backend/orga/internal/ws"
 	"backend/shared/config"
@@ -36,11 +35,6 @@ func main() {
 	}()
 
 	dbConn := db.InitDB(env)
-
-	if err := db.MigrateModels(dbConn, &models.Orga{}, &models.OrgaMember{}); err != nil {
-		fmt.Fprintf(os.Stderr, "[FATAL] Failed to migrate database models: %v\n", err)
-		os.Exit(1)
-	}
 
 	wsHub := ws.NewHub(redisClient, dbConn)
 
