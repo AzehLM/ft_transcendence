@@ -32,9 +32,9 @@ var (
 // business logic contract
 type StorageService interface {
 	// File part
-	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error)
+	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
-	DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
+	DownloadFile(userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
@@ -72,7 +72,7 @@ func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client
 // RequestUploadURL requests a presignedURL to the minio client and returns it.
 // File requested for upload are in a PENDING state until it has been fully uploaded to the minio storage service, where it then updates this status to ACTIVE via FinalizeUpload
 // The quota check is done via GetUserSpace so between a RequestUploadURL call and a FinalizeUpload call, it is possible that users have no storage space left
-func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID) (presignedURL string, objectID uuid.UUID, err error) {
+func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error) {
 
 	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
@@ -120,8 +120,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
 
 	return presignedURL, objectID, err
 }
@@ -172,7 +171,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	return file.ID, nil
 }
 
-func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
+func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
 
 	ctx := context.TODO()
 
@@ -199,8 +198,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID) (presi
 		return "", nil, nil, "", err
 	}
 
-	// replace hardcoded values with env var ?
-	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, "https://localhost:"+s.env.AppPort+"/storage", 1)
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
 
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
@@ -574,4 +572,12 @@ func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, fold
 	}
 
 	return folders, files, nil
+}
+
+
+func (s *storageService) presignedBaseURL(hostname string) string {
+	if hostname == s.env.DomainName {
+		return "https://" + s.env.DomainName
+	}
+	return "https://" + hostname + ":" + s.env.AppPort
 }

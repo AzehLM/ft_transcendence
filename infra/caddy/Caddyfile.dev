@@ -8,7 +8,6 @@
 # this machine's public IP, then replace ":80" below with your
 # domain name.
 
-
 # Global options block
 # https://caddyserver.com/docs/caddyfile/options
 {
@@ -55,7 +54,7 @@
             script-src 'self';
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
-            connect-src 'self' http://localhost:9000;
+            connect-src 'self' http://localhost:9000 https://ostrom.cloud;
             frame-ancestors 'none';
         "
 		# Content-Security-Policy "
