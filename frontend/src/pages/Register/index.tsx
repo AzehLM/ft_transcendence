@@ -84,7 +84,7 @@ export default function RegisterPage() {
                             <Package className="w-11 h-11 text-white" strokeWidth={2} />
                         </div>
                         <span className={styles.logo_title}>
-                            ft_box
+                            ostrom
                         </span>
                     </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>

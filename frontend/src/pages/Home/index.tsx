@@ -1,7 +1,7 @@
 function HomePage() {
     return (
         <div>
-            <h1>Ft_box</h1>
+            <h1>ostrom</h1>
             <p>We are on the Home page</p>
             <nav style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 <a href="/register" style={{ border: "1px solid black", padding: "4px 8px" }}>Register</a>
