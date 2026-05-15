@@ -33,9 +33,12 @@ export default function DashboardPage() {
     }, [loadFiles]);
 
 
-    const { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo } = useE2EEUpload(() => {
+    const { uploadFile, uploads } = useE2EEUpload(() => {
         loadFiles();
     });
+
+    const activeUploads = Object.values(uploads);
+    const isUploading = activeUploads.some(u => u.isUploading);
 
     const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
 
@@ -86,57 +89,62 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    {uploadStatus && (
-                        <div className={`${styles.statusMessage} ${uploadStatus.includes('Erreur') ? styles.error : styles.loading}`}>
-                            {!uploadStatus.includes('Erreur') && <span className={styles.statusDot}></span>}
-                            {uploadStatus}
-                        </div>
-                    )}
+                    {activeUploads.map(upload => (
+                        <div key={upload.id} style={{ marginBottom: '20px' }}>
+                            <div className={`${styles.statusMessage} ${upload.status.includes('Erreur') ? styles.error : styles.loading}`}>
+                                {!upload.status.includes('Erreur') && <span className={styles.statusDot}></span>}
+                                {upload.status}
+                            </div>
 
-                    {fileInfo && (
-                        <div className={styles.fileInfoCard}>
-                            <div className={styles.fileName}>{fileInfo.name}</div>
-                            <div className={styles.fileDetails}>
-                                <span><strong>Type:</strong> {fileInfo.type}</span>
-                                <span><strong>Taille:</strong> {fileInfo.size}</span>
+                            <div className={styles.fileInfoCard}>
+                                <div className={styles.fileName}>{upload.fileInfo.name}</div>
+                                <div className={styles.fileDetails}>
+                                    <span><strong>Type:</strong> {upload.fileInfo.type}</span>
+                                    <span><strong>Taille:</strong> {upload.fileInfo.size}</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
 
-                    {uploadProgress && (
-                        <div className={styles.progressContainer}>
-                            <div className={styles.progressHeader}>
-                                <div className={styles.progressTitle}>Progression du chiffrement</div>
-                                <div className={styles.progressPercentage}>{uploadProgress.percentage}%</div>
-                            </div>
-                            <div className={styles.progressBar}>
-                                <div
-                                    className={styles.progressFill}
-                                    style={{ width: `${uploadProgress.percentage}%` }}
-                                />
-                            </div>
-                            <div className={styles.progressMetrics}>
-                                <div className={styles.metric}>
-                                    <div className={styles.metricLabel}>Vitesse</div>
-                                    <div className={styles.metricValue}>
-                                        {(uploadProgress.speed / (1024 * 1024)).toFixed(2)} MB/s
+                            {upload.progress && (
+                                <div className={styles.progressContainer}>
+                                    <div className={styles.progressHeader}>
+                                        <div className={styles.progressTitleContainer}>
+                                            <div className={styles.progressTitle}>Chiffrement & Upload</div>
+                                            <div className={styles.progressSubtitle}>{upload.fileInfo.name}</div>
+                                        </div>
+                                        <div className={styles.progressPercentage}>{upload.progress.percentage}%</div>
+                                    </div>
+                                    <div className={styles.progressBarContainer}>
+                                        <div className={styles.progressBar}>
+                                            <div
+                                                className={styles.progressFill}
+                                                style={{ width: `${upload.progress.percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className={styles.progressMetrics}>
+                                        <div className={styles.metric}>
+                                            <div className={styles.metricLabel}>Vitesse</div>
+                                            <div className={styles.metricValue}>
+                                                {(upload.progress.speed / (1024 * 1024)).toFixed(2)} MB/s
+                                            </div>
+                                        </div>
+                                        <div className={styles.metric}>
+                                            <div className={styles.metricLabel}>Progression</div>
+                                            <div className={styles.metricValue}>
+                                                {((upload.progress.uploadedBytes) / (1024 * 1024)).toFixed(1)} / {((upload.progress.totalBytes) / (1024 * 1024)).toFixed(0)} MB
+                                            </div>
+                                        </div>
+                                        <div className={styles.metric}>
+                                            <div className={styles.metricLabel}>Temps restant</div>
+                                            <div className={styles.metricValue}>
+                                                {Math.round(upload.progress.remainingTime)}s
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className={styles.metric}>
-                                    <div className={styles.metricLabel}>Progression</div>
-                                    <div className={styles.metricValue}>
-                                        {((uploadProgress.uploadedBytes) / (1024 * 1024)).toFixed(1)} / {((uploadProgress.totalBytes) / (1024 * 1024)).toFixed(0)} MB
-                                    </div>
-                                </div>
-                                <div className={styles.metric}>
-                                    <div className={styles.metricLabel}>Temps restant</div>
-                                    <div className={styles.metricValue}>
-                                        {Math.round(uploadProgress.remainingTime)}s
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
-                    )}
+                    ))}
 
                     {downloadStatus && (
                         <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') ? styles.error : styles.success}`}>

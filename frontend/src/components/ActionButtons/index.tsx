@@ -15,9 +15,9 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && onUploadFile) {
-      onUploadFile(file);
+    const files = event.target.files;
+    if (files && files.length > 0 && onUploadFile) {
+      Array.from(files).forEach((file) => onUploadFile(file));
     }
 
     if (fileInputRef.current) {
@@ -54,6 +54,7 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
       */}
       <input
         type="file"
+        multiple
         ref={fileInputRef}
         onChange={handleFileChange}
         style={{ display: "none" }}
