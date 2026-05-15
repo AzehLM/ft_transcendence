@@ -27,9 +27,9 @@ import (
 
 func initConsumerGroups(client *redis.Client) {
 	streams := map[string]string{
-		"events:domain:file_orphaned":	"storage-file-orphaned",
-		"events:domain:user_deleted":	"storage-user-deleted",
-		"events:domain:org_deleted":	"storage-org-deleted",
+		"events:domain:file_orphaned": "storage-file-orphaned",
+		"events:domain:user_deleted":  "storage-user-deleted",
+		"events:domain:org_deleted":   "storage-org-deleted",
 	}
 	for stream, group := range streams {
 		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "0").Err()
@@ -49,7 +49,7 @@ func main() {
 	database := db.InitDB(env)
 
 	app := fiber.New(fiber.Config{
-		AppName: "ostrom_storage_service v1.0",
+		AppName:   "ostrom_storage_service v1.0",
 		BodyLimit: 4 * 1024 * 1024, // 4 MB max per requests
 	})
 
@@ -66,8 +66,8 @@ func main() {
 	// redisClient used for the business logic
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:		redisAddr,
-		Password:	env.RedisPassword,
+		Addr:     redisAddr,
+		Password: env.RedisPassword,
 	})
 	initConsumerGroups(redisClient)
 
@@ -107,26 +107,27 @@ func main() {
 	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
 	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
 
-	go consumer.PeriodicSweep(context.TODO(), 15 * time.Minute)
+	go consumer.PeriodicSweep(context.TODO(), 15*time.Minute)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
 
 	// file
-	api.Post("/files/upload-url",		handler.RequestUploadURL)
-	api.Post("/files/finalize",			handler.FinalizeUpload)
+	api.Post("/files/upload-url", handler.RequestUploadURL)
+	api.Post("/files/finalize", handler.FinalizeUpload)
 	api.Get("/files/:file_id/download", handler.DownloadFile)
-	api.Get("/files/:file_id",			handler.GetFileInfo)
-	api.Patch("/files/:file_id",		handler.MoveFile)
-	api.Delete("/files/:file_id",		handler.DeleteFile)
+	api.Get("/files/:file_id", handler.GetFileInfo)
+	api.Patch("/files/:file_id", handler.MoveFile)
+	api.Delete("/files/:file_id", handler.DeleteFile)
 
 	// folder
-	api.Post("/folders",									handler.CreateFolder)
-	api.Patch("/folders/:folder_id",						handler.UpdateFolder)
-	api.Delete("/folders/:folder_id",						handler.DeleteFolder)
-	api.Get("/folders",										handler.ListPersonalContents) // can have a query string
-	api.Get("/folders/:folder_id/contents",					handler.ListFolderContents)
-	api.Get("/orgs/:org_id/folders/:folder_id/contents",	handler.ListOrgContents)
+	api.Post("/folders", handler.CreateFolder)
+	api.Patch("/folders/:folder_id", handler.UpdateFolder)
+	api.Delete("/folders/:folder_id", handler.DeleteFolder)
+	api.Get("/folders", handler.ListPersonalContents) // can have a query string
+	api.Get("/folders/:folder_id/contents", handler.ListFolderContents)
+
+	api.Get("/storage/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {

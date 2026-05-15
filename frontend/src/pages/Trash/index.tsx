@@ -13,10 +13,6 @@ export default function TrashPage() {
         .then(res => setTrashedFiles(res.files || []))
         .catch(() => {
         setError("Failed to load trash files.");
-        setTrashedFiles([
-            { id: "1", name: "Deleted document", file_size: 0, created_at: new Date().toISOString() },
-            { id: "2", name: "Old report", file_size: 0, created_at: new Date().toISOString() },
-        ]);
         })
         .finally(() => setLoading(false));
     }, []);
