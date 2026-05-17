@@ -1,17 +1,20 @@
-function HomePage() {
-    return (
-        <div>
-            <h1>Ft_box</h1>
-            <p>We are on the Home page</p>
-            <nav style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-                <a href="/register" style={{ border: "1px solid black", padding: "4px 8px" }}>Register</a>
-                <a href="/login" style={{ border: "1px solid black", padding: "4px 8px" }}>Login</a>
-                <a href="/dashboard" style={{ border: "1px solid black", padding: "4px 8px" }}>Dashboard</a>
-                <a href="/profile" style={{ border: "1px solid black", padding: "4px 8px" }}>Profile</a>
-                <a href="/status" style={{ border: "1px solid black", padding: "4px 8px" }}>Status</a>
-            </nav>
-        </div>
-    )
-}
+import { NavBar } from "./NavBar";
+import { HeroSection } from "./HeroSection";
+import { SocialProof } from "./SocialProof";
+import { Features } from "./Features";
+import { CtaSection } from "./CtaSection";
+import styles from "./home.module.css";
 
-export default HomePage
+export default function HomePage() {
+    return (
+        <div className={styles.page}>
+            <NavBar />
+            <main className={styles.main}>
+                <HeroSection />
+                <SocialProof />
+                <Features />
+                <CtaSection />
+            </main>
+        </div>
+    );
+}
