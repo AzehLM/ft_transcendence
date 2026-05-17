@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
 import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
-import { FileValidationService } from '../services/fileValidation.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
 
 export interface UploadProgress {
@@ -39,6 +38,14 @@ async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
     );
 }
 
+function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     const [uploads, setUploads] = useState<Record<string, UploadTask>>({});
 
@@ -54,8 +61,8 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
 
         const fileInfo = {
             name: file.name,
-            size: FileValidationService.formatFileSize(file.size),
-            type: FileValidationService.getFileTypeLabel(file.type) || 'Fichier'
+            size: formatFileSize(file.size),
+            type: 'Fichier'
         };
 
         setUploads(prev => ({
@@ -66,16 +73,10 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
         const startTime = Date.now();
 
         try {
-            // Validation de taille et de contenu (MIME + Extension + Magic Numbers)
             if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
-                const max = FileValidationService.formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
-                const current = FileValidationService.formatFileSize(file.size);
+                const max = formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
+                const current = formatFileSize(file.size);
                 throw new Error(UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current));
-            }
-
-            const validation = await FileValidationService.validateFile(file);
-            if (!validation.valid) {
-                throw new Error(validation.error);
             }
 
             let publicKey: CryptoKey;
