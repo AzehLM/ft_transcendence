@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
+import { getAcceptAttribute } from "../../services/fileValidation.service";
 
 interface ActionButtonsProps {
   onUploadFile?: (file: File) => void;
@@ -55,6 +56,7 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
       <input
         type="file"
         multiple
+        accept={getAcceptAttribute()}
         ref={fileInputRef}
         onChange={handleFileChange}
         style={{ display: "none" }}

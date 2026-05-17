@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
 import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
+import { validateFile, formatFileSize } from '../services/fileValidation.service';
 
 export interface UploadProgress {
     uploadedBytes: number;
@@ -38,14 +39,6 @@ async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
     );
 }
 
-function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     const [uploads, setUploads] = useState<Record<string, UploadTask>>({});
 
@@ -73,10 +66,9 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
         const startTime = Date.now();
 
         try {
-            if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
-                const max = formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
-                const current = formatFileSize(file.size);
-                throw new Error(UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current));
+            const validation = await validateFile(file);
+            if (!validation.isValid) {
+                throw new Error(validation.error);
             }
 
             let publicKey: CryptoKey;
