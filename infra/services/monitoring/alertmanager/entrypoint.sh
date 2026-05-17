@@ -3,7 +3,7 @@ set -eu
 
 SECRET_FILE=/run/secrets/discord_webhook_url
 
-if [ ! -r "$SECRET_FILE"]; then
+if [ ! -r "$SECRET_FILE" ]; then
 	echo "error: secret file '$SECRET_FILE' is missing or unreadable" >&2
 	exit 1
 fi
