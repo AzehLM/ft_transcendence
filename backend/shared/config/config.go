@@ -19,6 +19,7 @@ type Env struct {
 	RedisPort			string
 	MinioPort			string
 	AppPort				string
+	DomainName			string
 }
 
 func LoadEnv() (*Env, error) {
@@ -55,6 +56,7 @@ func LoadEnv() (*Env, error) {
 		RedisPort:			os.Getenv("REDIS_PORT"),
 		MinioPort:			os.Getenv("MINIO_PORT"),
 		AppPort:			os.Getenv("PORT"),
+		DomainName:			os.Getenv("DOMAIN_NAME"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" ||

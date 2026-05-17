@@ -26,10 +26,11 @@ func clearRefreshTokenCookie(c fiber.Ctx) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
+		MaxAge:   -1,
 		HTTPOnly: true,
-		Secure:   true, // test avec caddy
+		Secure:   true,
 		SameSite: "Strict",
+		Path:     "/",
 	})
 }
 
@@ -37,6 +38,7 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	cookieToken := c.Cookies("refresh_token")
 
 	if cookieToken == "" {
+		clearRefreshTokenCookie(c)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "already logged out",
 		})
@@ -53,8 +55,8 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	}
 
 	clearRefreshTokenCookie(c)
+	log.Printf("[INFO] User logged out - refresh token cookie cleared")
 
-	log.Printf("[INFO] User logged out successfully (token cleared)")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "logged out successfully",
 	})

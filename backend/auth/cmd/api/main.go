@@ -34,7 +34,7 @@ func main() {
 	})
 
 	loginLimiter := limiter.New(limiter.Config{
-		Max:        5,
+		Max:        50,
 		Expiration: 15 * time.Minute,
 		KeyGenerator: func(c fiber.Ctx) string {
 			return c.IP()
@@ -49,8 +49,8 @@ func main() {
 
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:		redisAddr,
-		Password:	env.RedisPassword,
+		Addr:     redisAddr,
+		Password: env.RedisPassword,
 	})
 
 	defer func() {

@@ -4,6 +4,7 @@ export async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     const headers: HeadersInit = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
+        ...options.headers,
     };
 
     let response = await fetch(url, { ...options, headers });
@@ -36,8 +37,8 @@ export async function fetchWithRefresh(url: string, options: RequestInit = {}) {
 
         const newHeaders = {
             ...options.headers,
-            "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
         };
 
         response = await fetch(url, { ...options, headers: newHeaders });
