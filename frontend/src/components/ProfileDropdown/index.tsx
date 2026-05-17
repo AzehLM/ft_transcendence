@@ -6,7 +6,7 @@ import { logout } from "../../services/auth.service";
 export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
   const navigate = useNavigate();
-  
+
   return (
     <>
       <div
@@ -42,7 +42,9 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
         </Link>
         <div className={styles.dropdown__divider} />
         <button
-          onClick={() => logout(navigate)}
+          onClick={async () => {
+            await logout(navigate);
+          }}
           className={`${styles.dropdown__item} ${styles["dropdown__item--danger"]}`}
         >
           <LogOut className="w-4 h-4" />

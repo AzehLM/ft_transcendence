@@ -72,7 +72,7 @@ export default function LoginPage() {
             // navigate("/profile");
 
         } catch (err: any) {
-            console.error("❌ Erreur:", err);
+            console.error("Erreur:", err);
             setError(err.message || "An error occurred during login!");
             setIsLoading(false);
         }

@@ -6,7 +6,6 @@ import PrivacyPage from './pages/Privacy'
 import TermsPage from './pages/Terms'
 import ProfilePage from './pages/Profile'
 import DashboardPage from './pages/Dashboard'
-import TrashPage from './pages/Trash'
 import { AuthLayout } from './AuthLayout'
 import { MainLayout } from './MainLayout'
 import { MenuSidebar } from './components/MenuSidebar'
@@ -37,7 +36,6 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/trash" element={<TrashPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>

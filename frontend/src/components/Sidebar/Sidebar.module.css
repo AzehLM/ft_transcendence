@@ -20,7 +20,7 @@
     top: 12px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 700;
-    font-size: 32px;
+    font-size: 24px;
     color: #d54f2a;
     display: flex;
     align-items: center;
@@ -52,15 +52,15 @@
 
 .sidebar__button__label {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 24px;
+    font-size: 18px;
     color: var(--color-sidebar-text);
     letter-spacing: 0px;
     font-weight: 500;
 }
 
 .sidebar__button__icon {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     color: var(--color-sidebar-text);
     flex-shrink: 0;
 }
@@ -73,8 +73,8 @@
 }
 
 .sidebar__chevron {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     color: var(--brand-dark);
     transition: transform 0.2s ease;
 }

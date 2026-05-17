@@ -196,6 +196,21 @@ export async function exportPublicKey(
     return new Uint8Array(publicKeyBuffer);
 }
 
+export async function encryptDEKWithPublicKey(
+    dek: Uint8Array,
+    publicKey: CryptoKey
+): Promise<Uint8Array> {
+    const encryptedDek = await crypto.subtle.encrypt(
+        {
+            name: "RSA-OAEP",
+        },
+        publicKey,
+        toArrayBuffer(dek)
+    );
+
+    return new Uint8Array(encryptedDek);
+}
+
 // ============================================================================
 // UTILITAIRE: Convertir Uint8Array en Base64 pour l'envoi HTTP
 // ============================================================================
@@ -290,7 +305,7 @@ export async function generateLoginData(email: string, password: string) {
     console.log("🔐 Démarrage du processus de connexion cryptographique...");
 
     // ÉTAPE 1: Récupérer le salt du serveur
-    console.log("1️⃣ Récupération du salt depuis le serveur...");
+    console.log("Récupération du salt depuis le serveur...");
     let saltResponse;
     try {
         saltResponse = await fetch("/api/auth/salt", {
@@ -306,7 +321,7 @@ export async function generateLoginData(email: string, password: string) {
             throw new Error(errorData.message || "Failed to retrieve salt");
         }
     } catch (err: any) {
-        console.error("❌ Erreur lors de la récupération du salt:", err);
+        console.error("Erreur lors de la récupération du salt:", err);
         throw err;
     }
 
@@ -314,14 +329,13 @@ export async function generateLoginData(email: string, password: string) {
     const salt = base64ToUint8Array(saltData.salt);
 
     // ÉTAPE 2: Dériver Master Key
-    console.log("2️⃣ Dérivation de la Master Key...");
+    console.log("Dérivation de la Master Key...");
     const masterKey = await deriveMasterKey(password, salt);
 
     // ÉTAPE 3: Générer AuthHash
-    console.log("3️⃣ Génération de l'AuthHash...");
+    console.log("Génération de l'AuthHash...");
     const authHash = await generateAuthHash(masterKey);
 
-    // Créer l'objet à envoyer au serveur
     const loginData = {
         email,
         auth_hash: uint8ArrayToBase64(authHash),
@@ -353,7 +367,7 @@ export async function unwrapPrivateKey(
     masterKey: CryptoKey,
     iv: Uint8Array
 ): Promise<CryptoKey> {
-    
+
     const decryptedBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
         masterKey,
@@ -407,4 +421,66 @@ export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
         true,
         ["encrypt"]
     );
+}
+
+export async function decryptDEKWithPrivateKey(
+    encryptedDek: Uint8Array,
+    privateKey: CryptoKey
+): Promise<Uint8Array> {
+    const decryptedDek = await crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        privateKey,
+        toArrayBuffer(encryptedDek)
+    );
+
+    return new Uint8Array(decryptedDek);
+}
+
+
+export async function encryptFilename(
+    filename: string,
+    dek: Uint8Array,
+    iv: Uint8Array
+): Promise<string> {
+    const filenameBuffer = new TextEncoder().encode(filename);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(dek),
+        "AES-GCM",
+        false,
+        ["encrypt"]
+    );
+
+    const encryptedBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        cryptoKey,
+        filenameBuffer
+    );
+
+    return uint8ArrayToBase64(new Uint8Array(encryptedBuffer));
+}
+
+export async function decryptFilename(
+    encryptedFilenameBase64: string,
+    dek: Uint8Array,
+    iv: Uint8Array
+): Promise<string> {
+    const encryptedBuffer = base64ToUint8Array(encryptedFilenameBase64);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(dek),
+        "AES-GCM",
+        false,
+        ["decrypt"]
+    );
+
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        cryptoKey,
+        toArrayBuffer(encryptedBuffer)
+    );
+
+    return new TextDecoder().decode(decryptedBuffer);
 }
