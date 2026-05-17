@@ -31,7 +31,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: clamp(160px, 26vw, 360px);
+  font-size: clamp(120px, 26vw, 360px);
   font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 1;
@@ -47,6 +47,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  width: 100%;
+  max-width: 600px;
 }
 
 .errorBadge {
@@ -63,6 +65,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .terminalPrompt { opacity: 0.4; }
@@ -71,13 +75,13 @@
 
 .mainTitle {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: clamp(26px, 4vw, 46px);
+  font-size: clamp(24px, 6vw, 46px);
   font-weight: 600;
   color: #2b1008;
   margin: 0 0 14px;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  white-space: nowrap;
+  word-wrap: break-word;
 }
 
 .description {
@@ -144,4 +148,49 @@
   0%, 84% { clip-path: none; transform: none; opacity: 0; }
   85% { clip-path: inset(62% 0 18% 0); transform: translate(6px); opacity: 1; }
   91%, 100% { clip-path: none; transform: none; opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  .errorBadge {
+    font-size: 10px;
+    padding: 4px 10px;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .mainTitle {
+    font-size: 28px;
+  }
+
+  .description {
+    font-size: 14px;
+    margin-bottom: 30px;
+    padding: 0 10px;
+  }
+
+  .backBtn {
+    height: 48px;
+    padding: 0 24px;
+    font-size: 14px;
+  }
+
+  .cryptoFooter {
+    gap: 8px;
+    margin-top: 40px;
+    font-size: 9px;
+  }
+
+  .ghostWrapper {
+    font-size: clamp(80px, 30vw, 120px);
+  }
+}
+
+@media (max-width: 480px) {
+    .errorBadge span:nth-child(2) {
+        display: inline-block;
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
