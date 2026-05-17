@@ -40,7 +40,6 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
         >
           Account Settings
         </Link>
-        <div className={styles.dropdown__divider} />
         <button
           onClick={async () => {
             await logout(navigate);
