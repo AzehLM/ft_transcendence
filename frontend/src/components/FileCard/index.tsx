@@ -129,15 +129,29 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         <Folder className={styles.folderCard__icon} />
         <div className={styles.folderCard__name}>{name}</div>
         <div className={styles.fileCard__menu} ref={menuRef}>
-          <button onClick={handleMenuClick} className={styles.fileCard__menu__button}>
+          <button   
+            onClick={(e) => {
+              handleMenuClick(e);
+            }}
+            className={styles.fileCard__menu__button}>
             <MoreVertical className={styles.fileCard__menu__button__icon} strokeWidth={2} />
           </button>
           {showMenu && (
             <div className={styles.fileCard__menu__dropdown}>
-                <button onClick={handleMove} className={styles.fileCard__menu__item}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMove();
+                  }} 
+                  className={styles.fileCard__menu__item}>
                   Move
                 </button>
-              <button onClick={handleDelete} className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}>
+              <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}  
+                className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}>
                 Delete
               </button>
             </div>
