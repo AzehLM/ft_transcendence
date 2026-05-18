@@ -29,7 +29,7 @@ async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
     );
 }
 
-export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
+export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: string) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState<string>("");
     const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -105,7 +105,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
                 method: "POST",
                 body: JSON.stringify({
                     file_size: totalEncryptedSize,
-                    folder_id: null,
+                    folder_id: folderId || null,
                     org_id: orgId || null
                 })
             });
