@@ -27,8 +27,13 @@ export default function DashboardPage() {
         const response = folderId
             ? await FilesService.getFolderContents(folderId)
             : await FilesService.getAllFiles();
-        setFiles(response.files || []);
-        setFolders(response.folders || []);
+            setFiles(
+                (response.files || []).filter(file => file.org_id === null)
+            );
+
+            setFolders(
+                (response.folders || []).filter(folder => folder.org_id === null)
+            );
         } catch (err) {
             if (err instanceof Error && err.message === "not found") {
                 navigate("/404");
@@ -183,7 +188,7 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} />
+                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} />
                         ))}
                         {files.map((file) => (
                             <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} />
