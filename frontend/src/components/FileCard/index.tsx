@@ -7,6 +7,7 @@ import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 interface FileCardProps {
   id: string;
   name: string;
+  isFolder?: boolean;
   isTrash?: boolean;
   onDelete?: (id: string) => void;
   onAddToFolder?: (fileName: string, folderName: string) => void; // maybe need to change to id
@@ -14,13 +15,13 @@ interface FileCardProps {
   orgId?: string;
 }
 
-export function FileCard({ id, name, isTrash = false, onDelete, onAddToFolder, onDownload, orgId }: FileCardProps) {
+export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onAddToFolder, onDownload, orgId }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { decryptedName, loading } = useDecryptFilename(id, orgId);
+  const { decryptedName, loading } = useDecryptFilename(isFolder ? null : id, orgId);
 
-  const displayName = loading ? "..." : (decryptedName || name);
+  const displayName = isFolder ? name : (loading ? "..." : (decryptedName || name));
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {

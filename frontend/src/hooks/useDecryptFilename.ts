@@ -9,12 +9,14 @@ import { decryptOrgPrivateKey } from '../services/organizations.service';
 import { FilesService, DownloadResponse } from '../services/files.service';
 import { fetchWithRefresh } from '../services/api.service';
 
-export function useDecryptFilename(fileId: string, orgId?: string) {
+export function useDecryptFilename(fileId: string | null, orgId?: string) {
     const [decryptedName, setDecryptedName] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!fileId) return;
+        
         let isMounted = true;
 
         const decryptName = async () => {

@@ -3,7 +3,7 @@ import { ActionButtons } from "../../components/ActionButtons"
 import { CreateFolderModal } from "../../components/CreateFolderModal"
 import { useState, useEffect, useCallback } from "react";
 import styles from "./Dashboard.module.css";
-import { FilesService, FileItem } from "../../services/files.service";
+import { FilesService, FileItem, FolderItem } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 
@@ -11,6 +11,7 @@ export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [folders, setFolders] = useState<FolderItem[]>([]);
 
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
 
@@ -20,6 +21,7 @@ export default function DashboardPage() {
             setError(null);
             const response = await FilesService.getAllFiles();
             setFiles(response.files || []);
+            setFolders(response.folders || []);
         } catch (err) {
             console.error("Failed to load files:", err);
             setError("Failed to load files.");
@@ -28,10 +30,27 @@ export default function DashboardPage() {
         }
     }, []);
 
+    // const loadFolders = useCallback(async () => {
+    //     try {
+    //         setLoading(true);
+    //         setError(null);
+    //         const response = await FilesService.getAllFiles();
+    //         setFolders(response.folders || []);
+    //     } catch (err) {
+    //         console.error("Failed to load folders:", err);
+    //         setError("Failed to load folders.");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }, []);
+
     useEffect(() => {
         loadFiles();
     }, [loadFiles]);
 
+    useEffect(() => {
+    console.log("folders state updated:", folders);
+    }, [folders]);
 
     const { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo } = useE2EEUpload(() => {
         loadFiles();
@@ -147,11 +166,14 @@ export default function DashboardPage() {
 
                 {loading ? (
                     <p>Loading files...</p>
-                    ) : files.length === 0 ? (
+                    ) : files.length === 0 && folders.length === 0 ? (
                     <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
                     ) : (
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
+                        {folders.map((folder) => (
+                            <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDelete} onDownload={downloadAndDecrypt} />
+                        ))}
                         {files.map((file) => (
                             <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDelete} onDownload={downloadAndDecrypt} />
                         ))}
