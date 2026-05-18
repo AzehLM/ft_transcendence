@@ -8,6 +8,7 @@ import { generateOrganization } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
+import { organizationSchema } from "../../schemas/organization.schema";
 
 interface Organization {
   id: string;
@@ -42,11 +43,15 @@ export default function OrganizationsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [orgName, setOrgName] = useState("");
   const handleCreateOrg = async () => {
-    if (!orgName.trim()) return;
     try {
-      const data = await generateOrganization(orgName);
+      const result = organizationSchema.safeParse({ name: orgName });
+      if (!result.success) {
+        console.log(result.error.issues[0].message);
+        setModalError(result.error.issues[0].message);
+        return;
+      }
+      const data = await generateOrganization(result.data.name);
       // console.log("org data to send:", data);
-
       const response = await fetchWithRefresh("/api/orgs", {
         method: "POST",
         body: JSON.stringify(data),
@@ -114,7 +119,7 @@ const handleAddMember = async () => {
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
-  
+
   const handleLeaveOrga = async () => {
     try {
       if (!selectedOrg) {
@@ -122,7 +127,7 @@ const handleAddMember = async () => {
         return;
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
-      
+
 
       if (!response.ok) {
         const text = await response.text();
@@ -159,8 +164,8 @@ const handleAddMember = async () => {
     <div className={styles.mainBox}>
         <h2 className={styles.subtitle}>Organizations</h2>
         <div className={orgaStyles.header}>
-            <button 
-            className={`${styles.buttonChange} ${styles.profileButton}`} 
+            <button
+            className={`${styles.buttonChange} ${styles.profileButton}`}
             onClick={() => { setShowCreateModal(true); setModalError(null); }}
             >
             + Create Organization
@@ -196,7 +201,7 @@ const handleAddMember = async () => {
             ) : (
                 <div className={orgaStyles.orgList}>
                 {orgs.map((org) => (
-                    <div key={org.id} className={orgaStyles.orgCard} 
+                    <div key={org.id} className={orgaStyles.orgCard}
                       onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
                       <div className={orgaStyles.orgInfo}>
                           <p className={orgaStyles.orgName}>{org.name}</p>
@@ -221,7 +226,7 @@ const handleAddMember = async () => {
                           )}
                           <button
                           className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
-                          onClick={(e) => 
+                          onClick={(e) =>
                             {e.stopPropagation()
                               setSelectedOrg(org);
                             setShowLeaveConfirm(true);}}
@@ -249,7 +254,7 @@ const handleAddMember = async () => {
                 )}
 
                 </div>
-            )}    
+            )}
         </div>
     </div>
     </SettingsLayout>
