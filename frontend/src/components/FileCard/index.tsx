@@ -4,6 +4,8 @@ import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { Folder } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 
 interface FileCardProps {
   id: string;
@@ -21,6 +23,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { decryptedName, loading } = useDecryptFilename(isFolder ? null : id, orgId);
+  const navigate = useNavigate();
 
   const displayName = isFolder ? name : (loading ? "..." : (decryptedName || name));
   useEffect(() => {
@@ -121,7 +124,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   if (isFolder) {
   return (
     <>
-      <div className={styles.folderCard}>
+      <div className={styles.folderCard} onClick={() => navigate(`/dashboard/folder/${id}`)}>
         <div className={styles.folderCard__background} />
         <Folder className={styles.folderCard__icon} />
         <div className={styles.folderCard__name}>{name}</div>

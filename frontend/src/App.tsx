@@ -32,6 +32,7 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/dashboard/folder/:folderId" element={<DashboardPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>

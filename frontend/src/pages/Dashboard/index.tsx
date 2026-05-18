@@ -6,54 +6,47 @@ import styles from "./Dashboard.module.css";
 import { FilesService, FileItem, FolderItem } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
+import { useParams } from "react-router-dom";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [folders, setFolders] = useState<FolderItem[]>([]);
+    const { folderId } = useParams();
 
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
 
-    const loadFiles = useCallback(async () => {
+    useEffect(() => {
+    const load = async () => {
         try {
-            setLoading(true);
-            setError(null);
-            const response = await FilesService.getAllFiles();
-            setFiles(response.files || []);
-            setFolders(response.folders || []);
+        setLoading(true);
+        setError(null);
+        const response = folderId
+            ? await FilesService.getFolderContents(folderId)
+            : await FilesService.getAllFiles();
+        setFiles(response.files || []);
+        setFolders(response.folders || []);
         } catch (err) {
-            console.error("Failed to load files:", err);
-            setError("Failed to load files.");
+        console.error("Failed to load files:", err);
+        setError("Failed to load files.");
         } finally {
-            setLoading(false);
+        setLoading(false);
         }
-    }, []);
+    };
+    load();
+    }, [folderId]);
 
-    // const loadFolders = useCallback(async () => {
-    //     try {
-    //         setLoading(true);
-    //         setError(null);
-    //         const response = await FilesService.getAllFiles();
-    //         setFolders(response.folders || []);
-    //     } catch (err) {
-    //         console.error("Failed to load folders:", err);
-    //         setError("Failed to load folders.");
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }, []);
-
-    useEffect(() => {
-        loadFiles();
-    }, [loadFiles]);
-
-    useEffect(() => {
-    console.log("folders state updated:", folders);
-    }, [folders]);
+    const loadFiles = async () => {
+    const response = folderId
+        ? await FilesService.getFolderContents(folderId)
+        : await FilesService.getAllFiles();
+    setFiles(response.files || []);
+    setFolders(response.folders || []);
+    };
 
     const { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo } = useE2EEUpload(() => {
-        loadFiles();
+    loadFiles();
     });
 
     const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
