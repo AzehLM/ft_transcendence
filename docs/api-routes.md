@@ -1,4 +1,4 @@
-# ft_box - API Routes
+# ostrom - API Routes
 
 Base URL : `/api/v1`
 
@@ -145,7 +145,7 @@ Genere le secret TOTP.
 Reponse (200) :
 ```json
 {
-  "otpauth_uri": "otpauth://totp/ft_box:student@42lyon.fr?secret=XXXX&issuer=ft_box"
+  "otpauth_uri": "otpauth://totp/ostrom:student@42lyon.fr?secret=XXXX&issuer=ostrom"
 }
 ```
 

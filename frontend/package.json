@@ -10,6 +10,8 @@
     },
     "dependencies": {
         "crypto-js": "^4.2.0",
+        "file-type": "^22.0.1",
+        "framer-motion": "^12.38.0",
         "lucide-react": "^1.7.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",

@@ -1,3 +1,5 @@
+import { clearAllKeys } from "./idb.service";
+
 export async function logout(navigate: (path: string) => void) {
   try {
     await fetch("/api/auth/logout", {
@@ -8,8 +10,7 @@ export async function logout(navigate: (path: string) => void) {
     console.error("Logout request failed:", error);
   } finally {
     localStorage.removeItem("token");
-    sessionStorage.removeItem("privateKey");
-    sessionStorage.removeItem("publicKey");
+    await clearAllKeys();
 
     navigate("/login");
   }
