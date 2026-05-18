@@ -3,7 +3,18 @@ import { z } from "zod";
 // reused when changing password in settings page
 const passwordSchema = z
 	.string()
-	.min(8, "Password must be at least 8 characters");
+	.min(8, { message: "Password must be at least 8 characters" })
+	.max(20, { message: "Password must be at maximum 20 characters" })
+	.refine((password) => /[A-Z]/.test(password), {
+		message: "Password must be at least contain one uppercase character",
+	})
+	.refine((password) => /[a-z]/.test(password), {
+		message: "Password must be at least contain one lowercase character",
+	})
+	.refine((password) => /[0-9]/.test(password), { message: "Password must be at least contain one number" })
+	.refine((password) => /[!@#$%^&*]/.test(password), {
+		message: "Password must be at least contain one special character",
+	});
 
 export const registerSchema = z
 	.object({
