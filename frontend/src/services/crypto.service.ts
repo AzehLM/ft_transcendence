@@ -2,6 +2,8 @@
  * Service de Cryptographie pour l'Registration Zero-Knowledge
  */
 
+import { saveKey, getKey} from "./idb.service";
+
 // ============================================================================
 // ÉTAPE 1: Générer un Salt aléatoire
 // ============================================================================
@@ -351,8 +353,6 @@ export function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayB
   return new Uint8Array(data).buffer;
 }
 
-import { saveKey, getKey} from "./idb.service";
-
 export async function unwrapPrivateKey(
     encryptedPrivateKey: Uint8Array,
     masterKey: CryptoKey,
@@ -383,7 +383,6 @@ export async function storePrivateKey(privateKey: CryptoKey) {
   await saveKey("privateKey", privateKey);
 }
 
-// rebuild private key
 export async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
     return await getKey("privateKey");
 }

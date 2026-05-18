@@ -39,7 +39,14 @@ export async function getKey(name: string): Promise<CryptoKey | null> {
     const request = store.get(name);
 
     request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result || null);
+    request.onsuccess = () => {
+      const result = request.result;
+      if (result && !(result instanceof CryptoKey)) {
+        reject(new Error(`Stored value for ${name} is not a CryptoKey`));
+      } else {
+        resolve(result || null);
+      }
+    };
   });
 }
 
