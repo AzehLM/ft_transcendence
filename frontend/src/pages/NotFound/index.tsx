@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion, cubicBezier } from "framer-motion";
 import styles from "./NotFound.module.css";
 
-/* ─── Brand tokens ────────────────────────────────────────────── */
-const P = "#de7356"; // Coral
-const D = "#2b1008"; // Dark
+const P = "#de7356";
+const D = "#2b1008"; 
 
 const CHARSET = "01█▓░▒╔╗╚╝║═!@#$%ABCDEF?><~";
 const rchar = () => CHARSET[~~(Math.random() * CHARSET.length)];
 
-/* ─── Sub-Components ─────────────────────────────────────────── */
 
 function BinaryField({ count = 55 }) {
   const particles = useMemo(() =>
@@ -88,7 +86,6 @@ function useScramble(target: string, delay = 0, duration = 1000) {
   return out;
 }
 
-/* ─── Main Component ─────────────────────────────────────────── */
 
 export default function NotFound() {
   const navigate = useNavigate();
