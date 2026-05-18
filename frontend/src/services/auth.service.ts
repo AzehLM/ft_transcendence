@@ -42,7 +42,15 @@ export async function resetKeys(
     const iv = base64ToUint8Array(responseData.iv);
     const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
     await storePrivateKey(privateKey);
-    await storePublicKey(responseData.public_key);
+    const publicKeyArray = base64ToUint8Array(responseData.public_key);
+    const publicKey = await crypto.subtle.importKey(
+        "spki",
+        new Uint8Array(publicKeyArray),
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+    );
+    await storePublicKey(publicKey);
 
     return { success: true };
   } catch {
