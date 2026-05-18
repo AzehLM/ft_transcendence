@@ -125,3 +125,50 @@
 .fileCard__menu__item--delete:hover {
     background-color: rgba(222, 115, 86, 0.1);
 }
+
+.folderCard {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  height: 160px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  overflow: hidden;
+  border-radius: 17px;
+}
+
+.folderCard:hover {
+  transform: scale(1.05);
+}
+
+.folderCard__background {
+  position: absolute;
+  inset: 0;
+  background: var(--brand-light);
+  border-radius: 17px;
+}
+
+.folderCard__icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  color: var(--brand-primary);
+  width: 64px;
+  height: 64px;
+}
+
+.folderCard__name {
+  position: absolute;
+  bottom: 16px;
+  left: 12px;
+  right: 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--brand-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
