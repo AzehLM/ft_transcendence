@@ -1,4 +1,4 @@
-import { generateLoginData, base64ToUint8Array, unwrapPrivateKey, storePrivateKey } from "./crypto.service";
+import { generateLoginData, base64ToUint8Array, unwrapPrivateKey, storePrivateKey, storePublicKey } from "./crypto.service";
 
 import { clearAllKeys } from "./idb.service";
 
@@ -42,7 +42,7 @@ export async function resetKeys(
     const iv = base64ToUint8Array(responseData.iv);
     const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
     await storePrivateKey(privateKey);
-    sessionStorage.setItem("publicKey", responseData.public_key);
+    await storePublicKey(responseData.public_key);
 
     return { success: true };
   } catch {
