@@ -27,13 +27,8 @@ export default function DashboardPage() {
         const response = folderId
             ? await FilesService.getFolderContents(folderId)
             : await FilesService.getAllFiles();
-            setFiles(
-                (response.files || []).filter(file => file.org_id === null)
-            );
-
-            setFolders(
-                (response.folders || []).filter(folder => folder.org_id === null)
-            );
+            setFiles(response.files || []);
+            setFolders(response.folders || [])
         } catch (err) {
             if (err instanceof Error && err.message === "not found") {
                 navigate("/404");
@@ -52,8 +47,8 @@ export default function DashboardPage() {
     const response = folderId
         ? await FilesService.getFolderContents(folderId)
         : await FilesService.getAllFiles();
-    setFiles(response.files || []);
-    setFolders(response.folders || []);
+        setFiles(response.files || []);
+        setFolders(response.folders || [])
     };
 
     const { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo } = useE2EEUpload(() => {
@@ -111,7 +106,7 @@ export default function DashboardPage() {
                     Personal space
                 </h1>
                 <h2 className={styles.subtitle}>
-                    All files
+                    All files and folders
                 </h2>
 
                 <div className={styles.uploadContainer}>
