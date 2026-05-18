@@ -236,7 +236,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return nil
 	}
 
-	if err := s.repo.DecrementUserUsedSpace(userID /* file.OwnerUserID */, file.FileSize); err != nil {
+	if err := s.repo.DecrementUserUsedSpace(file.OwnerUserID, file.FileSize); err != nil {
 		return err
 	}
 

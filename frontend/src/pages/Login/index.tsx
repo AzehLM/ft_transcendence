@@ -108,8 +108,7 @@ export default function LoginPage() {
                             icon={Mail}
                             placeholder="Enter your email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                            onChange={(e) => setEmail(e.target.value)} />
 
                         <InputField
                             label="Password"
@@ -117,8 +116,7 @@ export default function LoginPage() {
                             icon={Lock}
                             placeholder="Enter your password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                            onChange={(e) => setPassword(e.target.value)} />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>
