@@ -64,7 +64,7 @@ export default function DashboardPage() {
         await loadFiles();
     };
 
-     const handleDelete = async (id: string) => {
+     const handleDeleteFile = async (id: string) => {
          try {
              setError(null);
              await FilesService.deleteFile(id);
@@ -73,6 +73,18 @@ export default function DashboardPage() {
              const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete file:", err);
              setError(`Failed to delete file: ${errorMessage}`);
+         }
+    };
+
+     const handleDeleteFolder = async (id: string) => {
+         try {
+             setError(null);
+             await FilesService.deleteFolder(id);
+             await loadFiles();
+         } catch (err) {
+             const errorMessage = err instanceof Error ? err.message : "Unknown error";
+             console.error("Failed to delete folder:", err);
+             setError(`Failed to delete folder: ${errorMessage}`);
          }
     };
 
@@ -172,10 +184,10 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDelete} onDownload={downloadAndDecrypt} />
+                            <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} />
                         ))}
                         {files.map((file) => (
-                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDelete} onDownload={downloadAndDecrypt} />
+                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} />
                         ))}
                     </div>
                 )}

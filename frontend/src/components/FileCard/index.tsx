@@ -112,7 +112,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
           fileName={displayName}
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteConfirm(false)}
-          isTrash={isTrash}
+          isFile={true}
         />
       </>
     );
@@ -146,7 +146,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         fileName={name}
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteConfirm(false)}
-        isTrash={false}
+        isFolder={true}
       />
     </>
   );
