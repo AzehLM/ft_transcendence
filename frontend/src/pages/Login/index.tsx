@@ -22,7 +22,7 @@ export default function LoginPage() {
 
         const result = loginSchema.safeParse({ email, password });
         if (!result.success) {
-            setError(result.error.issues[0].message);
+            setError("Incorrect email or password");
             return;
         }
 
