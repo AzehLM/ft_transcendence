@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { loginSchema } from "../../schemas/auth.schema";
 
 
 export default function LoginPage() {
@@ -19,33 +20,20 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
-        if (!email || !password) {
-            setError("All fields are required!");
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email!");
-            return;
-        }
-
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters!");
+        const result = loginSchema.safeParse({ email, password });
+        if (!result.success) {
+            setError(result.error.issues[0].message);
             return;
         }
 
         setIsLoading(true);
         try {
             console.log("🔐 Génération des données cryptographiques pour la connexion...");
-            const { masterKey, loginData } = await generateLoginData(email, password);
-
+            const { masterKey, loginData } = await generateLoginData(result.data.email, result.data.password);
             console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(loginData),
             });
 
@@ -53,13 +41,11 @@ export default function LoginPage() {
 
             if (!response.ok) {
                 setError(responseData.message || "Login failed!");
-                setIsLoading(false);
                 return;
             }
 
             console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
-
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
@@ -70,10 +56,10 @@ export default function LoginPage() {
             sessionStorage.setItem("publicKey", responseData.public_key);
             navigate("/dashboard");
             // navigate("/profile");
-
         } catch (err: any) {
             console.error("Erreur:", err);
             setError(err.message || "An error occurred during login!");
+        } finally {
             setIsLoading(false);
         }
     };
