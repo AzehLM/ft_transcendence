@@ -1,12 +1,13 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
 import { CreateFolderModal } from "../../components/CreateFolderModal"
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService, FileItem, FolderItem } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -14,6 +15,7 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [folders, setFolders] = useState<FolderItem[]>([]);
     const { folderId } = useParams();
+    const navigate = useNavigate();
 
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
 
@@ -28,7 +30,11 @@ export default function DashboardPage() {
         setFiles(response.files || []);
         setFolders(response.folders || []);
         } catch (err) {
-        console.error("Failed to load files:", err);
+            if (err instanceof Error && err.message === "not found") {
+                navigate("/404");
+                return;
+            }
+        console.log("Failed to load files:", err);
         setError("Failed to load files.");
         } finally {
         setLoading(false);
@@ -47,12 +53,12 @@ export default function DashboardPage() {
 
     const { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo } = useE2EEUpload(() => {
     loadFiles();
-    });
+    }, undefined, folderId);
 
     const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
 
     const handleCreateFolderSubmit = async (folderName: string) => {
-        await FilesService.createFolder(folderName);
+        await FilesService.createFolder(folderName, folderId);
 
         await loadFiles();
     };
