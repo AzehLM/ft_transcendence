@@ -104,8 +104,7 @@ export default function RegisterPage() {
                             icon={Mail}
                             placeholder="Enter your email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                            onChange={(e) => setEmail(e.target.value)} />
 
                         <InputField
                             label="Password"
@@ -113,8 +112,7 @@ export default function RegisterPage() {
                             icon={Lock}
                             placeholder="Create a strong password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                            onChange={(e) => setPassword(e.target.value)} />
 
                         <InputField
                             label="Confirm Password"
@@ -122,8 +120,7 @@ export default function RegisterPage() {
                             icon={Lock}
                             placeholder="Confirm your password"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
+                            onChange={(e) => setConfirmPassword(e.target.value)} />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>

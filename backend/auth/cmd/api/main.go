@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"backend/auth/internal"
 	"backend/auth/internal/handlers"
 	"backend/auth/internal/workers"
 	"backend/shared/config"
@@ -48,24 +47,6 @@ func main() {
 		},
 	})
 
-	minioUser, err := config.ReadSecret("minio_admin_user")
-	if err != nil {
-		log.Fatalf("[FATAL] Could not read MinIO user secret: %v", err)
-	}
-
-	minioPassword, err := config.ReadSecret("minio_admin_pwd")
-	if err != nil {
-		log.Fatalf("[FATAL] Could not read MinIO password secret: %v", err)
-	}
-
-	useSSL := false
-	minioEndpoint := "minio:9000"
-
-	minioClient, err := internal.NewMinioClient(minioEndpoint, minioUser, minioPassword, useSSL)
-	if err != nil {
-		log.Fatalf("[FATAL] MinIO client init failed: %v\n", err)
-	}
-
 	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
@@ -83,7 +64,7 @@ func main() {
 	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
 	app.Get("/health", healthHandler.Checker)
 
-	authHandler := handlers.NewAuthHandler(dbConn, env, minioClient, eventPublisher)
+	authHandler := handlers.NewAuthHandler(dbConn, env, eventPublisher)
 
 	app.Post("/api/auth/register", authHandler.RegisterUser)
 	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
@@ -97,7 +78,9 @@ func main() {
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)
 	api.Put("/auth/password", authHandler.UpdatePassword)
-	api.Patch("/auth/avatar", authHandler.UploadAvatar)
+	api.Patch("/user/avatar", authHandler.UploadAvatar)
+	api.Get("/user/me/avatar", authHandler.GetMyAvatar)
+	api.Get("/user/:id/avatar", authHandler.GetUserAvatar)
 	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
 
 	go func() {

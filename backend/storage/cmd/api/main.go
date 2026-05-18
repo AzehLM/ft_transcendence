@@ -98,6 +98,7 @@ func main() {
 	repo := files.NewStorageRepository(database)
 	svc := service.NewStorageService(repo, minioClient, eventPublisher, checker, env)
 	handler := handlers.NewStorageHandler(svc, env)
+	metricsHandler := handlers.NewMetricsHandler(database)
 
 	healthHandler := handlers.NewHealthHandler(database, redisClient, minioClient)
 	app.Get("/health", healthHandler.Checker)
@@ -126,8 +127,8 @@ func main() {
 	api.Delete("/folders/:folder_id", handler.DeleteFolder)
 	api.Get("/folders", handler.ListPersonalContents) // can have a query string
 	api.Get("/folders/:folder_id/contents", handler.ListFolderContents)
-
 	api.Get("/storage/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
+	app.Get("/metrics", metricsHandler.Serve)
 
 	go func() {
 		if err := app.Listen(":8083"); err != nil {
