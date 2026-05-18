@@ -7,13 +7,13 @@ import { useState } from "react";
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       {sidebar}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
         <SearchBar />
-        <div style={{ marginLeft: "auto", position: "relative" }}> 
+        <div style={{ marginLeft: "auto", position: "relative" }}>
           <UserProfileButton
             isOpen={profileDropdownOpen}
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

@@ -1,4 +1,4 @@
-# ft_box - API Routes
+# ostrom - API Routes
 
 Base URL : `/api/v1`
 
@@ -67,6 +67,7 @@ Reponse si 2FA desactivee (200) :
 {
   "access_token": "<jwt>",
   "encrypted_private_key": "<base64>",
+  "public_key": "<base64>",
   "iv": "<base64>"
 }
 ```
@@ -144,7 +145,7 @@ Genere le secret TOTP.
 Reponse (200) :
 ```json
 {
-  "otpauth_uri": "otpauth://totp/ft_box:student@42lyon.fr?secret=XXXX&issuer=ft_box"
+  "otpauth_uri": "otpauth://totp/ostrom:student@42lyon.fr?secret=XXXX&issuer=ostrom"
 }
 ```
 

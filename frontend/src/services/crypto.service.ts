@@ -2,6 +2,8 @@
  * Service de Cryptographie pour l'Registration Zero-Knowledge
  */
 
+import { saveKey, getKey} from "./idb.service";
+
 // ============================================================================
 // ÉTAPE 1: Générer un Salt aléatoire
 // ============================================================================
@@ -196,6 +198,21 @@ export async function exportPublicKey(
     return new Uint8Array(publicKeyBuffer);
 }
 
+export async function encryptDEKWithPublicKey(
+    dek: Uint8Array,
+    publicKey: CryptoKey
+): Promise<Uint8Array> {
+    const encryptedDek = await crypto.subtle.encrypt(
+        {
+            name: "RSA-OAEP",
+        },
+        publicKey,
+        toArrayBuffer(dek)
+    );
+
+    return new Uint8Array(encryptedDek);
+}
+
 // ============================================================================
 // UTILITAIRE: Convertir Uint8Array en Base64 pour l'envoi HTTP
 // ============================================================================
@@ -233,33 +250,26 @@ export async function generateRegistrationData(
     email: string,
     password: string
 ) {
-    console.log("🔐 Démarrage du processus d'enregistrement cryptographique...");
 
     // ÉTAPE 1: Générer Salt
-    console.log("1️⃣ Génération du Salt...");
     const salt = generateSalt();
 
     // ÉTAPE 2: Dériver Master Key
-    console.log("2️⃣ Dérivation de la Master Key...");
     const masterKey = await deriveMasterKey(password, salt);
 
     // ÉTAPE 3: Générer paire RSA
-    console.log("3️⃣ Génération de la paire RSA-OAEP...");
     const keyPair = await generateRSAKeyPair();
 
     // ÉTAPE 4: Envelopper la clé privée
-    console.log("4️⃣ Enveloppe de la clé privée (AES-GCM)...");
     const wrappedPrivateKey = await wrapPrivateKey(
         keyPair.privateKey,
         masterKey
     );
 
     // ÉTAPE 5: Générer AuthHash
-    console.log("5️⃣ Génération de l'AuthHash...");
     const authHash = await generateAuthHash(masterKey);
 
     // ÉTAPE 6: Exporter clé publique
-    console.log("6️⃣ Export de la clé publique...");
     const publicKey = await exportPublicKey(keyPair.publicKey);
 
     // Créer l'objet à envoyer au serveur
@@ -272,7 +282,6 @@ export async function generateRegistrationData(
         iv: uint8ArrayToBase64(wrappedPrivateKey.iv),
     };
 
-    console.log("✅ Données de registration générées");
 
     return registrationData;
 }
@@ -287,10 +296,8 @@ export async function generateRegistrationData(
 // 4. Envoyer l'AuthHash pour vérification
 
 export async function generateLoginData(email: string, password: string) {
-    console.log("🔐 Démarrage du processus de connexion cryptographique...");
 
     // ÉTAPE 1: Récupérer le salt du serveur
-    console.log("1️⃣ Récupération du salt depuis le serveur...");
     let saltResponse;
     try {
         saltResponse = await fetch("/api/auth/salt", {
@@ -306,7 +313,7 @@ export async function generateLoginData(email: string, password: string) {
             throw new Error(errorData.message || "Failed to retrieve salt");
         }
     } catch (err: any) {
-        console.error("❌ Erreur lors de la récupération du salt:", err);
+        console.error("Erreur lors de la récupération du salt:", err);
         throw err;
     }
 
@@ -314,20 +321,18 @@ export async function generateLoginData(email: string, password: string) {
     const salt = base64ToUint8Array(saltData.salt);
 
     // ÉTAPE 2: Dériver Master Key
-    console.log("2️⃣ Dérivation de la Master Key...");
+    console.log("Dérivation de la Master Key...");
     const masterKey = await deriveMasterKey(password, salt);
 
     // ÉTAPE 3: Générer AuthHash
-    console.log("3️⃣ Génération de l'AuthHash...");
+    console.log("Génération de l'AuthHash...");
     const authHash = await generateAuthHash(masterKey);
 
-    // Créer l'objet à envoyer au serveur
     const loginData = {
         email,
         auth_hash: uint8ArrayToBase64(authHash),
     };
 
-    console.log("✅ Données de connexion générées:", loginData);
 
     return { masterKey, loginData };
 }
@@ -353,7 +358,7 @@ export async function unwrapPrivateKey(
     masterKey: CryptoKey,
     iv: Uint8Array
 ): Promise<CryptoKey> {
-    
+
     const decryptedBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
         masterKey,
@@ -367,7 +372,7 @@ export async function unwrapPrivateKey(
             name: "RSA-OAEP",
             hash: "SHA-256",
         },
-        true,
+        false,
         ["decrypt"]
     );
 
@@ -375,40 +380,82 @@ export async function unwrapPrivateKey(
 }
 
 export async function storePrivateKey(privateKey: CryptoKey) {
-  const exported = await crypto.subtle.exportKey("pkcs8", privateKey);
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
-  sessionStorage.setItem("privateKey", base64);
+  await saveKey("privateKey", privateKey);
 }
 
-// rebuild private key
 export async function getPrivateKeyFromSession(): Promise<CryptoKey | null> {
-    const base64Key = sessionStorage.getItem("privateKey");
-    if (!base64Key) return null;
-    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
-
-    return crypto.subtle.importKey(
-        "pkcs8",
-        keyBuffer,
-        { name: "RSA-OAEP", hash: "SHA-256" },
-        true,
-        ["decrypt"]
-    );
+    return await getKey("privateKey");
 }
 
 
 export async function getPublicKeyFromSession(): Promise<CryptoKey | null> {
-    const base64Key = sessionStorage.getItem("publicKey");
-    if (!base64Key) return null;
-    const keyBuffer = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
-    return crypto.subtle.importKey(
-        "spki",
-        keyBuffer,
-        { name: "RSA-OAEP", hash: "SHA-256" },
-        true,
-        ["encrypt"]
-    );
+    return await getKey("publicKey");
 }
 
+export async function storePublicKey(publicKey: CryptoKey) {
+    await saveKey("publicKey", publicKey);
+}
+export async function decryptDEKWithPrivateKey(
+    encryptedDek: Uint8Array,
+    privateKey: CryptoKey
+): Promise<Uint8Array> {
+    const decryptedDek = await crypto.subtle.decrypt(
+        { name: "RSA-OAEP" },
+        privateKey,
+        toArrayBuffer(encryptedDek)
+    );
+
+    return new Uint8Array(decryptedDek);
+}
+
+
+export async function encryptFilename(
+    filename: string,
+    dek: Uint8Array,
+    iv: Uint8Array
+): Promise<string> {
+    const filenameBuffer = new TextEncoder().encode(filename);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(dek),
+        "AES-GCM",
+        false,
+        ["encrypt"]
+    );
+
+    const encryptedBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        cryptoKey,
+        filenameBuffer
+    );
+
+    return uint8ArrayToBase64(new Uint8Array(encryptedBuffer));
+}
+
+export async function decryptFilename(
+    encryptedFilenameBase64: string,
+    dek: Uint8Array,
+    iv: Uint8Array
+): Promise<string> {
+    const encryptedBuffer = base64ToUint8Array(encryptedFilenameBase64);
+
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(dek),
+        "AES-GCM",
+        false,
+        ["decrypt"]
+    );
+
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        cryptoKey,
+        toArrayBuffer(encryptedBuffer)
+    );
+
+    return new TextDecoder().decode(decryptedBuffer);
+}
 
 export async function generateChangePasswordData(
     password: string,

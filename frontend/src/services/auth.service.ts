@@ -1,11 +1,22 @@
 import { generateLoginData, base64ToUint8Array, unwrapPrivateKey, storePrivateKey } from "./crypto.service";
 
-export function logout(navigate: (path: string) => void) {
-  localStorage.removeItem("token");
-  sessionStorage.removeItem("privateKey");
-  sessionStorage.removeItem("publicKey");
+import { clearAllKeys } from "./idb.service";
+
+export async function logout(navigate: (path: string) => void) {
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (error) {
+    console.error("Logout request failed:", error);
+  } finally {
+    localStorage.removeItem("token");
+    await clearAllKeys();
+
   sessionStorage.removeItem("passwordChanged");
-  navigate("/login");
+    navigate("/login");
+  }
 }
 
 export async function resetKeys(

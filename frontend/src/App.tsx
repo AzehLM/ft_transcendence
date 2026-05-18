@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
 import HomePage from './pages/Home'
@@ -6,7 +6,6 @@ import PrivacyPage from './pages/Privacy'
 import TermsPage from './pages/Terms'
 import ProfilePage from './pages/Profile'
 import DashboardPage from './pages/Dashboard'
-import TrashPage from './pages/Trash'
 import { AuthLayout } from './AuthLayout'
 import { MainLayout } from './MainLayout'
 import { MenuSidebar } from './components/MenuSidebar'
@@ -20,11 +19,15 @@ import OrgFilesPage from './pages/Orgs/OrgFilesPage'
 import OrgMembersPage from './pages/Orgs/OrgMembersPage'
 import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
 import StatusPage from './pages/Status'
+import ScrollToTop from './components/ScrollToTop'
+import AboutPage from './pages/About/About'
+import { Footer } from './components/Footer'
 import NotFoundPage from './pages/NotFound'
 
 function App() {
     return (
         <BrowserRouter>
+            <ScrollToTop />
             <Routes>
                 <Route element={<AuthLayout />}>
                     <Route path="/login" element={<LoginPage />} />
@@ -33,7 +36,6 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/trash" element={<TrashPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
@@ -53,9 +55,11 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/status" element={<StatusPage />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/404" element={<NotFoundPage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
+            <Footer />
         </BrowserRouter>
     )
 }

@@ -11,8 +11,8 @@ type OrgaMember struct {
     Description			string    `gorm:"size:250" json:"description"`
 	Role				string    `gorm:"size:20;not null;check:role IN ('admin','member')" json:"role"`
     EncOrgPrivKey		[]byte    `gorm:"type:bytea;not null" json:"enc_org_priv_key"`
-    EncAesKey    		[]byte    `gorm:"type:bytea;not null" json:"enc_aes_key"`  
-    Iv            		[]byte    `gorm:"type:bytea;not null" json:"iv"`             
+    EncAesKey    		[]byte    `gorm:"type:bytea;not null" json:"enc_aes_key"`
+    Iv            		[]byte    `gorm:"type:bytea;not null" json:"iv"`
 	JoinedAt			time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"joined_at"`
 }
 
@@ -27,4 +27,3 @@ type OrgaMemberResponse struct {
 	FamilyName	string 		`json:"family_name"`
 	FirstName	string 		`json:"first_name"`
 }
-	

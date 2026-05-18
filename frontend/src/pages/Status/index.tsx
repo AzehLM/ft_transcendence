@@ -48,7 +48,7 @@ export default function StatusPage() {
 	return (
 		<div
 			className={authStyles.login_page_wrapper}
-			style={{ background: "linear-gradient(to bottom right, #fef9f7, white)", alignItems: "flex-start", paddingTop: 64 }}
+			style={{ background: "linear-gradient(to bottom right, #fef9f7, white)", alignItems: "flex-start", paddingTop: 64, display: "flex", flex: 1, minHeight: 0 }}
 		>
 			<div className={authStyles.login_page_container} style={{ maxWidth: 520 }}> {/* made it a bit larger than the container in the login page*/}
 

@@ -66,6 +66,10 @@ export default function OrgMembersPage() {
     // Refresh members list -> might be modified with websocket
     try {
       const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
+      if (!res.ok) {
+        setModalError("Member added, but failed to refresh members.");
+        return;
+      }
       const data = await res.json();
       setMembers(data);
     } catch {
@@ -113,12 +117,13 @@ export default function OrgMembersPage() {
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
-          return;
+          return null;
         }
         if (!res.ok) throw new Error("Failed to fetch members.");
         return res.json();
       })
       .then(data => {
+        if (!data) return;
         setMembers(data);
 
         fetchWithRefresh("/api/auth/me")
@@ -137,7 +142,7 @@ export default function OrgMembersPage() {
         setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate]);
 
 
   const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
@@ -200,15 +205,15 @@ export default function OrgMembersPage() {
     <OrgLayout title="Organization members" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
         { myRole === "admin" && (
           <div className={orgaStyles.header}>
-            <button 
-            className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`} 
+            <button
+            className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`}
             onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
             >
             + Add a member
             </button>
           </div>
         )}
-            
+
         <ConfirmationModal
           isOpen={showAddMemberModal}
           fileName={memberEmail}

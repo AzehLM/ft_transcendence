@@ -19,23 +19,31 @@ interface FileGridProps {
   showActionButtons?: boolean;
   isTrash?: boolean;
   orgName?: string;
+  orgId?: string;
+  onUploadFile?: (file: File) => void;
+  onCreateFolder?: () => void;
+  onDownloadFile?: (id: string) => void;
   orgDesc?: string;
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgDesc }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc }: FileGridProps) {
+  const isOrgPage = orgName !== undefined;
+
   return (
     <div className={styles.page}>
-      <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons}></OrgHeader>
-      <div className={showActionButtons ? styles.contentArea : styles.contentAreaNoButtons}>
+      {isOrgPage && <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} onUploadFile={onUploadFile} onCreateFolder={onCreateFolder}></OrgHeader>}
+      <div className={showActionButtons && !isOrgPage ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>
         {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
         {loading ? (
           <p>Loading...</p>
+        ) : files.length === 0 ? (
+          <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
         ) : (
           <div className={styles.fileGrid}>
             {files.map((file) => (
-            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} />            ))}
+            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} onDownload={onDownloadFile} orgId={orgId} />            ))}
           </div>
         )}
       </div>

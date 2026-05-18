@@ -7,24 +7,25 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
 var (
 	ErrNotFound = fmt.Errorf("not found")
-	ErrEmpty = fmt.Errorf("cannot be empty")
+	ErrEmpty    = fmt.Errorf("cannot be empty")
 )
 
 // db contract -> these methods represents what each file/folder repository have to be able to do
 type StorageRepository interface {
 	// File part
-	DeleteFile(fileID uuid.UUID) error											// DELETE /files/{file_id}
-	FindByObjectID(objectID uuid.UUID) (*File, error)							// POST /files/finalize
-	InsertPendingFile(file *File) error											// POST /files/upload-url
+	DeleteFile(fileID uuid.UUID) error                                                                                       // DELETE /files/{file_id}
+	FindByObjectID(objectID uuid.UUID) (*File, error)                                                                        // POST /files/finalize
+	InsertPendingFile(file *File) error                                                                                      // POST /files/upload-url
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
-	FindByID(fileID uuid.UUID) (*File, error)									// GET /download and DELETE
-	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)		// PATCH /files/{file_id}
+	FindByID(fileID uuid.UUID) (*File, error)                                                                                // GET /download and DELETE
+	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)                                                   // PATCH /files/{file_id}
 	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
-	FindFilesByUserID(userID uuid.UUID) ([]File, error)	// used for user_deleted event handling
-	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)	// used for org_deleted event handling
+	FindFilesByUserID(userID uuid.UUID) ([]File, error) // used for user_deleted event handling
+	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)   // used for org_deleted event handling
 	DeleteOrgData(orgID uuid.UUID) error
 	DeleteUserData(userID uuid.UUID) error
 
@@ -33,15 +34,15 @@ type StorageRepository interface {
 	FindStalePendingFiles(age time.Duration) ([]File, error)
 
 	// Folder part
-	CreateFolder(folder *Folder) error											// POST /folders
-	FindFolderByID(folderID uuid.UUID) (*Folder, error)							// GET /folders?parent_id=xxx and GET /orgs/{org_id}/folders/{folder_id}/contents
-	IsFolderEmpty(folderID uuid.UUID) (bool, error)								// DELETE /folders/{folder_id}
-	DeleteFolder(folderID uuid.UUID) error										// DELETE /folders/{folder_id}
-	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error		// PATCH /folders/{folder_id}
+	CreateFolder(folder *Folder) error                                     // POST /folders
+	FindFolderByID(folderID uuid.UUID) (*Folder, error)                    // GET /folders?parent_id=xxx and GET /orgs/{org_id}/folders/{folder_id}/contents
+	IsFolderEmpty(folderID uuid.UUID) (bool, error)                        // DELETE /folders/{folder_id}
+	DeleteFolder(folderID uuid.UUID) error                                 // DELETE /folders/{folder_id}
+	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error // PATCH /folders/{folder_id}
 	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
-	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error)	// GET /folders?parent_id=xxx
-	ListOrgFolderContents(orgID uuid.UUID, folderID uuid.UUID) ([]Folder, []File, error)	// GET /orgs/{org_id}/folders/{folder_id}/contents
+	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error) // GET /folders?parent_id=xxx
+	ListOrgFolderContents(orgID uuid.UUID, folderID uuid.UUID) ([]Folder, []File, error) // GET /orgs/{org_id}/folders/{folder_id}/contents
 
 	// Space utils
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
@@ -167,8 +168,6 @@ func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64
 		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
 }
 
-
-
 // Folders
 
 func (r *storageRepository) CreateFolder(folder *Folder) error {
@@ -235,7 +234,6 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 	// this create an ancestors temporary table used for the recursive.
 	// f is a shorcut for folder, a for ancestors
 
-
 	// things to test:
 	// root folder to different root folder -> false
 	// folder to its own id -> true
@@ -260,8 +258,8 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 
 func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error) {
 	// 2 queries to fill folders then files
-	var folders	[]Folder
-	var files	[]File
+	var folders []Folder
+	var files []File
 
 	folderQuery := r.db.Where("owner_user_id = ?", ownerID)
 	if parentID == nil {
@@ -290,16 +288,23 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 }
 
 func (r *storageRepository) ListOrgFolderContents(orgID uuid.UUID, folderID uuid.UUID) ([]Folder, []File, error) {
-	var folders	[]Folder
-	var files	[]File
+	var folders []Folder
+	var files []File
 
-	folderQuery := r.db.Where("org_id = ? AND parent_id = ?", orgID, folderID)
+	var folderQuery *gorm.DB
+	var fileQuery *gorm.DB
+
+	if folderID == uuid.Nil {
+		folderQuery = r.db.Where("org_id = ? AND parent_id IS NULL", orgID)
+		fileQuery = r.db.Where("org_id = ? AND folder_id IS NULL AND status = ?", orgID, "ACTIVE")
+	} else {
+		folderQuery = r.db.Where("org_id = ? AND parent_id = ?", orgID, folderID)
+		fileQuery = r.db.Where("org_id = ? AND folder_id = ? AND status = ?", orgID, folderID, "ACTIVE")
+	}
 
 	if err := folderQuery.Find(&folders).Error; err != nil {
 		return nil, nil, err
 	}
-
-	fileQuery := r.db.Where("org_id = ? AND folder_id = ? AND status = ?", orgID, folderID, "ACTIVE")
 
 	if err := fileQuery.Find(&files).Error; err != nil {
 		return nil, nil, err

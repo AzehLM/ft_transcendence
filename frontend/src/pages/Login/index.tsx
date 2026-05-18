@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey } from "../../services/crypto.service";
+import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey, storePublicKey } from "../../services/crypto.service";
 import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -37,10 +37,8 @@ export default function LoginPage() {
 
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques pour la connexion...");
             const { masterKey, loginData } = await generateLoginData(email, password);
 
-            console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: {
@@ -57,7 +55,6 @@ export default function LoginPage() {
                 return;
             }
 
-            console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
 
 
@@ -67,12 +64,20 @@ export default function LoginPage() {
             const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
             await storePrivateKey(privateKey);
 
-            sessionStorage.setItem("publicKey", responseData.public_key);
+            const publicKeyArray = base64ToUint8Array(responseData.public_key);
+            const publicKey = await crypto.subtle.importKey(
+                "spki",
+                new Uint8Array(publicKeyArray),
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["encrypt"]
+            );
+            await storePublicKey(publicKey);
+
             navigate("/dashboard");
-            // navigate("/profile");
 
         } catch (err: any) {
-            console.error("❌ Erreur:", err);
+            console.error("Erreur:", err);
             setError(err.message || "An error occurred during login!");
             setIsLoading(false);
         }
@@ -88,7 +93,7 @@ export default function LoginPage() {
                             <Package className="w-11 h-11 text-white" strokeWidth={2} />
                         </div>
                         <span className={styles.logo_title}>
-                            ft_box
+                            ostrom
                         </span>
                     </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
@@ -108,8 +113,7 @@ export default function LoginPage() {
                             icon={Mail}
                             placeholder="Enter your email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                            onChange={(e) => setEmail(e.target.value)} />
 
                         <InputField
                             label="Password"
@@ -117,8 +121,7 @@ export default function LoginPage() {
                             icon={Lock}
                             placeholder="Enter your password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                            onChange={(e) => setPassword(e.target.value)} />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>

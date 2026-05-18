@@ -17,7 +17,7 @@ export default function AccountPage() {
     const handleDeleteAccount = async () => {
     try {
         const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
-        
+
         if (!response.ok) {
         const data = await response.json();
         console.error("Failed to delete account:", data);
@@ -25,7 +25,7 @@ export default function AccountPage() {
         return;
         }
 
-        logout(navigate);
+        await logout(navigate);
     } catch (err) {
         console.error("Network error:", err);
         setError("Network error, please try again.");

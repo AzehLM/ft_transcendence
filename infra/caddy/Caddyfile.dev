@@ -8,7 +8,6 @@
 # this machine's public IP, then replace ":80" below with your
 # domain name.
 
-
 # Global options block
 # https://caddyserver.com/docs/caddyfile/options
 {
@@ -55,7 +54,7 @@
             script-src 'self';
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
-            connect-src 'self' http://localhost:9000;
+            connect-src 'self' http://localhost:9000 https://ostrom.cloud;
             frame-ancestors 'none';
         "
 		# Content-Security-Policy "
@@ -93,6 +92,7 @@
 	# internal links and redirects are prefix-aware.
     @prometheus path /prometheus /prometheus/*
     handle @prometheus {
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
         uri strip_prefix /prometheus
         reverse_proxy prometheus:9090
     }
@@ -137,12 +137,12 @@
 
 
     # API routes
-    @auth path /api/auth /api/auth/*
+    @auth path /api/auth /api/user/ /api/users/ /api/auth/* /api/user/* /api/users/*
     handle @auth {
         reverse_proxy auth:8081
     }
     # super strict on the /api/orgs/*** path since I didn't find a better name for it
-    @storage-api path /api/files /api/files/* /api/folders /api/folders/* /api/orgs/*/folders/*/contents
+    @storage-api path /api/files /api/files/* /api/folders /api/folders/* /api/storage/*/folders/*/contents
     handle @storage-api {
         reverse_proxy storage:8083
     }
