@@ -10,13 +10,13 @@ Partout ou un input vient d'un utilisateur humain (peut se tromper ou etre malve
 
 On veut check:
 
-- Incription: email format, password longeur, caracteres requis, confirmation
-- Login: email format -> retour d'erreur avant un call API
-- Changement de MDP: ancien mdp présent, nouveau mdp -> respecte les critères
-- Création d'orga: nom non vide, longueur max, caractères autorisés
-- Création de dossier/renommage: non vide, longueur, pas de `/` ou caracteres qui casserait un path
-- Upload de fichier: taille max coté client, MIME type
-- Profil utilisateur: Formatage nom/prenom
+- [x] Incription: email format, password longeur, caracteres requis, confirmation
+- [x] Login: email format -> retour d'erreur avant un call API
+- [x] Changement de MDP: ancien mdp présent, nouveau mdp -> respecte les critères
+- [x] Création d'orga: nom non vide, longueur max, caractères autorisés
+- [x] Création de dossier/renommage: non vide, longueur, pas de `/` ou caracteres qui casserait un path
+- [x] Upload de fichier: taille max coté client, MIME type
+- [ ] Profil utilisateur: Formatage nom/prenom
 
 
 **Ce qu'on en tire**
