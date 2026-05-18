@@ -147,7 +147,9 @@ export default function DashboardPage() {
 
                 {loading ? (
                     <p>Loading files...</p>
-                ) : (
+                    ) : files.length === 0 ? (
+                    <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
+                    ) : (
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {files.map((file) => (
