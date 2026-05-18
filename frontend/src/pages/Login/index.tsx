@@ -65,10 +65,9 @@ export default function LoginPage() {
             await storePrivateKey(privateKey);
 
             const publicKeyArray = base64ToUint8Array(responseData.public_key);
-            const publicKeyBuffer = publicKeyArray.buffer.slice(publicKeyArray.byteOffset, publicKeyArray.byteOffset + publicKeyArray.byteLength) as ArrayBuffer;
             const publicKey = await crypto.subtle.importKey(
                 "spki",
-                new Uint8Array(publicKeyBuffer),
+                new Uint8Array(publicKeyArray),
                 { name: "RSA-OAEP", hash: "SHA-256" },
                 true,
                 ["encrypt"]

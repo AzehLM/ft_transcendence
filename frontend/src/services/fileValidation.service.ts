@@ -32,7 +32,7 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
     if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
         return {
             isValid: false,
-            error: `Fichier trop volumineux (${formatFileSize(file.size)}). Maximum autorisé: ${formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE)}`
+            error:`ERROR_VALIDATION_SIZE`
         };
     }
 
@@ -79,6 +79,37 @@ export const formatFileSize = (bytes: number): string => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export const getFileTypeLabel = (mimeType: string): string => {
+    const typeMap: Record<string, string> = {
+        'image/jpeg': 'Image JPEG',
+        'image/png': 'Image PNG',
+        'image/gif': 'Image GIF',
+        'image/webp': 'Image WebP',
+        'image/bmp': 'Image BMP',
+        'image/svg+xml': 'Image SVG',
+        'video/mp4': 'Vidéo MP4',
+        'video/webm': 'Vidéo WebM',
+        'video/mpeg': 'Vidéo MPEG',
+        'video/quicktime': 'Vidéo QuickTime',
+        'video/x-msvideo': 'Vidéo AVI',
+        'application/pdf': 'Document PDF',
+        'text/plain': 'Fichier texte',
+        'text/csv': 'Fichier CSV',
+        'application/msword': 'Document Word',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Document Word',
+        'application/vnd.ms-excel': 'Classeur Excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Classeur Excel',
+        'application/vnd.ms-powerpoint': 'Présentation PowerPoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'Présentation PowerPoint',
+        'application/zip': 'Archive ZIP',
+        'application/x-rar-compressed': 'Archive RAR',
+        'application/x-7z-compressed': 'Archive 7z',
+        'application/json': 'Fichier JSON',
+    };
+
+    return typeMap[mimeType] || mimeType || 'Fichier';
 };
 
 export const getAcceptAttribute = (): string => {

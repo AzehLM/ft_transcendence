@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
 import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
-import { validateFile, formatFileSize } from '../services/fileValidation.service';
+import { validateFile, formatFileSize, getFileTypeLabel } from '../services/fileValidation.service';
 
 export interface UploadProgress {
     uploadedBytes: number;
@@ -50,12 +50,12 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
     };
 
     const uploadFile = async (file: File) => {
-        const id = Math.random().toString(36).substring(2, 9);
+        const id = crypto.randomUUID();
 
         const fileInfo = {
             name: file.name,
             size: formatFileSize(file.size),
-            type: 'Fichier'
+            type: getFileTypeLabel(file.type)
         };
 
         setUploads(prev => ({
@@ -178,11 +178,12 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string) {
             if (!finalizeRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_FINALIZE_FAILED);
 
             updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
-            onSuccess();
 
             setTimeout(() => {
                 setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
             }, 4000);
+
+            onSuccess();
 
         } catch (err: any) {
             updateUpload(id, { status: `Erreur d'upload: ${err.message}`, progress: null, isUploading: false, error: err.message });
