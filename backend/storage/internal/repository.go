@@ -263,7 +263,7 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 
 	folderQuery := r.db.Where("owner_user_id = ?", ownerID)
 	if parentID == nil {
-		folderQuery = folderQuery.Where("parent_id IS NULL")
+		folderQuery = folderQuery.Where("parent_id IS NULL AND org_id IS NULL")
 	} else {
 		folderQuery = folderQuery.Where("parent_id = ?", *parentID)
 	}
@@ -275,7 +275,7 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 	// ACTIVE files only
 	fileQuery := r.db.Where("owner_user_id = ? AND status = ?", ownerID, "ACTIVE")
 	if parentID == nil {
-		fileQuery = fileQuery.Where("folder_id IS NULL")
+		fileQuery = fileQuery.Where("folder_id IS NULL AND org_id IS NULL")
 	} else {
 		fileQuery = fileQuery.Where("folder_id = ?", *parentID)
 	}
