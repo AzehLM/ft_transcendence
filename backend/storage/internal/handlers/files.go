@@ -362,3 +362,43 @@ func (h *StorageHandler) GetFileInfo(c fiber.Ctx) error {
 		"encrypted_filename": file.Name,
 	})
 }
+
+func (h *StorageHandler) AbortMultipartUpload(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	var body struct {
+		ObjectID	uuid.UUID	`json:"object_id"`
+		UploadID	string		`json:"upload_id"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing request body",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := h.svc.AbortMultipartUpload(userID, body.ObjectID, body.UploadID); err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
