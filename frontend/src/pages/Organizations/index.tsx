@@ -47,7 +47,7 @@ export default function OrganizationsPage() {
   const handleCreateOrg = async () => {
     if (!orgName.trim()) return;
     if (orgName.length > 100) {
-      setModalError(`The organization name cannot exceed 100 caracters`)
+      setModalError(`The organization name cannot exceed 100 characters`)
       return;
     }
     try {

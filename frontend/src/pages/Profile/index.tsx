@@ -95,7 +95,7 @@ export default function ProfilePage() {
                 <EditableField
                   label="First Name"
                   value={firstName}
-                  maxCarac={250}
+                  maxCharac={250}
                   onSave={handleChangeFirstName}
                   isUserNames={true}
                   handleReset={handleResetFirstName}
@@ -103,7 +103,7 @@ export default function ProfilePage() {
                 <EditableField
                   label="Family Name"
                   value={familyName}
-                  maxCarac={250}
+                  maxCharac={250}
                   onSave={handleChangeFamilyName}
                   isUserNames={true}
                   handleReset={handleResetFamilyName}

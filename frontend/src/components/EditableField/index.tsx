@@ -6,7 +6,7 @@ interface EditableFieldProps {
   label: string;
   value: string;
   role?: string | null;
-  maxCarac: number;
+  maxCharac: number;
   isOrgaName?: boolean;
   isOrgaDesc?: boolean;
   isUserNames?: boolean;
@@ -14,7 +14,7 @@ interface EditableFieldProps {
   handleReset?: () => Promise<void>;
 }
 
-export function EditableField({ label, value, role, maxCarac, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
+export function EditableField({ label, value, role, maxCharac, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
@@ -25,8 +25,8 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
       setEditing(false);
       return;
     }
-    if (inputValue.length > maxCarac) {
-        setError(`The input cannot exceed ${maxCarac} caracters`)
+    if (inputValue.length > maxCharac) {
+        setError(`The input cannot exceed ${maxCharac} characters`)
         return;
     }
     setLoading(true);
