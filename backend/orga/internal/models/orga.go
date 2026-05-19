@@ -22,6 +22,7 @@ type OrgResponse struct {
 	MaxSpace	int64     `json:"max_space"`
 	CreatedAt	time.Time `json:"created_at"`
 	Role  		string `json:"role"`
+	Description string `json:"description"`
 }
 
 func (Orga) TableName() string {

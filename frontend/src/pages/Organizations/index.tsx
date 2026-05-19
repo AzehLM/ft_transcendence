@@ -4,17 +4,20 @@ import { SettingsLayout } from "../Profile/SettingsLayout";
 import styles from "../../styles/profile.module.css";
 import orgaStyles from "./Organizations.module.css"
 import { UserPlus, UserMinus } from "lucide-react";
-import { generateOrganization } from "../../services/organizations.service";
+import { generateOrganization, addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
-import { addMemberToOrg } from "../../services/organizations.service";
 import { organizationSchema } from "../../schemas/organization.schema";
+import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
+import { resetKeys } from "../../services/auth.service";
+
 
 interface Organization {
   id: string;
   name: string;
   role: string;
   enc_org_priv_key: string;
+  description: string;
 }
 
 export default function OrganizationsPage() {
@@ -24,7 +27,7 @@ export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-
+  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
 
   useEffect(() => {
     fetchWithRefresh("/api/orgs")
@@ -50,6 +53,14 @@ export default function OrganizationsPage() {
         setModalError(result.error.issues[0].message);
         return;
       }
+
+      // handle missing public key
+      const userPublicKey = await getPublicKeyFromSession();
+      if (!userPublicKey) {
+        setPublicKeyMissing(true)
+        return;
+      }
+
       const data = await generateOrganization(result.data.name);
       // console.log("org data to send:", data);
       const response = await fetchWithRefresh("/api/orgs", {
@@ -84,19 +95,25 @@ export default function OrganizationsPage() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
 
-const handleAddMember = async () => {
-  if (!memberEmail.trim() || !selectedOrg) return;
-  setModalError(null);
+  const handleAddMember = async () => {
+    if (!memberEmail.trim() || !selectedOrg) return;
+    setModalError(null);
 
-  const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
-  if (!success) {
-    setModalError(error ?? "Failed to add member.");
-    return;
-  }
+    const userPrivateKey = await getPrivateKeyFromSession();
+    if (!userPrivateKey) {
+      setPublicKeyMissing(true)
+      return;
+    }
 
-  setMemberEmail("");
-  setShowAddMemberModal(false);
-};
+    const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
+    if (!success) {
+      setModalError(error ?? "Failed to add member.");
+      return;
+    }
+
+    setMemberEmail("");
+    setShowAddMemberModal(false);
+  };
 
   // Debug org key
   // const handleDebugOrgKey = async () => {
@@ -159,6 +176,30 @@ const handleAddMember = async () => {
     }
   };
 
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+
+    useEffect(() => {
+    fetchWithRefresh("/api/auth/me")
+        .then(res => res.json())
+        .then(data => setEmail(data.email));
+    }, []);
+
+  const handleResetKeys = async () => {
+    setModalError(null);
+    if (!password) return;
+
+    const { success, error } = await resetKeys(email, password);
+    if (!success) {
+      setModalError(error ?? "Error !");
+      return;
+    }
+
+    setPassword("");
+    setPublicKeyMissing(false);
+    setModalError(null);
+  };
+
   return (
     <SettingsLayout>
     <div className={styles.mainBox}>
@@ -183,6 +224,7 @@ const handleAddMember = async () => {
           errorMessage={modalError ?? undefined}
         />
 
+
         <ConfirmationModal
           isOpen={showAddMemberModal}
           fileName={memberEmail}
@@ -191,6 +233,16 @@ const handleAddMember = async () => {
           isAddMember={true}
           inputValue={memberEmail}
           onInputChange={setMemberEmail}
+          errorMessage={modalError ?? undefined}
+        />
+        <ConfirmationModal
+          isOpen={publicKeyMissing}
+          fileName={orgName}
+          onConfirm={handleResetKeys}
+          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          isKeyMissing={true}
+          inputValue={password}
+          onInputChange={setPassword}
           errorMessage={modalError ?? undefined}
         />
         <div className={orgaStyles.organizations}>
@@ -205,6 +257,7 @@ const handleAddMember = async () => {
                       onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
                       <div className={orgaStyles.orgInfo}>
                           <p className={orgaStyles.orgName}>{org.name}</p>
+                          <p className={orgaStyles.orgDesc}>{org.description}</p>
                           <p className={orgaStyles.orgRole}>{org.role}</p>
                           {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
                       </div>

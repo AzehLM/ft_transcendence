@@ -83,6 +83,17 @@
   text-overflow: ellipsis;
 }
 
+.orgDesc {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--brand-dark);
+  word-break: break-word;
+  flex: 1;
+  font-style: italic;
+  color: rgb(120, 120, 120);
+  margin-top: 4px;
+}
+
 .orgRole {
   font-size: 13px;
   color: rgb(120, 120, 120);
