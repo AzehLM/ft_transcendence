@@ -83,6 +83,14 @@ export default function DashboardPage() {
          }
     };
 
+    const handleRenameFolder = async (id: string, newName: string) => {
+        await FilesService.updateFolder(id, {
+            name: newName,
+        });
+
+        await loadFiles();
+    };
+
      const handleDeleteFolder = async (id: string) => {
          try {
              setError(null);
@@ -202,7 +210,7 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} />
+                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} />
                         ))}
                         {files.map((file) => (
                             <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} />

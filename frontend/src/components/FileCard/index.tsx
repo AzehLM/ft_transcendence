@@ -13,12 +13,13 @@ interface FileCardProps {
   isFolder?: boolean;
   isTrash?: boolean;
   onDelete?: (id: string) => void;
-  onMove?: (fileName: string, folderName: string) => void; // maybe need to change to id
+  onMove?: (objectId: string, targetId: string) => void; // maybe need to change to id
   onDownload?: (id: string) => void;
+  onRename?: (id: string, newName: string) => Promise<void>;
   orgId?: string;
 }
 
-export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onMove, onDownload, orgId }: FileCardProps) {
+export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onMove, onDownload, onRename, orgId }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -67,6 +68,32 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   const handleConfirmDelete = () => {
     setShowDeleteConfirm(false);
     onDelete?.(id);
+  };
+
+  const handleRename = () => {
+    setShowMenu(false);
+    setShowRenameConfirm(true);
+  };
+
+  const [renameValue, setRenameValue] = useState(name);
+  const [showRenameConfirm, setShowRenameConfirm] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleConfirmRename = async () => {
+    try {
+      if (!renameValue.trim()) {
+        setModalError("Invalid name");
+        return;
+      }
+
+      await onRename?.(id, renameValue);
+
+      setShowRenameConfirm(false);
+      setModalError(null);
+    } catch (err) {
+      console.log(err);
+      setModalError("Failed to rename folder");
+    }
   };
 
   if (!isFolder) {
@@ -146,6 +173,14 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
                   className={styles.fileCard__menu__item}>
                   Move
                 </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename();
+                  }} 
+                  className={styles.fileCard__menu__item}>
+                  Rename
+                </button>
               <button 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -164,6 +199,16 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteConfirm(false)}
         isDeleteFolder={true}
+      />
+      <ConfirmationModal
+        isOpen={showRenameConfirm}
+        fileName={name}
+        onConfirm={handleConfirmRename}
+        onCancel={() => { setShowRenameConfirm(false); setModalError(null); }}
+        isRenameFolder={true}
+        inputValue={renameValue}
+        onInputChange={setRenameValue}
+        errorMessage={modalError ?? undefined}
       />
     </>
   );

@@ -20,6 +20,7 @@ interface ConfirmationModalProps {
     isDeleteFile?: boolean;
     isDeleteFolder?: boolean;
     isCreateFolder?: boolean;
+    isRenameFolder?: boolean;
 }
 
 export function ConfirmationModal({
@@ -42,6 +43,7 @@ export function ConfirmationModal({
     isDeleteFile = false,
     isDeleteFolder = false,
     isCreateFolder = false,
+    isRenameFolder = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -66,6 +68,8 @@ export function ConfirmationModal({
     title = "Delete Folder?"
     } else if (isCreateFolder) {
     title="Create Folder"
+    } else if (isRenameFolder) {
+    title = "Rename Folder?";
     } else if (isTrash) {
     title = "Delete File?";
     } else {
@@ -86,6 +90,8 @@ export function ConfirmationModal({
     ? `Are you sure you want to remove "${fileName}" from this organization?`
     : isCreateFolder
     ? "Enter the name of the Folder you want to create :"
+    : isRenameFolder
+    ? `Enter a new name for the folder "${fileName}" :`
     : undefined
 
     const buttonText = isAccount
@@ -104,6 +110,8 @@ export function ConfirmationModal({
     ? "Remove"
     : isCreateFolder
     ? "Create Folder"
+    : isRenameFolder
+    ? "Rename Folder"
     : "Move to Trash";
     
     return (
@@ -112,10 +120,10 @@ export function ConfirmationModal({
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember || isCreateFolder) && (
+                {(isCreateOrga || isAddMember || isCreateFolder || isRenameFolder) && (
                 <input
                     type={isAddMember ? "email" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : "User email"}
+                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}
