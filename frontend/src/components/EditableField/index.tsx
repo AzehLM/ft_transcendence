@@ -25,7 +25,7 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
       setEditing(false);
       return;
     }
-    if (inputValue.length > 100) {
+    if (inputValue.length > maxCarac) {
         setError(`The input cannot exceed ${maxCarac} caracters`)
         return;
     }
