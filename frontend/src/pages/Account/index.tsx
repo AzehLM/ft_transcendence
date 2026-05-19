@@ -147,8 +147,8 @@ export default function AccountPage() {
         if (!isReset) return;
 
         const handlePopState = () => {
-        sessionStorage.removeItem("passwordChanged");
-        logout(navigate);
+            sessionStorage.removeItem("passwordChanged");
+            logout(navigate);
         };
 
         window.addEventListener("popstate", handlePopState);
@@ -161,18 +161,6 @@ export default function AccountPage() {
         logout(navigate);
         }
     }, []);
-
-    useEffect(() => {
-    if (!isReset) return;
-
-    const handlePopState = () => {
-        sessionStorage.removeItem("passwordChanged");
-        logout(navigate);
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-    }, [isReset]);
 
     return (
 
