@@ -88,7 +88,7 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	objectID = uuid.New()
 
 	var used, max int64
-	used, max, err = s.repo.GetUserSpace(userID)
+	used, max, err = s.getQuota(userID, orgID)
 	if err != nil {
 		return "", uuid.Nil, err
 	}
@@ -142,7 +142,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 
 	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
-	ok, err = s.repo.TryIncrementUserUsedSpace(userID, file.FileSize)
+	ok, err = s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -236,7 +236,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return nil
 	}
 
-	if err := s.repo.DecrementUserUsedSpace(file.OwnerUserID, file.FileSize); err != nil {
+	if err := s.decrementQuota(file.OwnerUserID, file.OrgID, file.FileSize); err != nil {
 		return err
 	}
 
@@ -580,4 +580,26 @@ func (s *storageService) presignedBaseURL(hostname string) string {
 		return "https://" + s.env.DomainName
 	}
 	return "https://" + hostname + ":" + s.env.AppPort
+}
+
+
+func (s *storageService) getQuota(userID uuid.UUID, orgID *uuid.UUID) (int64, int64, error) {
+	if orgID == nil {
+		return s.repo.GetUserSpace(userID)
+	}
+	return s.repo.GetOrgSpace(*orgID)
+}
+
+func (s *storageService) tryIncrementQuota(userID uuid.UUID, orgID *uuid.UUID, delta int64) (bool, error) {
+	if orgID == nil {
+		return s.repo.TryIncrementUserUsedSpace(userID, delta)
+	}
+	return s.repo.TryIncrementOrgUsedSpace(*orgID, delta)
+}
+
+func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delta int64) error {
+	if orgID == nil {
+		return s.repo.DecrementUserUsedSpace(userID, delta)
+	}
+	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
 }
