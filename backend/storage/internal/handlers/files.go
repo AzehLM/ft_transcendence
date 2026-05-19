@@ -167,6 +167,52 @@ func (h *StorageHandler) FinalizeUpload(c fiber.Ctx) error {
 	})
 }
 
+func (h *StorageHandler) FinalizeMultipartUpload(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing request body",
+		})
+	}
+
+	var body finalizeMultipartRequest
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	var fileID uuid.UUID
+
+	fileID, err = h.svc.FinalizeMultipartUpload(userID, body.ObjectID, body.UploadID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID, body.Parts)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		case errors.Is(err, service.ErrInvalidPartCount):
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad request"})
+		case errors.Is(err, service.ErrQuotaExceeded):
+			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"file_id": fileID,
+	})
+}
+
 func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 
 	userID, err := h.extractUserID(c)

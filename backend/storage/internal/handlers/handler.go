@@ -30,6 +30,16 @@ type finalizeRequest struct {
 	OrgID				*uuid.UUID	`json:"org_id"`
 }
 
+type finalizeMultipartRequest struct {
+	ObjectID			uuid.UUID				`json:"object_id"`
+	UploadID			string					`json:"upload_id"`
+	EncryptedFilename	string					`json:"encrypted_filename"`
+	EncryptedDEK		[]byte					`json:"encrypted_dek"`
+	IV					[]byte					`json:"iv"`
+	OrgID				*uuid.UUID				`json:"org_id"`
+	Parts				[]service.CompletePart	`json:"parts"`
+}
+
 func (h *StorageHandler) extractUserID(c fiber.Ctx) (uuid.UUID, error) {
 
 	userIDstr, ok := c.Locals("user_id").(string)
