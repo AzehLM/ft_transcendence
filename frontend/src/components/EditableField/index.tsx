@@ -62,9 +62,9 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
             <button className={styles.iconButton} onClick={handleSave} disabled={loading}>
               <Check size={18} />
             </button>
-            <button className={styles.iconButton} onClick={handleCancel}>
+            { handleReset && ( <button className={styles.iconButton} onClick={handleCancel}>
               <X size={18} />
-            </button>
+            </button> )}
           </>
         ) : (
           <>
