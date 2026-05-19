@@ -20,7 +20,7 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "first_name", "family_name").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -34,6 +34,8 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 		"used_space": user.UsedSpace,
 		"max_space":  user.MaxSpace,
 		"created_at": user.CreatedAt,
+		"first_name": user.FirstName,
+		"family_name": user.FamilyName,
 	})
 }
 
@@ -250,7 +252,103 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+    })
+}
+
+func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
+	var body struct {
+		FirstName string `json:"first_name" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.FirstName == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "first name required",
+	// 	})
+	// }
+
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("first_name", body.FirstName)
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": result.Error.Error(),
+        })
+    }
+	if result.RowsAffected == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+		"message": "first name updated",
+	})
+}
+
+func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
+	var body struct {
+		FamilyName string `json:"family_name" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.FamilyName == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "family name required",
+	// 	})
+	// }
+
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("family_name", body.FamilyName)
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": result.Error.Error(),
+        })
+    }
+	if result.RowsAffected == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "family name updated",
 	})
 }

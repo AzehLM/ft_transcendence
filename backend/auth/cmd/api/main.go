@@ -82,6 +82,8 @@ func main() {
 	api.Get("/user/me/avatar", authHandler.GetMyAvatar)
 	api.Get("/user/:id/avatar", authHandler.GetUserAvatar)
 	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
+	api.Patch("/auth/first-name", authHandler.ChangeFirstName)
+	api.Patch("/auth/family-name", authHandler.ChangeFamilyName)
 
 	go func() {
 		log.Println("[INFO] Starting Fiber server on port 8081...")

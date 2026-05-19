@@ -40,7 +40,7 @@ function App() {
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
                         <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/storage" element={<StoragePage />} />
+                        <Route path="/usage" element={<StoragePage />} />
                         <Route path="/account" element={<AccountPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
                     </Route>
