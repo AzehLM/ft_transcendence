@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -56,6 +57,7 @@ type StorageService interface {
 	// Multipart
 	RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
 	FinalizeMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error)
+	AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
@@ -748,6 +750,16 @@ func (s *storageService) FinalizeMultipartUpload(userID uuid.UUID, objectID uuid
 			return uuid.Nil, ErrInvalidPartCount
 		}
 		seen[p.PartNumber] = true
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, file.FolderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
 	}
 
 	ok, err := s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
