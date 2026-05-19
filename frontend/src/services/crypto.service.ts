@@ -377,6 +377,33 @@ export async function unwrapPrivateKey(
     return privateKey;
 }
 
+export async function unwrapPrivateKeyPassword(
+    encryptedPrivateKey: Uint8Array,
+    masterKey: CryptoKey,
+    iv: Uint8Array
+): Promise<CryptoKey> {
+
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        masterKey,
+        toArrayBuffer(encryptedPrivateKey)
+    );
+
+    const privateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        decryptedBuffer,
+        {
+            name: "RSA-OAEP",
+            hash: "SHA-256",
+        },
+        true, // where the problem was we need the key to be extractable but what about
+        ["decrypt"]
+    );
+
+    return privateKey;
+}
+
+
 export async function storePrivateKey(privateKey: CryptoKey) {
   await saveKey("privateKey", privateKey);
 }
