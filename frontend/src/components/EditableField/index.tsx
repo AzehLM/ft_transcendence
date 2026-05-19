@@ -85,7 +85,7 @@ export function EditableField({ label, value, role, maxCarac, isOrgaName = false
             { isUserNames && value === "" && (
               <p className={styles.novalue}>No name yet, you can add one!</p>
             )}
-            <button className={styles.iconButton} onClick={() => setEditing(true)}>
+            <button className={styles.iconButton} onClick={() => { setInputValue(value); setEditing(true); }}>
               <Pencil size={18} />
             </button>
           </>
