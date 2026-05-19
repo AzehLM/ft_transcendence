@@ -23,14 +23,15 @@ interface FileGridProps {
   onUploadFile?: (file: File) => void;
   onCreateFolder?: () => void;
   onDownloadFile?: (id: string) => void;
+  orgDesc?: string;
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc }: FileGridProps) {
   const isOrgPage = orgName !== undefined;
 
   return (
     <div className={styles.page}>
-      {isOrgPage && <OrgHeader orgName={orgName} showActionButtons={showActionButtons} onUploadFile={onUploadFile} onCreateFolder={onCreateFolder}></OrgHeader>}
+      {isOrgPage && <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} onUploadFile={onUploadFile} onCreateFolder={onCreateFolder}></OrgHeader>}
       <div className={showActionButtons && !isOrgPage ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
         <h2 className={styles.subtitle}>{subtitle}</h2>

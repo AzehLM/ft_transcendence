@@ -17,6 +17,9 @@ interface ConfirmationModalProps {
     isChangeRole?: boolean;
     newRole?: string;
     isRemoveMember?: boolean;
+    isDeleteOrga?: boolean;
+    isPasswordChanged?: boolean;
+    isKeyMissing?: boolean;
     isDeleteFile?: boolean;
     isDeleteFolder?: boolean;
     isCreateFolder?: boolean;
@@ -40,7 +43,10 @@ export function ConfirmationModal({
     errorMessage,
     isChangeRole = false,
     newRole,
-    isRemoveMember = false,
+    isRemoveMember = false, 
+    isDeleteOrga = false,
+    isPasswordChanged = false,
+    isKeyMissing = false,
     isDeleteFile = false,
     isDeleteFolder = false,
     isCreateFolder = false,
@@ -64,6 +70,8 @@ export function ConfirmationModal({
     title = "Change Role?";
     } else if (isRemoveMember) {
     title = "Remove Member?";
+    } else if (isDeleteOrga) {
+    title = "Delete Organization?";
     } else if (isDeleteFile) {
     title = "Delete File?"
     } else if (isDeleteFolder) {
@@ -76,6 +84,10 @@ export function ConfirmationModal({
     title = "Move location?";
     } else if (isTrash) {
     title = "Delete File?";
+    } else if (isPasswordChanged) {
+    title = "Password Updated";
+    } else if (isKeyMissing) {
+    title = "Enter your password";
     } else {
     title = "Move to Trash?";
     }
@@ -92,6 +104,16 @@ export function ConfirmationModal({
     ? `Change ${fileName}'s role to ${newRole}?`
     : isRemoveMember
     ? `Are you sure you want to remove "${fileName}" from this organization?`
+    : isDeleteOrga
+    ? `Are you sure you want to permanently delete the organization, "${fileName}"? This action cannot be undone.`
+    : isPasswordChanged
+    ? "Your password has been updated. Please log in again with your new password."
+    : isKeyMissing
+    ? "To complete this action, enter your password."
+    : isAddMember
+    ? "Enter the email of the new member."
+    : isCreateOrga
+    ? "Enter the name of the new organization"
     : isCreateFolder
     ? "Enter the name of the Folder you want to create :"
     : isRenameFolder
@@ -114,6 +136,12 @@ export function ConfirmationModal({
     ? "Change Role"
     : isRemoveMember
     ? "Remove"
+    : isDeleteOrga
+    ? "Delete Organization"
+    : isPasswordChanged
+    ? "Log out"
+    : isKeyMissing
+    ? "Confirm"
     : isCreateFolder
     ? "Create Folder"
     : isMove
@@ -124,14 +152,19 @@ export function ConfirmationModal({
     
     return (
         <>
+            {!isPasswordChanged && (
             <div className={styles.modal__overlay} onClick={onCancel} />
+            )}
+            {isPasswordChanged && (
+            <div className={styles.modal__overlay} />
+            )}
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember || isCreateFolder || isRenameFolder || isMove) && (
+                {(isCreateOrga || isAddMember || isKeyMissing || isCreateFolder || isRenameFolder || isMove) && (
                 <input
-                    type={isAddMember ? "email" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : isMove ? "Folder ID" : "User email"}
+                    type={isAddMember ? "email" : isKeyMissing ? "password" : "text"}
+                    placeholder={isCreateOrga ? "Organization name" : isKeyMissing ? "Password" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : isMove ? "Folder ID" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}
@@ -142,9 +175,13 @@ export function ConfirmationModal({
                 <p className={styles.modal__error}>{errorMessage}</p>
                 )}
                 <div className={styles.modal__actions}>
-                    <button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} onClick={onCancel}>
+                    { !isPasswordChanged && (<button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
+                          onClick={() => {
+                            onInputChange?.("");
+                            onCancel();
+                        }}>
                         Cancel
-                    </button>
+                    </button>)}
                     <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={onConfirm}>
                         {buttonText}
                     </button>

@@ -1,15 +1,25 @@
 import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
 import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
-import { FileValidationService } from '../services/fileValidation.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
+import { validateFile, formatFileSize, getFileTypeLabel } from '../services/fileValidation.service';
 
-interface UploadProgress {
+export interface UploadProgress {
     uploadedBytes: number;
     totalBytes: number;
     percentage: number;
     speed: number;
     remainingTime: number;
+}
+
+export interface UploadTask {
+    id: string;
+    file: File;
+    fileInfo: { name: string; size: string; type: string };
+    status: string;
+    progress: UploadProgress | null;
+    isUploading: boolean;
+    error: string | null;
 }
 
 async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
@@ -30,53 +40,35 @@ async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
 }
 
 export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: string) {
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadStatus, setUploadStatus] = useState<string>("");
-    const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
-    const [fileInfo, setFileInfo] = useState<{ name: string; size: string; type: string } | null>(null);
+    const [uploads, setUploads] = useState<Record<string, UploadTask>>({});
 
-    const validateFile = (file: File): string | null => {
-        if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
-            const max = FileValidationService.formatFileSize(UPLOAD_CONFIG.MAX_FILE_SIZE);
-            const current = FileValidationService.formatFileSize(file.size);
-            return UPLOAD_MESSAGES.ERROR_VALIDATION_SIZE(max, current);
-        }
-
-        if (!UPLOAD_CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
-            return UPLOAD_MESSAGES.ERROR_VALIDATION_TYPE();
-        }
-
-        return null;
+    const updateUpload = (id: string, updates: Partial<UploadTask>) => {
+        setUploads(prev => ({
+            ...prev,
+            [id]: { ...prev[id], ...updates }
+        }));
     };
 
     const uploadFile = async (file: File) => {
-        if (isUploading) {
-            setUploadStatus("Erreur: Un upload est déjà en cours. Veuillez attendre la fin.");
-            setTimeout(() => setUploadStatus(""), 5000);
-            return;
-        }
+        const id = crypto.randomUUID();
 
-        const error = validateFile(file);
-        if (error) {
-            setUploadStatus(`Erreur: ${error}`);
-            setTimeout(() => setUploadStatus(""), 5000);
-            return;
-        }
-
-        setFileInfo({
+        const fileInfo = {
             name: file.name,
-            size: FileValidationService.formatFileSize(file.size),
-            type: FileValidationService.getFileTypeLabel(file.type) || 'Fichier'
-        });
+            size: formatFileSize(file.size),
+            type: getFileTypeLabel(file.type)
+        };
 
-        setIsUploading(true);
-        setUploadStatus(UPLOAD_MESSAGES.INITIALIZING(file.name));
+        setUploads(prev => ({
+            ...prev,
+            [id]: { id, file, fileInfo, status: UPLOAD_MESSAGES.INITIALIZING(file.name), progress: null, isUploading: true, error: null }
+        }));
+
         const startTime = Date.now();
 
         try {
-            const magicNumberValidation = await FileValidationService.validateMagicNumber(file);
-            if (!magicNumberValidation.valid) {
-                throw new Error(magicNumberValidation.error);
+            const validation = await validateFile(file);
+            if (!validation.isValid) {
+                throw new Error(validation.error);
             }
 
             let publicKey: CryptoKey;
@@ -96,7 +88,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             );
             const encryptedDEK = await encryptDEKWithPublicKey(dek, publicKey);
 
-            setUploadStatus(UPLOAD_MESSAGES.REQUESTING_AUTH);
+            updateUpload(id, { status: UPLOAD_MESSAGES.REQUESTING_AUTH });
 
             const numChunks = Math.ceil(file.size / UPLOAD_CONFIG.CHUNK_SIZE);
             const totalEncryptedSize = file.size + (numChunks * 16);
@@ -113,7 +105,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             if (!initRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_SERVER_AUTH);
             const { presigned_url, object_id } = await initRes.json();
 
-            setUploadStatus(UPLOAD_MESSAGES.ENCRYPTING);
+            updateUpload(id, { status: UPLOAD_MESSAGES.ENCRYPTING });
 
             let offset = 0;
             let chunkIndex = 1;
@@ -144,12 +136,14 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
                 const remainingTime = remainingBytes / speed;
                 const percentage = Math.round((uploadedBytes / file.size) * 100);
 
-                setUploadProgress({
-                    uploadedBytes,
-                    totalBytes: file.size,
-                    percentage,
-                    speed,
-                    remainingTime
+                updateUpload(id, {
+                    progress: {
+                        uploadedBytes,
+                        totalBytes: file.size,
+                        percentage,
+                        speed,
+                        remainingTime
+                    }
                 });
 
                 offset += UPLOAD_CONFIG.CHUNK_SIZE;
@@ -158,8 +152,8 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             const finalBlob = new Blob(encryptedChunks, { type: "application/octet-stream" });
 
-            setUploadStatus(UPLOAD_MESSAGES.UPLOADING);
-            await new Promise(resolve => setTimeout(resolve, 500)); // Petite animation
+            updateUpload(id, { status: UPLOAD_MESSAGES.UPLOADING });
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const uploadRes = await fetch(presigned_url, {
                 method: "PUT",
@@ -168,7 +162,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             if (!uploadRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_STORAGE_REJECTED);
 
-            setUploadStatus(UPLOAD_MESSAGES.FINALIZING);
+            updateUpload(id, { status: UPLOAD_MESSAGES.FINALIZING });
 
             const finalizeRes = await fetchWithRefresh("/api/files/finalize", {
                 method: "POST",
@@ -183,21 +177,21 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             if (!finalizeRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_FINALIZE_FAILED);
 
-            setUploadStatus(UPLOAD_MESSAGES.SUCCESS(file.name));
-            setUploadProgress(null);
+            updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
+
+            setTimeout(() => {
+                setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+            }, 4000);
+
             onSuccess();
 
         } catch (err: any) {
-            setUploadStatus(`Erreur d'upload: ${err.message}`);
-            setUploadProgress(null);
-        } finally {
+            updateUpload(id, { status: `Erreur d'upload: ${err.message}`, progress: null, isUploading: false, error: err.message });
             setTimeout(() => {
-                setIsUploading(false);
-                setUploadStatus("");
-                setFileInfo(null);
-            }, 4000);
+                setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+            }, 5000);
         }
     };
 
-    return { uploadFile, isUploading, uploadStatus, uploadProgress, fileInfo };
+    return { uploadFile, uploads };
 }
