@@ -169,7 +169,7 @@ func (r *storageRepository) TryIncrementUserUsedSpace(userID uuid.UUID, delta in
 func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64) error {
 	return r.db.Table("users").
 		Where("id = ?", userID).
-		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
+		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
 }
 
 // Folders
@@ -406,5 +406,5 @@ func (r *storageRepository) TryIncrementOrgUsedSpace(orgID uuid.UUID, delta int6
 func (r *storageRepository) DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) error {
 	return r.db.Table("organizations").
 		Where("id = ?", orgID).
-		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
+		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
 }
