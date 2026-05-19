@@ -13,20 +13,27 @@ export default function ProfilePage() {
   const [email, setEmail] = useState<string>("")
 
   useEffect(() => {
-    fetchWithRefresh(`/api/auth/me`)
+    let cancelled = false;
+
+    fetchWithRefresh("/api/auth/me")
       .then(res => {
         // navigate to 404 if not found ?
         if (!res.ok) throw new Error("Failed to fetch user");
-        return res.json()
+        return res.json();
       })
       .then(data => {
-        if (data) {
+        if (!cancelled && data) {
           setFirstName(data.first_name);
           setFamilyName(data.family_name);
           setEmail(data.email);
         }
       })
-  });
+      .catch(err => {
+        if (!cancelled) console.error("Failed to fetch user:", err);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
 
   const handleChangeFirstName = async (newFirstName: string) => {
     const response = await fetchWithRefresh(`/api/auth/first-name`, {
