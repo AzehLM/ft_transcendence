@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -27,6 +29,8 @@ var (
 	ErrCyclicMove     = errors.New("cannot move folder into itself or one of its descendants")
 	ErrInvalidParent  = errors.New("invalid parent")
 	ErrInvalidName    = errors.New("invalid folder name")
+
+	ErrInvalidPartCount = errors.New("invalid part count")
 )
 
 // business logic contract
@@ -38,6 +42,9 @@ type StorageService interface {
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
+
+	// Multipart
+	RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
@@ -613,4 +620,80 @@ func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delt
 		return s.repo.DecrementUserUsedSpace(userID, delta)
 	}
 	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
+}
+
+
+// multipart
+// https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
+func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
+
+	// S3 multipart upload limits to 10000 but I think 100 is enough as we are giving users/organizations a 5go limit of available space.
+	if partCount <= 0 || partCount > 100 {
+		return uuid.Nil, "", nil, ErrInvalidPartCount // mapped to 400 bad request
+	}
+
+	// rbac check
+	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, "", nil, ErrForbidden
+		}
+		return uuid.Nil, "", nil, err
+	}
+
+	var used, max int64
+	used, max, err = s.getQuota(userID, orgID)
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	if used+fileSize > max {
+		return uuid.Nil, "", nil, ErrQuotaExceeded
+	}
+
+	// parameters needed by minio
+	ctx := context.TODO()
+	objectKey := uuid.New()
+	core := minio.Core{Client: s.minioClient}
+
+	uploadIDStr, err := core.NewMultipartUpload(ctx, "ostrom", objectKey.String(), minio.PutObjectOptions{})
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	// presigning each part
+	urls := make([]string, partCount)
+	for i := 1; i <= partCount; i++ {
+		reqParams := make(url.Values)
+		reqParams.Set("partNumber", strconv.Itoa(i))
+		reqParams.Set("uploadId", uploadIDStr)
+
+		rawURL, err := s.minioClient.Presign(ctx, "PUT", "ostrom", objectKey.String(), 15*time.Minute, reqParams)
+		if err != nil {
+			_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+			return uuid.Nil, "", nil, err
+		}
+
+		urls[i-1] = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
+	}
+
+	newFile := &storage.File{
+		ID:				uuid.New(),
+		OwnerUserID:	userID,
+		OrgID:			orgID,
+		FolderID:		folderID,
+		Name:			"",
+		FileSize:		fileSize,
+		MinioObjectKey:	objectKey,
+		UploadID:		&uploadIDStr,
+		EncryptedDEK:	[]byte{},
+		IV:				[]byte{},
+		Status:			"PENDING",
+	}
+
+	if err := s.repo.InsertPendingFile(newFile); err != nil {
+		_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+		return uuid.Nil, "", nil, err
+	}
+
+	return objectKey, uploadIDStr, urls, nil
 }
