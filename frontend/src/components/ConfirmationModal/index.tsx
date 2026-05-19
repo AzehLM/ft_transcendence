@@ -21,6 +21,7 @@ interface ConfirmationModalProps {
     isDeleteFolder?: boolean;
     isCreateFolder?: boolean;
     isRenameFolder?: boolean;
+    isMove?: boolean;
 }
 
 export function ConfirmationModal({
@@ -44,6 +45,7 @@ export function ConfirmationModal({
     isDeleteFolder = false,
     isCreateFolder = false,
     isRenameFolder = false,
+    isMove = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -70,6 +72,8 @@ export function ConfirmationModal({
     title="Create Folder"
     } else if (isRenameFolder) {
     title = "Rename Folder?";
+    } else if (isMove) {
+    title = "Move location?";
     } else if (isTrash) {
     title = "Delete File?";
     } else {
@@ -92,6 +96,8 @@ export function ConfirmationModal({
     ? "Enter the name of the Folder you want to create :"
     : isRenameFolder
     ? `Enter a new name for the folder "${fileName}" :`
+    : isMove
+    ? `Enter the id of the new target folder for "${fileName}" :`
     : undefined
 
     const buttonText = isAccount
@@ -110,6 +116,8 @@ export function ConfirmationModal({
     ? "Remove"
     : isCreateFolder
     ? "Create Folder"
+    : isMove
+    ? "Move item"
     : isRenameFolder
     ? "Rename Folder"
     : "Move to Trash";
@@ -120,10 +128,10 @@ export function ConfirmationModal({
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember || isCreateFolder || isRenameFolder) && (
+                {(isCreateOrga || isAddMember || isCreateFolder || isRenameFolder || isMove) && (
                 <input
                     type={isAddMember ? "email" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : "User email"}
+                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : isMove ? "Folder ID" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}

@@ -13,7 +13,7 @@ interface FileCardProps {
   isFolder?: boolean;
   isTrash?: boolean;
   onDelete?: (id: string) => void;
-  onMove?: (objectId: string, targetId: string) => void; // maybe need to change to id
+  onMove?: (id: string, newParentId: string) => Promise<void>; // maybe need to change to id
   onDownload?: (id: string) => void;
   onRename?: (id: string, newName: string) => Promise<void>;
   orgId?: string;
@@ -45,14 +45,6 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   const handleMenuClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(!showMenu);
-  };
-
-  const handleMove = () => {
-    const folderName = prompt("Enter existing folder name:");
-    if (folderName) {
-      onMove?.(displayName, folderName);
-      setShowMenu(false);
-    }
   };
 
   const handleDownload = () => {
@@ -91,8 +83,26 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
       setShowRenameConfirm(false);
       setModalError(null);
     } catch (err) {
-      console.log(err);
       setModalError("Failed to rename folder");
+    }
+  };
+
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [targetFolderId, setTargetFolderId] = useState("");
+
+  const handleMove = () => {
+    setShowMenu(false);
+    setShowMoveModal(true);
+  };
+
+  const handleConfirmMove = async () => {
+    try {
+      await onMove?.(id, targetFolderId);
+      setShowMoveModal(false);
+      setTargetFolderId("");
+      setModalError(null);
+    } catch (err) {
+      setModalError("Failed to move");
     }
   };
 
@@ -143,6 +153,15 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteConfirm(false)}
           isDeleteFile={true}
+        />
+        <ConfirmationModal
+          isOpen={showMoveModal}
+          fileName={name}
+          onConfirm={handleConfirmMove}
+          onCancel={() => { setShowMoveModal(false); setTargetFolderId(""); }}
+          isMove={true}
+          inputValue={targetFolderId}
+          onInputChange={setTargetFolderId}
         />
       </>
     );
@@ -209,6 +228,15 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         inputValue={renameValue}
         onInputChange={setRenameValue}
         errorMessage={modalError ?? undefined}
+      />
+      <ConfirmationModal
+        isOpen={showMoveModal}
+        fileName={name}
+        onConfirm={handleConfirmMove}
+        onCancel={() => { setShowMoveModal(false); setTargetFolderId(""); }}
+        isMove={true}
+        inputValue={targetFolderId}
+        onInputChange={setTargetFolderId}
       />
     </>
   );
