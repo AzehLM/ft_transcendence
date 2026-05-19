@@ -110,7 +110,6 @@ export default function AccountPage() {
             new_encrypted_private_key: data.new_encrypted_private_key,
             new_iv: data.new_iv,
         };
-        console.log("Send to change password : ", passwordData);
         const responsePut = await fetchWithRefresh("/api/auth/password", {
         method: "PUT",
         body: JSON.stringify(passwordData),
