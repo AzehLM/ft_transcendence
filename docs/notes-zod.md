@@ -2,7 +2,7 @@
 
 **Pourquoi Zod (a mettre dans notes tech-lead)**
 
-Zod est une lib de validation de schémas Typescript-first. Il prend un input utilisateur et valide + la type.
+Zod est une lib de validation de schémas Typescript-first. Il prend un input utilisateur, le valide + la type.
 
 **Ou faire de la validation de schémas ?**
 
