@@ -216,7 +216,9 @@ func (h *StorageHandler) MoveFile(c fiber.Ctx) error {
 		}
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "file moved",
+	})
 }
 
 // call to GetFileInfo from service returns a File so I can modulate the return value depending on needs
