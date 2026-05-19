@@ -1,6 +1,5 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
-import { CreateFolderModal } from "../../components/CreateFolderModal"
 import { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService, FileItem, FolderItem } from "../../services/files.service";
@@ -8,6 +7,7 @@ import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -18,6 +18,8 @@ export default function DashboardPage() {
     const navigate = useNavigate();
 
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+    const [folderName, setFolderName] = useState("");
+    const [folderError, setFolderError] = useState<string | null>(null);
 
     useEffect(() => {
     const load = async () => {
@@ -57,10 +59,16 @@ export default function DashboardPage() {
 
     const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
 
-    const handleCreateFolderSubmit = async (folderName: string) => {
+    const handleCreateFolderSubmit = async () => {
+        if (!folderName.trim()) {
+            setFolderError("Invalid Name")
+            return;
+        }
         await FilesService.createFolder(folderName, folderId);
-
         await loadFiles();
+        setFolderError("")
+        setFolderName("");
+        setIsFolderModalOpen(false);
     };
 
      const handleDeleteFile = async (id: string) => {
@@ -90,10 +98,21 @@ export default function DashboardPage() {
     return (
         <div className={styles.page}>
 
-            <CreateFolderModal
+            {/* <CreateFolderModal
                 isOpen={isFolderModalOpen}
                 onClose={() => setIsFolderModalOpen(false)}
                 onSubmit={handleCreateFolderSubmit}
+            /> */}
+
+            <ConfirmationModal
+            isOpen={isFolderModalOpen}
+            fileName={folderName}
+            onConfirm={handleCreateFolderSubmit}
+            onCancel={() => { setIsFolderModalOpen(false); setFolderError(null); }}
+            isCreateFolder={true}
+            inputValue={folderName}
+            onInputChange={setFolderName}
+            errorMessage={folderError ?? undefined}
             />
 
             <ActionButtons onUploadFile={uploadFile}

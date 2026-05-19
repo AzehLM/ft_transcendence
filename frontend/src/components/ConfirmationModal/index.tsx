@@ -19,6 +19,7 @@ interface ConfirmationModalProps {
     isRemoveMember?: boolean;
     isDeleteFile?: boolean;
     isDeleteFolder?: boolean;
+    isCreateFolder?: boolean;
 }
 
 export function ConfirmationModal({
@@ -39,7 +40,8 @@ export function ConfirmationModal({
     newRole,
     isRemoveMember = false,
     isDeleteFile = false,
-    isDeleteFolder = false
+    isDeleteFolder = false,
+    isCreateFolder = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -62,6 +64,8 @@ export function ConfirmationModal({
     title = "Delete File?"
     } else if (isDeleteFolder) {
     title = "Delete Folder?"
+    } else if (isCreateFolder) {
+    title="Create Folder"
     } else if (isTrash) {
     title = "Delete File?";
     } else {
@@ -96,6 +100,8 @@ export function ConfirmationModal({
     ? "Change Role"
     : isRemoveMember
     ? "Remove"
+    : isCreateFolder
+    ? "Create Folder"
     : "Move to Trash";
     
     return (
@@ -104,10 +110,10 @@ export function ConfirmationModal({
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember) && (
+                {(isCreateOrga || isAddMember || isCreateFolder) && (
                 <input
                     type={isAddMember ? "email" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : "User email"}
+                    placeholder={isCreateOrga ? "Organization name" : isCreateFolder ? "Folder Name" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}
