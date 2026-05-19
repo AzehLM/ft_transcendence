@@ -41,7 +41,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 		})
 	}
 
-    hostname := c.Hostname()
+	hostname := c.Hostname()
 	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID, hostname)
 	if err != nil {
 		switch {
@@ -59,6 +59,67 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"presigned_url": presignedURL,
 		"object_id":     objectID,
+	})
+}
+
+func (h *StorageHandler) RequestMultipartUpload(c fiber.Ctx) error {
+
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	var body struct {
+		FileSize	int64		`json:"file_size" validate:"required,min=1"`
+		FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
+		OrgID		*uuid.UUID	`json:"org_id,omitempty"`
+		PartCount	int			`json:"part_count" validate:"required,min=1"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing request body",
+		})
+	}
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	hostname := c.Hostname()
+	objectID, uploadID, urls, err := h.svc.RequestMultipartUpload(userID, body.FileSize, body.FolderID, body.OrgID, body.PartCount, hostname)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+		case errors.Is(err, service.ErrForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+		case errors.Is(err, service.ErrInvalidPartCount):
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad request"})
+		case errors.Is(err, service.ErrQuotaExceeded):
+			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "quota exceeded"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
+	type partURL struct {
+		PartNumber   int    `json:"part_number"`
+		PresignedURL string `json:"presigned_url"`
+	}
+
+	parts := make([]partURL, len(urls))
+	for i, u := range urls {
+		parts[i] = partURL{PartNumber: i + 1, PresignedURL: u}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"object_id": objectID,
+		"upload_id": uploadID,
+		"parts":     parts,
 	})
 }
 
@@ -122,7 +183,7 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 		})
 	}
 
-    hostname := c.Hostname()
+	hostname := c.Hostname()
 	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(userID, fileID, hostname)
 	if err != nil {
 		switch {
