@@ -7,28 +7,57 @@
     height: 100%;
     left: 0;
     top: 0;
-    width: 220px;
-    background: var(--brand-light);
-    box-shadow: inset -4px 0px 3.5px var(--color-dark-shadow);
+    width: 230px;
+    background: #fcf1ef;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     z-index: 100;
     overflow-y: auto;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .sidebar__logo {
-    left: 12px;
-    top: 12px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 700;
-    font-size: 24px;
-    color: #d54f2a;
     display: flex;
     align-items: center;
     gap: 12px;
     text-decoration: none;
-    padding: 24px 20px;
+    padding: 32px 20px;
+    margin-bottom: 20px;
+}
+
+.logoSquare {
+    width: 36px;
+    height: 36px;
+    background-color: #63473f;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.logoText {
+    display: flex;
+    flex-direction: column;
+}
+
+.logoName {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #4a3731;
+    line-height: 1.2;
+}
+
+.logoSubtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 400;
+    font-size: 11px;
+    color: #8c7b75;
 }
 
 .sidebar__button {
@@ -38,41 +67,45 @@
     background: none;
     border: none;
     cursor: pointer;
-    transition: opacity 0.2s ease;
     text-decoration: none;
-    color: inherit;
-    padding: 8px 0;
+    color: #4a3731;
+    padding: 10px 12px;
+    margin: 2px 12px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
 }
 
 .sidebar__button:hover {
-    opacity: 0.8;
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 .sidebar__button--active {
-    opacity: 0.7;
+    background-color: #fedfd7;
+    color: #4a3731;
 }
 
 .sidebar__button__label {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 18px;
-    color: var(--color-sidebar-text);
-    letter-spacing: 0px;
+    font-size: 15px;
     font-weight: 500;
 }
 
 .sidebar__button__icon {
-    width: 22px;
-    height: 22px;
-    color: var(--color-sidebar-text);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
     flex-shrink: 0;
 }
 
 .sidebar__links {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 8px 16px;
+    gap: 2px;
 }
+
+
 
 .sidebar__chevron {
     width: 22px;

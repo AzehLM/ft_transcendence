@@ -1,23 +1,21 @@
 import { useState, useEffect } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
-import { useParams } from "react-router-dom";
-import { OrgLayout } from "./OrgLayout";
-import profileStyles from "../../styles/profile.module.css";
+import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
-import orgaStyles from "../Organizations/Organizations.module.css"
-import { UserMinus, Shield } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
+import { UserPlus, MoreHorizontal, Shield, UserMinus } from "lucide-react";
+import styles from "./OrgMembers.module.css";
 
 interface Member {
   user_id: string;
   email: string;
   role: string;
+  first_name?: string;
+  last_name?: string;
+  status?: string;
 }
 
 export default function OrgMembersPage() {
-
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
   const navigate = useNavigate();
@@ -30,46 +28,23 @@ export default function OrgMembersPage() {
       })
       .then(data => setOrgName(data.name))
       .catch(() => setOrgName("Unknown"));
-
   }, [id]);
-
-    // Add a member
-    const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-    const [memberEmail, setMemberEmail] = useState("");
-    const [modalError, setModalError] = useState<string | null>(null);
-
-  const handleAddMember = async () => {
-    if (!memberEmail.trim()) return;
-    setModalError(null);
-
-    const { success, error } = await addMemberToOrg(id!, memberEmail);
-    if (!success) {
-      setModalError(error ?? "Failed to add member.");
-      return;
-    }
-
-    // Refresh members list -> might be modified with websocket
-    try {
-      const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
-      if (!res.ok) {
-        setModalError("Member added, but failed to refresh members.");
-        return;
-      }
-      const data = await res.json();
-      setMembers(data);
-    } catch {
-      setModalError("Member added, but failed to refresh members.");
-      return;
-    }
-
-    setMemberEmail("");
-    setShowAddMemberModal(false);
-  };
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [memberEmail, setMemberEmail] = useState("");
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [newRole, setNewRole] = useState<string>("");
+
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
@@ -103,10 +78,27 @@ export default function OrgMembersPage() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  const handleAddMember = async () => {
+    if (!memberEmail.trim()) return;
+    setModalError(null);
 
-  const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [newRole, setNewRole] = useState<string>("");
+    const { success, error } = await addMemberToOrg(id!, memberEmail);
+    if (!success) {
+      setModalError(error ?? "Failed to add member.");
+      return;
+    }
+
+    try {
+      const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(data);
+      }
+    } catch {}
+
+    setMemberEmail("");
+    setShowAddMemberModal(false);
+  };
 
   const handleChangeRole = async () => {
     if (!selectedMember) return;
@@ -135,9 +127,6 @@ export default function OrgMembersPage() {
     setSelectedMember(null);
   };
 
-  const [showRemoveModal, setShowRemoveModal] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
-
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
     const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
@@ -160,85 +149,123 @@ export default function OrgMembersPage() {
     setMemberToRemove(null);
   };
 
+  const getInitials = (member: Member) => {
+    if (member.first_name && member.last_name) {
+      return `${member.first_name[0]}${member.last_name[0]}`.toUpperCase();
+    }
+    return member.email.substring(0, 2).toUpperCase();
+  };
+
+  const getName = (member: Member) => {
+    if (member.first_name && member.last_name) {
+      return `${member.first_name} ${member.last_name}`;
+    }
+    return member.email.split("@")[0].replace(/[._]/g, " ");
+  };
+
   return (
-    <OrgLayout title="Organization members" orgName={orgName} showActionButtons={false}>
-        { myRole === "admin" && (
-          <div className={orgaStyles.header}>
-            <button
-            className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`}
-            onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
-            >
-            + Add a member
-            </button>
+    <div style={{ minHeight: "100%", backgroundColor: "transparent" }}>
+      <div className={styles.container}>
+        <div className={styles.headerSection}>
+          <div className={styles.titleGroup}>
+            <h1>Organization Members</h1>
+            <p className={styles.subtitle}>Manage access and roles for your team members.</p>
           </div>
-        )}
+          {myRole === "admin" && (
+            <button
+              className={styles.addButton}
+              onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
+            >
+              <UserPlus size={20} />
+              Add member
+            </button>
+          )}
+        </div>
 
-        <ConfirmationModal
-          isOpen={showAddMemberModal}
-          fileName={memberEmail}
-          onConfirm={handleAddMember}
-          onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
-          isAddMember={true}
-          inputValue={memberEmail}
-          onInputChange={setMemberEmail}
-          errorMessage={modalError ?? undefined}
-        />
+        {error && <div className={styles.errorState}>{error}</div>}
 
-      <div className={orgaStyles.organizations}>
-        {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
         {loading ? (
-          <p>Loading...</p>
+          <div className={styles.loadingState}>Loading members...</div>
         ) : members.length === 0 ? (
-          <p className={orgaStyles.empty}>No members found.</p>
+          <div className={styles.emptyState}>No members found.</div>
         ) : (
-          <div className={orgaStyles.orgList}>
+          <div className={styles.memberList}>
             {members.map((member) => (
-              <div key={member.user_id} className={orgaStyles.orgCard}>
-                <div className={orgaStyles.orgInfo}>
-                  <p className={orgaStyles.orgName}>{member.email}</p>
-                  <p className={orgaStyles.orgRole}>{member.role}</p>
+              <div key={member.user_id} className={styles.memberCard}>
+                <div className={styles.avatar}>
+                   <div className={styles.initialsAvatar}>{getInitials(member)}</div>
                 </div>
+                <div className={styles.memberInfo}>
+                  <h3 className={styles.memberName}>{getName(member)}</h3>
+                  <p className={styles.memberEmail}>{member.email}</p>
+                </div>
+                <div className={styles.memberActions}>
+                  <div className={`${styles.roleTag} ${
+                    member.role.toLowerCase() === 'admin' ? styles.roleAdmin :
+                    member.role.toLowerCase() === 'editor' ? styles.roleEditor :
+                    styles.roleViewer
+                  }`}>
+                    {member.role}
+                  </div>
+                  <div className={styles.statusInfo}>
+                    <span className={`${styles.statusDot} ${styles.statusDotActive}`}></span>
+                    Active
+                  </div>
+                  {myRole === "admin" && (
+                    <div className={styles.buttonsGroup}>
+                      <button
+                        className={`${styles.actionBtn} ${styles.roleBtn}`}
+                        title="Change Role"
+                        onClick={() => {
+                          setSelectedMember(member);
+                          setNewRole(member.role === "admin" ? "member" : "admin");
+                          setShowChangeRoleModal(true);
+                        }}
+                      >
+                        <Shield size={18} />
+                      </button>
+                      <button
+                        className={`${styles.actionBtn} ${styles.kickBtn}`}
+                        title="Remove Member"
+                        onClick={() => {
+                          setMemberToRemove(member);
+                          setShowRemoveModal(true);
+                        }}
+                      >
+                        <UserMinus size={18} />
+                      </button>
+                    </div>
+                  )}
 
-              {myRole === "admin" && (
-                <div className={orgaStyles.orgActions}>
-                  <button
-                    className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
-                    onClick={() => {
-                      setSelectedMember(member);
-                      setNewRole(member.role === "admin" ? "member" : "admin");
-                      setShowChangeRoleModal(true);
-                    }}
-                  >
-                    <Shield size={20} />
-                    {member.role === "admin" ? "Make Member" : "Make Admin"}
-                  </button>
-                  <button
-                    className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
-                    onClick={() => {
-                      setMemberToRemove(member);
-                      setShowRemoveModal(true);
-                    }}
-                  >
-                    <UserMinus size={20} />
-                    Remove
-                  </button>
                 </div>
-              )}
               </div>
             ))}
           </div>
         )}
       </div>
 
-        <ConfirmationModal
-          isOpen={showChangeRoleModal}
-          fileName={selectedMember?.email ?? ""}
-          onConfirm={handleChangeRole}
-          errorMessage={modalError ?? undefined}
-          onCancel={() => { setShowChangeRoleModal(false); setSelectedMember(null); setModalError(null); }}    isChangeRole={true}
-          newRole={newRole}
-        />
-        <ConfirmationModal
+      <ConfirmationModal
+        isOpen={showAddMemberModal}
+        fileName={memberEmail}
+        onConfirm={handleAddMember}
+        onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
+        isAddMember={true}
+        inputValue={memberEmail}
+        onInputChange={setMemberEmail}
+        errorMessage={modalError ?? undefined}
+      />
+
+      <ConfirmationModal
+        isOpen={showChangeRoleModal}
+        fileName={selectedMember?.email ?? ""}
+        onConfirm={handleChangeRole}
+        errorMessage={modalError ?? undefined}
+        onCancel={() => { setShowChangeRoleModal(false); setSelectedMember(null); setModalError(null); }}
+        isChangeRole={true}
+        newRole={newRole}
+      />
+
+      <ConfirmationModal
         isOpen={showRemoveModal}
         errorMessage={modalError ?? undefined}
         onCancel={() => { setShowRemoveModal(false); setMemberToRemove(null); setModalError(null); }}
@@ -246,6 +273,6 @@ export default function OrgMembersPage() {
         onConfirm={handleRemoveMember}
         isRemoveMember={true}
       />
-    </OrgLayout>
+    </div>
   );
 }

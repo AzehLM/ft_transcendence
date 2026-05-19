@@ -6,8 +6,11 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
       <Link to="/" className={styles.sidebar__logo}>
-        <Package className="w-11 h-11" strokeWidth={2} />
-        ostrom
+        <div className={styles.logoSquare}>O</div>
+        <div className={styles.logoText}>
+          <span className={styles.logoName}>Ostrom</span>
+          <span className={styles.logoSubtitle}>Cloud Storage</span>
+        </div>
       </Link>
       <div className={styles.sidebar__links}>
         {children}
