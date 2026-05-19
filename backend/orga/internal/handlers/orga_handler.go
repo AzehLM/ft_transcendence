@@ -110,7 +110,6 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	orga := models.Orga{
 		Name:      body.Name,
 		PublicKey: decodedPublicKey,
-		// PublicKey: []byte(body.PublicKey),
 	}
 
 	// create an orga member with role admin
@@ -131,14 +130,14 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		})
 	}
 
-	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey)
 	if errAes != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 aes key",
 		})
 	}
 
-	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv)
 	if errIv != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 iv",
@@ -146,7 +145,6 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	}
 
 	orgaMember := models.OrgaMember{
-		// OrgID:         orga.ID,
 		UserID:        userID,
 		Role:          "admin",
 		EncOrgPrivKey: decodedKey,
@@ -197,8 +195,6 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
 		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
 	}
-
-	// delete all MinIO files
 
 	return c.SendStatus(fiber.StatusNoContent)
 
@@ -273,12 +269,6 @@ func (h *OrgaHandler) PatchMaxSpace(c fiber.Ctx) error {
 		})
 	}
 
-	// if body.Space <= 0 {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error" : "space must be positive",
-	// 	})
-	// }
-
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
@@ -344,12 +334,6 @@ func (h *OrgaHandler) PatchUsedSpace(c fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
-	// if body.Space <= 0 {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error" : "space must be positive",
-	// 	})
-	// }
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
@@ -505,12 +489,6 @@ func (h *OrgaHandler) ChangeDescription(c fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
-	// if body.Description == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "description required",
-	// 	})
-	// }
 
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam)
