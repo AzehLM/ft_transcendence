@@ -16,18 +16,24 @@ export default function AccountPage() {
 
     const handleDeleteAccount = async () => {
     try {
-        const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
+        const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
-        if (!response.ok) {
-        const data = await response.json();
-        console.error("Failed to delete account:", data);
-        setError(data.message || "Failed to delete account, please try again.");
-        return;
+    if (!response.ok) {
+      const text = await response.text();
+      let message = "Failed to delete account, please try again.";
+      try {
+        if (text) {
+          const data = JSON.parse(text);
+          message = data.message || data.error || message;
         }
+      } catch {}
+      setError(message);
+      return;
+    }
 
         await logout(navigate);
     } catch (err) {
-        console.error("Network error:", err);
+        console.log("Network error:", err);
         setError("Network error, please try again.");
     }
     };
@@ -138,7 +144,8 @@ export default function AccountPage() {
         sessionStorage.setItem("passwordChanged", "true");
         setIsReset(true);
 
-    } catch {
+    } catch (err) {
+        console.log("Network error:", err);
         setPwdError("Network error, please try again.");
     }
     };
