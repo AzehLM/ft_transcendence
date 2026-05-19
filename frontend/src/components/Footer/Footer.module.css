@@ -5,6 +5,11 @@
 .footer {
     background-color: #fdf3ef;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
+    margin-left: 0;
+}
+
+.footerWithSidebar {
+    margin-left: 220px;
 }
 
 .footerGrid {
@@ -72,4 +77,22 @@
     color: #9ca3af;
     text-align: center;
     margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .footerWithSidebar {
+        margin-left: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .footerWithSidebar {
+        margin-left: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .footerWithSidebar {
+        margin-left: 80px;
+    }
 }

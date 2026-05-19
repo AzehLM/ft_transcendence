@@ -3,8 +3,8 @@
    ============================================================================ */
 
 .sidebar {
-    position: relative;
-    height: auto;
+    position: fixed;
+    height: 100%;
     left: 0;
     top: 0;
     width: 220px;
@@ -13,6 +13,8 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    z-index: 100;
+    overflow-y: auto;
 }
 
 .sidebar__logo {
@@ -83,31 +85,104 @@
     transform: rotate(-90deg);
 }
 
-/* .sidebar__folder {
-    position: absolute;
-    left: 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    height: auto;
-    transition: opacity 0.2s ease;
+
+/* Tablets  */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 180px;
+    }
+
+    .sidebar__logo {
+        padding: 16px 12px;
+        font-size: 20px;
+    }
+
+    .sidebar__links {
+        gap: 12px;
+        padding: 6px 12px;
+    }
+
+    .sidebar__button__label {
+        font-size: 16px;
+    }
+
+    .sidebar__button__icon {
+        width: 20px;
+        height: 20px;
+    }
 }
 
-.sidebar__folder:hover {
-    opacity: 0.8;
+/* Mobiles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 140px;
+    }
+
+    .sidebar__logo {
+        padding: 12px 8px;
+        font-size: 18px;
+    }
+
+    .sidebar__links {
+        gap: 8px;
+        padding: 4px 8px;
+    }
+
+    .sidebar__button {
+        padding: 6px 4px;
+        gap: 6px;
+    }
+
+    .sidebar__button__label {
+        font-size: 13px;
+    }
+
+    .sidebar__button__icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .sidebar__chevron {
+        width: 16px;
+        height: 16px;
+    }
 }
 
-.sidebar__folder--active {
-    opacity: 0.7;
-}
+@media (max-width: 480px) {
+    .sidebar {
+        width: 80px;
+    }
 
-.sidebar__folder__icon {
-    width: 28px;
-    height: 28px;
-    color: var(--color-sidebar-text);
-    flex-shrink: 0;
-} */
+    .sidebar__logo {
+        padding: 10px 6px;
+        font-size: 14px;
+        gap: 0;
+        justify-content: center;
+    }
+
+    .sidebar__links {
+        gap: 8px;
+        padding: 4px 4px;
+    }
+
+    .sidebar__button {
+        padding: 6px 4px;
+        gap: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar__button__label {
+        display: none;
+    }
+
+    .sidebar__button__icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .sidebar__chevron {
+        display: none;
+    }
+}

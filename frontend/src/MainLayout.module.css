@@ -1,0 +1,25 @@
+.mainContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-left: 220px;
+}
+
+@media (max-width: 1024px) {
+    .mainContainer {
+        margin-left: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mainContainer {
+        margin-left: 140px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mainContainer {
+        margin-left: 100px;
+    }
+}
