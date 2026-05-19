@@ -84,6 +84,8 @@ export function ConfirmationModal({
     ? `Change ${fileName}'s role to ${newRole}?`
     : isRemoveMember
     ? `Are you sure you want to remove "${fileName}" from this organization?`
+    : isCreateFolder
+    ? "Enter the name of the Folder you want to create :"
     : undefined
 
     const buttonText = isAccount
