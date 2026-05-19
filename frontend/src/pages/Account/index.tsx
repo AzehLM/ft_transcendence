@@ -15,10 +15,10 @@ export default function AccountPage() {
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-
-    const [email, setEmail] = useState<string>("");
     const [pwdError, setPwdError] = useState<string | null>(null);
     const [isReset, setIsReset] = useState(false);
+
+    const [email, setEmail] = useState<string>("");
     const [isUpdating, setIsUpdating] = useState(false);
 
     const [deleteError, setDeleteError] = useState<string | null>(null);

@@ -232,3 +232,38 @@
         width: 200px;
     }
 }
+/* still need to be checked */
+@media (max-width: 1080px) {
+    .profileBox {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .profileAvatarCol {
+        width: 100%;
+    }
+    
+    .infoBox {
+        width: 100%;
+    }
+    
+    .mainBox {
+        padding: 20px;
+    }
+    
+    .buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .profileButton {
+        width: 100%;
+    }
+}
+
+
+@media (max-width: 1200px) {
+    .profileAvatarCol img {
+        width: 200px;
+    }
+}
