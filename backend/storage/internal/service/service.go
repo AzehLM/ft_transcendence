@@ -107,13 +107,13 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	ctx := context.TODO()
 	objectID = uuid.New()
 
-	var used, max int64
-	used, max, err = s.getQuota(userID, orgID)
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
 	if err != nil {
 		return "", uuid.Nil, err
 	}
 
-	if used+fileSize > max {
+	if used+fileSize > maxSpace {
 		return "", uuid.Nil, ErrQuotaExceeded
 	}
 
@@ -650,16 +650,19 @@ func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64
 		if errors.Is(err, rbac.ErrForbidden) {
 			return uuid.Nil, "", nil, ErrForbidden
 		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, "", nil, ErrNotFound
+		}
 		return uuid.Nil, "", nil, err
 	}
 
-	var used, max int64
-	used, max, err = s.getQuota(userID, orgID)
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
 	if err != nil {
 		return uuid.Nil, "", nil, err
 	}
 
-	if used+fileSize > max {
+	if used+fileSize > maxSpace {
 		return uuid.Nil, "", nil, ErrQuotaExceeded
 	}
 
@@ -803,4 +806,33 @@ func (s *storageService) FinalizeMultipartUpload(userID uuid.UUID, objectID uuid
 
 	_ = s.publisher.PublishFileUploaded(ctx, file)
 	return file.ID, nil
+}
+
+func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	// rbac: only owner can cancel its own upload (cannot do a CanDeleteFile as the file is still PENDING)
+	if file.OwnerUserID != userID {
+		return ErrForbidden
+	}
+
+	if file.UploadID == nil || *file.UploadID != uploadID {
+		return ErrForbidden
+	}
+
+	// aborting on MinIO side, if MinIO fails we only log it but can't do anything, leaving the sweeper do the job
+	core := minio.Core{Client: s.minioClient}
+	if err := core.AbortMultipartUpload(context.TODO(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
+		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
+	}
+
+	// again, no need to decrement user space here as the file is still PENDING
+	return s.repo.DeleteFile(file.ID)
 }
