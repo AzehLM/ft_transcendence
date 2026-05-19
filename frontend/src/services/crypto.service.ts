@@ -1,62 +1,62 @@
 /**
- * Service de Cryptographie pour l'Registration Zero-Knowledge
- */
+ * Cryptography Service for Zero-Knowledge Registration
+ *  */
 
 import { saveKey, getKey} from "./idb.service";
 
 // ============================================================================
-// ÉTAPE 1: Générer un Salt aléatoire
+// STEP 1: Generate a random Salt
 // ============================================================================
-// Pourquoi? Le salt rend chaque mot de passe unique, même si 2 utilisateurs
-// ont le même mot de passe, ils auront des derives différents.
-// Taille: 16 bytes = 128 bits (sécurisé pour PBKDF2)
+// Why? The salt makes each password unique — even if 2 users have the same
+// password, they will have different derived keys.
+// Size: 16 bytes = 128 bits (secure for PBKDF2)
 
 export function generateSalt(): Uint8Array {
-    const salt = new Uint8Array(16); // Un tableau d'entiers (de 16 cases) unsigned de 8 bits
-    crypto.getRandomValues(salt); // Elle prend le tableau salt et remplace chaque 0 par un nombre aléatoire entre 0-255
+    const salt = new Uint8Array(16); // Array of 16 unsigned 8-bit integers
+    crypto.getRandomValues(salt); // Fills each slot with a random number between 0-255
     return salt;
 }
 
 // ============================================================================
-// ÉTAPE 2: Dériver la Master Key via PBKDF2
+// STEP 2: Derive the Master Key via PBKDF2
 // ============================================================================
-// Pourquoi PBKDF2?
-// - C'est une "Key Derivation Function" (KDF)
-// - Elle prend (mot de passe + salt) et crée une clé cryptographique
-// - Elle est iterative (on peut la rendre lente = plus dur à brute-force)
+// Why PBKDF2?
+// - It's a "Key Derivation Function" (KDF)
+// - It takes (password + salt) and creates a cryptographic key
+// - It's iterative (can be made slow = harder to brute-force)
 //
-// Paramètres:
-// - iterations: 100,000 (standard moderne)
+// Parameters:
+// - iterations: 100,000 (modern standard)
 // - hash: SHA-256
-// - output: 32 bytes = 256 bits (assez pour AES-256 et HMAC-SHA256)
+// - output: 32 bytes = 256 bits (enough for AES-256 and HMAC-SHA256)
 
 export async function deriveMasterKey(
     password: string,
     salt: Uint8Array
 ): Promise<CryptoKey> {
-    // 1. Convertir le mot de passe string en bytes
-    const passwordBuffer = new TextEncoder().encode(password); // Les fonctions crypto travaillent avec du binaire, pas du texte.
+    // 1. Convert the password string to bytes
+    const passwordBuffer = new TextEncoder().encode(password); // Crypto functions work with binary, not text.
 
-    // 2.  Transformer les bytes en un objet (une clé) que crypto.subtle peut utiliser pour PBKDF2
+    // 2. Transform the bytes into an object (a key) that crypto.subtle can use for PBKDF2
     const passwordKey = await crypto.subtle.importKey(
         "raw",
         passwordBuffer,
         { name: "PBKDF2" },
-        false, // On peut PAS extraire cette clé (pour la sécurité)
-        ["deriveKey"] // Cette clé peut servir à dériver d'autres clés
+        false, // Cannot extract this key (for security)
+        ["deriveKey"] // This key can be used to derive other keys
     );
 
-    // 3. Dériver la Master Key
+    // 3. Derive the Master Key
     const masterKey = await crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
             salt: salt as BufferSource,
-            iterations: 100000, // Recos de OWASP 2023
-            hash: "SHA-256", // Utiliser SHA-256 pour les iterations
+            iterations: 100000, // OWASP 2023 recommendation
+            hash: "SHA-256",
         },
         passwordKey,
-        { name: "AES-GCM", length: 256 }, // La clé résultante doit être utilisable pour AES-GCM
-        true, // On la rend extractable pour la suite
+        { name: "AES-GCM", length: 256 }, // The resulting key must be usable for AES-GCM
+        true, // Make it extractable for later use
         ["encrypt", "decrypt"]
     );
 
@@ -64,45 +64,45 @@ export async function deriveMasterKey(
 }
 
 // ============================================================================
-// ÉTAPE 3: Générer une paire de clés RSA-OAEP random
+// STEP 3: Generate a random RSA-OAEP key pair
 // ============================================================================
-// Pourquoi RSA?
-// - Asymétrique = il y a une clé publique (on l'envoie au serveur)
-// - Et une clé privée (on la garde, chiffrée)
-// - 4096 bits = sécurisé pour les 20 prochaines années
+// Why RSA?
+// - Asymmetric = there is a public key (sent to the server)
+// - And a private key (kept locally, encrypted)
+// - 4096 bits = secure for the next 20 years
 //
-// Utilité:
-// - La clé publique permet au serveur de chiffrer des données pour toi
-// - La clé privée te permet de déchiffrer SEULEMENT les données qui te sont destinées
+// Purpose:
+// - The public key allows the server to encrypt data for you
+// - The private key lets you decrypt ONLY data intended for you
 
 export async function generateRSAKeyPair(): Promise<CryptoKeyPair> {
     const keyPair = await crypto.subtle.generateKey(
         {
             name: "RSA-OAEP",
-            modulusLength: 4096, // 4096 bits = très sécurisé
+            modulusLength: 4096, // 4096 bits = very secure
             publicExponent: new Uint8Array([1, 0, 1]), // Standard: 0x10001 (65537)
             hash: "SHA-256",
         },
-        true, // extractable (on va l'exporter)
-        ["encrypt", "decrypt"] // On va l'utiliser pour encryption
+        true, // extractable (we will export it)
+        ["encrypt", "decrypt"]
     );
 
     return keyPair;
 }
 
 // ============================================================================
-// ÉTAPE 4: Envelopper (chiffrer) la clé privée RSA avec la Master Key
+// STEP 4: Wrap (encrypt) the RSA private key with the Master Key
 // ============================================================================
-// Pourquoi faire ça?
-// - La clé privée RSA est TRÈS sensible
-// - On ne la stocke pas en clair sur ton disque
-// - On la chiffre avec la Master Key (qui vient du mot de passe)
-// - Résultat: Si quelqu'un vole ton computer, il a juste du blob chiffré inutile
+// Why do this?
+// - The RSA private key is VERY sensitive
+// - We don't store it in plaintext on disk
+// - We encrypt it with the Master Key (derived from the password)
+// - Result: If someone steals your computer, they only have a useless encrypted blob
 //
-// Processus:
-// 1. Exporter la clé privée en format PKCS8 (format standard)
-// 2. La chiffrer avec AES-GCM + Master Key
-// 3. Retourner le blob chiffré
+// Process:
+// 1. Export the private key in PKCS8 format (standard format)
+// 2. Encrypt it with AES-GCM + Master Key
+// 3. Return the encrypted blob
 
 export async function wrapPrivateKey(
     privateKey: CryptoKey,
@@ -111,26 +111,26 @@ export async function wrapPrivateKey(
     encryptedPrivateKey: Uint8Array;
     iv: Uint8Array;
 }> {
-    // 1. Exporter la clé privée en raw binary (PKCS8)
+    // 1. Export the private key as raw binary (PKCS8)
     const privateKeyBuffer = await crypto.subtle.exportKey(
         "pkcs8",
         privateKey
     );
 
-    // 2. Générer un IV aléatoire pour AES-GCM
-    // IV = Initialization Vector (doit être différent pour chaque chiffrement)
-    // Taille: 12 bytes (96 bits) = standard pour GCM
+    // 2. Generate a random IV for AES-GCM
+    // IV = Initialization Vector (must be different for each encryption)
+    // Size: 12 bytes (96 bits) = standard for GCM
     const iv = new Uint8Array(12);
     crypto.getRandomValues(iv);
 
-    // 3. Chiffrer la clé privée avec AES-GCM
+    // 3. Encrypt the private key with AES-GCM
     const encryptedData = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: iv },
         masterKey,
         privateKeyBuffer
     );
 
-    // 4. Convertir en Uint8Array (le tag est inclus à l'intérieur)
+    // 4. Convert to Uint8Array (the authentication tag is included inside)
     const encryptedPrivateKey = new Uint8Array(encryptedData);
 
     return {
@@ -140,29 +140,29 @@ export async function wrapPrivateKey(
 }
 
 // ============================================================================
-// ÉTAPE 5: Générer l'AuthHash
+// STEP 5: Generate the AuthHash
 // ============================================================================
-// Pourquoi?
-// - C'est la "proof of knowledge" = preuve qu'on connaît le mot de passe
-// - On l'envoie au serveur (pas le mot de passe!)
-// - Le serveur le hash avec bcrypt et le compare lors de la login
+// Why?
+// - It's the "proof of knowledge" = proof that we know the password
+// - We send it to the server (not the password itself!)
+// - The server hashes it with bcrypt and compares it during login
 //
-// Comment?
+// How?
 // - HMAC-SHA256(Master_Key, "fixed_string")
-// - HMAC = keyed hash, le serveur peut pas le reproduire sans la Master Key
+// - HMAC = keyed hash, the server can't reproduce it without the Master Key
 //
-// Note: On va extraire la Master Key pour pouvoir la hacher
+// Note: We export the Master Key in order to hash it
 
 export async function generateAuthHash(
     masterKey: CryptoKey
 ): Promise<Uint8Array> {
-    // 1. Extraire la Master Key en bytes
+    // 1. Export the Master Key as bytes
     const masterKeyBuffer = await crypto.subtle.exportKey(
         "raw",
         masterKey
     );
 
-    // 2. Créer une clé HMAC à partir de la Master Key
+    // 2. Create an HMAC key from the Master Key
     const hmacKey = await crypto.subtle.importKey(
         "raw",
         masterKeyBuffer,
@@ -171,7 +171,7 @@ export async function generateAuthHash(
         ["sign"]
     );
 
-    // 3. Signer le message "fixed_string"
+    // 3. Sign the message "auth_string"
     const messageBuffer = new TextEncoder().encode("auth_string");
     const authHashBuffer = await crypto.subtle.sign(
         "HMAC",
@@ -183,9 +183,9 @@ export async function generateAuthHash(
 }
 
 // ============================================================================
-// ÉTAPE 6: Exporter la clé publique pour l'envoyer au serveur
+// STEP 6: Export the public key to send to the server
 // ============================================================================
-// Format: SPKI = SubjectPublicKeyInfo (format standard)
+// Format: SPKI = SubjectPublicKeyInfo (standard format)
 
 export async function exportPublicKey(
     publicKey: CryptoKey
@@ -214,10 +214,10 @@ export async function encryptDEKWithPublicKey(
 }
 
 // ============================================================================
-// UTILITAIRE: Convertir Uint8Array en Base64 pour l'envoi HTTP
+// UTILITY: Convert Uint8Array to Base64 for HTTP transmission
 // ============================================================================
-// Pourquoi? HTTP fonctionne avec du texte, pas du binaire
-// Base64 = encodage binaire en caractères texte
+// Why? HTTP works with text, not binary
+// Base64 = binary encoding using text characters
 
 export function uint8ArrayToBase64(arr: Uint8Array): string {
     const chunkSize = 8192; // Process 8KB at a time
@@ -241,38 +241,38 @@ export function base64ToUint8Array(str: string): Uint8Array {
 }
 
 // ============================================================================
-// FONCTION PRINCIPALE: Orchestrer tout le processus
+// MAIN FUNCTION: Orchestrate the entire registration process
 // ============================================================================
-// C'est la fonction qu'on appellera depuis RegisterPage.tsx
-// Elle fait les étapes 1-5 dans le bon ordre
+// This is the function called from RegisterPage.tsx
+// It runs steps 1-5 in the correct order
 
 export async function generateRegistrationData(
     email: string,
     password: string
 ) {
 
-    // ÉTAPE 1: Générer Salt
+    // STEP 1: Generate Salt
     const salt = generateSalt();
 
-    // ÉTAPE 2: Dériver Master Key
+    // STEP 2: Derive Master Key
     const masterKey = await deriveMasterKey(password, salt);
 
-    // ÉTAPE 3: Générer paire RSA
+    // STEP 3: Generate RSA key pair
     const keyPair = await generateRSAKeyPair();
 
-    // ÉTAPE 4: Envelopper la clé privée
+    // STEP 4: Wrap the private key
     const wrappedPrivateKey = await wrapPrivateKey(
         keyPair.privateKey,
         masterKey
     );
 
-    // ÉTAPE 5: Générer AuthHash
+    // STEP 5: Generate AuthHash
     const authHash = await generateAuthHash(masterKey);
 
-    // ÉTAPE 6: Exporter clé publique
+    // STEP 6: Export public key
     const publicKey = await exportPublicKey(keyPair.publicKey);
 
-    // Créer l'objet à envoyer au serveur
+    // Build the object to send to the server
     const registrationData = {
         email,
         salt: uint8ArrayToBase64(salt),
@@ -287,17 +287,17 @@ export async function generateRegistrationData(
 }
 
 // ============================================================================
-// FONCTION LOGIN: Récupérer le salt et générer l'AuthHash pour la connexion
+// LOGIN FUNCTION: Retrieve the salt and generate the AuthHash for login
 // ============================================================================
-// Processus:
-// 1. Envoyer l'email au serveur pour récupérer le salt
-// 2. Dériver la Master Key avec le password + salt
-// 3. Générer l'AuthHash
-// 4. Envoyer l'AuthHash pour vérification
+// Process:
+// 1. Send the email to the server to retrieve the salt
+// 2. Derive the Master Key with password + salt
+// 3. Generate the AuthHash
+// 4. Send the AuthHash for verification
 
 export async function generateLoginData(email: string, password: string) {
 
-    // ÉTAPE 1: Récupérer le salt du serveur
+    // STEP 1: Retrieve the salt from the server
     let saltResponse;
     try {
         saltResponse = await fetch("/api/auth/salt", {
@@ -313,19 +313,17 @@ export async function generateLoginData(email: string, password: string) {
             throw new Error(errorData.message || "Failed to retrieve salt");
         }
     } catch (err: any) {
-        console.error("Erreur lors de la récupération du salt:", err);
+        console.error("Error when fetching the salt:", err);
         throw err;
     }
 
     const saltData = await saltResponse.json();
     const salt = base64ToUint8Array(saltData.salt);
 
-    // ÉTAPE 2: Dériver Master Key
-    console.log("Dérivation de la Master Key...");
+    // STEP 2: Derive Master Key
     const masterKey = await deriveMasterKey(password, salt);
 
-    // ÉTAPE 3: Générer AuthHash
-    console.log("Génération de l'AuthHash...");
+    // STEP 3: Generate AuthHash
     const authHash = await generateAuthHash(masterKey);
 
     const loginData = {
