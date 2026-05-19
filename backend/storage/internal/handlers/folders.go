@@ -158,7 +158,9 @@ func (h *StorageHandler) UpdateFolder(c fiber.Ctx) error {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
 		}
 	}
-	return c.SendStatus(fiber.StatusOK)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "forlder updated",
+	})
 }
 
 func (h *StorageHandler) ListPersonalContents(c fiber.Ctx) error {
