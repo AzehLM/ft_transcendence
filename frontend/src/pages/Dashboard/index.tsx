@@ -31,8 +31,8 @@ export default function DashboardPage() {
             : await FilesService.getAllFiles();
             setFiles(response.files || []);
             setFolders(response.folders || [])
-        } catch (err) {
-            if (err instanceof Error && err.message === "not found") {
+        } catch (err: any) { // not a good solution to use any but I don't have another one yet
+            if (err.status === 400 || err.status === 404) {
                 navigate("/404");
                 return;
             }
@@ -64,8 +64,14 @@ export default function DashboardPage() {
             setFolderError("Invalid Name")
             return;
         }
-        await FilesService.createFolder(folderName, folderId);
-        await loadFiles();
+        try {
+            await FilesService.createFolder(folderName, folderId);
+            await loadFiles();
+        } catch (err: any) {
+            setError(err.message || "Failed to create folder.");
+            setFolderName("");
+            setIsFolderModalOpen(false);
+        }
         setFolderError("")
         setFolderName("");
         setIsFolderModalOpen(false);
@@ -84,23 +90,47 @@ export default function DashboardPage() {
     };
 
     const handleRenameFolder = async (id: string, newName: string) => {
-        await FilesService.updateFolder(id, {
-            name: newName,
-        });
-        await loadFiles();
+        try {
+            await FilesService.updateFolder(id, {
+                name: newName,
+            });
+            await loadFiles();
+        } catch (err: any) {
+            if (err.status === 404) {
+                setError("Folder not found.");
+            } else {
+                setError(err.message || "Failed to rename folder.");
+            }
+        }
     };
 
     const handleMoveFolder = async (id: string, newParentId: string) => {
-        await FilesService.updateFolder(id, {
-            parent_id: newParentId,
-        });
-        await loadFiles();
+        try {
+            await FilesService.updateFolder(id, {
+                parent_id: newParentId,
+            });
+            await loadFiles();
+        } catch (err: any) {
+            if (err.status === 404) {
+                setError("File or folder not found.");
+            } else {
+                setError(err.message || "Failed to move.");
+            }
+        }
     };
 
 
     const handleMoveFile = async (id: string, newParentId: string) => {
-        await FilesService.moveFile(id, newParentId);
-        await loadFiles();
+        try {
+            await FilesService.moveFile(id, newParentId);
+            await loadFiles();
+        } catch (err: any) {
+            if (err.status === 404) {
+                setError("File or folder not found.");
+            } else {
+                setError(err.message || "Failed to move.");
+            }
+        }
     };
 
      const handleDeleteFolder = async (id: string) => {
@@ -117,13 +147,6 @@ export default function DashboardPage() {
 
     return (
         <div className={styles.page}>
-
-            {/* <CreateFolderModal
-                isOpen={isFolderModalOpen}
-                onClose={() => setIsFolderModalOpen(false)}
-                onSubmit={handleCreateFolderSubmit}
-            /> */}
-
             <ConfirmationModal
             isOpen={isFolderModalOpen}
             fileName={folderName}
@@ -133,6 +156,7 @@ export default function DashboardPage() {
             inputValue={folderName}
             onInputChange={setFolderName}
             errorMessage={folderError ?? undefined}
+            // add max carac
             />
 
             <ActionButtons onUploadFile={uploadFile}

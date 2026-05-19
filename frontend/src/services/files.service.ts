@@ -56,14 +56,18 @@ async function authenticatedRequest<T>(
 
     if (!response.ok) {
         let errorMsg = `API Error: ${response.status}`;
-        if (response.status === 400 || response.status === 404)
-            throw new Error("not found");
+        let errorCode = response.status;
+        // if (response.status === 400 || response.status === 404)
+        //     throw new Error("not found");
         try {
             const error = await response.json();
-            errorMsg = error.error || errorMsg;
+            errorMsg = error.error || error.message || errorMsg;
         } catch (e) {
         }
-        throw new Error(errorMsg);
+        // throw new Error(errorMsg);
+        const err = new Error(errorMsg);
+        (err as any).status = errorCode; // not a good solution to use any but I don't have another one yet
+        throw err;
     }
 
     if (response.status === 204) {
