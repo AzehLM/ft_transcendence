@@ -321,6 +321,7 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 				log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
 				continue
 			}
+			log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
 
 			var decErr error
 			if f.OrgID != nil {
@@ -330,9 +331,7 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 			}
 
 			if decErr != nil {
-				log.Printf("[WARN] sweep: decrement quota failed for %s: %v", f.ID, decErr)
-			} else {
-				log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
+				log.Printf("[WARN] sweep: quota decrement failed for row %s (already removed): %v", f.ID, decErr)
 			}
 		}
 	}
