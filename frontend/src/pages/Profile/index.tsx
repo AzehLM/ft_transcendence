@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-// import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "./SettingsLayout";
 import avatar from './assets/temp-avatar.png';
@@ -8,22 +7,6 @@ import { fetchWithRefresh } from "../../services/api.service";
 import fieldStyles from "../../components/EditableField/EditableField.module.css"
 
 export default function ProfilePage() {
-//   const [privateKey, setPrivateKey] = useState<string | null>(null);
-
-// useEffect(() => {
-//   const init = async () => {
-//     const key = await getPrivateKeyFromSession();
-//     if (!key) return;
-//     const exported = await crypto.subtle.exportKey("pkcs8", key);
-//     const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
-//     setPrivateKey(base64);
-//   };
-//   init();
-
-// }, []);
-// const [name] = useState<string>("Jean");
-// const [sirname] = useState<string>("Dupont");
-// const [email] = useState<string>("jeannot@gmail.com");
 
   const [firstName, setFirstName] = useState<string>("")
   const [familyName, setFamilyName] = useState<string>("")
@@ -57,7 +40,7 @@ export default function ProfilePage() {
   const handleResetFirstName = async () => {
     const response = await fetchWithRefresh(`/api/auth/first-name`, {
       method: "PATCH",
-      body: JSON.stringify({ description: "" }),
+      body: JSON.stringify({ first_name: "" }),
     });
     if (!response.ok) throw new Error("Failed to change first name.");
     setFirstName("");
@@ -69,13 +52,13 @@ export default function ProfilePage() {
       body: JSON.stringify({family_name: newFamilyName}),
     });
     if (!response.ok) throw new Error("Failed to change family name");
-    setFirstName(newFamilyName)
+    setFamilyName(newFamilyName)
   };
 
   const handleResetFamilyName = async () => {
     const response = await fetchWithRefresh(`/api/auth/family-name`, {
       method: "PATCH",
-      body: JSON.stringify({ description: "" }),
+      body: JSON.stringify({ family_name: "" }),
     });
     if (!response.ok) throw new Error("Failed to change family name.");
     setFamilyName("");
@@ -115,13 +98,6 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          {/* <div className={styles.buttons}>
-            <button className={`${styles.buttonChange} ${styles.profileButton}`}>Save Changes</button>
-            <button className={`${styles.buttonCancel} ${styles.profileButton}`}>Cancel</button>
-          </div> */}
-          {/* <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
-            {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Key not found"}
-          </div> */}
         </SettingsLayout>
     );
 }
