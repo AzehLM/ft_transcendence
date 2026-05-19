@@ -140,6 +140,17 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 		return uuid.Nil, ErrForbidden
 	}
 
+	// rbac check for upload in organization: checks that the user still has the rights to Finalize an upload (can change between RequestURL and FinalizeUpload if the file is huge)
+	if err := s.rbac.CanCreateInFolder(userID, file.FolderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
 	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
 	var ok bool
 	ok, err = s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
