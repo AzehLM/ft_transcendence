@@ -89,8 +89,8 @@ function useScramble(target: string, delay = 0, duration = 1000) {
 
 export default function NotFound() {
   const navigate = useNavigate();
-  const badge = useScramble("ERR_404  ·  DECRYPTION_KEY_MISMATCH", 80, 900);
-  const title = useScramble("Fichier introuvable", 550, 1100);
+  const badge = useScramble("ERR_404  ·  RESOURCE_NOT_FOUND", 80, 900);
+  const title = useScramble("Page introuvable", 550, 1100);
 
   const up = (delay: number, y = 8) => ({
     initial: { opacity: 0, y },
@@ -116,12 +116,12 @@ export default function NotFound() {
         <motion.h1 {...up(0.25, 8)} className={styles.mainTitle}>{title}</motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.48 }} transition={{ delay: 1.4, duration: 0.7 }} className={styles.description}>
-          Ce fichier n'existe pas, a été supprimé, ou la clé de déchiffrement ne correspond pas à ce contenu chiffré.
+          La page que vous recherchez semble avoir été déplacée, supprimée ou n'a jamais existé.
         </motion.p>
 
         <motion.div {...up(1.6, 6)}>
           <button className={styles.backBtn} onClick={() => navigate("/")}>
-            ← Retourner au drive sécurisé
+            ← Retourner à l'accueil
           </button>
         </motion.div>
 

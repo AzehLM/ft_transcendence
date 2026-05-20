@@ -1,4 +1,4 @@
-import { Settings, Users, Files, Building2 } from "lucide-react";
+import { Settings, Users, Files, Building2, ChevronLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
@@ -9,6 +9,8 @@ export function OrgSidebar() {
 
   return (
     <Sidebar>
+      <SidebarLink to="/dashboard" icon={<ChevronLeft size={20} />} label="Back" />
+      <div style={{ height: "1px", background: "rgba(0,0,0,0.05)", margin: "12px 0" }} />
       <SidebarLink to={`/orgs/${id}/files`} icon={<Files size={20} />} label="All files" />
       <SidebarLink to="/organizations" icon={<Building2 size={20} />} label="Organizations" />
       <SidebarLink to={`/orgs/${id}/members`} icon={<Users size={20} />} label="Members" />
