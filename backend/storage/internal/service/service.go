@@ -827,10 +827,11 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 		return ErrForbidden
 	}
 
-	// aborting on MinIO side, if MinIO fails we only log it but can't do anything, leaving the sweeper do the job
+	// aborting on MinIO side, if MinIO fails we only log it and return, leaving the sweeper do the job
 	core := minio.Core{Client: s.minioClient}
 	if err := core.AbortMultipartUpload(context.TODO(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
 		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
+		return err
 	}
 
 	// again, no need to decrement user space here as the file is still PENDING
