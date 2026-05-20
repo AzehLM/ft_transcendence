@@ -396,7 +396,7 @@ export async function unwrapPrivateKeyPassword(
             name: "RSA-OAEP",
             hash: "SHA-256",
         },
-        true, // where the problem was we need the key to be extractable but what about
+        true,
         ["decrypt"]
     );
 
