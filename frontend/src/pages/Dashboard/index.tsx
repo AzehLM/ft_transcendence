@@ -13,7 +13,9 @@ export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [folders, setFolders] = useState<FolderItem[]>([]);
+    const [moveOptions, setMoveOptions] = useState<FolderItem[]>([]);
     const { folderId } = useParams();
     const navigate = useNavigate();
 
@@ -26,11 +28,14 @@ export default function DashboardPage() {
         try {
         setLoading(true);
         setError(null);
+        setSuccess("");
         const response = folderId
             ? await FilesService.getFolderContents(folderId)
             : await FilesService.getAllFiles();
             setFiles(response.files || []);
             setFolders(response.folders || [])
+        const data = await FilesService.getAllFiles(); // to improve
+            setMoveOptions(data.folders || [])
         } catch (err: any) { // not a good solution to use any but I don't have another one yet
             if (err.status === 400 || err.status === 404) {
                 navigate("/404");
@@ -46,14 +51,18 @@ export default function DashboardPage() {
     }, [folderId]);
 
     const loadFiles = async () => {
+        setSuccess("");
     const response = folderId
         ? await FilesService.getFolderContents(folderId)
         : await FilesService.getAllFiles();
         setFiles(response.files || []);
         setFolders(response.folders || [])
+        const data = await FilesService.getAllFiles(); // to improve
+        setMoveOptions(data.folders || [])
     };
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
+    setSuccess("");
     loadFiles();
     }, undefined, folderId);
 
@@ -63,6 +72,7 @@ export default function DashboardPage() {
     const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
 
     const handleCreateFolderSubmit = async () => {
+        setSuccess("");
         if (!folderName.trim()) {
             setFolderError("Invalid Name")
             return;
@@ -81,6 +91,7 @@ export default function DashboardPage() {
     };
 
      const handleDeleteFile = async (id: string) => {
+        setSuccess("");
          try {
              setError(null);
              await FilesService.deleteFile(id);
@@ -93,6 +104,7 @@ export default function DashboardPage() {
     };
 
     const handleRenameFolder = async (id: string, newName: string) => {
+        setSuccess("");
         try {
             await FilesService.updateFolder(id, {
                 name: newName,
@@ -105,9 +117,11 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to rename folder.");
             }
         }
+        setSuccess("Folder renamed");
     };
 
-    const handleMoveFolder = async (id: string, newParentId: string) => {
+    const handleMoveFolder = async (id: string, newParentId: string | null) => {
+        setSuccess("");
         try {
             await FilesService.updateFolder(id, {
                 parent_id: newParentId,
@@ -120,10 +134,12 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to move.");
             }
         }
+        setSuccess("Folder moved");
     };
 
 
-    const handleMoveFile = async (id: string, newParentId: string) => {
+    const handleMoveFile = async (id: string, newParentId: string | null) => {
+        setSuccess("");
         try {
             await FilesService.moveFile(id, newParentId);
             await loadFiles();
@@ -134,9 +150,11 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to move.");
             }
         }
+        setSuccess("File moved");
     };
 
      const handleDeleteFolder = async (id: string) => {
+        setSuccess("");
          try {
              setError(null);
              await FilesService.deleteFolder(id);
@@ -146,6 +164,7 @@ export default function DashboardPage() {
              console.error("Failed to delete folder:", err);
              setError(`Failed to delete folder: ${errorMessage}`);
          }
+         setSuccess("Folder deleted");
     };
 
     return (
@@ -179,6 +198,11 @@ export default function DashboardPage() {
                     {error && (
                         <div className={`${styles.statusMessage} ${styles.error}`}>
                             {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}`}>
+                            {success}
                         </div>
                     )}
 
@@ -254,10 +278,10 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
+                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} folders={moveOptions} />
                         ))}
                         {files.map((file) => (
-                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile}/>
+                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} folders={moveOptions}/>
                         ))}
                     </div>
                 )}

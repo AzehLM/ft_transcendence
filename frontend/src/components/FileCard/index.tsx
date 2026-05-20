@@ -5,6 +5,8 @@ import { ConfirmationModal } from "../ConfirmationModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { FolderItem } from "../../services/files.service";
+import { MoveModal } from "../MoveModal";
 
 
 interface FileCardProps {
@@ -13,13 +15,14 @@ interface FileCardProps {
   isFolder?: boolean;
   isTrash?: boolean;
   onDelete?: (id: string) => void;
-  onMove?: (id: string, newParentId: string) => Promise<void>; // maybe need to change to id
+  onMove?: (id: string, newParentId: string | null) => Promise<void>;
   onDownload?: (id: string) => void;
   onRename?: (id: string, newName: string) => Promise<void>;
   orgId?: string;
+  folders?: FolderItem[]; 
 }
 
-export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onMove, onDownload, onRename, orgId }: FileCardProps) {
+export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onMove, onDownload, onRename, orgId, folders = undefined }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -154,7 +157,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
           onCancel={() => setShowDeleteConfirm(false)}
           isDeleteFile={true}
         />
-        <ConfirmationModal
+        {/* <ConfirmationModal
           isOpen={showMoveModal}
           fileName={displayName}
           onConfirm={handleConfirmMove}
@@ -162,7 +165,19 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
           isMove={true}
           inputValue={targetFolderId}
           onInputChange={setTargetFolderId}
-        />
+        /> */}
+        {showMoveModal && (
+          <MoveModal
+            isOpen={showMoveModal}
+            fileName={displayName}
+            folders={folders?.filter(f => f.id !== id) ?? []}
+            onConfirm={(folderId) => {
+              onMove?.(id, folderId === "" ? null : folderId);
+              setShowMoveModal(false);
+            }}
+            onCancel={() => setShowMoveModal(false)}
+          />
+        )}
       </>
     );
   }
@@ -229,7 +244,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         onInputChange={setRenameValue}
         errorMessage={modalError ?? undefined}
       />
-      <ConfirmationModal
+      {/* <ConfirmationModal
         isOpen={showMoveModal}
         fileName={name}
         onConfirm={handleConfirmMove}
@@ -237,7 +252,19 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         isMove={true}
         inputValue={targetFolderId}
         onInputChange={setTargetFolderId}
-      />
+      /> */}
+      {showMoveModal && (
+        <MoveModal
+          isOpen={showMoveModal}
+          fileName={name}
+          folders={folders?.filter(f => f.id !== id) ?? []}
+          onConfirm={(folderId) => {
+            onMove?.(id, folderId === "" ? null : folderId);
+            setShowMoveModal(false);
+          }}
+          onCancel={() => setShowMoveModal(false)}
+        />
+      )}
     </>
   );
 }

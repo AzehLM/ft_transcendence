@@ -118,7 +118,7 @@ export const FilesService = {
     // Rename or move a folder
     updateFolder: async (
         folderId: string,
-        updates: { name?: string; parent_id?: string }
+        updates: { name?: string; parent_id?: string | null }
     ): Promise<void> => {
         await authenticatedRequest<void>(`/folders/${folderId}`, {
             method: "PATCH",
@@ -165,7 +165,7 @@ export const FilesService = {
     },
 
     // Move file to a different folder
-    moveFile: async (fileId: string, folderId: string): Promise<void> => {
+    moveFile: async (fileId: string, folderId: string | null): Promise<void> => {
         await authenticatedRequest<void>(`/files/${fileId}`, {
             method: "PATCH",
             body: JSON.stringify({ folder_id: folderId }),
