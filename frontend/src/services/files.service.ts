@@ -172,29 +172,10 @@ export const FilesService = {
         });
     },
 
-    // Delete file (move to trash)
+    // Delete file
     deleteFile: async (fileId: string): Promise<void> => {
         await authenticatedRequest<void>(`/files/${fileId}`, {
             method: "DELETE",
-        });
-    },
-
-    // Get trash files
-    getTrashFiles: async (): Promise<FolderContents> => {
-        return authenticatedRequest<FolderContents>("/files/trash");
-    },
-
-    // Permanently delete file from trash
-    permanentlyDeleteFile: async (fileId: string): Promise<void> => {
-        await authenticatedRequest<void>(`/files/${fileId}/permanent-delete`, {
-            method: "DELETE",
-        });
-    },
-
-    // Restore file from trash
-    restoreFile: async (fileId: string): Promise<void> => {
-        await authenticatedRequest<void>(`/files/${fileId}/restore`, {
-            method: "POST",
         });
     },
 };
