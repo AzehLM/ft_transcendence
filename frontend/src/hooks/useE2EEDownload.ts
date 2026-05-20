@@ -7,7 +7,7 @@ import {
 } from '../services/crypto.service';
 import { fetchWithRefresh } from '../services/api.service';
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
+const CHUNK_SIZE = 32 * 1024 * 1024; // 16 Mo
 const CIPHER_CHUNK_SIZE = CHUNK_SIZE + 16;
 
 interface DownloadMetadata {
