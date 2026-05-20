@@ -8,6 +8,8 @@ import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { ChevronRight } from "lucide-react";
+
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -162,6 +164,35 @@ export default function DashboardPage() {
          }
     };
 
+    const [breadcrumbs, setBreadcrumbs] = useState<{ id: string | null; name: string }[]>([
+    { id: null, name: "Root" }
+    ]);
+
+    const handleBreadcrumbClick = (item: { id: string | null }, index: number) => {
+    setBreadcrumbs(prev => prev.slice(0, index + 1));
+    if (item.id) {
+        navigate(`/dashboard/folder/${item.id}`);
+    } else {
+        navigate("/dashboard");
+    }
+    };
+
+    useEffect(() => {
+    if (!folderId) {
+        setBreadcrumbs([{ id: null, name: "Root" }]);
+        return;
+    }
+
+    FilesService.getFolderPath(folderId)
+        .then(data => {
+        setBreadcrumbs([
+            { id: null, name: "Root" },
+            ...data.map((f) => ({ id: f.id, name: f.name }))
+        ]);
+        })
+        .catch(() => setBreadcrumbs([{ id: null, name: "Root" }]));
+    }, [folderId]);
+
     return (
         <div className={styles.page}>
             <ConfirmationModal
@@ -199,6 +230,20 @@ export default function DashboardPage() {
                             {success}
                         </div>
                     )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "0 5% 16px" }}>
+                    {breadcrumbs.map((item, index) => (
+                        <span key={index} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        {index > 0 && <ChevronRight size={14} style={{ color: "#999" }} />}
+                        <button
+                        onClick={() => handleBreadcrumbClick(item, index)}
+                        className={`${styles.breadcrumbBtn} ${index === breadcrumbs.length - 1 ? styles.breadcrumbBtnActive : ""}`}
+                        >
+                        {item.name}
+                        </button>
+                        </span>
+                    ))}
+                    </div>
 
                     {activeUploads.map(upload => (
                         <div key={upload.id} style={{ marginBottom: '20px' }}>

@@ -43,6 +43,13 @@ export interface FileMetadata {
     org_id?: string;
 }
 
+export interface Folder {
+    id: string;
+    name: string;
+}
+
+export type Path = Folder[];
+
 // Helper function to make authenticated requests
 async function authenticatedRequest<T>(
     endpoint: string,
@@ -177,5 +184,12 @@ export const FilesService = {
         await authenticatedRequest<void>(`/files/${fileId}`, {
             method: "DELETE",
         });
+    },
+
+    // Get Folder Path
+    getFolderPath: async (folderId: string): Promise<Path> => {
+        return authenticatedRequest<Path>(
+            `/folders/${folderId}/path`
+        );
     },
 };
