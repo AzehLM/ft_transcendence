@@ -15,7 +15,6 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [folders, setFolders] = useState<FolderItem[]>([]);
-    const [moveOptions, setMoveOptions] = useState<FolderItem[]>([]);
     const { folderId } = useParams();
     const navigate = useNavigate();
 
@@ -34,8 +33,6 @@ export default function DashboardPage() {
             : await FilesService.getAllFiles();
             setFiles(response.files || []);
             setFolders(response.folders || [])
-        const data = await FilesService.getAllFiles(); // to improve
-            setMoveOptions(data.folders || [])
         } catch (err: any) { // not a good solution to use any but I don't have another one yet
             if (err.status === 400 || err.status === 404) {
                 navigate("/404");
@@ -57,8 +54,6 @@ export default function DashboardPage() {
         : await FilesService.getAllFiles();
         setFiles(response.files || []);
         setFolders(response.folders || [])
-        const data = await FilesService.getAllFiles(); // to improve
-        setMoveOptions(data.folders || [])
     };
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
@@ -110,6 +105,7 @@ export default function DashboardPage() {
                 name: newName,
             });
             await loadFiles();
+            setSuccess("Folder renamed");
         } catch (err: any) {
             if (err.status === 404) {
                 setError("Folder not found.");
@@ -117,7 +113,6 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to rename folder.");
             }
         }
-        setSuccess("Folder renamed");
     };
 
     const handleMoveFolder = async (id: string, newParentId: string | null) => {
@@ -127,6 +122,7 @@ export default function DashboardPage() {
                 parent_id: newParentId,
             });
             await loadFiles();
+            setSuccess("Folder moved");
         } catch (err: any) {
             if (err.status === 404) {
                 setError("File or folder not found.");
@@ -134,7 +130,6 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to move.");
             }
         }
-        setSuccess("Folder moved");
     };
 
 
@@ -143,6 +138,7 @@ export default function DashboardPage() {
         try {
             await FilesService.moveFile(id, newParentId);
             await loadFiles();
+            setSuccess("File moved");
         } catch (err: any) {
             if (err.status === 404) {
                 setError("File or folder not found.");
@@ -150,7 +146,6 @@ export default function DashboardPage() {
                 setError(err.message || "Failed to move.");
             }
         }
-        setSuccess("File moved");
     };
 
      const handleDeleteFolder = async (id: string) => {
@@ -159,12 +154,12 @@ export default function DashboardPage() {
              setError(null);
              await FilesService.deleteFolder(id);
              await loadFiles();
+             setSuccess("Folder deleted");
          } catch (err) {
              const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete folder:", err);
              setError(`Failed to delete folder: ${errorMessage}`);
          }
-         setSuccess("Folder deleted");
     };
 
     return (
@@ -178,7 +173,6 @@ export default function DashboardPage() {
             inputValue={folderName}
             onInputChange={setFolderName}
             errorMessage={folderError ?? undefined}
-            // add max carac
             />
 
             <ActionButtons onUploadFile={uploadFile}
@@ -278,10 +272,10 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} folders={moveOptions} />
+                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
                         ))}
                         {files.map((file) => (
-                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} folders={moveOptions}/>
+                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
                         ))}
                     </div>
                 )}

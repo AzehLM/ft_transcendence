@@ -98,17 +98,6 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
     setShowMoveModal(true);
   };
 
-  const handleConfirmMove = async () => {
-    try {
-      await onMove?.(id, targetFolderId);
-      setShowMoveModal(false);
-      setTargetFolderId("");
-      setModalError(null);
-    } catch (err) {
-      setModalError("Failed to move");
-    }
-  };
-
   if (!isFolder) {
     return (
       <>
@@ -157,20 +146,10 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
           onCancel={() => setShowDeleteConfirm(false)}
           isDeleteFile={true}
         />
-        {/* <ConfirmationModal
-          isOpen={showMoveModal}
-          fileName={displayName}
-          onConfirm={handleConfirmMove}
-          onCancel={() => { setShowMoveModal(false); setTargetFolderId(""); }}
-          isMove={true}
-          inputValue={targetFolderId}
-          onInputChange={setTargetFolderId}
-        /> */}
         {showMoveModal && (
           <MoveModal
             isOpen={showMoveModal}
             fileName={displayName}
-            folders={folders?.filter(f => f.id !== id) ?? []}
             onConfirm={(folderId) => {
               onMove?.(id, folderId === "" ? null : folderId);
               setShowMoveModal(false);
@@ -244,20 +223,10 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         onInputChange={setRenameValue}
         errorMessage={modalError ?? undefined}
       />
-      {/* <ConfirmationModal
-        isOpen={showMoveModal}
-        fileName={name}
-        onConfirm={handleConfirmMove}
-        onCancel={() => { setShowMoveModal(false); setTargetFolderId(""); }}
-        isMove={true}
-        inputValue={targetFolderId}
-        onInputChange={setTargetFolderId}
-      /> */}
       {showMoveModal && (
         <MoveModal
           isOpen={showMoveModal}
           fileName={name}
-          folders={folders?.filter(f => f.id !== id) ?? []}
           onConfirm={(folderId) => {
             onMove?.(id, folderId === "" ? null : folderId);
             setShowMoveModal(false);
