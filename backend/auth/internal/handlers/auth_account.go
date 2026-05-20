@@ -118,15 +118,11 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		"client_salt":           newClientSalt,
 		"iv":                    newIV,
 		"encrypted_private_key": newPrivKey,
-		"refresh_token":         nil,
 	}).Error
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
-
-	//TODO: generate a new jwt and refresh token maybe
-	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
