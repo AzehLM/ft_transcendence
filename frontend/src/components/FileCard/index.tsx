@@ -156,7 +156,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
         />
         <ConfirmationModal
           isOpen={showMoveModal}
-          fileName={name}
+          fileName={displayName}
           onConfirm={handleConfirmMove}
           onCancel={() => { setShowMoveModal(false); setTargetFolderId(""); }}
           isMove={true}
