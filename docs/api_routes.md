@@ -687,6 +687,40 @@ Reponse (200) :
 
 ---
 
+
+### `POST /files/multipart/init`
+
+Demande **des** presigned URL pour upload par chunk vers MinIO, renvoie chaque URL associée a la partie
+
+Body:
+```json
+{
+  "file_size": 2147483648,
+  "folder_id": "<uuid_optional>",
+  "org_id": "<uuid_optional>"
+  "part_count": "<number between 1 - 100>"
+}
+```
+
+Response (200):
+```json
+{
+  "object_id": "<uuid>"
+    "parts": [
+        {
+            "part_number": 1,
+            "presigned_url": "https://minio.../bucket/object?X-Amz-..."
+        },
+        {
+          ...
+        }
+    ],
+    "upload_id": "<string>"
+}
+```
+
+---
+
 ### `POST /files/finalize`
 
 Apres l'upload MinIO reussi, stocke les metadonnees crypto en DB et retourne l'ID du fichier créé.
