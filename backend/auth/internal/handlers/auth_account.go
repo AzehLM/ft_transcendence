@@ -126,7 +126,7 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 
 	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "password updated please login again",
+		"message": "password updated",
 	})
 }
 
