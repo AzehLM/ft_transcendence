@@ -18,25 +18,26 @@ export default function AccountPage() {
     try {
         const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
-    if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to delete account, please try again.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.message || data.error || message;
+        if (!response.ok) {
+        const text = await response.text();
+        let message = "Failed to delete account, please try again.";
+        try {
+            if (text) {
+            const data = JSON.parse(text);
+            message = data.message || data.error || message;
+            }
+        } catch {}
+        setError(message);
+        return;
         }
-      } catch {}
-      setError(message);
-      return;
-    }
 
         await logout(navigate);
     } catch (err) {
         console.log("Network error:", err);
         setError("Network error, please try again.");
     }
-    };
+};
+
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
