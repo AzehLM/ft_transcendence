@@ -4,7 +4,7 @@ import { motion, cubicBezier } from "framer-motion";
 import styles from "./NotFound.module.css";
 
 const P = "#de7356";
-const D = "#2b1008"; 
+const D = "#2b1008";
 
 const CHARSET = "01█▓░▒╔╗╚╝║═!@#$%ABCDEF?><~";
 const rchar = () => CHARSET[~~(Math.random() * CHARSET.length)];
@@ -90,7 +90,7 @@ function useScramble(target: string, delay = 0, duration = 1000) {
 export default function NotFound() {
   const navigate = useNavigate();
   const badge = useScramble("ERR_404  ·  RESOURCE_NOT_FOUND", 80, 900);
-  const title = useScramble("Page introuvable", 550, 1100);
+  const title = useScramble("Lost in the cloud?", 550, 1100);
 
   const up = (delay: number, y = 8) => ({
     initial: { opacity: 0, y },
@@ -116,7 +116,7 @@ export default function NotFound() {
         <motion.h1 {...up(0.25, 8)} className={styles.mainTitle}>{title}</motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.48 }} transition={{ delay: 1.4, duration: 0.7 }} className={styles.description}>
-          La page que vous recherchez semble avoir été déplacée, supprimée ou n'a jamais existé.
+          The page you're looking for might have been moved, deleted, or never existed in our secure vault.
         </motion.p>
 
         <motion.div {...up(1.6, 6)}>
