@@ -706,16 +706,16 @@ Response (200):
 ```json
 {
   "object_id": "<uuid>"
-    "parts": [
-        {
-            "part_number": 1,
-            "presigned_url": "https://minio.../bucket/object?X-Amz-..."
-        },
-        {
-          ...
-        }
-    ],
-    "upload_id": "<string>"
+  "parts": [
+      {
+        "part_number": 1,
+        "presigned_url": "https://minio.../bucket/object?X-Amz-..."
+      },
+      {
+        ...
+      }
+  ],
+  "upload_id": "<string>"
 }
 ```
 
@@ -740,6 +740,40 @@ Reponse (201) :
 ```json
 {
   "file_id": "<uuid>",
+}
+```
+
+---
+
+### `POST /files/multipart/finalize`
+
+Finalise un upload multipart : déclenche l'assemblage des parts côté MinIO, active le fichier en DB, et incrémente le quota (user ou organization selon `org_id`).
+
+Body:
+```json
+{
+  "object_id": "<uuid>",
+  "upload_id": "<string>",
+  "encrypted_filename": "<base64_string>",
+  "encrypted_dek": "<base64_bytes>",
+  "iv": "<base64_bytes>",
+  "org_id": "<uuid_optional>",
+  "parts": [
+    {
+      "part_number": 1,
+      "etag": "<string>"
+    },
+    {
+      ...
+    }
+  ]
+}
+```
+
+Response (201):
+```json
+{
+  "file_id": "<uuid>"
 }
 ```
 
