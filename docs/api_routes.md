@@ -770,12 +770,28 @@ Body:
 }
 ```
 
-Response (201):
+Reponse (201):
 ```json
 {
   "file_id": "<uuid>"
 }
 ```
+
+---
+
+### `POST /files/multipart/abort`
+
+Annule un upload multipart en cours : libère les parts côté MinIO et supprime la ligne PENDING en DB. Seul l'uploader peut annuler son propre upload. Aucun effet sur le quota.
+
+Body:
+```json
+{
+  "object_id": "<uuid>",
+  "upload_id": "<string>"
+}
+```
+
+Reponse : `204 No Content`
 
 ---
 
