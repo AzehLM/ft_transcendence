@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import styles from "./Organizations.module.css";
-import { UserPlus, UserMinus, Plus } from "lucide-react";
+import { UserPlus, UserMinus, Plus, Building2 } from "lucide-react";
 import { generateOrganization, addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
@@ -233,7 +233,22 @@ export default function OrganizationsPage() {
         {loading ? (
             <div className={styles.loadingState}>Loading organizations...</div>
         ) : orgs.length === 0 ? (
-            <div className={styles.emptyState}>You are not part of any organization.</div>
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>
+                <Building2 size={32} />
+              </div>
+              <h2 className={styles.emptyTitle}>No organizations yet</h2>
+              <p className={styles.emptyDescription}>
+                Create your first organization to start collaborating and sharing files with your team securely.
+              </p>
+              <button 
+                className={styles.emptyButton}
+                onClick={() => { setShowCreateModal(true); setModalError(null); }}
+              >
+                <Plus size={20} />
+                Create your first Organization
+              </button>
+            </div>
         ) : (
             <div className={styles.orgList}>
             {orgs.map((org) => (

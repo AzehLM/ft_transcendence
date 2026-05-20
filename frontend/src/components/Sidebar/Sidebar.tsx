@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
-import { Package } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
-      <Link to="/" className={styles.sidebar__logo}>
+      <Link to="/dashboard" className={styles.sidebar__logo}>
         <div className={styles.logoSquare}>O</div>
         <div className={styles.logoText}>
           <span className={styles.logoName}>Ostrom</span>
