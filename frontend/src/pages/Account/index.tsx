@@ -5,7 +5,7 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
 import { DangerZone } from "../../components/DangerZone";
-import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKeyPassword } from "../../services/crypto.service";
+import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { useEffect } from "react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 
@@ -114,7 +114,7 @@ export default function AccountPage() {
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
 
-            const privateKey = await unwrapPrivateKeyPassword(encryptedPrivateKey, masterKey, iv);
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv, true);
 
             const data = await generateChangePasswordData(newPassword, privateKey);
             const passwordData = {
