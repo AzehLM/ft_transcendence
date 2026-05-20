@@ -48,6 +48,10 @@ type StorageRepository interface {
 	GetUserSpace(userID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
 	TryIncrementUserUsedSpace(userID uuid.UUID, delta int64) (bool, error)
 	DecrementUserUsedSpace(userID uuid.UUID, delta int64) error
+
+	GetOrgSpace(orgID uuid.UUID) (usedSpace int64, maxSpace int64, err error)
+	TryIncrementOrgUsedSpace(orgID uuid.UUID, delta int64) (bool, error)
+	DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) error
 }
 
 type storageRepository struct {
@@ -165,7 +169,7 @@ func (r *storageRepository) TryIncrementUserUsedSpace(userID uuid.UUID, delta in
 func (r *storageRepository) DecrementUserUsedSpace(userID uuid.UUID, delta int64) error {
 	return r.db.Table("users").
 		Where("id = ?", userID).
-		UpdateColumn("used_space", gorm.Expr("used_space - ?", delta)).Error
+		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
 }
 
 // Folders
@@ -370,4 +374,37 @@ func (r *storageRepository) FindStalePendingFiles(age time.Duration) ([]File, er
 		return nil, err
 	}
 	return files, nil
+}
+
+func (r *storageRepository) GetOrgSpace(orgID uuid.UUID) (usedSpace int64, maxSpace int64, err error) {
+	var result struct {
+		UsedSpace int64
+		MaxSpace  int64
+	}
+
+	err = r.db.Table("organizations").
+		Select("used_space, max_space").
+		Where("id = ?", orgID).
+		Take(&result).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.UsedSpace, result.MaxSpace, nil
+}
+
+func (r *storageRepository) TryIncrementOrgUsedSpace(orgID uuid.UUID, delta int64) (bool, error) {
+	result := r.db.Table("organizations").
+		Where("id = ? AND used_space + ? <= max_space", orgID, delta).
+		UpdateColumn("used_space", gorm.Expr("used_space + ?", delta))
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
+}
+
+func (r *storageRepository) DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) error {
+	return r.db.Table("organizations").
+		Where("id = ?", orgID).
+		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
 }
