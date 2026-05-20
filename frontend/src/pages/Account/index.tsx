@@ -141,7 +141,6 @@ export default function AccountPage() {
         setNewPassword("");
         setConfirmPassword("");
         setPwdError(null);
-        sessionStorage.setItem("passwordChanged", "true");
         setIsReset(true);
 
     } catch (err) {
@@ -149,25 +148,6 @@ export default function AccountPage() {
         setPwdError("Network error, please try again.");
     }
     };
-
-    useEffect(() => {
-        if (!isReset) return;
-
-        const handlePopState = () => {
-            sessionStorage.removeItem("passwordChanged");
-            logout(navigate);
-        };
-
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, [isReset]);
-
-    useEffect(() => {
-        if (sessionStorage.getItem("passwordChanged") === "true") {
-        sessionStorage.removeItem("passwordChanged");
-        logout(navigate);
-        }
-    }, []);
 
     return (
 
@@ -216,8 +196,8 @@ export default function AccountPage() {
                 <ConfirmationModal
                     isOpen={isReset}
                     fileName=""
-                    onConfirm={() => logout(navigate)}
-                    onCancel={() => logout(navigate)}
+                    onConfirm={() => setIsReset(false)}
+                    onCancel={() => setIsReset(false)}
                     isPasswordChanged={true}
                 />
                 <DangerZone
