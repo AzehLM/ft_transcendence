@@ -354,7 +354,8 @@ export function toArrayBuffer(data: ArrayBuffer | Uint8Array | number[]): ArrayB
 export async function unwrapPrivateKey(
     encryptedPrivateKey: Uint8Array,
     masterKey: CryptoKey,
-    iv: Uint8Array
+    iv: Uint8Array,
+    extractable: boolean = false
 ): Promise<CryptoKey> {
 
     const decryptedBuffer = await crypto.subtle.decrypt(
@@ -370,7 +371,7 @@ export async function unwrapPrivateKey(
             name: "RSA-OAEP",
             hash: "SHA-256",
         },
-        false,
+        extractable,
         ["decrypt"]
     );
 
