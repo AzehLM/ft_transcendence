@@ -14,6 +14,7 @@ export default function OrgFilesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
   const loadFiles = async () => {
@@ -37,7 +38,12 @@ export default function OrgFilesPage() {
       if (!res.ok) throw new Error("Failed to fetch org.");
       return res.json();
     })
-    .then(data => setOrgName(data.name))
+    .then(data => {
+      if (data) {
+        setOrgName(data.name);
+        setOrgDesc(data.description);
+      }
+    })
     .catch(() => setOrgName("Unknown"));
 
     loadFiles()
@@ -175,7 +181,8 @@ export default function OrgFilesPage() {
         onDelete={handleDelete}
         orgName={orgName}
         orgId={id}
-        showActionButtons={true}
+        orgDesc={orgDesc}
+      showActionButtons={true}
         onUploadFile={uploadFile}
         onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}

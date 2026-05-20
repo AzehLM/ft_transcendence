@@ -3,21 +3,24 @@ import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
-import { UserPlus, MoreHorizontal, Shield, UserMinus } from "lucide-react";
-import styles from "./OrgMembers.module.css";
+import orgaStyles from "../Organizations/Organizations.module.css"
+import { UserMinus, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import { resetKeys } from "../../services/auth.service";
 
 interface Member {
   user_id: string;
   email: string;
   role: string;
-  first_name?: string;
-  last_name?: string;
-  status?: string;
+  family_name: string;
+  first_name: string;
 }
 
 export default function OrgMembersPage() {
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,9 +29,79 @@ export default function OrgMembersPage() {
         if (!res.ok) throw new Error("Failed to fetch org name.");
         return res.json();
       })
-      .then(data => setOrgName(data.name))
+      .then(data => {
+        if (data) {
+          setOrgName(data.name);
+          setOrgDesc(data.description);
+        }
+      })
       .catch(() => setOrgName("Unknown"));
   }, [id]);
+
+    // Add a member
+    const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+    const [memberEmail, setMemberEmail] = useState("");
+    const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleAddMember = async () => {
+    if (!memberEmail.trim()) return;
+    setModalError(null);
+
+    const userPrivateKey = await getPrivateKeyFromSession();
+    if (!userPrivateKey) {
+      setPublicKeyMissing(true)
+      return;
+    }
+
+    const { success, error } = await addMemberToOrg(id!, memberEmail);
+    if (!success) {
+      setModalError(error ?? "Failed to add member.");
+      return;
+    }
+
+    // Refresh members list -> might be modified with websocket
+    try {
+      const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
+      if (!res.ok) {
+        setModalError("Member added, but failed to refresh members.");
+        return;
+      }
+      const data = await res.json();
+      setMembers(data);
+    } catch {
+      setModalError("Member added, but failed to refresh members.");
+      return;
+    }
+
+    setMemberEmail("");
+    setShowAddMemberModal(false);
+  };
+
+
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
+
+    useEffect(() => {
+    fetchWithRefresh("/api/auth/me")
+        .then(res => res.json())
+        .then(data => setEmail(data.email));
+    }, []);
+
+  const handleResetKeys = async () => {
+    setModalError(null);
+    if (!password) return;
+
+    const { success, error } = await resetKeys(email, password);
+    if (!success) {
+      setModalError(error ?? "Error !");
+      return;
+    }
+
+    setPassword("");
+    setPublicKeyMissing(false);
+    setModalError(null);
+  };
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -164,14 +237,9 @@ export default function OrgMembersPage() {
   };
 
   return (
-    <div style={{ minHeight: "100%", backgroundColor: "transparent" }}>
-      <div className={styles.container}>
-        <div className={styles.headerSection}>
-          <div className={styles.titleGroup}>
-            <h1>Organization Members</h1>
-            <p className={styles.subtitle}>Manage access and roles for your team members.</p>
-          </div>
-          {myRole === "admin" && (
+    <OrgLayout title="Organization members" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
+        { myRole === "admin" && (
+          <div className={orgaStyles.header}>
             <button
               className={styles.addButton}
               onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
@@ -179,11 +247,33 @@ export default function OrgMembersPage() {
               <UserPlus size={20} />
               Add member
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {error && <div className={styles.errorState}>{error}</div>}
+        <ConfirmationModal
+          isOpen={showAddMemberModal}
+          fileName={memberEmail}
+          onConfirm={handleAddMember}
+          onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
+          isAddMember={true}
+          inputValue={memberEmail}
+          onInputChange={setMemberEmail}
+          errorMessage={modalError ?? undefined}
+        />
 
+        <ConfirmationModal
+          isOpen={publicKeyMissing}
+          fileName={orgName}
+          onConfirm={handleResetKeys}
+          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          isKeyMissing={true}
+          inputValue={password}
+          onInputChange={setPassword}
+          errorMessage={modalError ?? undefined}
+        />
+
+      <div className={orgaStyles.organizations}>
+        {error && <p style={{ color: "#de7356", marginBottom: "16px" }}>{error}</p>}
         {loading ? (
           <div className={styles.loadingState}>Loading members...</div>
         ) : members.length === 0 ? (
@@ -191,13 +281,17 @@ export default function OrgMembersPage() {
         ) : (
           <div className={styles.memberList}>
             {members.map((member) => (
-              <div key={member.user_id} className={styles.memberCard}>
-                <div className={styles.avatar}>
-                   <div className={styles.initialsAvatar}>{getInitials(member)}</div>
-                </div>
-                <div className={styles.memberInfo}>
-                  <h3 className={styles.memberName}>{getName(member)}</h3>
-                  <p className={styles.memberEmail}>{member.email}</p>
+              <div key={member.user_id} className={orgaStyles.orgCard}>
+                <div className={orgaStyles.orgInfo}>
+                  <p className={orgaStyles.orgName}>
+                    {member.first_name || member.family_name
+                      ? `${member.first_name ?? ""} ${member.family_name ?? ""}`.trim()
+                      : member.email}
+                    {(member.first_name || member.family_name) && (
+                      <span> ({member.email})</span>
+                    )}
+                  </p>
+                  <p className={orgaStyles.orgRole}>{member.role}</p>
                 </div>
                 <div className={styles.memberActions}>
                   <div className={`${styles.roleTag} ${
