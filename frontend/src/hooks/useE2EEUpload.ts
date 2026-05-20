@@ -82,7 +82,8 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         dek: Uint8Array,
         encryptedDEK: Uint8Array,
     ) => {
-        const totalEncryptedSize = file.size + 16; // single GCM tag
+        const numChunks = Math.ceil(file.size / UPLOAD_CONFIG.CHUNK_SIZE);
+        const totalEncryptedSize = file.size + numChunks * 16;
 
         const initRes = await fetchWithRefresh("/api/files/upload-url", {
             method: "POST",
@@ -97,19 +98,29 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
         updateUpload(id, { status: UPLOAD_MESSAGES.ENCRYPTING });
 
-        const buffer = await file.arrayBuffer();
-        const chunkIv = deriveChunkIv(baseIv, 1);
-        const encrypted = await window.crypto.subtle.encrypt(
-            { name: "AES-GCM", iv: chunkIv },
-            cryptoKey,
-            buffer
-        );
+        const encryptedChunks: Uint8Array[] = [];
+        for (let i = 0; i < numChunks; i++) {
+            const offset = i * UPLOAD_CONFIG.CHUNK_SIZE;
+            const slice = file.slice(offset, offset + UPLOAD_CONFIG.CHUNK_SIZE);
+            const buffer = await slice.arrayBuffer();
+
+            const chunkIv = deriveChunkIv(baseIv, i + 1);
+            const encrypted = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: chunkIv },
+                cryptoKey,
+                buffer
+            );
+            encryptedChunks.push(new Uint8Array(encrypted));
+        }
+
+        // Concatenate all encrypted chunks into one body for the single PUT
+        const body = new Blob(encryptedChunks as BlobPart[], { type: "application/octet-stream" });
 
         updateUpload(id, { status: UPLOAD_MESSAGES.UPLOADING });
 
         const uploadRes = await fetch(presigned_url, {
             method: "PUT",
-            body: encrypted
+            body
         });
         if (!uploadRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_STORAGE_REJECTED);
 
@@ -148,7 +159,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             method: "POST",
             body: JSON.stringify({
                 file_size: totalEncryptedSize,
-                folder_id: null,
+                folder_id: folderId || null,
                 org_id: orgId || null,
                 part_count: numChunks,
             })
