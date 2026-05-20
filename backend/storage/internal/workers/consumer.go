@@ -321,11 +321,17 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 				log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
 				continue
 			}
-			// only case where we need to update the user used space. The other cases either didn't FinalizeUpload or completely delete users/organizations data which delete on cascade this db field
-			if err := c.repo.DecrementUserUsedSpace(f.OwnerUserID, f.FileSize); err != nil {
-				log.Printf("[WARN] sweep: DecrementUserUsedSpace failed for %s: %v", f.ID, err)
+			log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
+
+			var decErr error
+			if f.OrgID != nil {
+				decErr = c.repo.DecrementOrgUsedSpace(*f.OrgID, f.FileSize)
 			} else {
-				log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
+				decErr = c.repo.DecrementUserUsedSpace(f.OwnerUserID, f.FileSize)
+			}
+
+			if decErr != nil {
+				log.Printf("[WARN] sweep: quota decrement failed for row %s (already removed): %v", f.ID, decErr)
 			}
 		}
 	}
