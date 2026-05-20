@@ -15,22 +15,35 @@ export default function AccountPage() {
     const [error, setError] = useState<string | null>(null);
 
     const handleDeleteAccount = async () => {
-    try {
-        const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
+        try {
+            const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
-        if (!response.ok) {
-        const data = await response.json();
-        console.error("Failed to delete account:", data);
-        setError(data.message || "Failed to delete account, please try again.");
-        return;
+            if (!response.ok) {
+            const text = await response.text();
+            let message = "Failed to delete account, please try again.";
+            try {
+                if (text) {
+                const data = JSON.parse(text);
+                message = data.message || data.error || message;
+                }
+            } catch {}
+            setError(message);
+            return;
+            }
+
+            await logout(navigate);
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+            if (err instanceof TypeError) {
+                setError("Network error, please try again.");
+            } else if (err instanceof SyntaxError) {
+                setError("Received an invalid server response. Please try again.");
+            } else {
+                setError("Failed to delete account. Please try again.");
+            }
         }
-
-        await logout(navigate);
-    } catch (err) {
-        console.error("Network error:", err);
-        setError("Network error, please try again.");
-    }
     };
+
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,121 +59,109 @@ export default function AccountPage() {
     }, []);
 
     const handleChangePassword = async () => {
-    setPwdError(null);
-    setIsReset(false);
-    if (!password || !newPassword || !confirmPassword) {
-        setPwdError("All fields are required!");
-        setPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        return;
-    }
-    if (newPassword !== confirmPassword) {
-        setPwdError("The new passwords do not match.");
-        setPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        return;
-    }
-
-    if (newPassword.length < 8) {
-        setPwdError("Password must be at least 8 characters!");
-        setPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        return;
-    }
-
-    if (newPassword === password) {
-        setPwdError("New password cannot be the same as the previous one.");
-        setPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        return;
-    }
-    try {
-
-        const { masterKey, loginData } = await generateLoginData(email, password);
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(loginData),
-        });
-
-        const responseData = await response.json();
-
-        if (!response.ok) {
-            setPwdError(responseData.message || "Error !");
+        setPwdError(null);
+        setIsReset(false);
+        if (!password || !newPassword || !confirmPassword) {
+            setPwdError("All fields are required!");
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPwdError("The new passwords do not match.");
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
             return;
         }
 
+        if (newPassword.length < 8) {
+            setPwdError("Password must be at least 8 characters!");
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            return;
+        }
 
-        const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
-        const iv = base64ToUint8Array(responseData.iv);
+        if (newPassword === password) {
+            setPwdError("New password cannot be the same as the previous one.");
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            return;
+        }
+        
+        try {
 
-        const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+            const { masterKey, loginData } = await generateLoginData(email, password);
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(loginData),
+            });
 
-        const data = await generateChangePasswordData(newPassword, privateKey);
-        const passwordData = {
-            old_auth_hash: loginData.auth_hash,
-            new_client_salt: data.new_client_salt,
-            new_auth_hash: data.new_auth_hash,
-            new_encrypted_private_key: data.new_encrypted_private_key,
-            new_iv: data.new_iv,
-        };
-        const responsePut = await fetchWithRefresh("/api/auth/password", {
-        method: "PUT",
-        body: JSON.stringify(passwordData),
-        });
+            const responseData = await response.json();
 
-        if (!responsePut.ok) {
-            const text = await responsePut.text();
-            let message = "Failed to change password.";
-            try {
-                if (text) {
-                const data = JSON.parse(text);
-                message = data.error || data.message || message;
-                }
-            } catch {}
-                setPwdError(message);
-                setPassword("");
-                setNewPassword("");
-                setConfirmPassword("");
+            if (!response.ok) {
+                setPwdError(responseData.message || "Error !");
                 return;
+            }
+
+
+            const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
+            const iv = base64ToUint8Array(responseData.iv);
+
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv, true);
+
+            const data = await generateChangePasswordData(newPassword, privateKey);
+            const passwordData = {
+                old_auth_hash: loginData.auth_hash,
+                new_client_salt: data.new_client_salt,
+                new_auth_hash: data.new_auth_hash,
+                new_encrypted_private_key: data.new_encrypted_private_key,
+                new_iv: data.new_iv,
+            };
+            const responsePut = await fetchWithRefresh("/api/auth/password", {
+            method: "PUT",
+            body: JSON.stringify(passwordData),
+            });
+
+            if (!responsePut.ok) {
+                const text = await responsePut.text();
+                let message = "Failed to change password.";
+                try {
+                    if (text) {
+                    const data = JSON.parse(text);
+                    message = data.error || data.message || message;
+                    }
+                } catch {}
+                    setPwdError(message);
+                    setPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    return;
+            }
+
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            setPwdError(null);
+            setIsReset(true);
+
+        } catch (err) {
+            console.error("Failed to change password:", err);
+            if (err instanceof TypeError) {
+                setPwdError("Network error, please try again.");
+            } else if (err instanceof SyntaxError) {
+                setPwdError("Received an invalid server response. Please try again.");
+            } else {
+                setPwdError("Failed to change password. Please try again.");
+            }
         }
-
-        setPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setPwdError(null);
-        sessionStorage.setItem("passwordChanged", "true");
-        setIsReset(true);
-
-    } catch {
-        setPwdError("Network error, please try again.");
-    }
     };
-
-    useEffect(() => {
-        if (!isReset) return;
-
-        const handlePopState = () => {
-            sessionStorage.removeItem("passwordChanged");
-            logout(navigate);
-        };
-
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, [isReset]);
-
-    useEffect(() => {
-        if (sessionStorage.getItem("passwordChanged") === "true") {
-        sessionStorage.removeItem("passwordChanged");
-        logout(navigate);
-        }
-    }, []);
 
     return (
 
@@ -209,8 +210,8 @@ export default function AccountPage() {
                 <ConfirmationModal
                     isOpen={isReset}
                     fileName=""
-                    onConfirm={() => logout(navigate)}
-                    onCancel={() => logout(navigate)}
+                    onConfirm={() => setIsReset(false)}
+                    onCancel={() => setIsReset(false)}
                     isPasswordChanged={true}
                 />
                 <DangerZone
