@@ -26,9 +26,6 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
             <button style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}>
               <Bell size={20} />
             </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}>
-              <Settings size={20} />
-            </button>
             <div style={{ position: "relative" }}>
               <UserProfileButton
                 isOpen={profileDropdownOpen}
