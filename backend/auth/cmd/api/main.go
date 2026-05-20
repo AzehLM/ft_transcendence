@@ -99,11 +99,9 @@ func main() {
 	api.Get("/auth/2fa/recovery-codes", authHandler.GetRecoveryCodes)
 	api.Post("/auth/2fa/disable", authHandler.DisableTwoFactor)
 
-	tempSessionApi := app.Group("/api")
-	tempSessionApi.Use(middleware.VerifyTempSession(env.JwtSecret))
-
-	tempSessionApi.Post("/auth/2fa/verify", authHandler.VerifyTOTPLogin)
-	tempSessionApi.Post("/auth/2fa/recovery-code", authHandler.VerifyRecoveryCode)
+	// Temp session routes (for 2FA verification during login)
+	app.Post("/api/auth/2fa/verify", middleware.VerifyTempSession(env.JwtSecret), authHandler.VerifyTOTPLogin)
+	app.Post("/api/auth/2fa/recovery-code", middleware.VerifyTempSession(env.JwtSecret), authHandler.VerifyRecoveryCode)
 
 	api.Get("/auth/me", authHandler.GetInfo)
 	api.Delete("/auth/me", authHandler.DeleteUser)

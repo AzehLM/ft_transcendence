@@ -41,7 +41,7 @@ export async function verifyTOTPLogin(code: string, tempToken: string) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-Temp-Token": tempToken,
+            "Authorization": `Bearer ${tempToken}`,
         },
         body: JSON.stringify({ code }),
     });
@@ -60,7 +60,7 @@ export async function verifyRecoveryCode(code: string, tempToken: string) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-Temp-Token": tempToken,
+            "Authorization": `Bearer ${tempToken}`,
         },
         body: JSON.stringify({ code }),
     });

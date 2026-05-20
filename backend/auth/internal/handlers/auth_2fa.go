@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"time"
@@ -73,7 +74,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -144,10 +145,20 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	}
 	delete(failedAttempts, userID)
 
-	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, userID)
+	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, user.ID.String())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "encryption_failed"})
 	}
+
+	// Base64 encode encrypted secret for safe database storage
+	encryptedSecretBase64 := []byte(base64.StdEncoding.EncodeToString(encryptedSecret))
+
+	logLen := len(encryptedSecret)
+	if logLen > 16 {
+		logLen = 16
+	}
+	log.Printf("[INFO] Setup: user.ID=%s, user.ClientSalt=%x, encrypted secret len=%d, hex_first_%d=%x, base64_len=%d",
+		user.ID, user.ClientSalt, len(encryptedSecret), logLen, encryptedSecret[:logLen], len(encryptedSecretBase64))
 
 	recoveryCodes := h.TOTPService.GenerateRecoveryCodes(10)
 	hashedCodes, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
@@ -156,10 +167,17 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "hashing_failed"})
 	}
 
+	// JSON marshal recovery codes, then base64 encode for safe database storage
+	hashedCodesJSON, err := json.Marshal(hashedCodes)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "recovery_codes_encoding_failed"})
+	}
+	recoveryCodesBase64 := []byte(base64.StdEncoding.EncodeToString(hashedCodesJSON))
+
 	err = h.DB.Model(&user).Updates(map[string]interface{}{
 		"TwoFactorEnabled":    true,
-		"TOTPSecretEncrypted": encryptedSecret,
-		"RecoveryCodesHashed": hashedCodes,
+		"TOTPSecretEncrypted": encryptedSecretBase64,
+		"RecoveryCodesHashed": recoveryCodesBase64,
 	}).Error
 
 	if err != nil {
@@ -182,7 +200,7 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt", "totp_secret_encrypted").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -212,11 +230,24 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
 	code := req.Code
 
-	secret, err := decryptTOTPSecret(user.TOTPSecretEncrypted, user.ClientSalt, userID)
+	logLen := len(user.TOTPSecretEncrypted)
+	if logLen > 16 {
+		logLen = 16
+	}
+	log.Printf("[DEBUG] Login: user.ID=%s, user.ClientSalt=%x, retrieved encrypted secret (base64) len=%d, first_%d=%s",
+		user.ID, user.ClientSalt, len(user.TOTPSecretEncrypted), logLen, user.TOTPSecretEncrypted[:logLen])
+
+	// Base64 decode the stored encrypted secret
+	encryptedSecret, err := base64.StdEncoding.DecodeString(string(user.TOTPSecretEncrypted))
 	if err != nil {
+		log.Printf("[ERROR] Base64 decode failed: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
 	}
 
+	log.Printf("[DEBUG] Decryption attempt - encryptedSecretLen=%d, saltLen=%d, userID=%s",
+		len(encryptedSecret), len(user.ClientSalt), user.ID)
+
+	secret, err := decryptTOTPSecret(encryptedSecret, user.ClientSalt, user.ID.String())
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
 		attempt := failedAttempts[userID]
 		attempt.Count++
@@ -258,11 +289,19 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	})
 }
 
-func parseRecoveryCodes(hashedCodesJSON []byte) [][]byte {
-	var codes [][]byte
-	err := json.Unmarshal(hashedCodesJSON, &codes)
+func parseRecoveryCodes(hashedCodesBase64 []byte) [][]byte {
+	// Base64 decode first
+	decodedJSON, err := base64.StdEncoding.DecodeString(string(hashedCodesBase64))
 	if err != nil {
-		log.Printf("[ERROR] Failed to parse recovery codes: %v", err)
+		log.Printf("[ERROR] Failed to base64 decode recovery codes: %v", err)
+		return [][]byte{}
+	}
+
+	// Then unmarshal JSON
+	var codes [][]byte
+	err = json.Unmarshal(decodedJSON, &codes)
+	if err != nil {
+		log.Printf("[ERROR] Failed to parse recovery codes JSON: %v", err)
 		return [][]byte{}
 	}
 	return codes
@@ -274,7 +313,7 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "recovery_codes_hashed").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -343,7 +382,10 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "serialization_failed"})
 	}
 
-	err = h.DB.Model(&user).Update("RecoveryCodesHashed", remainingCodesJSON).Error
+	// Base64 encode for safe database storage (same format as setup)
+	remainingCodesBase64 := []byte(base64.StdEncoding.EncodeToString(remainingCodesJSON))
+
+	err = h.DB.Model(&user).Update("RecoveryCodesHashed", remainingCodesBase64).Error
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
 	}
