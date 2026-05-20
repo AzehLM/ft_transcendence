@@ -107,7 +107,7 @@ export function ConfirmationModal({
     : isDeleteOrga
     ? `Are you sure you want to permanently delete the organization, "${fileName}"? This action cannot be undone.`
     : isPasswordChanged
-    ? "Your password has been updated. Please log in again with your new password."
+    ? "Your password has been successfully updated."
     : isKeyMissing
     ? "To complete this action, enter your password."
     : isAddMember
@@ -139,7 +139,7 @@ export function ConfirmationModal({
     : isDeleteOrga
     ? "Delete Organization"
     : isPasswordChanged
-    ? "Log out"
+    ? "Confirm"
     : isKeyMissing
     ? "Confirm"
     : isCreateFolder
