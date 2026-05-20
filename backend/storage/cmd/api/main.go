@@ -127,6 +127,7 @@ func main() {
 	api.Delete("/folders/:folder_id", handler.DeleteFolder)
 	api.Get("/folders", handler.ListPersonalContents) // can have a query string
 	api.Get("/folders/:folder_id/contents", handler.ListFolderContents)
+	api.Get("/folders/:folder_id/path", handler.GetFolderPath)
 	api.Get("/storage/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
 	app.Get("/metrics", metricsHandler.Serve)
 

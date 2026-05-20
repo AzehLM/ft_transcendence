@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"time"
+	"errors"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -39,6 +40,7 @@ type StorageRepository interface {
 	IsFolderEmpty(folderID uuid.UUID) (bool, error)                        // DELETE /folders/{folder_id}
 	DeleteFolder(folderID uuid.UUID) error                                 // DELETE /folders/{folder_id}
 	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error // PATCH /folders/{folder_id}
+	GetFolderPath(folderID uuid.UUID) ([]Folder, error)
 	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
 	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error) // GET /folders?parent_id=xxx
@@ -407,4 +409,26 @@ func (r *storageRepository) DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) 
 	return r.db.Table("organizations").
 		Where("id = ?", orgID).
 		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
+}
+
+func (r *storageRepository) GetFolderPath(folderID uuid.UUID) ([]Folder, error) {
+    var path []Folder
+    currentID := folderID
+
+    for {
+        var folder Folder
+        if err := r.db.Model(&Folder{}).Where("id = ?", currentID).First(&folder).Error; err != nil {
+            if errors.Is(err, gorm.ErrRecordNotFound) {
+                break
+            }
+            return nil, err
+        }
+        path = append([]Folder{folder}, path...)
+        if folder.ParentID == nil {
+            break
+        }
+        currentID = *folder.ParentID
+    }
+
+    return path, nil
 }

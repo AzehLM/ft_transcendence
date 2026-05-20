@@ -313,3 +313,27 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 		"files":	filesItems,
 	})
 }
+
+func (h *StorageHandler) GetFolderPath(c fiber.Ctx) error {
+	folderID, err := uuid.Parse(c.Params("folder_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid folder_id",
+		})
+	}
+
+    path, err := h.svc.GetFolderPath(folderID)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to get folder path"})
+    }
+
+    result := make([]fiber.Map, len(path))
+    for i, folder := range path {
+        result[i] = fiber.Map{
+            "id":   folder.ID,
+            "name": folder.Name,
+        }
+    }
+
+    return c.Status(fiber.StatusOK).JSON(result)
+}

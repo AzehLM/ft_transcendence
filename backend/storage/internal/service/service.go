@@ -47,6 +47,7 @@ type StorageService interface {
 	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
+	GetFolderPath(folderID uuid.UUID) ([]storage.Folder, error)
 }
 
 type storageService struct {
@@ -613,4 +614,8 @@ func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delt
 		return s.repo.DecrementUserUsedSpace(userID, delta)
 	}
 	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
+}
+
+func (s *storageService) GetFolderPath(folderID uuid.UUID) ([]storage.Folder, error) {
+	return s.repo.GetFolderPath(folderID)
 }
