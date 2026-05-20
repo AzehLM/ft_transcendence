@@ -36,13 +36,13 @@ function App() {
                 {/* <Route element={<ProtectedRoute />}> */}
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/organizations" element={<OrganizationsPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/usage" element={<StoragePage />} />
                         <Route path="/account" element={<AccountPage />} />
-                        <Route path="/organizations" element={<OrganizationsPage />} />
                     </Route>
                     <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
                         <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
