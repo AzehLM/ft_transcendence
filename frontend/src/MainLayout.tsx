@@ -4,7 +4,7 @@ import { SearchBar } from "./components/SearchBar";
 import { UserProfileButton } from "./components/UserProfileButton";
 import { useState } from "react";
 import styles from "./MainLayout.module.css";
-import { Bell, Settings } from "lucide-react";
+import { Bell} from "lucide-react";
 
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
