@@ -40,10 +40,8 @@ export default function TrashPage() {
       subtitle="Deleted items"
       files={trashedFiles}
       loading={loading}
-      error={error}
       onDelete={handlePermanentDelete}
       showActionButtons={false}
-      isTrash={true}
     />
   );
 }

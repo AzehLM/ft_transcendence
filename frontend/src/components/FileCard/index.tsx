@@ -5,7 +5,6 @@ import { ConfirmationModal } from "../ConfirmationModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { FolderItem } from "../../services/files.service";
 import { MoveModal } from "../MoveModal";
 
 
@@ -13,16 +12,14 @@ interface FileCardProps {
   id: string;
   name: string;
   isFolder?: boolean;
-  isTrash?: boolean;
   onDelete?: (id: string) => void;
   onMove?: (id: string, newParentId: string | null) => Promise<void>;
   onDownload?: (id: string) => void;
   onRename?: (id: string, newName: string) => Promise<void>;
   orgId?: string;
-  folders?: FolderItem[]; 
 }
 
-export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete, onMove, onDownload, onRename, orgId, folders = undefined }: FileCardProps) {
+export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownload, onRename, orgId }: FileCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

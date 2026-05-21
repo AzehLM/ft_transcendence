@@ -325,10 +325,10 @@ export default function DashboardPage() {
                     /* Files grid */
                     <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
                         {folders.map((folder) => (
-                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} isTrash={false} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
+                            < FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
                         ))}
                         {files.map((file) => (
-                            <FileCard key={file.id} id={file.id} name={file.name} isTrash={false} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
+                            <FileCard key={file.id} id={file.id} name={file.name} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
                         ))}
                     </div>
                 )}

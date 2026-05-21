@@ -22,11 +22,10 @@ interface FileGridProps {
   subtitle: string;
   files: FileItem[];
   loading: boolean;
-  error: string | null;
+  // error: string | null;
   onDeleteFile: (id: string) => void;
   onDeleteFolder: (id: string) => void;
   showActionButtons?: boolean;
-  isTrash?: boolean;
   orgName?: string;
   orgId?: string;
   onUploadFile?: (file: File) => void;
@@ -40,7 +39,7 @@ interface FileGridProps {
 
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDeleteFile, onDeleteFolder, onRename, onMoveFolder, onMoveFile, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc, folders }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, onDeleteFile, onDeleteFolder, onRename, onMoveFolder, onMoveFile, showActionButtons = true, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc, folders }: FileGridProps) {
   const isOrgPage = orgName !== undefined;
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -142,7 +141,6 @@ export function FileGrid({ title, subtitle, files, loading, error, onDeleteFile,
                 id={folder.id}
                 name={folder.name}
                 isFolder={true}
-                isTrash={false}
                 orgId={orgId}
                 onDelete={onDeleteFolder}
                 onRename={onRename}
@@ -154,7 +152,6 @@ export function FileGrid({ title, subtitle, files, loading, error, onDeleteFile,
               key={file.id} 
               id={file.id} 
               name={file.name} 
-              isTrash={isTrash} 
               onDelete={onDeleteFile} 
               onDownload={onDownloadFile} 
               orgId={orgId}

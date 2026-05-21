@@ -259,7 +259,6 @@ export default function OrgFilesPage() {
         files={files}
         folders={folders}
         loading={loading}
-        error={error}
         onDeleteFile={handleDeleteFile}
         onDeleteFolder={handleDeleteFolder}
         orgName={orgName}
