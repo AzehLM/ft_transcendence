@@ -33,7 +33,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                 </Route>
-                {/* <Route element={<ProtectedRoute />}> */}
+                <Route element={<ProtectedRoute />}>
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
@@ -49,7 +49,7 @@ function App() {
                         <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
                         <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>
-                {/* </Route> */}
+                </Route>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
