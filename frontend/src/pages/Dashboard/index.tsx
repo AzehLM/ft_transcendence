@@ -97,7 +97,7 @@ export default function DashboardPage() {
          try {
              await FilesService.deleteFile(id);
              await loadFiles();
-             setSuccess("Folder deleted");
+             setSuccess("File deleted");
          } catch (err) {
              const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete file:", err);
