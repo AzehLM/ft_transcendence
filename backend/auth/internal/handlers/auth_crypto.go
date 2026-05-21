@@ -8,7 +8,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"log"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/pbkdf2"
@@ -50,7 +49,6 @@ func hashToken(rawToken string) string {
 
 func encryptTOTPSecret(secret string, clientSalt []byte, userID string) ([]byte, error) {
 
-	log.Printf("[DEBUG] encryptTOTPSecret START - userID=%s, saltLen=%d", userID, len(clientSalt))
 
 	key := pbkdf2.Key(
 		[]byte(userID),
@@ -59,8 +57,6 @@ func encryptTOTPSecret(secret string, clientSalt []byte, userID string) ([]byte,
 		32,
 		sha256.New,
 	)
-
-	log.Printf("[DEBUG] encryptTOTPSecret - derived key hash=%x", key[:8])
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -79,8 +75,6 @@ func encryptTOTPSecret(secret string, clientSalt []byte, userID string) ([]byte,
 
 	ciphertext := gcm.Seal(iv, iv, []byte(secret), nil)
 
-	log.Printf("[DEBUG] encryptTOTPSecret - result len=%d, iv=%x, secret=%s", len(ciphertext), iv, secret)
-
 	return ciphertext, nil
 }
 
@@ -91,8 +85,6 @@ func decryptTOTPSecret(encryptedSecret []byte, clientSalt []byte, userID string)
 		return "", fmt.Errorf("invalid_encrypted_secret: too short")
 	}
 
-	log.Printf("[DEBUG] decryptTOTPSecret START - encryptedLen=%d, saltLen=%d, userID=%s, userIDLen=%d",
-		len(encryptedSecret), len(clientSalt), userID, len(userID))
 
 	key := pbkdf2.Key(
 		[]byte(userID),
@@ -102,34 +94,25 @@ func decryptTOTPSecret(encryptedSecret []byte, clientSalt []byte, userID string)
 		sha256.New,
 	)
 
-	log.Printf("[DEBUG] decryptTOTPSecret - derived key hash=%x", key[:8])
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Printf("[ERROR] AES cipher creation failed: %v", err)
 		return "", err
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.Printf("[ERROR] GCM creation failed: %v", err)
 		return "", err
 	}
 
 	iv := encryptedSecret[:12]
 	ciphertext := encryptedSecret[12:]
 
-	log.Printf("[DEBUG] extracted iv=%d bytes, ciphertext=%d bytes", len(iv), len(ciphertext))
-
 	// Decrypt
 	plaintext, err := gcm.Open(nil, iv, ciphertext, nil)
 	if err != nil {
-		log.Printf("[ERROR] GCM.Open failed: %v (iv=%x, ciphertext_first_16=%x)",
-			err, iv, ciphertext[:min(16, len(ciphertext))])
 		return "", err
 	}
-
-	log.Printf("[DEBUG] decryption successful, plaintext=%s", string(plaintext))
 
 	return string(plaintext), nil
 }
