@@ -34,34 +34,42 @@ func (s *TOTPService) VerifyTOTPCode(secret, userCode string) bool {
 
 }
 
-func (s *TOTPService) GenerateRecoveryCodes(count int) []string {
-
+func (s *TOTPService) GenerateRecoveryCodes(count int) ([]string, error) {
 	codes := make([]string, count)
 	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	digits := "0123456789"
 
-	for i := 0; i < count; i++ {
-		part1 := s.randomString(3, letters)
-		part2 := s.randomString(3, digits)
-		part3 := s.randomString(3, letters)
+    for i := 0; i < count; i++ {
+	part1, err := s.randomString(3, letters)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+ 		part2, err := s.randomString(3, digits)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+ 		part3, err := s.randomString(3, letters)
+ 		if err != nil {
+ 			return nil, err
+ 		}
 
 		codes[i] = fmt.Sprintf("%s-%s-%s", part1, part2, part3)
 	}
 
-	return codes
+	return codes, nil
 }
 
-func (s *TOTPService) randomString(length int, charset string) string {
+func (s *TOTPService) randomString(length int, charset string) (string, error) {
 	result := ""
 	randomByte := make([]byte, length)
 	if _, err := rand.Read(randomByte); err != nil {
-		return result 
+		return "", err
 	}
 	for i := 0; i < length; i++ {
 		randomIndex := int(randomByte[i]) % len(charset)
 		result += string(charset[randomIndex])
 	}
-	return result
+	return result, nil
 }
 
 func (s *TOTPService) HashRecoveryCodes(codes []string) ([]byte, error) {
