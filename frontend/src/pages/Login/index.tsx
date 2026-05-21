@@ -44,7 +44,6 @@ export default function LoginPage() {
 
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques pour la connexion...");
             const { masterKey: mk, loginData } = await generateLoginData(email, password);
 
             const response = await fetch("/api/auth/login", {
@@ -78,7 +77,6 @@ export default function LoginPage() {
             }
 
             // No 2FA - proceed with normal login
-            console.log("✅ Connexion réussie!");
             localStorage.setItem("token", responseData.access_token);
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
@@ -100,7 +98,6 @@ export default function LoginPage() {
             navigate("/dashboard");
 
         } catch (err: any) {
-            console.error("Erreur:", err);
             setError(err.message || "An error occurred during login!");
             setIsLoading(false);
         }
@@ -125,7 +122,6 @@ export default function LoginPage() {
                 throw new Error("Missing required data for login completion");
             }
         } catch (err: any) {
-            console.error("❌ Erreur lors du traitement 2FA:", err);
             setError(err.message || "Failed to process 2FA verification");
         }
     };
@@ -133,17 +129,15 @@ export default function LoginPage() {
     // Show 2FA verification if required
     if (show2FA) {
         return (
-            <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
-                <VerifyTOTP
-                    tempToken={tempToken}
-                    onSuccess={handle2FASuccess}
-                    onCancel={() => {
-                        setShow2FA(false);
-                        setTempToken("");
-                        setError("");
-                    }}
-                />
-            </div>
+            <VerifyTOTP
+                tempToken={tempToken}
+                onSuccess={handle2FASuccess}
+                onCancel={() => {
+                    setShow2FA(false);
+                    setTempToken("");
+                    setError("");
+                }}
+            />
         );
     }
 
