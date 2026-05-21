@@ -1,9 +1,6 @@
-import { Folder, Files, Network} from "lucide-react";
-import { useState, useEffect } from "react";
-import { FilesService, FolderItem } from "../../services/files.service";
+import {Files, Network} from "lucide-react";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
-import { SidebarMenu } from "../Sidebar/SidebarMenu";
 
 export function MenuSidebar() {
   return (
