@@ -259,9 +259,9 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "0 5% 16px" }}>
+                    <div className={styles.breadcrumb}>
                     {breadcrumbs.map((item, index) => (
-                        <span key={index} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <span key={index} className={styles.breadcrumbItem}>
                         {index > 0 && <ChevronRight size={14} style={{ color: "#999" }} />}
                         <button
                         onClick={() => handleBreadcrumbClick(item, index)}
