@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"backend/auth/internal/service"
 	"backend/auth/internal/workers"
-	"backend/auth/internal/service" 
 	"backend/shared/config"
 
 	"gorm.io/gorm"
@@ -25,7 +25,7 @@ type AuthHandler struct {
 	DB          *gorm.DB
 	Env         *config.Env
 	Publisher   *workers.EventPublisher
-	TOTPService  *service.TOTPService
+	TOTPService *service.TOTPService
 }
 
 type LoginRequest struct {
@@ -44,8 +44,6 @@ type UpdatePasswordRequest struct {
 type VerifyTOTPRequest struct {
 	Code string `json:"code"`
 }
-
-
 
 func NewAuthHandler(db *gorm.DB, env *config.Env, publisher *workers.EventPublisher) *AuthHandler {
 	return &AuthHandler{
