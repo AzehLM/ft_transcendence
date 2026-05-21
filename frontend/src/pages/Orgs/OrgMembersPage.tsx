@@ -235,6 +235,7 @@ export default function OrgMembersPage() {
                       <button
                         className={`${styles.actionBtn} ${styles.roleBtn}`}
                         title="Change Role"
+                        aria-label={`Change role for ${getName(member)}`}
                         onClick={() => {
                           setSelectedMember(member);
                           setNewRole(member.role === "admin" ? "member" : "admin");
@@ -246,6 +247,7 @@ export default function OrgMembersPage() {
                       <button
                         className={`${styles.actionBtn} ${styles.kickBtn}`}
                         title="Remove Member"
+                        aria-label={`Remove ${getName(member)} from organization`}
                         onClick={() => {
                           setMemberToRemove(member);
                           setShowRemoveModal(true);

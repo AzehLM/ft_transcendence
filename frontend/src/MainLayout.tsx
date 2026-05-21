@@ -24,7 +24,12 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
         }}>
           <SearchBar placeholder="Search members..." />
           <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}>
+
+             <button
+               type="button"
+               aria-label="Notifications"
+               style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}
+             >
               <Bell size={20} />
             </button>
             <div style={{ position: "relative" }}>

@@ -121,7 +121,7 @@ export default function NotFound() {
 
         <motion.div {...up(1.6, 6)}>
           <button className={styles.backBtn} onClick={() => navigate("/")}>
-            ← Retourner à l'accueil
+            ← Go back to safety
           </button>
         </motion.div>
 
