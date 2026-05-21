@@ -1,40 +1,20 @@
-import { useState, useEffect } from "react";
-import { FilesService, FolderItem } from "../../services/files.service";
-import { SidebarMenu } from "../Sidebar/SidebarMenu";
-import { Settings, Users, Files, ArrowLeft, Folder } from "lucide-react";
+import { Settings, Users, Files, Building2, ChevronLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
 
 export function OrgSidebar() {
-
-  const [foldersExpanded, setFoldersExpanded] = useState(false);
-  const [folders, setFolders] = useState<FolderItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    FilesService.getAllFiles()
-      .then((r) => setFolders(r.folders || []))
-      .catch(() => setFolders([]))
-      .finally(() => setLoading(false));
-  }, []);
-
   const { id } = useParams();
+
 
   return (
     <Sidebar>
-      <SidebarLink to="/organizations" icon={<ArrowLeft />} label="Back" />
-      <SidebarLink to={`/orgs/${id}/files`} icon={<Files />} label="All files" />
-      <SidebarMenu
-        label="Folders"
-        icon={<Folder />}
-        expanded={foldersExpanded}
-        onToggle={() => setFoldersExpanded(!foldersExpanded)}
-        items={folders}
-        loading={loading}
-      />
-      <SidebarLink to={`/orgs/${id}/members`} icon={<Users />} label="Members" />
-      <SidebarLink to={`/orgs/${id}/settings`} icon={<Settings />} label="Settings" />
+      <SidebarLink to="/dashboard" icon={<ChevronLeft size={20} />} label="Back" />
+      <div style={{ height: "1px", background: "rgba(0,0,0,0.05)", margin: "12px 0" }} />
+      <SidebarLink to={`/orgs/${id}/files`} icon={<Files size={20} />} label="All files" />
+      <SidebarLink to="/organizations" icon={<Building2 size={20} />} label="Organizations" />
+      <SidebarLink to={`/orgs/${id}/members`} icon={<Users size={20} />} label="Members" />
+      <SidebarLink to={`/orgs/${id}/settings`} icon={<Settings size={20} />} label="Settings" />
     </Sidebar>
   );
 }

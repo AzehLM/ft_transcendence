@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { OrgLayout } from "./OrgLayout";
 import { StorageBar } from "../../components/StorageBar";
-import styles from "../../styles/profile.module.css"
+import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
 
 export default function OrgSettingsPage() {
-
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const [myRole, setMyRole] = useState<string | null>(null);
   const [usedSpace, setUsedSpace] = useState<number>(0);
   const [maxSpace, setMaxSpace] = useState<number>(0);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -37,93 +38,114 @@ export default function OrgSettingsPage() {
           setOrgDesc(data.description);
         }
       })
-      .catch(() => setOrgName("Unknown"));
-  }, [id]);
+      .catch(() => setOrgName("Unknown"))
+      .finally(() => setLoading(false));
+  }, [id, navigate]);
 
-
-    const [error, setError] = useState<string | null>(null);
-
-    const handleDeleteOrga = async () => {
+  const handleDeleteOrga = async () => {
     try {
-        const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
-        
-        if (!response.ok) {
+      const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
+
+      if (!response.ok) {
         const data = await response.json();
-        console.error("Failed to delete organization:", data);
         setError(data.message || "Failed to delete organization, please try again.");
         return;
-        }
-        navigate("/organizations");
-
+      }
+      navigate("/organizations");
     } catch (err) {
-        console.error("Network error:", err);
-        setError("Network error, please try again.");
+      setError("Network error, please try again.");
     }
-    };
+  };
 
-    const handleRenameOrg = async (newName: string) => {
-      const response = await fetchWithRefresh(`/api/orgs/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ name: newName }),
-      });
-      if (!response.ok) throw new Error("Failed to rename.");
-      setOrgName(newName);
-    };
+  const handleRenameOrg = async (newName: string) => {
+    const response = await fetchWithRefresh(`/api/orgs/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name: newName }),
+    });
+    if (!response.ok) throw new Error("Failed to rename.");
+    setOrgName(newName);
+  };
 
-    const handleChangeDescription = async (newDescription: string) => {
-      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
-        method: "PATCH",
-        body: JSON.stringify({ description: newDescription }),
-      });
-      if (!response.ok) throw new Error("Failed to change description.");
-      setOrgDesc(newDescription);
-    };
+  const handleChangeDescription = async (newDescription: string) => {
+    const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: newDescription }),
+    });
+    if (!response.ok) throw new Error("Failed to change description.");
+    setOrgDesc(newDescription);
+  };
 
-    const handleResetDescription = async () => {
-      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
-        method: "PATCH",
-        body: JSON.stringify({ description: "" }),
-      });
-      if (!response.ok) throw new Error("Failed to change description.");
-      setOrgDesc("");
-    };
+  const handleResetDescription = async () => {
+    const response = await fetchWithRefresh(`/api/orgs/${id}/members/me/description`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: "" }),
+    });
+    if (!response.ok) throw new Error("Failed to change description.");
+    setOrgDesc("");
+  };
+
+  if (loading) {
+    return (
+      <OrgLayout title="" showActionButtons={false}>
+        <div className={styles.container}>
+           <div className={styles.sectionCard}>
+             <p className={styles.subtitle}>Loading settings...</p>
+           </div>
+        </div>
+      </OrgLayout>
+    );
+  }
 
   return (
-    <OrgLayout title="Organization settings" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
-      <div className={styles.mainBox}>
-        <h2 className={styles.subtitle}>Informations</h2>
-        <EditableField
-          label="Organization name"
-          value={orgName}
-          role={myRole}
-          maxCharac={100}
-          onSave={handleRenameOrg}
-          isOrgaName={true}
-        />
-        <EditableField
-          label="Organization description"
-          value={orgDesc}
-          role={myRole}
-          maxCharac={250}
-          onSave={handleChangeDescription}
-          handleReset={handleResetDescription}
-          isOrgaDesc={true}
-        />
+    <OrgLayout title="" showActionButtons={false}>
+      <div className={styles.container}>
+        <div className={styles.headerSection}>
+          <h1>Organization Settings</h1>
+          <p className={styles.subtitle}>Manage your organization details and storage</p>
+        </div>
+
+        <div className={styles.settingsGrid}>
+          <div className={styles.sectionCard}>
+            <h2 className={styles.sectionTitle}>General Information</h2>
+            <div className={styles.fieldGroup}>
+              <EditableField
+                label="Organization name"
+                value={orgName}
+                role={myRole}
+                maxCharac={100}
+                onSave={handleRenameOrg}
+                isOrgaName={true}
+              />
+              <EditableField
+                label="Organization description"
+                value={orgDesc}
+                role={myRole}
+                maxCharac={250}
+                onSave={handleChangeDescription}
+                handleReset={handleResetDescription}
+                isOrgaDesc={true}
+              />
+            </div>
+          </div>
+
+          <div className={styles.sectionCard}>
+            <h2 className={styles.sectionTitle}>Storage Usage</h2>
+            <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} />
+          </div>
+
+          {myRole === "admin" && (
+            <DangerZone
+              label="Delete this organization"
+              description="This action cannot be undone and will remove all members, files, and folders associated with this organization."
+              buttonText="Delete Organization"
+              fileName={orgName}
+              onConfirm={handleDeleteOrga}
+              error={error ?? undefined}
+              isDeleteOrga={true}
+            />
+          )}
+        </div>
       </div>
-      <div className={styles.mainBox}>
-        <h2 className={styles.subtitle}>Storage Usage</h2>
-        <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} ></StorageBar>
-      </div>
-      { myRole === "admin" && (
-        <DangerZone
-        label="Delete this organization"
-        description="This action cannot be undone and will remove all members."
-        buttonText="Delete Organization"
-        fileName={orgName}
-        onConfirm={handleDeleteOrga}
-        error={error}
-        isDeleteOrga={true}
-      /> )}
     </OrgLayout>
   );
 }

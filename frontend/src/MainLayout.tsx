@@ -3,6 +3,9 @@ import { ProfileDropdown } from "./components/ProfileDropdown"
 import { SearchBar } from "./components/SearchBar";
 import { UserProfileButton } from "./components/UserProfileButton";
 import { useState } from "react";
+import styles from "./MainLayout.module.css";
+import { Bell} from "lucide-react";
+import { Footer } from "./components/Footer";
 
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -10,25 +13,46 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       {sidebar}
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem" }}>
-        <SearchBar />
-        <div style={{ marginLeft: "auto", position: "relative" }}>
-          <UserProfileButton
-            isOpen={profileDropdownOpen}
-            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          />
-          <ProfileDropdown
-            isOpen={profileDropdownOpen}
-            onClose={() => setProfileDropdownOpen(false)}
-          />
+      <div className={styles.mainContainer}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "20px 40px",
+          backgroundColor: "#ffffff",
+          borderBottom: "1px solid rgba(0,0,0,0.05)"
+        }}>
+          <SearchBar placeholder="Search members..." />
+          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+
+             <button
+               type="button"
+               aria-label="Notifications"
+               style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}
+             >
+              <Bell size={20} />
+            </button>
+            <div style={{ position: "relative" }}>
+              <UserProfileButton
+                isOpen={profileDropdownOpen}
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              />
+              <ProfileDropdown
+                isOpen={profileDropdownOpen}
+                onClose={() => setProfileDropdownOpen(false)}
+              />
+            </div>
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
-          <Outlet />
+        <div style={{ flex: 1, overflow: "auto", minWidth: 0, backgroundColor: "#fffcfb", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1 }}>
+            <Outlet />
+          </div>
+          <Footer hasSidebar={false} />
         </div>
       </div>
     </div>
   );
 }
+
