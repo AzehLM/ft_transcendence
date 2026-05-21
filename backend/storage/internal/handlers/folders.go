@@ -159,7 +159,7 @@ func (h *StorageHandler) UpdateFolder(c fiber.Ctx) error {
 		}
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "forlder updated",
+		"message": "folder updated",
 	})
 }
 
