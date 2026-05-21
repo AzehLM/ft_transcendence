@@ -161,17 +161,13 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 		user.ID, user.ClientSalt, len(encryptedSecret), logLen, encryptedSecret[:logLen], len(encryptedSecretBase64))
 
 	recoveryCodes := h.TOTPService.GenerateRecoveryCodes(10)
-	hashedCodes, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
+	hashedCodesJSON, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "hashing_failed"})
 	}
 
-	// JSON marshal recovery codes, then base64 encode for safe database storage
-	hashedCodesJSON, err := json.Marshal(hashedCodes)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "recovery_codes_encoding_failed"})
-	}
+	// Base64 encode the already-marshaled JSON for safe database storage
 	recoveryCodesBase64 := []byte(base64.StdEncoding.EncodeToString(hashedCodesJSON))
 
 	err = h.DB.Model(&user).Updates(map[string]interface{}{

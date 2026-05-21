@@ -126,16 +126,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                             )}
                         </div>
 
-                        {/* Manual Secret Option */}
-                        <div className={styles.totp_setup__secret_box}>
-                            <label className={styles.totp_setup__secret_label}>
-                                Can't scan? Enter this secret manually:
-                            </label>
-                            <div className={styles.totp_setup__secret_value}>
-                                {secret}
-                            </div>
-                        </div>
-
                         {error && (
                             <div className={styles.totp_setup__error_message}>
                                 {error}
