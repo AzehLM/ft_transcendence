@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import styles from "./Footer.module.css";
 
 const FOOTER_COLUMNS = [
@@ -20,26 +19,8 @@ const FOOTER_COLUMNS = [
 ];
 
 export function Footer({ hasSidebar = false }: { hasSidebar?: boolean }) {
-    const [hasSidebarInDOM, setHasSidebarInDOM] = useState(false);
-
-    useEffect(() => {
-        const checkSidebar = () => {
-            const sidebar = document.querySelector('[class*="sidebar"]');
-            setHasSidebarInDOM(!!sidebar);
-        };
-
-        checkSidebar();
-
-        const observer = new MutationObserver(checkSidebar);
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        return () => observer.disconnect();
-    }, []);
-
-    const shouldHaveSidebarMargin = hasSidebar || hasSidebarInDOM;
-
     return (
-        <footer className={`${styles.footer} ${shouldHaveSidebarMargin ? styles.footerWithSidebar : ''}`}>
+        <footer className={`${styles.footer} ${hasSidebar ? styles.footerWithSidebar : ''}`}>
             <div className={styles.footerGrid}>
                 {/* Brand */}
                 <div>

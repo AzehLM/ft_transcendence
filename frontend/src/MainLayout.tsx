@@ -5,6 +5,7 @@ import { UserProfileButton } from "./components/UserProfileButton";
 import { useState } from "react";
 import styles from "./MainLayout.module.css";
 import { Bell} from "lucide-react";
+import { Footer } from "./components/Footer";
 
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -39,8 +40,11 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", minWidth: 0, backgroundColor: "#fffcfb" }}>
-          <Outlet />
+        <div style={{ flex: 1, overflow: "auto", minWidth: 0, backgroundColor: "#fffcfb", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1 }}>
+            <Outlet />
+          </div>
+          <Footer hasSidebar={false} />
         </div>
       </div>
     </div>
