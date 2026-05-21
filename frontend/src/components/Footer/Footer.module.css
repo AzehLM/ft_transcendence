@@ -87,16 +87,22 @@
 
 @media (max-width: 768px) {
     .footerWithSidebar {
-        margin-left: 0;
+        margin-left: 140px;
     }
-    
+
     .footerGrid {
         grid-template-columns: 1fr;
         text-align: center;
         gap: 32px;
     }
-    
+
     .footerNav {
         align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .footerWithSidebar {
+        margin-left: 80px;
     }
 }
