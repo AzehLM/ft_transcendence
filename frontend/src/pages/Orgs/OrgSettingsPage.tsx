@@ -45,7 +45,7 @@ export default function OrgSettingsPage() {
   const handleDeleteOrga = async () => {
     try {
       const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
-      
+
       if (!response.ok) {
         const data = await response.json();
         setError(data.message || "Failed to delete organization, please try again.");
@@ -88,7 +88,9 @@ export default function OrgSettingsPage() {
     return (
       <OrgLayout title="" showActionButtons={false}>
         <div className={styles.container}>
-          <div className={styles.loadingState}>Loading settings...</div>
+           <div className={styles.sectionCard}>
+             <p className={styles.subtitle}>Loading settings...</p>
+           </div>
         </div>
       </OrgLayout>
     );

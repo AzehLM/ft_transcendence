@@ -22,9 +22,9 @@
     transition: all 0.2s ease;
 }
 
-.profileButton:hover {
-    background-color: #d0d0d0;
-}
+ .profileButtonOpen {
+     background-color: #d0d0d0;
+ }
 
 .profileIcon {
     width: 20px;

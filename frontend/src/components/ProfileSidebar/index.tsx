@@ -1,6 +1,6 @@
 import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
-import { User, HardDrive, Shield, Network } from "lucide-react";
+import { User, HardDrive, Shield } from "lucide-react";
 
 
 export function ProfileSidebar() {
