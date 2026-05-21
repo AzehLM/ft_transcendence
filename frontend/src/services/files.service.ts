@@ -184,9 +184,9 @@ export const FilesService = {
     },
 
     // Get Orga Files and Folders
-    getOrgaFilesFolders: async (folderId: string, ordId: string): Promise<FolderContents> => {
+    getOrgaFilesFolders: async (folderId: string, orgId: string): Promise<FolderContents> => {
         return authenticatedRequest<FolderContents>(
-            `/storage/${ordId}/folders/${folderId}/contents`
+            `/storage/${orgId}/folders/${folderId}/contents`
         );
     },
 };
