@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"log"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +14,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var tempTOTPStore = make(map[string]tempTOTPData)
+var (
+	tempTOTPStoreMutex sync.RWMutex
+	tempTOTPStore      = make(map[string]tempTOTPData)
+
+	failedAttemptsMutex sync.RWMutex
+	failedAttempts      = make(map[string]failedAttempt)
+)
 
 type tempTOTPData struct {
 	Secret    string
@@ -24,8 +31,6 @@ type failedAttempt struct {
 	Count       int
 	LockedUntil time.Time
 }
-
-var failedAttempts = make(map[string]failedAttempt)
 
 const maxAttempts = 3
 const lockoutDuration = 5 * time.Minute
@@ -54,10 +59,12 @@ func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
 	}
 
+	tempTOTPStoreMutex.Lock()
 	tempTOTPStore[userID] = tempTOTPData{
 		Secret:    secret,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	}
+	tempTOTPStoreMutex.Unlock()
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"qrCodeURL": url,
@@ -83,14 +90,20 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	}
 
 	// Check if user is locked out
-	if attempt, exists := failedAttempts[userID]; exists {
+	failedAttemptsMutex.RLock()
+	attempt, exists := failedAttempts[userID]
+	failedAttemptsMutex.RUnlock()
+
+	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":   "too_many_attempts",
 				"message": "Too many failed attempts. Generate a new QR code.",
 			})
 		}
+		failedAttemptsMutex.Lock()
 		delete(failedAttempts, userID)
+		failedAttemptsMutex.Unlock()
 	}
 
 	req := new(VerifyTOTPRequest)
@@ -105,7 +118,10 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 	code := req.Code
 
+	tempTOTPStoreMutex.RLock()
 	data, exists := tempTOTPStore[userID]
+	tempTOTPStoreMutex.RUnlock()
+
 	if !exists {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "No pending 2FA setup",
@@ -113,7 +129,9 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	}
 
 	if time.Now().After(data.ExpiresAt) {
+		tempTOTPStoreMutex.Lock()
 		delete(tempTOTPStore, userID)
+		tempTOTPStoreMutex.Unlock()
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error":   "TOTP_secret_expired",
 			"message": "Setup window expired. Generate a new QR code.",
@@ -123,27 +141,38 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	secret := data.Secret
 
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
+		failedAttemptsMutex.Lock()
 		attempt := failedAttempts[userID]
 		attempt.Count++
-		failedAttempts[userID] = attempt
-
 		if attempt.Count >= maxAttempts {
-			failedAttempts[userID] = failedAttempt{
-				Count:       attempt.Count,
-				LockedUntil: time.Now().Add(lockoutDuration),
-			}
+			attempt.LockedUntil = time.Now().Add(lockoutDuration)
+			failedAttempts[userID] = attempt
+			failedAttemptsMutex.Unlock()
+
+			tempTOTPStoreMutex.Lock()
 			delete(tempTOTPStore, userID)
+			tempTOTPStoreMutex.Unlock()
+
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error": "too_many_attempts",
 			})
 		}
+		failedAttempts[userID] = attempt
+		failedAttemptsMutex.Unlock()
 
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":              "invalid_code",
 			"attempts_remaining": maxAttempts - attempt.Count,
 		})
 	}
+
+	failedAttemptsMutex.Lock()
 	delete(failedAttempts, userID)
+	failedAttemptsMutex.Unlock()
+
+	tempTOTPStoreMutex.Lock()
+	delete(tempTOTPStore, userID)
+	tempTOTPStoreMutex.Unlock()
 
 	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, user.ID.String())
 	if err != nil {
@@ -157,10 +186,8 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	if logLen > 16 {
 		logLen = 16
 	}
-	log.Printf("[INFO] Setup: user.ID=%s, user.ClientSalt=%x, encrypted secret len=%d, hex_first_%d=%x, base64_len=%d",
-		user.ID, user.ClientSalt, len(encryptedSecret), logLen, encryptedSecret[:logLen], len(encryptedSecretBase64))
 
-	recoveryCodes := h.TOTPService.GenerateRecoveryCodes(10)
+	recoveryCodes, err := h.TOTPService.GenerateRecoveryCodes(10)
 	hashedCodesJSON, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
 
 	if err != nil {
@@ -179,8 +206,6 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
 	}
-
-	delete(tempTOTPStore, userID)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success":       true,
@@ -204,14 +229,20 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
 	}
 
-	if attempt, exists := failedAttempts[userID]; exists {
+	failedAttemptsMutex.RLock()
+	attempt, exists := failedAttempts[userID]
+	failedAttemptsMutex.RUnlock()
+
+	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":   "too_many_attempts",
 				"message": "Too many failed attempts. Try again later.",
 			})
 		}
+		failedAttemptsMutex.Lock()
 		delete(failedAttempts, userID)
+		failedAttemptsMutex.Unlock()
 	}
 
 	req := new(VerifyTOTPRequest)
@@ -230,39 +261,32 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	if logLen > 16 {
 		logLen = 16
 	}
-	log.Printf("[DEBUG] Login: user.ID=%s, user.ClientSalt=%x, retrieved encrypted secret (base64) len=%d, first_%d=%s",
-		user.ID, user.ClientSalt, len(user.TOTPSecretEncrypted), logLen, user.TOTPSecretEncrypted[:logLen])
-
 	// Base64 decode the stored encrypted secret
 	encryptedSecret, err := base64.StdEncoding.DecodeString(string(user.TOTPSecretEncrypted))
 	if err != nil {
-		log.Printf("[ERROR] Base64 decode failed: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
 	}
 
-	log.Printf("[DEBUG] Decryption attempt - encryptedSecretLen=%d, saltLen=%d, userID=%s",
-		len(encryptedSecret), len(user.ClientSalt), user.ID)
-
 	secret, err := decryptTOTPSecret(encryptedSecret, user.ClientSalt, user.ID.String())
 	if err != nil {
-		log.Printf("[ERROR] Decryption failed: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
 	}
 
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
+		failedAttemptsMutex.Lock()
 		attempt := failedAttempts[userID]
 		attempt.Count++
-		failedAttempts[userID] = attempt
-
 		if attempt.Count >= maxAttempts {
-			failedAttempts[userID] = failedAttempt{
-				Count:       attempt.Count,
-				LockedUntil: time.Now().Add(lockoutDuration),
-			}
+			attempt.LockedUntil = time.Now().Add(lockoutDuration)
+			failedAttempts[userID] = attempt
+			failedAttemptsMutex.Unlock()
+
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error": "too_many_attempts",
 			})
 		}
+		failedAttempts[userID] = attempt
+		failedAttemptsMutex.Unlock()
 
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":              "invalid_code",
@@ -270,7 +294,9 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 		})
 	}
 
+	failedAttemptsMutex.Lock()
 	delete(failedAttempts, userID)
+	failedAttemptsMutex.Unlock()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    user.ID.String(),
@@ -302,7 +328,6 @@ func parseRecoveryCodes(hashedCodesBase64 []byte) [][]byte {
 	var codes [][]byte
 	err = json.Unmarshal(decodedJSON, &codes)
 	if err != nil {
-		log.Printf("[ERROR] Failed to parse recovery codes JSON: %v", err)
 		return [][]byte{}
 	}
 	return codes
@@ -335,14 +360,20 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 	givenCode := req.Code
 	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
 
-	if attempt, exists := failedAttempts[userID]; exists {
+	failedAttemptsMutex.RLock()
+	attempt, exists := failedAttempts[userID]
+	failedAttemptsMutex.RUnlock()
+
+	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":   "too_many_attempts",
 				"message": "Too many failed attempts. Try again later.",
 			})
 		}
+		failedAttemptsMutex.Lock()
 		delete(failedAttempts, userID)
+		failedAttemptsMutex.Unlock()
 	}
 
 	var remainingCodes [][]byte
@@ -357,26 +388,30 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 	}
 
 	if !codeFound {
+		failedAttemptsMutex.Lock()
 		attempt := failedAttempts[userID]
 		attempt.Count++
-		failedAttempts[userID] = attempt
-
 		if attempt.Count >= maxAttempts {
-			failedAttempts[userID] = failedAttempt{
-				Count:       attempt.Count,
-				LockedUntil: time.Now().Add(lockoutDuration),
-			}
+			attempt.LockedUntil = time.Now().Add(lockoutDuration)
+			failedAttempts[userID] = attempt
+			failedAttemptsMutex.Unlock()
+
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error": "too_many_attempts",
 			})
 		}
+		failedAttempts[userID] = attempt
+		failedAttemptsMutex.Unlock()
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error":              "invalid_recovery_code",
 			"attempts_remaining": maxAttempts - attempt.Count,
 		})
 	}
+
+	failedAttemptsMutex.Lock()
 	delete(failedAttempts, userID)
+	failedAttemptsMutex.Unlock()
 
 	remainingCodesJSON, err := json.Marshal(remainingCodes)
 	if err != nil {
