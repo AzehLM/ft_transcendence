@@ -190,8 +190,8 @@ export default function AccountPage() {
                 <ConfirmationModal
                     isOpen={isReset}
                     fileName=""
-                    onConfirm={() => logout(navigate)}
-                    onCancel={() => logout(navigate)}
+                    onConfirm={() => setIsReset(false)}
+                    onCancel={() => setIsReset(false)}
                     isPasswordChanged={true}
                 />
                 <DangerZone

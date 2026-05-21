@@ -1,0 +1,61 @@
+.container {
+    padding: 24px 40px;
+    width: 100%;
+    margin: 0;
+}
+
+.headerSection {
+    margin-bottom: 32px;
+}
+
+.headerSection h1 {
+    font-size: 40px;
+    font-weight: 700;
+    color: #4a3731;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #8c7b75;
+    margin: 0;
+}
+
+.settingsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+.sectionCard {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #4a3731;
+    margin: 0 0 20px 0;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .headerSection h1 {
+        font-size: 32px;
+    }
+}

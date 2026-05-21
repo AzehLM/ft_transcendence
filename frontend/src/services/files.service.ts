@@ -43,6 +43,13 @@ export interface FileMetadata {
     org_id?: string;
 }
 
+export interface Folder {
+    id: string;
+    name: string;
+}
+
+export type Path = Folder[];
+
 // Helper function to make authenticated requests
 async function authenticatedRequest<T>(
     endpoint: string,
@@ -56,12 +63,18 @@ async function authenticatedRequest<T>(
 
     if (!response.ok) {
         let errorMsg = `API Error: ${response.status}`;
+        let errorCode = response.status;
+        // if (response.status === 400 || response.status === 404)
+        //     throw new Error("not found");
         try {
             const error = await response.json();
-            errorMsg = error.error || errorMsg;
+            errorMsg = error.error || error.message || errorMsg;
         } catch (e) {
         }
-        throw new Error(errorMsg);
+        // throw new Error(errorMsg);
+        const err = new Error(errorMsg);
+        (err as any).status = errorCode; // not a good solution to use any but I don't have another one yet
+        throw err;
     }
 
     if (response.status === 204) {
@@ -83,16 +96,6 @@ export const FilesService = {
         return authenticatedRequest<FolderContents>(`/folders/${folderId}/contents`);
     },
 
-    // Get files in an organization folder
-    getOrgFolderContents: async (
-        orgId: string,
-        folderId: string
-    ): Promise<FolderContents> => {
-        return authenticatedRequest<FolderContents>(
-            `/orgs/${orgId}/folders/${folderId}/contents`
-        );
-    },
-
     // Create a new folder
     createFolder: async (
         name: string,
@@ -112,7 +115,7 @@ export const FilesService = {
     // Rename or move a folder
     updateFolder: async (
         folderId: string,
-        updates: { name?: string; parent_id?: string }
+        updates: { name?: string; parent_id?: string | null }
     ): Promise<void> => {
         await authenticatedRequest<void>(`/folders/${folderId}`, {
             method: "PATCH",
@@ -159,36 +162,31 @@ export const FilesService = {
     },
 
     // Move file to a different folder
-    moveFile: async (fileId: string, folderId: string): Promise<void> => {
+    moveFile: async (fileId: string, folderId: string | null): Promise<void> => {
         await authenticatedRequest<void>(`/files/${fileId}`, {
             method: "PATCH",
             body: JSON.stringify({ folder_id: folderId }),
         });
     },
 
-    // Delete file (move to trash)
+    // Delete file
     deleteFile: async (fileId: string): Promise<void> => {
         await authenticatedRequest<void>(`/files/${fileId}`, {
             method: "DELETE",
         });
     },
 
-    // Get trash files
-    getTrashFiles: async (): Promise<FolderContents> => {
-        return authenticatedRequest<FolderContents>("/files/trash");
+    // Get Folder Path
+    getFolderPath: async (folderId: string): Promise<Path> => {
+        return authenticatedRequest<Path>(
+            `/folders/${folderId}/path`
+        );
     },
 
-    // Permanently delete file from trash
-    permanentlyDeleteFile: async (fileId: string): Promise<void> => {
-        await authenticatedRequest<void>(`/files/${fileId}/permanent-delete`, {
-            method: "DELETE",
-        });
-    },
-
-    // Restore file from trash
-    restoreFile: async (fileId: string): Promise<void> => {
-        await authenticatedRequest<void>(`/files/${fileId}/restore`, {
-            method: "POST",
-        });
+    // Get Orga Files and Folders
+    getOrgaFilesFolders: async (folderId: string, orgId: string): Promise<FolderContents> => {
+        return authenticatedRequest<FolderContents>(
+            `/storage/${orgId}/folders/${folderId}/contents`
+        );
     },
 };

@@ -1,7 +1,10 @@
 // Constantes pour l'upload E2EE
 export const UPLOAD_CONFIG = {
-    CHUNK_SIZE: 5 * 1024 * 1024, // 5 MB
+    CHUNK_SIZE: 32 * 1024 * 1024, // 32 MB plaintext per chunk (multipart)
     MAX_FILE_SIZE: 2 * 1024 * 1024 * 1024, // 2 GB
+    MULTIPART_THRESHOLD: 96 * 1024 * 1024, // files below 96 MB will be managed as a single chunk (first implementation, no chunking)
+    MAX_PART_COUNT: 100, // maximum number of chunks accepted, even if it's above 2 GB
+    PARALLEL_UPLOADS: 4,
 };
 
 export const UPLOAD_MESSAGES = {
@@ -18,4 +21,5 @@ export const UPLOAD_MESSAGES = {
     ERROR_SERVER_AUTH: 'Impossible de préparer l\'upload sur le serveur.',
     ERROR_STORAGE_REJECTED: 'Le fichier chiffré a été rejeté par le stockage.',
     ERROR_FINALIZE_FAILED: 'Le serveur n\'a pas pu finaliser l\'upload.',
+    ERROR_PART_FAILED: 'Une partie de l\'upload a échoué.',
 };

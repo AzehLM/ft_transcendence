@@ -116,6 +116,11 @@ func main() {
 	// file
 	api.Post("/files/upload-url", handler.RequestUploadURL)
 	api.Post("/files/finalize", handler.FinalizeUpload)
+	// multipart
+	api.Post("/files/multipart/init", handler.RequestMultipartUpload)
+	api.Post("/files/multipart/finalize", handler.FinalizeMultipartUpload)
+	api.Post("/files/multipart/abort", handler.AbortMultipartUpload)
+
 	api.Get("/files/:file_id/download", handler.DownloadFile)
 	api.Get("/files/:file_id", handler.GetFileInfo)
 	api.Patch("/files/:file_id", handler.MoveFile)
@@ -127,6 +132,7 @@ func main() {
 	api.Delete("/folders/:folder_id", handler.DeleteFolder)
 	api.Get("/folders", handler.ListPersonalContents) // can have a query string
 	api.Get("/folders/:folder_id/contents", handler.ListFolderContents)
+	api.Get("/folders/:folder_id/path", handler.GetFolderPath)
 	api.Get("/storage/:org_id/folders/:folder_id/contents", handler.ListOrgContents)
 	app.Get("/metrics", metricsHandler.Serve)
 
