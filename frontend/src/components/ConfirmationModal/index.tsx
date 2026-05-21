@@ -25,6 +25,7 @@ interface ConfirmationModalProps {
     isCreateFolder?: boolean;
     isRenameFolder?: boolean;
     isMove?: boolean;
+    orgId?: string;
 }
 
 export function ConfirmationModal({

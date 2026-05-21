@@ -46,10 +46,10 @@ export default function OrgFilesPage() {
     load();
   }, [folderId, id]);
 
-  const loadFiles = async () => {
+  const loadFiles = async (currentFolderId?: string) => {
     setSuccess("");
-    const response = folderId
-      ? await FilesService.getOrgaFilesFolders(folderId, id!)
+    const response = currentFolderId
+      ? await FilesService.getOrgaFilesFolders(currentFolderId, id!)
       : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
     setFiles(response.files || []);
     setFolders(response.folders || []);
@@ -68,7 +68,7 @@ export default function OrgFilesPage() {
 
   const { uploadFile, uploads } = useE2EEUpload(() => {
     setSuccess("");
-    loadFiles();
+    loadFiles(folderId);
   }, id, folderId);
   
   const activeUploads = Object.values(uploads);
@@ -84,7 +84,8 @@ export default function OrgFilesPage() {
          try {
              setError(null);
              await FilesService.deleteFile(fileId);
-             await loadFiles();
+             await loadFiles(folderId);
+             setSuccess("File deleted");
          } catch (err) {
              const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete file:", err);
@@ -97,30 +98,23 @@ export default function OrgFilesPage() {
       try {
           setError(null);
           await FilesService.deleteFolder(folderId);
-          await loadFiles();
+          await loadFiles(folderId);
           setSuccess("Folder deleted");
       } catch (err) {
           const errorMessage = err instanceof Error ? err.message : "Unknown error";
           console.error("Failed to delete folder:", err);
           setError(`Failed to delete folder: ${errorMessage}`);
       }
-};
+  };
 
-  const handleCreateFolder = async () => {
-    const folderName = prompt("Enter folder name:");
-    if (!folderName) return;
+  const handleCreateFolder = async (name: string) => {
+    setSuccess("");
 
     try {
       setError(null);
-      await fetchWithRefresh(`/api/folders`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: folderName,
-          org_id: id,
-        }),
-      });
-      await loadFiles();
-    } catch (err) {
+      await FilesService.createFolder(name, folderId, id);
+      await loadFiles(folderId);
+    } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to create folder: ${errorMessage}`);
     }

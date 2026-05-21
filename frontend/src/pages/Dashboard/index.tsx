@@ -77,6 +77,7 @@ export default function DashboardPage() {
         try {
             await FilesService.createFolder(folderName, folderId);
             await loadFiles();
+            setSuccess("Folder created");
         } catch (err: any) {
             setError(err.message || "Failed to create folder.");
             setFolderName("");
@@ -93,6 +94,7 @@ export default function DashboardPage() {
              setError(null);
              await FilesService.deleteFile(id);
              await loadFiles();
+             setSuccess("Folder deleted");
          } catch (err) {
              const errorMessage = err instanceof Error ? err.message : "Unknown error";
              console.error("Failed to delete file:", err);
