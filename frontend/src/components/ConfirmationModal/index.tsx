@@ -153,7 +153,11 @@ export function ConfirmationModal({
     
     return (
         <>
-            <div className={styles.modal__overlay} />
+            <div className={styles.modal__overlay} 
+                onClick={() => {
+                    onInputChange?.("");
+                    onCancel();
+                }} />
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
