@@ -162,6 +162,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
               setShowMoveModal(false);
             }}
             onCancel={() => setShowMoveModal(false)}
+            orgId={orgId}
           />
         )}
       </>
@@ -239,6 +240,7 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}
+          orgId={orgId}
         />
       )}
     </>

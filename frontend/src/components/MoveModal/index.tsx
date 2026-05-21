@@ -9,6 +9,7 @@ interface MoveFolderModalProps {
   fileName: string;
   onConfirm: (folderId: string | null) => void;
   onCancel: () => void;
+  orgId?: string;
 }
 
 interface BreadcrumbItem {
@@ -16,7 +17,7 @@ interface BreadcrumbItem {
   name: string;
 }
 
-export function MoveModal({ isOpen, fileName, onConfirm, onCancel }: MoveFolderModalProps) {
+export function MoveModal({ isOpen, fileName, onConfirm, onCancel, orgId }: MoveFolderModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [folders, setFolders] = useState<FolderItem[]>([]);
@@ -34,16 +35,24 @@ export function MoveModal({ isOpen, fileName, onConfirm, onCancel }: MoveFolderM
   useEffect(() => {
     if (!isOpen) return;
     loadFolders(currentFolderId);
+    console.log(orgId)
   }, [currentFolderId, isOpen]);
 
   const loadFolders = async (folderId: string | null) => {
     try {
       setLoading(true);
       setError(null);
-      const response = folderId
-        ? await FilesService.getFolderContents(folderId)
-        : await FilesService.getAllFiles();
-      setFolders(response.folders || []);
+      if (orgId) {
+        const response = folderId
+          ? await FilesService.getOrgaFilesFolders(folderId, orgId!)
+          : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", orgId!);
+        setFolders(response.folders || []);
+      } else {
+        const response = folderId
+          ? await FilesService.getFolderContents(folderId)
+          : await FilesService.getAllFiles();
+        setFolders(response.folders || []);
+      }
     } catch {
       setError("Failed to load folders. Please try again.");
     } finally {

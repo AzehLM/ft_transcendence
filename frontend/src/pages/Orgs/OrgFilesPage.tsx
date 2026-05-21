@@ -48,6 +48,7 @@ export default function OrgFilesPage() {
 
   const loadFiles = async (currentFolderId?: string) => {
     setSuccess("");
+    setError(null);
     const response = currentFolderId
       ? await FilesService.getOrgaFilesFolders(currentFolderId, id!)
       : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
@@ -68,6 +69,7 @@ export default function OrgFilesPage() {
 
   const { uploadFile, uploads } = useE2EEUpload(() => {
     setSuccess("");
+    setError(null);
     loadFiles(folderId);
   }, id, folderId);
   
@@ -81,8 +83,8 @@ export default function OrgFilesPage() {
 
   const handleDeleteFile = async (fileId: string) => {
         setSuccess("");
+        setError(null);
          try {
-             setError(null);
              await FilesService.deleteFile(fileId);
              await loadFiles(folderId);
              setSuccess("File deleted");
@@ -95,8 +97,8 @@ export default function OrgFilesPage() {
 
   const handleDeleteFolder = async (folderId: string) => {
     setSuccess("");
+    setError(null);
       try {
-          setError(null);
           await FilesService.deleteFolder(folderId);
           await loadFiles(folderId);
           setSuccess("Folder deleted");
@@ -109,9 +111,9 @@ export default function OrgFilesPage() {
 
   const handleCreateFolder = async (name: string) => {
     setSuccess("");
+    setError(null);
 
     try {
-      setError(null);
       await FilesService.createFolder(name, folderId, id);
       await loadFiles(folderId);
     } catch (err: any) {
@@ -120,21 +122,57 @@ export default function OrgFilesPage() {
     }
   };
 
-    const handleRenameFolder = async (id: string, newName: string) => {
-        setSuccess("");
-        try {
-            await FilesService.updateFolder(id, {
-                name: newName,
-            });
-            await loadFiles(folderId);
-            setSuccess("Folder renamed");
-        } catch (err: any) {
-            if (err.status === 404) {
-                setError("Folder not found.");
-            } else {
-                setError(err.message || "Failed to rename folder.");
-            }
-        }
+  const handleRenameFolder = async (id: string, newName: string) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.updateFolder(id, {
+              name: newName,
+          });
+          await loadFiles(folderId);
+          setSuccess("Folder renamed");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("Folder not found.");
+          } else {
+              setError(err.message || "Failed to rename folder.");
+          }
+      }
+  };
+
+  const handleMoveFolder = async (id: string, newParentId: string | null) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.updateFolder(id, {
+              parent_id: newParentId,
+          });
+          await loadFiles(folderId);
+          setSuccess("Folder moved");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("File or folder not found.");
+          } else {
+              setError(err.message || "Failed to move.");
+          }
+      }
+  };
+
+
+  const handleMoveFile = async (id: string, newParentId: string | null) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.moveFile(id, newParentId);
+          await loadFiles(folderId);
+          setSuccess("File moved");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("File or folder not found.");
+          } else {
+              setError(err.message || "Failed to move.");
+          }
+      }
     };
 
   return (
@@ -232,6 +270,8 @@ export default function OrgFilesPage() {
         onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}
         onRename={handleRenameFolder}
+        onMoveFolder={handleMoveFolder}
+        onMoveFile={handleMoveFile}
       />
     </>
   );

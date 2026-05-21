@@ -51,6 +51,7 @@ export default function DashboardPage() {
 
     const loadFiles = async () => {
         setSuccess("");
+        setError(null);
     const response = folderId
         ? await FilesService.getFolderContents(folderId)
         : await FilesService.getAllFiles();
@@ -60,6 +61,7 @@ export default function DashboardPage() {
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
     setSuccess("");
+    setError(null);
     loadFiles();
     }, undefined, folderId);
 
@@ -70,6 +72,7 @@ export default function DashboardPage() {
 
     const handleCreateFolderSubmit = async () => {
         setSuccess("");
+        setError(null);
         if (!folderName.trim()) {
             setFolderError("Invalid Name")
             return;
@@ -90,8 +93,8 @@ export default function DashboardPage() {
 
      const handleDeleteFile = async (id: string) => {
         setSuccess("");
+        setError(null);
          try {
-             setError(null);
              await FilesService.deleteFile(id);
              await loadFiles();
              setSuccess("Folder deleted");
@@ -104,6 +107,7 @@ export default function DashboardPage() {
 
     const handleRenameFolder = async (id: string, newName: string) => {
         setSuccess("");
+        setError(null);
         try {
             await FilesService.updateFolder(id, {
                 name: newName,
@@ -121,6 +125,7 @@ export default function DashboardPage() {
 
     const handleMoveFolder = async (id: string, newParentId: string | null) => {
         setSuccess("");
+        setError(null);
         try {
             await FilesService.updateFolder(id, {
                 parent_id: newParentId,
@@ -139,6 +144,7 @@ export default function DashboardPage() {
 
     const handleMoveFile = async (id: string, newParentId: string | null) => {
         setSuccess("");
+        setError(null);
         try {
             await FilesService.moveFile(id, newParentId);
             await loadFiles();
@@ -154,8 +160,8 @@ export default function DashboardPage() {
 
      const handleDeleteFolder = async (id: string) => {
         setSuccess("");
+        setError(null);
          try {
-             setError(null);
              await FilesService.deleteFolder(id);
              await loadFiles();
              setSuccess("Folder deleted");
