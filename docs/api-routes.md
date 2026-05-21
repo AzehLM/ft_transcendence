@@ -138,73 +138,150 @@ Invalide les refresh tokens des autres sessions.
 
 ## 2FA
 
-### `POST /auth/2fa/enable`
+### `POST /auth/2fa/totp/generate`
 
-Genere le secret TOTP.
+**Authentication:** Required (Bearer token)
 
-Reponse (200) :
+Generates a new TOTP secret and QR code URL for 2FA setup.
+
+Body : None
+
+Response (200) :
 ```json
 {
-  "otpauth_uri": "otpauth://totp/ostrom:student@42lyon.fr?secret=XXXX&issuer=ostrom"
+  "qrCodeURL": "otpauth://totp/ostrom:student@42lyon.fr?secret=XXXX&issuer=ostrom",
+  "secret": "ABCDEFGHIJKLMNOP",
+  "message": "Scan QR with authenticator app",
+  "expiresIn": 300
 }
 ```
+
+The TOTP secret is temporarily stored server-side for 5 minutes.
+
+---
+
+### `POST /auth/2fa/totp/verify`
+
+**Authentication:** Required (Bearer token)
+
+Verifies the TOTP code during 2FA setup and enables 2FA for the account. Returns 10 recovery codes that are shown only once.
+
+Body :
+```json
+{ "code": "123456" }
+```
+
+Response (200) :
+```json
+{
+  "success": true,
+  "recoveryCodes": ["ABC-123-DEF", "GHI-456-JKL", "..."],
+  "message": "Save these 10 codes in a safe place offline!"
+}
+```
+
+Errors:
+- `invalid_code` - Wrong TOTP code
+- `too_many_attempts` - 3+ failed attempts, locked for 5 minutes
+- `TOTP_secret_expired` - Setup window expired
 
 ---
 
 ### `POST /auth/2fa/verify`
 
-Confirme l'activation en validant un premier code. Renvoie les recovery codes une seule fois.
+**Authentication:** Required (Bearer token with scope="2fa")
+
+Verifies TOTP code during login and returns full access token.
 
 Body :
 ```json
 { "code": "123456" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "recovery_codes": ["abc12345", "def67890", "..."]
+  "token": "<jwt_24h>"
 }
 ```
+
++ Refresh JWT en cookie HttpOnly
+
+Errors:
+- `invalid_code` - Wrong TOTP code
+- `too_many_attempts` - 3+ failed attempts, locked for 5 minutes
+- `decryption_failed` - TOTP decryption error
 
 ---
 
-### `POST /auth/2fa/validate`
+### `POST /auth/2fa/recovery-code`
 
-Pendant le login, valide le code TOTP pour obtenir les vrais JWT.
+**Authentication:** Required (Bearer token with scope="2fa")
+
+Verifies a recovery code during login. Each code can only be used once.
 
 Body :
 ```json
-{
-  "tmp_token": "<token>",
-  "code": "123456"
-}
+{ "code": "ABC-123-DEF" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "access_token": "<jwt>",
-  "encrypted_private_key": "<base64>",
-  "iv": "<base64>"
+  "token": "<jwt_24h>",
+  "remaining": 9,
+  "warning": "Use an authenticator app to add a new recovery code"
 }
 ```
+
 + Refresh JWT en cookie HttpOnly
 
-Le champ `code` peut aussi etre un recovery code a usage unique.
+Errors:
+- `invalid_recovery_code` - Wrong or already-used code
+- `too_many_attempts` - 3+ failed attempts, locked for 5 minutes
+- `code_must_be_11_characters` - Invalid format
+
+---
+
+### `GET /auth/2fa/recovery-codes`
+
+**Authentication:** Required (Bearer token)
+
+Returns the count of remaining recovery codes.
+
+Body : None
+
+Response (200) :
+```json
+{
+  "enabled": true,
+  "remaining": 8,
+  "message": "You have backup codes remaining"
+}
+```
 
 ---
 
 ### `POST /auth/2fa/disable`
 
+**Authentication:** Required (Bearer token)
+
+Disables 2FA for the account. Requires password verification.
+
 Body :
 ```json
-{ "code": "123456" }
+{ "password": "user_password" }
 ```
 
-Reponse : `200 OK`
+Response (200) :
+```json
+{
+  "success": true,
+  "message": "2FA has been disabled"
+}
+```
 
-Supprime le secret TOTP + les recovery codes.
+Deletes: TOTP secret, recovery codes, 2FA state.
 
 
 ---
