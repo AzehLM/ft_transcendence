@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
-import { SettingsLayout } from "../Profile/SettingsLayout";
-import styles from "../../styles/profile.module.css";
-import orgaStyles from "./Organizations.module.css"
-import { UserPlus, UserMinus } from "lucide-react";
+import styles from "./Organizations.module.css";
+import { UserPlus, UserMinus, Plus, Building2 } from "lucide-react";
 import { generateOrganization, addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +58,6 @@ export default function OrganizationsPage() {
       }
 
       const data = await generateOrganization(orgName);
-      // console.log("org data to send:", data);
 
       const response = await fetchWithRefresh("/api/orgs", {
         method: "POST",
@@ -113,25 +110,6 @@ export default function OrganizationsPage() {
     setMemberEmail("");
     setShowAddMemberModal(false);
   };
-
-  // Debug org key
-  // const handleDebugOrgKey = async () => {
-  //   if (!selectedOrg) return;
-  //   try {
-  //     const keysRes = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/keys`);
-  //     // const keysData = await keysRes.json();
-  //     // console.log("raw keys data:", keysData);
-  //     // console.log("enc_org_priv_key:", keysData.enc_org_priv_key);
-  //     // console.log("enc_aes_key:", keysData.enc_aes_key);
-  //     // console.log("iv:", keysData.iv);
-  //     const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
-
-  //     const orgPrivKey = await decryptOrgPrivateKey(enc_org_priv_key, enc_aes_key, iv);
-  //     console.log("🔑 Org Private Key (base64):", orgPrivKey);
-  //   } catch (err) {
-  //     console.error("Error:", err);
-  //   }
-  // };
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
@@ -199,17 +177,24 @@ export default function OrganizationsPage() {
     setModalError(null);
   };
 
+  const getInitials = (name: string) => {
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
-    <SettingsLayout>
-    <div className={styles.mainBox}>
-        <h2 className={styles.subtitle}>Organizations</h2>
-        <div className={orgaStyles.header}>
-            <button 
-            className={`${styles.buttonChange} ${styles.profileButton}`} 
+    <div className={styles.container}>
+        <div className={styles.headerSection}>
+          <div className={styles.titleGroup}>
+            <h1>Organizations</h1>
+            <p className={styles.subtitle}>Manage your organizations and memberships</p>
+          </div>
+          <button 
+            className={styles.addButton} 
             onClick={() => { setShowCreateModal(true); setModalError(null); }}
-            >
-            + Create Organization
-            </button>
+          >
+            <Plus size={20} />
+            Create Organization
+          </button>
         </div>
 
         <ConfirmationModal
@@ -244,71 +229,94 @@ export default function OrganizationsPage() {
           onInputChange={setPassword}
           errorMessage={modalError ?? undefined}
         />
-        <div className={orgaStyles.organizations}>
-            {loading ? (
-                <p>Loading...</p>
-            ) : orgs.length === 0 ? (
-                <p className={orgaStyles.empty}>You are not part of any organization.</p>
-            ) : (
-                <div className={orgaStyles.orgList}>
-                {orgs.map((org) => (
-                    <div key={org.id} className={orgaStyles.orgCard} 
-                      onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
-                      <div className={orgaStyles.orgInfo}>
-                          <p className={orgaStyles.orgName}>{org.name}</p>
-                          <p className={orgaStyles.orgDesc}>{org.description}</p>
-                          <p className={orgaStyles.orgRole}>{org.role}</p>
-                          {/* <button className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`} onClick={handleDebugOrgKey}>🔑 Debug Org Key</button> */}
+
+        {loading ? (
+            <div className={styles.loadingState}>Loading organizations...</div>
+        ) : orgs.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>
+                <Building2 size={32} />
+              </div>
+              <h2 className={styles.emptyTitle}>No organizations yet</h2>
+              <p className={styles.emptyDescription}>
+                Create your first organization to start collaborating and sharing files with your team securely.
+              </p>
+              <button 
+                className={styles.emptyButton}
+                onClick={() => { setShowCreateModal(true); setModalError(null); }}
+              >
+                <Plus size={20} />
+                Create your first Organization
+              </button>
+            </div>
+        ) : (
+            <div className={styles.orgList}>
+            {orgs.map((org) => (
+                <div key={org.id} className={styles.orgCard} 
+                  onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
+                  
+                  <div className={styles.orgAvatar}>
+                    <span className={styles.initialsAvatar}>
+                      {getInitials(org.name)}
+                    </span>
+                  </div>
+
+                  <div className={styles.orgInfo}>
+                      <h3 className={styles.orgName}>{org.name}</h3>
+                      <p className={styles.orgDesc}>{org.description || "No description provided"}</p>
+                  </div>
+
+                  <div className={styles.orgActions}>
+                      <div className={`${styles.roleTag} ${org.role.toLowerCase() === 'admin' ? styles.roleAdmin : ""}`}>
+                        {org.role}
                       </div>
 
-                      <div className={orgaStyles.orgActions}>
-                          {org.role === "admin" && (
-                          <button
-                              className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconAdd}`}
-                              onClick={(e) => {
-                              e.stopPropagation();
-                                setSelectedOrg(org);
-                                setShowAddMemberModal(true);
-                                setModalError(null);
-                              }}
-                          >
-                              <UserPlus size={20} />
-                              Add
-                          </button>
-                          )}
-                          <button
-                          className={`${orgaStyles.buttonIcon} ${orgaStyles.buttonIconLeave}`}
-                          onClick={(e) => 
-                            {e.stopPropagation()
-                              setSelectedOrg(org);
-                            setShowLeaveConfirm(true);}}
-                          >
-                          <UserMinus size={20} />
-                          Leave
-                          </button>
-                      </div>
-                        {orgErrors[org.id] && (
-                          <p className={orgaStyles.orgErrorMessage}>{orgErrors[org.id]}</p>
-                        )}
-                    </div>
-                ))}
-                {selectedOrg && (
-                  <ConfirmationModal
-                    isOpen={showLeaveConfirm}
-                    fileName={selectedOrg.name}
-                    onConfirm={handleLeaveOrga}
-                    onCancel={() => setShowLeaveConfirm(false)}
-                    isTrash={false}
-                    isAccount={false}
-                    isLeaveOrga={true}
-                    isMe={true}
-                  />
-                )}
-
+                      {org.role === "admin" && (
+                      <button
+                          className={`${styles.buttonIcon} ${styles.buttonIconAdd}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrg(org);
+                            setShowAddMemberModal(true);
+                            setModalError(null);
+                          }}
+                          title="Add Member"
+                      >
+                          <UserPlus size={18} />
+                      </button>
+                      )}
+                      <button
+                        className={`${styles.buttonIcon} ${styles.buttonIconLeave}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrg(org);
+                          setShowLeaveConfirm(true);
+                        }}
+                        title="Leave Organization"
+                      >
+                        <UserMinus size={18} />
+                      </button>
+                  </div>
+                    {orgErrors[org.id] && (
+                      <p className={styles.errorState}>{orgErrors[org.id]}</p>
+                    )}
                 </div>
-            )}    
-        </div>
+            ))}
+            {selectedOrg && (
+              <ConfirmationModal
+                isOpen={showLeaveConfirm}
+                fileName={selectedOrg.name}
+                onConfirm={handleLeaveOrga}
+                onCancel={() => setShowLeaveConfirm(false)}
+                isTrash={false}
+                isAccount={false}
+                isLeaveOrga={true}
+                isMe={true}
+              />
+            )}
+
+            </div>
+        )}    
     </div>
-    </SettingsLayout>
   );
 }

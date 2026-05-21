@@ -230,9 +230,9 @@
     bottom: 0;
     right: 0;
     background: linear-gradient(
-        90deg, 
-        rgba(255,255,255,0) 0%, 
-        rgba(255,255,255,0.2) 50%, 
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.2) 50%,
         rgba(255,255,255,0) 100%
     );
     animation: shimmer 2.5s infinite linear;
