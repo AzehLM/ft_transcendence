@@ -15,7 +15,12 @@ export function useDecryptFilename(fileId: string | null, orgId?: string) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!fileId) return;
+         if (!fileId) {
+             setLoading(false);
+             setError(null);
+             setDecryptedName("");
+             return;
+         }
         
         let isMounted = true;
 
