@@ -1,6 +1,7 @@
 import { FileCard } from "../FileCard";
 import styles from "./FileGrid.module.css";
 import { OrgHeader } from "../OrgHeader";
+import { FolderItem } from "../../services/files.service";
 
 interface FileItem {
   id: string;
@@ -24,9 +25,10 @@ interface FileGridProps {
   onCreateFolder?: () => void;
   onDownloadFile?: (id: string) => void;
   orgDesc?: string;
+  folders: FolderItem[];
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc, folders }: FileGridProps) {
   const isOrgPage = orgName !== undefined;
 
   return (
@@ -42,6 +44,16 @@ export function FileGrid({ title, subtitle, files, loading, error, onDelete, sho
           <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
         ) : (
           <div className={styles.fileGrid}>
+            {folders.map((folder) => (
+              <FileCard
+                key={folder.id}
+                id={folder.id}
+                name={folder.name}
+                isFolder={true}
+                isTrash={false}
+                orgId={orgId}
+              />
+            ))}
             {files.map((file) => (
             <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} onDownload={onDownloadFile} orgId={orgId} />            ))}
           </div>

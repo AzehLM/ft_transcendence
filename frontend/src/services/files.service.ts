@@ -192,4 +192,11 @@ export const FilesService = {
             `/folders/${folderId}/path`
         );
     },
+
+    // Get Orga Files and Folders
+    getOrgaFilesFolders: async (folderId: string, ordId: string): Promise<FolderContents> => {
+        return authenticatedRequest<FolderContents>(
+            `/storage/${ordId}/folders/${folderId}/contents`
+        );
+    },
 };

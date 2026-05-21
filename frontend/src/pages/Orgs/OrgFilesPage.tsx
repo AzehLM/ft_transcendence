@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileItem } from "../../services/files.service";
+import { FileItem, FilesService, FolderItem } from "../../services/files.service";
 import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
@@ -10,49 +10,66 @@ import styles from "../Dashboard/Dashboard.module.css";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
+  const { folderId } = useParams();
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
+
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setSuccess("");
+        const response = folderId
+          ? await FilesService.getOrgaFilesFolders(folderId, id!)
+          : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
+        setFiles(response.files || []);
+        setFolders(response.folders || []);
+      } catch (err: any) {
+        if (err.status === 400 || err.status === 404) {
+          navigate("/404");
+          return;
+        }
+        setError("Failed to load files.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [folderId, id]);
+
   const loadFiles = async () => {
-    try {
-      const res = await fetchWithRefresh(`/api/storage/${id}/folders/00000000-0000-0000-0000-000000000000/contents`);
-      if (!res.ok) throw new Error("Failed to fetch files.");
-      const data = await res.json();
-      setFiles(data.files || []);
-    } catch (err) {
-      setError("Failed to load org files.");
-    }
+    setSuccess("");
+    const response = folderId
+      ? await FilesService.getOrgaFilesFolders(folderId, id!)
+      : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
+    setFiles(response.files || []);
+    setFolders(response.folders || []);
   };
 
   useEffect(() => {
-  fetchWithRefresh(`/api/orgs/${id}`)
-    .then(res => {
-      if (res.status === 404 || res.status === 400) {
-        navigate("/404");
-        return;
-      }
-      if (!res.ok) throw new Error("Failed to fetch org.");
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        setOrgName(data.name);
-        setOrgDesc(data.description);
-      }
-    })
-    .catch(() => setOrgName("Unknown"));
-
-    loadFiles()
-      .finally(() => setLoading(false));
+    fetchWithRefresh(`/api/orgs/${id}`)
+      .then(res => {
+        if (res.status === 404 || res.status === 400) { navigate("/404"); return; }
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); } })
+      .catch(() => setOrgName("Unknown"));
   }, [id]);
 
   const { uploadFile, uploads } = useE2EEUpload(() => {
+    setSuccess("");
     loadFiles();
-  }, id);
+  }, id, folderId);
   
   const activeUploads = Object.values(uploads);
 
@@ -106,6 +123,11 @@ export default function OrgFilesPage() {
           <div className={`${styles.statusMessage} ${styles.error}`}>
             {error}
           </div>
+        )}
+        {success && (
+            <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}`}>
+                {success}
+            </div>
         )}
 
         {activeUploads.map(upload => (
@@ -176,13 +198,14 @@ export default function OrgFilesPage() {
         title="Organization files"
         subtitle="All files"
         files={files}
+        folders={folders}
         loading={loading}
         error={error}
         onDelete={handleDelete}
         orgName={orgName}
         orgId={id}
         orgDesc={orgDesc}
-      showActionButtons={true}
+        showActionButtons={true}
         onUploadFile={uploadFile}
         onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}

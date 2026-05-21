@@ -12,12 +12,12 @@ export function OrgSidebar() {
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    FilesService.getAllFiles()
-      .then((r) => setFolders(r.folders || []))
-      .catch(() => setFolders([]))
-      .finally(() => setLoading(false));
-  }, []);
+  // useEffect(() => {
+  //   FilesService.getAllFiles()
+  //     .then((r) => setFolders(r.folders || []))
+  //     .catch(() => setFolders([]))
+  //     .finally(() => setLoading(false));
+  // }, []);
 
   const { id } = useParams();
 

@@ -47,6 +47,7 @@ function App() {
                     </Route>
                     <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
                         <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/files/:folderId" element={<OrgFilesPage />} />
                         <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
                         <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>

@@ -91,11 +91,18 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   };
 
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [targetFolderId, setTargetFolderId] = useState("");
 
   const handleMove = () => {
     setShowMenu(false);
     setShowMoveModal(true);
+  };
+
+  const handleEnterFolder = () => {
+    if (orgId) {
+      navigate(`/orgs/${orgId}/files/${id}`);
+    } else {
+      navigate(`/dashboard/folder/${id}`);
+    }
   };
 
   if (!isFolder) {
@@ -164,8 +171,8 @@ export function FileCard({ id, name, isFolder = false, isTrash = false, onDelete
   if (isFolder) {
   return (
     <>
-      <div className={styles.folderCard} onClick={() => navigate(`/dashboard/folder/${id}`)}>
-        <div className={styles.folderCard__background} />
+    <div className={styles.folderCard} onClick={handleEnterFolder}> 
+      <div className={styles.folderCard__background} />
         <Folder className={styles.folderCard__icon} />
         <div className={styles.folderCard__name}>{name}</div>
         <div className={styles.fileCard__menu} ref={menuRef}>
