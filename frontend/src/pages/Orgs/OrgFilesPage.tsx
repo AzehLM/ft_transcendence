@@ -95,11 +95,11 @@ export default function OrgFilesPage() {
          }
   };
 
-  const handleDeleteFolder = async (folderId: string) => {
+  const handleDeleteFolder = async (folderIdDeleted: string) => {
     setSuccess("");
     setError(null);
       try {
-          await FilesService.deleteFolder(folderId);
+          await FilesService.deleteFolder(folderIdDeleted);
           await loadFiles(folderId);
           setSuccess("Folder deleted");
       } catch (err) {
