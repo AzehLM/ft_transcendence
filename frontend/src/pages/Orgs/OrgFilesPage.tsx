@@ -120,6 +120,23 @@ export default function OrgFilesPage() {
     }
   };
 
+    const handleRenameFolder = async (id: string, newName: string) => {
+        setSuccess("");
+        try {
+            await FilesService.updateFolder(id, {
+                name: newName,
+            });
+            await loadFiles(folderId);
+            setSuccess("Folder renamed");
+        } catch (err: any) {
+            if (err.status === 404) {
+                setError("Folder not found.");
+            } else {
+                setError(err.message || "Failed to rename folder.");
+            }
+        }
+    };
+
   return (
     <>
       <div className={styles.uploadContainer} style={{ margin: "20px 5%", marginTop: 0 }}>
@@ -214,6 +231,7 @@ export default function OrgFilesPage() {
         onUploadFile={uploadFile}
         onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}
+        onRename={handleRenameFolder}
       />
     </>
   );
