@@ -48,7 +48,6 @@ Reponse (201) :
   "access_token": "<jwt>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
 
 ---
 
@@ -71,7 +70,6 @@ Reponse si 2FA desactivee (200) :
   "iv": "<base64>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
 
 Reponse si 2FA activee (200) :
 ```json
@@ -205,8 +203,6 @@ Response (200) :
 }
 ```
 
-+ Refresh JWT en cookie HttpOnly
-
 Errors:
 - `invalid_code` - Wrong TOTP code
 - `too_many_attempts` - 3+ failed attempts, locked for 5 minutes
@@ -233,8 +229,6 @@ Response (200) :
   "warning": "Use an authenticator app to add a new recovery code"
 }
 ```
-
-+ Refresh JWT en cookie HttpOnly
 
 Errors:
 - `invalid_recovery_code` - Wrong or already-used code
