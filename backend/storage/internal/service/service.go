@@ -67,7 +67,7 @@ type StorageService interface {
 	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
-	GetFolderPath(folderID uuid.UUID) ([]storage.Folder, error)
+	GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error)
 }
 
 type storageService struct {
@@ -838,6 +838,23 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 	return s.repo.DeleteFile(file.ID)
 }
 
-func (s *storageService) GetFolderPath(folderID uuid.UUID) ([]storage.Folder, error) {
-	return s.repo.GetFolderPath(folderID)
+func (s *storageService) GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error) {
+    folders, err := s.repo.GetFolderPath(folderID)
+    if err != nil {
+        return nil, err
+    }
+    if len(folders) == 0 {
+        return nil, ErrNotFound
+    }
+
+    rootFolder := folders[0]
+    err = s.rbac.CanReadFile(userID, rootFolder.OwnerUserID, rootFolder.OrgID)
+	if err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
+    }
+
+    return folders, nil
 }

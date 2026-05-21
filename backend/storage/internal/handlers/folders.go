@@ -315,6 +315,13 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 }
 
 func (h *StorageHandler) GetFolderPath(c fiber.Ctx) error {
+	userID, err := h.extractUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	folderID, err := uuid.Parse(c.Params("folder_id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -322,10 +329,18 @@ func (h *StorageHandler) GetFolderPath(c fiber.Ctx) error {
 		})
 	}
 
-    path, err := h.svc.GetFolderPath(folderID)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to get folder path"})
-    }
+    path, err := h.svc.GetFolderPath(userID, folderID)
+	if err != nil {
+		switch {
+			case errors.Is(err, service.ErrNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+			case errors.Is(err, service.ErrForbidden):
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "forbidden"})
+			default:
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal error"})
+		}
+	}
+
 
     result := make([]fiber.Map, len(path))
     for i, folder := range path {
