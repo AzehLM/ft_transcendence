@@ -54,8 +54,9 @@ func (s *TOTPService) GenerateRecoveryCodes(count int) []string {
 func (s *TOTPService) randomString(length int, charset string) string {
 	result := ""
 	randomByte := make([]byte, length)
-	rand.Read(randomByte)
-
+	if _, err := rand.Read(randomByte); err != nil {
+		return result 
+	}
 	for i := 0; i < length; i++ {
 		randomIndex := int(randomByte[i]) % len(charset)
 		result += string(charset[randomIndex])
