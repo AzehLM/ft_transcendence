@@ -5,8 +5,8 @@ import styles from "./Dashboard.module.css";
 import { FilesService, FileItem, FolderItem } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ChevronRight } from "lucide-react";
 
