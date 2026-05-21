@@ -248,6 +248,11 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 		len(encryptedSecret), len(user.ClientSalt), user.ID)
 
 	secret, err := decryptTOTPSecret(encryptedSecret, user.ClientSalt, user.ID.String())
+	if err != nil {
+		log.Printf("[ERROR] Decryption failed: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
+	}
+
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
 		attempt := failedAttempts[userID]
 		attempt.Count++

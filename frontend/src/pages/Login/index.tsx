@@ -129,15 +129,15 @@ export default function LoginPage() {
     // Show 2FA verification if required
     if (show2FA) {
         return (
-            <VerifyTOTP
-                tempToken={tempToken}
-                onSuccess={handle2FASuccess}
-                onCancel={() => {
-                    setShow2FA(false);
-                    setTempToken("");
-                    setError("");
-                }}
-            />
+                <VerifyTOTP
+                    tempToken={tempToken}
+                    onSuccess={handle2FASuccess}
+                    onCancel={() => {
+                        setShow2FA(false);
+                        setTempToken("");
+                        setError("");
+                    }}
+                />
         );
     }
 
