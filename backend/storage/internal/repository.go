@@ -414,15 +414,22 @@ func (r *storageRepository) DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) 
 func (r *storageRepository) GetFolderPath(folderID uuid.UUID) ([]Folder, error) {
     var path []Folder
     currentID := folderID
+    visited := make(map[uuid.UUID]struct{})
 
     for {
+        if _, seen := visited[currentID]; seen {
+            return nil, fmt.Errorf("cycle detected while resolving folder path at folder %s", currentID)
+        }
+        visited[currentID] = struct{}{}
+
         var folder Folder
         if err := r.db.Model(&Folder{}).Where("id = ?", currentID).First(&folder).Error; err != nil {
             if errors.Is(err, gorm.ErrRecordNotFound) {
-                break
+                return nil, fmt.Errorf("%w: folder %s", gorm.ErrRecordNotFound, currentID)
             }
             return nil, err
         }
+
         path = append([]Folder{folder}, path...)
         if folder.ParentID == nil {
             break
