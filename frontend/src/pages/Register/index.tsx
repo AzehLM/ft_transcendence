@@ -208,6 +208,8 @@ export default function RegisterPage() {
                         setShowSetupTOTP(true);
                     }}
                     onSkip={() => {
+                        // Clear the registration token and go to login
+                        localStorage.removeItem("token");
                         setShowTwoFAPrompt(false);
                         navigate("/login");
                     }}
