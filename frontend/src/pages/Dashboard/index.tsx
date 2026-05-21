@@ -202,7 +202,7 @@ export default function DashboardPage() {
     }, [folderId]);
 
     return (
-        <div className={styles.page}>
+        <div className={styles.container}>
             <ConfirmationModal
             isOpen={isFolderModalOpen}
             fileName={folderName}
@@ -218,14 +218,15 @@ export default function DashboardPage() {
                            onCreateFolder={() => setIsFolderModalOpen(true)}
              />
 
-            {/* Main content area */}
-            <div className={styles.contentArea}>
-                <h1 className={styles.title}>
-                    Personal space
-                </h1>
-                <h2 className={styles.subtitle}>
-                    All files and folders
-                </h2>
+            <div className={styles.headerSection}>
+                <div className={styles.titleGroup}>
+                    <h1>
+                        Personal space
+                    </h1>
+                    <h2 className={styles.subtitle}>
+                        All files and folders
+                    </h2>
+                </div>
 
                 <div className={styles.uploadContainer}>
                     {error && (
