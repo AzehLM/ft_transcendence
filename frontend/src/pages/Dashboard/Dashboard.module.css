@@ -280,6 +280,33 @@
     animation: fadeIn 0.5s ease-in-out;
 }
 
+
+.breadcrumbBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--brand-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.breadcrumbBtn:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.breadcrumbBtnActive {
+  cursor: default;
+  font-weight: 600;
+  color: var(--brand-dark);
+}
+
+.breadcrumbBtnActive:hover {
+  background: none;
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;

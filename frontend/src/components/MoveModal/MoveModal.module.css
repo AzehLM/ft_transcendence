@@ -1,0 +1,127 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.breadcrumbSeparator {
+  color: #999;
+}
+
+.breadcrumbBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--brand-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.breadcrumbBtn:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.breadcrumbActive {
+  color: var(--brand-dark);
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumbActive:hover {
+  background: none;
+}
+
+.folderList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.folderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.folderRow:hover {
+  background-color: #f5f5f5;
+}
+
+.selected {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.folderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folderIcon {
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.folderName {
+  font-size: 14px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--brand-dark);
+}
+
+.enterBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.enterBtn:hover {
+  color: var(--brand-primary);
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.loadingMsg,
+.errorMsg,
+.emptyMsg {
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.errorMsg {
+  color: #d32f2f;
+}
+
+.emptyMsg,
+.loadingMsg {
+  color: #999;
+}

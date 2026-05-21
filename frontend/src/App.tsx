@@ -37,6 +37,7 @@ function App() {
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
+                        <Route path="/dashboard/folder/:folderId" element={<DashboardPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
@@ -46,6 +47,7 @@ function App() {
                     </Route>
                     <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
                         <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/files/:folderId" element={<OrgFilesPage />} />
                         <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
                         <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>

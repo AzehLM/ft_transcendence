@@ -20,6 +20,12 @@ interface ConfirmationModalProps {
     isDeleteOrga?: boolean;
     isPasswordChanged?: boolean;
     isKeyMissing?: boolean;
+    isDeleteFile?: boolean;
+    isDeleteFolder?: boolean;
+    isCreateFolder?: boolean;
+    isRenameFolder?: boolean;
+    isMove?: boolean;
+    orgId?: string;
 }
 
 export function ConfirmationModal({
@@ -42,6 +48,11 @@ export function ConfirmationModal({
     isDeleteOrga = false,
     isPasswordChanged = false,
     isKeyMissing = false,
+    isDeleteFile = false,
+    isDeleteFolder = false,
+    isCreateFolder = false,
+    isRenameFolder = false,
+    isMove = false,
 }: ConfirmationModalProps) {
     if (!isOpen) return null;
 
@@ -62,6 +73,16 @@ export function ConfirmationModal({
     title = "Remove Member?";
     } else if (isDeleteOrga) {
     title = "Delete Organization?";
+    } else if (isDeleteFile) {
+    title = "Delete File?"
+    } else if (isDeleteFolder) {
+    title = "Delete Folder?"
+    } else if (isCreateFolder) {
+    title="Create Folder"
+    } else if (isRenameFolder) {
+    title = "Rename Folder?";
+    } else if (isMove) {
+    title = "Move location?";
     } else if (isTrash) {
     title = "Delete File?";
     } else if (isPasswordChanged) {
@@ -74,7 +95,9 @@ export function ConfirmationModal({
 
     const message: string | undefined = isAccount
     ? "Are you sure you want to permanently delete your account? This action cannot be undone."
-    : isTrash
+    : isDeleteFile
+    ? `Are you sure you want to permanently delete "${fileName}"? This action cannot be undone.`
+    : isDeleteFolder
     ? `Are you sure you want to permanently delete "${fileName}"? This action cannot be undone.`
     : isLeaveOrga && isMe
     ? `Are you sure you want to leave "${fileName}"?`
@@ -92,11 +115,17 @@ export function ConfirmationModal({
     ? "Enter the email of the new member."
     : isCreateOrga
     ? "Enter the name of the new organization"
+    : isCreateFolder
+    ? "Enter the name of the Folder you want to create :"
+    : isRenameFolder
+    ? `Enter a new name for the folder "${fileName}" :`
+    : isMove
+    ? `Enter the id of the new target folder for "${fileName}" :`
     : undefined
 
     const buttonText = isAccount
     ? "Delete Account"
-    : isTrash
+    : isDeleteFile || isDeleteFolder
     ? "Delete"
     : isLeaveOrga && isMe
     ? "Leave Organization"
@@ -114,23 +143,28 @@ export function ConfirmationModal({
     ? "Confirm"
     : isKeyMissing
     ? "Confirm"
+    : isCreateFolder
+    ? "Create Folder"
+    : isMove
+    ? "Move item"
+    : isRenameFolder
+    ? "Rename Folder"
     : "Move to Trash";
     
     return (
         <>
-            {!isPasswordChanged && (
-            <div className={styles.modal__overlay} onClick={onCancel} />
-            )}
-            {isPasswordChanged && (
-            <div className={styles.modal__overlay} />
-            )}
+            <div className={styles.modal__overlay} 
+                onClick={() => {
+                    onInputChange?.("");
+                    onCancel();
+                }} />
             <div className={styles.modal}>
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
-                {(isCreateOrga || isAddMember || isKeyMissing) && (
+                {(isCreateOrga || isAddMember || isKeyMissing || isCreateFolder || isRenameFolder || isMove) && (
                 <input
                     type={isAddMember ? "email" : isKeyMissing ? "password" : "text"}
-                    placeholder={isCreateOrga ? "Organization name" : isKeyMissing ? "Password" : "User email"}
+                    placeholder={isCreateOrga ? "Organization name" : isKeyMissing ? "Password" : isCreateFolder ? "Folder Name" : isRenameFolder ? "New Folder Name" : isMove ? "Folder ID" : "User email"}
                     value={inputValue}
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}

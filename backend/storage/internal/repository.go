@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,6 +40,7 @@ type StorageRepository interface {
 	IsFolderEmpty(folderID uuid.UUID) (bool, error)                        // DELETE /folders/{folder_id}
 	DeleteFolder(folderID uuid.UUID) error                                 // DELETE /folders/{folder_id}
 	UpdateFolder(folderID uuid.UUID, updates map[string]interface{}) error // PATCH /folders/{folder_id}
+	GetFolderPath(folderID uuid.UUID) ([]Folder, error)
 	IsDescendant(folderID uuid.UUID, parent uuid.UUID) (bool, error)
 
 	ListFolderContents(ownerID uuid.UUID, parentID *uuid.UUID) ([]Folder, []File, error) // GET /folders?parent_id=xxx
@@ -267,7 +269,7 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 
 	folderQuery := r.db.Where("owner_user_id = ?", ownerID)
 	if parentID == nil {
-		folderQuery = folderQuery.Where("parent_id IS NULL")
+		folderQuery = folderQuery.Where("parent_id IS NULL AND org_id IS NULL")
 	} else {
 		folderQuery = folderQuery.Where("parent_id = ?", *parentID)
 	}
@@ -279,7 +281,7 @@ func (r *storageRepository) ListFolderContents(ownerID uuid.UUID, parentID *uuid
 	// ACTIVE files only
 	fileQuery := r.db.Where("owner_user_id = ? AND status = ?", ownerID, "ACTIVE")
 	if parentID == nil {
-		fileQuery = fileQuery.Where("folder_id IS NULL")
+		fileQuery = fileQuery.Where("folder_id IS NULL AND org_id IS NULL")
 	} else {
 		fileQuery = fileQuery.Where("folder_id = ?", *parentID)
 	}
@@ -407,4 +409,33 @@ func (r *storageRepository) DecrementOrgUsedSpace(orgID uuid.UUID, delta int64) 
 	return r.db.Table("organizations").
 		Where("id = ?", orgID).
 		UpdateColumn("used_space", gorm.Expr("CASE WHEN used_space >= ? THEN used_space - ? ELSE 0 END", delta, delta)).Error
+}
+
+func (r *storageRepository) GetFolderPath(folderID uuid.UUID) ([]Folder, error) {
+    var path []Folder
+    currentID := folderID
+    visited := make(map[uuid.UUID]struct{})
+
+    for {
+        if _, seen := visited[currentID]; seen {
+            return nil, fmt.Errorf("cycle detected while resolving folder path at folder %s", currentID)
+        }
+        visited[currentID] = struct{}{}
+
+        var folder Folder
+        if err := r.db.Model(&Folder{}).Where("id = ?", currentID).First(&folder).Error; err != nil {
+            if errors.Is(err, gorm.ErrRecordNotFound) {
+                return nil, fmt.Errorf("%w: folder %s", gorm.ErrRecordNotFound, currentID)
+            }
+            return nil, err
+        }
+
+        path = append([]Folder{folder}, path...)
+        if folder.ParentID == nil {
+            break
+        }
+        currentID = *folder.ParentID
+    }
+
+    return path, nil
 }
