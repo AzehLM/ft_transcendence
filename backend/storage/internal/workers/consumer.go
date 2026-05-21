@@ -346,7 +346,14 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 	}
 
 	for _, f := range stalePending {
-		_ = c.minioClient.RemoveObject(ctx, "ostrom", f.MinioObjectKey.String(), minio.RemoveObjectOptions{})
+		if f.UploadID != nil {
+			core := minio.Core{Client: c.minioClient}
+			if err := core.AbortMultipartUpload(ctx, "ostrom", f.MinioObjectKey.String(), *f.UploadID); err != nil {
+				log.Printf("[WARN] sweep: AbortMultipartUpload failed for %s: %v", f.ID, err)
+			}
+		} else {
+			_ = c.minioClient.RemoveObject(ctx, "ostrom", f.MinioObjectKey.String(), minio.RemoveObjectOptions{})
+		}
 		if err := c.repo.DeleteFile(f.ID); err != nil {
 			log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
 			continue

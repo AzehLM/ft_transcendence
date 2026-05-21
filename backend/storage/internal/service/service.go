@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -27,7 +30,19 @@ var (
 	ErrCyclicMove     = errors.New("cannot move folder into itself or one of its descendants")
 	ErrInvalidParent  = errors.New("invalid parent")
 	ErrInvalidName    = errors.New("invalid folder name")
+
+	ErrInvalidPartCount = errors.New("invalid part count")
 )
+
+// CompletePart represents one part of a multipart upload, as returned by MinIO.
+// PartNumber is 1-indexed and ETag is the value from the PUT response header (without surrounding quotes).
+// Public struct as it is used by the handler
+type CompletePart struct {
+	PartNumber	int		`json:"part_number"`
+	ETag		string	`json:"etag"`
+}
+
+const maxParts = 100
 
 // business logic contract
 type StorageService interface {
@@ -38,6 +53,11 @@ type StorageService interface {
 	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
+
+	// Multipart
+	RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
+	FinalizeMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error)
+	AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
@@ -88,13 +108,13 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 	ctx := context.TODO()
 	objectID = uuid.New()
 
-	var used, max int64
-	used, max, err = s.getQuota(userID, orgID)
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
 	if err != nil {
 		return "", uuid.Nil, err
 	}
 
-	if used+fileSize > max {
+	if used+fileSize > maxSpace {
 		return "", uuid.Nil, ErrQuotaExceeded
 	}
 
@@ -614,6 +634,208 @@ func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delt
 		return s.repo.DecrementUserUsedSpace(userID, delta)
 	}
 	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
+}
+
+// multipart
+// https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
+func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
+
+	// S3 multipart upload limits to 10000 but I think 100 (maxParts) is enough as we are giving users/organizations a 5go limit of available space.
+	if partCount <= 0 || partCount > maxParts {
+		return uuid.Nil, "", nil, ErrInvalidPartCount // mapped to 400 bad request
+	}
+
+	// rbac check
+	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, "", nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, "", nil, ErrNotFound
+		}
+		return uuid.Nil, "", nil, err
+	}
+
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	if used+fileSize > maxSpace {
+		return uuid.Nil, "", nil, ErrQuotaExceeded
+	}
+
+	// parameters needed by minio
+	ctx := context.TODO()
+	objectKey := uuid.New()
+	core := minio.Core{Client: s.minioClient}
+
+	uploadIDStr, err := core.NewMultipartUpload(ctx, "ostrom", objectKey.String(), minio.PutObjectOptions{})
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	// presigning each part
+	urls := make([]string, partCount)
+	for i := 1; i <= partCount; i++ {
+		reqParams := make(url.Values)
+		reqParams.Set("partNumber", strconv.Itoa(i))
+		reqParams.Set("uploadId", uploadIDStr)
+
+		rawURL, err := s.minioClient.Presign(ctx, "PUT", "ostrom", objectKey.String(), 15*time.Minute, reqParams)
+		if err != nil {
+			// free MinIO parts
+			_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+			return uuid.Nil, "", nil, err
+		}
+
+		urls[i-1] = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
+	}
+
+	newFile := &storage.File{
+		ID:				uuid.New(),
+		OwnerUserID:	userID,
+		OrgID:			orgID,
+		FolderID:		folderID,
+		Name:			"",
+		FileSize:		fileSize,
+		MinioObjectKey:	objectKey,
+		UploadID:		&uploadIDStr,
+		EncryptedDEK:	[]byte{},
+		IV:				[]byte{},
+		Status:			"PENDING",
+	}
+
+	if err := s.repo.InsertPendingFile(newFile); err != nil {
+		_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+		return uuid.Nil, "", nil, err
+	}
+
+	return objectKey, uploadIDStr, urls, nil
+}
+
+func (s *storageService) FinalizeMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string, encryptedFilename string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error) {
+
+	ctx := context.TODO()
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return uuid.Nil, ErrNotFound
+	}
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// checking file.UploadID != nil to be sure the db field is not NULL and we're uploading a multipart file
+	if file.UploadID == nil || *file.UploadID != uploadID {
+		return uuid.Nil, ErrForbidden
+	}
+	if !uuidPtrEqual(file.OrgID, orgID) {
+		return uuid.Nil, ErrForbidden
+	}
+
+	// checking parts are not empty
+	if len(parts) == 0 {
+		return uuid.Nil, ErrInvalidPartCount
+	}
+
+	seen := make(map[int]bool, len(parts))
+	for _, p := range parts {
+		if p.PartNumber < 1 || p.PartNumber > maxParts { // maxParts reference value of partCount in RequestMultipartUpload
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		// ETag non-empty as we use it as identifier
+		if p.ETag == "" {
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		if seen[p.PartNumber] {
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		seen[p.PartNumber] = true
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, file.FolderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	ok, err := s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if !ok {
+		// free MinIO parts
+		core := minio.Core{Client: s.minioClient}
+		_ = core.AbortMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID)
+		return uuid.Nil, ErrQuotaExceeded
+	}
+
+	// assembling parts on MinIO side
+	core := minio.Core{Client: s.minioClient}
+	minioParts := make([]minio.CompletePart, len(parts))
+	for i, p := range parts {
+		minioParts[i] = minio.CompletePart{PartNumber: p.PartNumber, ETag: p.ETag}
+	}
+	// concatenate uploaded parts and commit to an object.
+	if _, err := core.CompleteMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID, minioParts, minio.PutObjectOptions{}); err != nil {
+		// rollback in case of fail on MinIO side -> decrementing used space.
+		_ = s.decrementQuota(userID, file.OrgID, file.FileSize)
+		return uuid.Nil, err
+	}
+
+	if err := s.repo.ActivateFile(objectID, encryptedFilename, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		// same as above, decrementing used space
+		_ = s.decrementQuota(userID, file.OrgID, file.FileSize)
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	file, err = s.repo.FindByID(file.ID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	_ = s.publisher.PublishFileUploaded(ctx, file)
+	return file.ID, nil
+}
+
+func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	// rbac: only owner can cancel its own upload (cannot do a CanDeleteFile as the file is still PENDING)
+	if file.OwnerUserID != userID {
+		return ErrForbidden
+	}
+
+	if file.UploadID == nil || *file.UploadID != uploadID {
+		return ErrForbidden
+	}
+
+	// aborting on MinIO side, if MinIO fails we only log it and return, leaving the sweeper do the job
+	core := minio.Core{Client: s.minioClient}
+	if err := core.AbortMultipartUpload(context.TODO(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
+		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
+		return err
+	}
+
+	// again, no need to decrement user space here as the file is still PENDING
+	return s.repo.DeleteFile(file.ID)
 }
 
 func (s *storageService) GetFolderPath(folderID uuid.UUID) ([]storage.Folder, error) {

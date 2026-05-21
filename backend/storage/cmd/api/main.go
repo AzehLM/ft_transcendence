@@ -116,6 +116,11 @@ func main() {
 	// file
 	api.Post("/files/upload-url", handler.RequestUploadURL)
 	api.Post("/files/finalize", handler.FinalizeUpload)
+	// multipart
+	api.Post("/files/multipart/init", handler.RequestMultipartUpload)
+	api.Post("/files/multipart/finalize", handler.FinalizeMultipartUpload)
+	api.Post("/files/multipart/abort", handler.AbortMultipartUpload)
+
 	api.Get("/files/:file_id/download", handler.DownloadFile)
 	api.Get("/files/:file_id", handler.GetFileInfo)
 	api.Patch("/files/:file_id", handler.MoveFile)
