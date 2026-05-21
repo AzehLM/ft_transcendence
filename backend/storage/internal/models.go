@@ -14,6 +14,7 @@ type File struct {
 	Name			string		`gorm:"size:100;not null" json:"name"`
 	FileSize		int64		`gorm:"not null" json:"file_size"`
 	MinioObjectKey	uuid.UUID	`gorm:"type:uuid;uniqueIndex;not null" json:"minio_object_key"`
+	UploadID		*string		`gorm:"type:varchar(255)" json:"-"`  // nullable so pointer
 	EncryptedDEK	[]byte		`gorm:"type:bytea;not null" json:"encrypted_dek"`
 	IV				[]byte		`gorm:"type:bytea;not null" json:"iv"`
 	Status			string		`gorm:"size:20;not null;default:'PENDING'" json:"status"`

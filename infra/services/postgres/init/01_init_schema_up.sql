@@ -65,6 +65,7 @@ CREATE TABLE files (
     name VARCHAR(100) NOT NULL,
     file_size BIGINT NOT NULL,
     minio_object_key UUID UNIQUE NOT NULL,
+    upload_id VARCHAR(255),
     encrypted_dek BYTEA NOT NULL,
     iv BYTEA NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
