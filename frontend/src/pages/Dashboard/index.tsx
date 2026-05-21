@@ -201,6 +201,25 @@ export default function DashboardPage() {
         .catch(() => setBreadcrumbs([{ id: null, name: "Root" }]));
     }, [folderId]);
 
+    const [hideMessage, setHideMessage] = useState(false);
+
+    useEffect(() => {
+        if (success || error) {
+            setHideMessage(false);
+
+            const timer = setTimeout(() => {
+                setHideMessage(true);
+
+                setTimeout(() => {
+                    setSuccess('');
+                    setError('');
+                }, 400);
+            }, 3000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [success, error]);
+
     return (
         <div className={styles.container}>
             <ConfirmationModal
@@ -230,12 +249,12 @@ export default function DashboardPage() {
 
                 <div className={styles.uploadContainer}>
                     {error && (
-                        <div className={`${styles.statusMessage} ${styles.error}`}>
+                        <div className={`${styles.statusMessage} ${styles.error}  ${hideMessage ? styles.hide : ''}`}>
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}`}>
+                        <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}  ${hideMessage ? styles.hide : ''}`}>
                             {success}
                         </div>
                     )}

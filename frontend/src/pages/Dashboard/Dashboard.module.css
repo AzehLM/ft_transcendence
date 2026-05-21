@@ -348,6 +348,10 @@
     overflow: hidden;
 }
 
+.statusMessage.hide {
+    animation: fadeOutUp 0.4s ease forwards;
+}
+
 .statusMessage.success {
     background: linear-gradient(135deg, #f0fdf4 0%, #f1f5f9 100%);
     border-left: 3px solid #22c55e;
@@ -551,5 +555,23 @@
     }
     100% {
         transform: translateX(100%);
+    }
+}
+
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 100px;
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
     }
 }
