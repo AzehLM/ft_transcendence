@@ -840,9 +840,12 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 
 func (s *storageService) GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error) {
     folders, err := s.repo.GetFolderPath(folderID)
-    if err != nil {
-        return nil, err
-    }
+ 	if err != nil {
+ 		if errors.Is(err, gorm.ErrRecordNotFound) {
+ 			return nil, ErrNotFound
+ 		}
+ 		return nil, err
+ 	}
     if len(folders) == 0 {
         return nil, ErrNotFound
     }
