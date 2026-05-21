@@ -35,7 +35,6 @@ export function MoveModal({ isOpen, fileName, onConfirm, onCancel, orgId }: Move
   useEffect(() => {
     if (!isOpen) return;
     loadFolders(currentFolderId);
-    console.log(orgId)
   }, [currentFolderId, isOpen]);
 
   const loadFolders = async (folderId: string | null) => {
