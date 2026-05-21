@@ -5,8 +5,6 @@ import (
 	"backend/auth/internal/service" 
 	"backend/shared/config"
 
-	"github.com/minio/minio-go/v7"
-
 	"gorm.io/gorm"
 )
 
@@ -26,7 +24,6 @@ type SaltRequest struct {
 type AuthHandler struct {
 	DB          *gorm.DB
 	Env         *config.Env
-	MinioClient *minio.Client
 	Publisher   *workers.EventPublisher
 	TOTPService  *service.TOTPService
 }
@@ -50,11 +47,10 @@ type VerifyTOTPRequest struct {
 
 
 
-func NewAuthHandler(db *gorm.DB, env *config.Env, minioClient *minio.Client, publisher *workers.EventPublisher) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, env *config.Env, publisher *workers.EventPublisher) *AuthHandler {
 	return &AuthHandler{
 		DB:          db,
 		Env:         env,
-		MinioClient: minioClient,
 		Publisher:   publisher,
 		TOTPService: &service.TOTPService{},
 	}

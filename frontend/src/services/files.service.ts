@@ -1,3 +1,5 @@
+import { fetchWithRefresh } from './api.service';
+
 const API_BASE_URL = "/api";
 
 // Types
@@ -41,33 +43,29 @@ export interface FileMetadata {
     org_id?: string;
 }
 
-// Helper function to get auth token
-function getAuthToken(): string {
-    // Token should be stored from login response
-    // This is a placeholder - adjust based on your auth storage
-    return localStorage.getItem("access_token") || "";
-}
-
 // Helper function to make authenticated requests
 async function authenticatedRequest<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const token = getAuthToken();
     const headers: HeadersInit = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
         ...options.headers,
     };
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
+    const response = await fetchWithRefresh(`${API_BASE_URL}${endpoint}`, { ...options, headers });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || `API Error: ${response.status}`);
+        let errorMsg = `API Error: ${response.status}`;
+        try {
+            const error = await response.json();
+            errorMsg = error.error || errorMsg;
+        } catch (e) {
+        }
+        throw new Error(errorMsg);
+    }
+
+    if (response.status === 204) {
+        return undefined as unknown as T;
     }
 
     return response.json();

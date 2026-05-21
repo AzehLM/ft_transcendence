@@ -9,16 +9,17 @@ import (
 )
 
 type Env struct {
-	PostgresHost     string
-	PostgresPort     string
-	PostgresUser     string
-	PostgresPassword string
-	PostgresDBname   string
-	JwtSecret        string
-	RedisPassword    string
-	RedisPort        string
-	MinioPort        string
-	AppPort          string
+	PostgresHost		string
+	PostgresPort		string
+	PostgresUser		string
+	PostgresPassword	string
+	PostgresDBname		string
+	JwtSecret			string
+	RedisPassword		string
+	RedisPort			string
+	MinioPort			string
+	AppPort				string
+	DomainName			string
 }
 
 func LoadEnv() (*Env, error) {
@@ -45,16 +46,17 @@ func LoadEnv() (*Env, error) {
 	}
 
 	env := &Env{
-		PostgresHost:     os.Getenv("POSTGRES_HOST"),
-		PostgresPort:     os.Getenv("POSTGRES_PORT"),
-		PostgresDBname:   os.Getenv("POSTGRES_DB_NAME"),
-		PostgresUser:     postgresUser,
-		PostgresPassword: postgresPassword,
-		JwtSecret:        jwtSecret,
-		RedisPassword:    redisPassword,
-		RedisPort:        os.Getenv("REDIS_PORT"),
-		MinioPort:        os.Getenv("MINIO_PORT"),
-		AppPort:          os.Getenv("PORT"),
+		PostgresHost:		os.Getenv("POSTGRES_HOST"),
+		PostgresPort:		os.Getenv("POSTGRES_PORT"),
+		PostgresDBname:		os.Getenv("POSTGRES_DB_NAME"),
+		PostgresUser:		postgresUser,
+		PostgresPassword:	postgresPassword,
+		JwtSecret:			jwtSecret,
+		RedisPassword:		redisPassword,
+		RedisPort:			os.Getenv("REDIS_PORT"),
+		MinioPort:			os.Getenv("MINIO_PORT"),
+		AppPort:			os.Getenv("PORT"),
+		DomainName:			os.Getenv("DOMAIN_NAME"),
 	}
 
 	if env.PostgresDBname == "" || env.PostgresHost == "" || env.PostgresPassword == "" ||

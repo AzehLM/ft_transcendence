@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
-	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -15,7 +13,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
-	"github.com/minio/minio-go/v7"
 )
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
@@ -23,12 +20,12 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "first_name", "family_name").
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -37,6 +34,8 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 		"used_space": user.UsedSpace,
 		"max_space":  user.MaxSpace,
 		"created_at": user.CreatedAt,
+		"first_name": user.FirstName,
+		"family_name": user.FamilyName,
 	})
 }
 
@@ -46,17 +45,17 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		log.Printf("[WARN] invalid user_id %s: %v", userIDStr, err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_user_id"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
 	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_publish_user_deleted_event"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not publish user deleted event"})
 	}
 
 	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could_not_delete_user"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
 	clearRefreshTokenCookie(c)
@@ -65,50 +64,50 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "account_deleted_successfully",
+		"message": "account deleted successfully",
 	})
 }
 
 func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 	req := new(UpdatePasswordRequest)
 	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
 
 	if req.OldAuthHash == "" || req.NewAuthHash == "" || req.NewClientSalt == "" || req.NewIv == "" || req.NewEncryptedPrivKey == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing_parameters"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing parameters"})
 	}
 
 	userID := c.Locals("user_id").(string)
 	var user models.User
 
 	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	if !verifyArgon2idHash(req.OldAuthHash, user.ServerSalt, user.AuthHash) {
 		log.Printf("[WARN] Failed password update attempt for user %s", user.Email)
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "invalid_old_password"})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "invalid old password"})
 	}
 
 	newServerHash, newServerSaltHex, err := hashWithArgon2id(req.NewAuthHash)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	newClientSalt, err := base64.StdEncoding.DecodeString(req.NewClientSalt)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_client_salt_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new client salt format"})
 	}
 
 	newIV, err := base64.StdEncoding.DecodeString(req.NewIv)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_iv_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new iv format"})
 	}
 
 	newPrivKey, err := base64.StdEncoding.DecodeString(req.NewEncryptedPrivKey)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_new_private_key_format"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid new private key format"})
 	}
 
 	newServerSalt, _ := base64.StdEncoding.DecodeString(newServerSaltHex)
@@ -119,115 +118,233 @@ func (h *AuthHandler) UpdatePassword(c fiber.Ctx) error {
 		"client_salt":           newClientSalt,
 		"iv":                    newIV,
 		"encrypted_private_key": newPrivKey,
-		"refresh_token":         nil,
 	}).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
-
-	//TODO: generate a new jwt and refresh token maybe
-	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] Password successfully updated for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "password_updated_please_login_again",
+		"message": "password updated",
 	})
 }
 
 func (h *AuthHandler) UploadAvatar(c fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
-	var user models.User
+	userIDStr := c.Locals("user_id").(string)
 
-	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
 	file, err := c.FormFile("avatar")
-
-	if (err != nil) {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "no file uploaded"})
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "no file uploaded"})
 	}
 
-	maxSize := int64(5 * 1024 * 1024)
-	fileSize := file.Size
-
-	if (file.Size > maxSize) {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "file too large, bigger than 5MB"})
+	const maxSize = int64(4 * 1024 * 1024)
+	if file.Size > maxSize {
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"error": "file too large max 4mb"})
 	}
-
-	filename := fmt.Sprintf("avatars/%s-%d.jpg", userID, time.Now().Unix())
 
 	src, err := file.Open()
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not open file"})
 	}
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			log.Printf("[WARN] Failed to close avatar upload source: %v", err)
+		}
+	}()
 
-	buffer := make([]byte, 512)
-	src.Read(buffer)
-
-	realType := http.DetectContentType(buffer)
-
-	if realType != "image/jpeg" && realType != "image/png" {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "invalid file type, should be png or jpeg"})
+	findExtension := make([]byte, 512)
+	if _, err := src.Read(findExtension); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
 	}
 
-	src.Seek(0, 0)
-	fullBuffer, err := io.ReadAll(src)
+	// trying to sniff the extension type by reading bytes values, double security (MIME type has to be check in the front first)
+	contentType := http.DetectContentType(findExtension)
+
+	// only accepting jpeg or png for now
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return c.Status(fiber.StatusUnsupportedMediaType).JSON(fiber.Map{"error": "invalid file type jpeg or png only"})
+	}
+
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
+	}
+	data, err := io.ReadAll(src)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not read file"})
 	}
 
-	ctx := context.TODO()
-	_, err = h.MinioClient.PutObject(
-		ctx,
-		"ostrom",
-		filename,
-		bytes.NewReader(fullBuffer),
-		fileSize,
-		minio.PutObjectOptions{},
-	)
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed_to_upload_avatar",
-		})
+	avatar := models.UserAvatar{
+		UserID:      userID,
+		Data:        data,
+		ContentType: contentType,
+		UpdatedAt:   time.Now(),
 	}
 
-	avatarURL := fmt.Sprintf("https://minio/ostrom/%s", filename)
-
-	err = h.DB.Model(&user).Updates(map[string]interface{}{
-		"avatar_url": avatarURL,
-	}).Error
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+	result := h.DB.Save(&avatar)
+	if result.Error != nil {
+		log.Printf("[ERROR] Failed to save avatar for user %s: %v", userIDStr, result.Error)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo"})
 	}
 
-	log.Printf("[INFO] Avatar successfully uploaded for user %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":    "avatar_uploaded_successfully",
-		"avatar_url": avatarURL,
+		"message": "avatar uploaded successfully",
 	})
 }
 
-func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
-    email := c.Query("email")
-    if email == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
-    }
+// method for authenticated user's avatar bytes with the correct Content-Type.
+func (h *AuthHandler) GetMyAvatar(c fiber.Ctx) error {
+	userIDStr := c.Locals("user_id").(string)
+	return serveAvatar(c, h.DB, userIDStr)
+}
 
-    var user models.User
+// method for any user's avatar bytes — public endpoint (already behind JWT middleware).
+func (h *AuthHandler) GetUserAvatar(c fiber.Ctx) error {
+	targetID := c.Params("id")
+	if _, err := uuid.Parse(targetID); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
+	}
+	return serveAvatar(c, h.DB, targetID)
+}
+
+// do we really want to keep both GetMyAvatar and GetUserAvatar ? Both returns the same values
+
+func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
+	var avatar models.UserAvatar
+
+	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no avatar"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
+	}
+
+	// Content-type so the frontend can sanitize again the output of the API call
+	// Last-Modified and Cache-Control for cache purposes
+	c.Set("Content-Type", avatar.ContentType)
+	c.Set("Cache-Control", "public, max-age=3600")
+	c.Set("Last-Modified", avatar.UpdatedAt.UTC().Format(http.TimeFormat))
+	return c.Status(fiber.StatusOK).Send(avatar.Data)
+}
+
+func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
+	email := c.Query("email")
+	if email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email is required"})
+	}
+
+	var user models.User
 	err := h.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
     })
+}
+
+func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
+	var body struct {
+		FirstName string `json:"first_name" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.FirstName == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "first name required",
+	// 	})
+	// }
+
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("first_name", body.FirstName)
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": result.Error.Error(),
+        })
+    }
+	if result.RowsAffected == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "first name updated",
+	})
+}
+
+func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
+	var body struct {
+		FamilyName string `json:"family_name" validate:"required"`
+	}
+
+	if len(c.Body()) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Request body is empty",
+		})
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// if body.FamilyName == "" {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "family name required",
+	// 	})
+	// }
+
+	userIDLocals, err := c.Locals("user_id").(string)
+	if !err {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+	}
+
+	userID, errUser := uuid.Parse(userIDLocals)
+	if errUser != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+	}
+
+	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("family_name", body.FamilyName)
+    if result.Error != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": result.Error.Error(),
+        })
+    }
+	if result.RowsAffected == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "family name updated",
+	})
 }

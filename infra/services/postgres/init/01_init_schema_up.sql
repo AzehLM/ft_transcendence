@@ -5,6 +5,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
+    first_name VARCHAR(255),
+    family_name VARCHAR(255),
     client_salt BYTEA NOT NULL,
     server_salt BYTEA NOT NULL,
     iv BYTEA NOT NULL,
@@ -51,6 +53,7 @@ CREATE TABLE org_members (
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'member')),
+    description VARCHAR(250),
     enc_org_priv_key BYTEA NOT NULL,
     enc_aes_key     BYTEA NOT NULL,
     iv              BYTEA NOT NULL,
@@ -77,10 +80,19 @@ CREATE TABLE files (
     name VARCHAR(100) NOT NULL,
     file_size BIGINT NOT NULL,
     minio_object_key UUID UNIQUE NOT NULL,
+    upload_id VARCHAR(255),
     encrypted_dek BYTEA NOT NULL,
     iv BYTEA NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. USER_AVATARS
+CREATE TABLE user_avatars (
+    user_id        UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    data           BYTEA        NOT NULL,
+    content_type   VARCHAR(50)  NOT NULL,
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 

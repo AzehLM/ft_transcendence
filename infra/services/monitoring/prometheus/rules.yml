@@ -1,0 +1,33 @@
+groups:
+  - name: ostrom_availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Service {{ $labels.job }} is down'
+          description: 'Service {{ $labels.job }} has not responded for 1 minute.'
+
+  - name: ostrom_http
+    rules:
+      - alert: High5xxRate
+        expr: sum(rate(caddy_http_request_duration_seconds_count{code=~"5.."}[1m])) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'High 5xx error rate'
+          description: 'More than 0.1 req/s with 5xx errors on Caddy.'
+
+  - name: ostrom_storage
+    rules:
+      - alert: StorageQuotaWarning
+        expr: ostrom_user_used_space_bytes / ostrom_user_max_space_bytes > 0.8
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'User approaching storage quota'
+          description: 'User {{ $labels.user_id }} has used more than 80% of their quota.'

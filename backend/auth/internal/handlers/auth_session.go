@@ -26,10 +26,11 @@ func clearRefreshTokenCookie(c fiber.Ctx) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
+		MaxAge:   -1,
 		HTTPOnly: true,
-		Secure:   true, // test avec caddy
+		Secure:   true,
 		SameSite: "Strict",
+		Path:     "/",
 	})
 }
 
@@ -37,8 +38,9 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	cookieToken := c.Cookies("refresh_token")
 
 	if cookieToken == "" {
+		clearRefreshTokenCookie(c)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "already_logged_out",
+			"message": "already logged out",
 		})
 	}
 
@@ -53,10 +55,10 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	}
 
 	clearRefreshTokenCookie(c)
+	log.Printf("[INFO] User logged out - refresh token cookie cleared")
 
-	log.Printf("[INFO] User logged out successfully (token cleared)")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "logged_out_successfully",
+		"message": "logged out successfully",
 	})
 }
 
@@ -66,7 +68,7 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 
 	if cookieToken == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "missing_refresh_token",
+			"error": "missing refresh token",
 		})
 	}
 
@@ -78,7 +80,7 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 		clearRefreshTokenCookie(c)
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "invalid_refresh_token",
+			"error": "invalid refresh token",
 		})
 	}
 
@@ -91,7 +93,7 @@ func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
 	jwtSecret := []byte(h.Env.JwtSecret)
 	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token generation failed"})
 	}
 
 	log.Printf("[INFO] Access token refreshed for %s", user.Email)

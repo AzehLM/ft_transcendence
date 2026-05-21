@@ -8,18 +8,22 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import orgaStyles from "../Organizations/Organizations.module.css"
 import { UserMinus, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import { resetKeys } from "../../services/auth.service";
 
 interface Member {
   user_id: string;
   email: string;
   role: string;
+  family_name: string;
+  first_name: string;
 }
 
 export default function OrgMembersPage() {
 
   const { id } = useParams();
   const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +32,12 @@ export default function OrgMembersPage() {
         if (!res.ok) throw new Error("Failed to fetch org name.");
         return res.json();
       })
-      .then(data => setOrgName(data.name))
+      .then(data => {
+        if (data) {
+          setOrgName(data.name);
+          setOrgDesc(data.description);
+        }
+      })
       .catch(() => setOrgName("Unknown"));
 
   }, [id]);
@@ -42,6 +51,12 @@ export default function OrgMembersPage() {
     if (!memberEmail.trim()) return;
     setModalError(null);
 
+    const userPrivateKey = await getPrivateKeyFromSession();
+    if (!userPrivateKey) {
+      setPublicKeyMissing(true)
+      return;
+    }
+
     const { success, error } = await addMemberToOrg(id!, memberEmail);
     if (!success) {
       setModalError(error ?? "Failed to add member.");
@@ -51,6 +66,10 @@ export default function OrgMembersPage() {
     // Refresh members list -> might be modified with websocket
     try {
       const res = await fetchWithRefresh(`/api/orgs/${id}/members`);
+      if (!res.ok) {
+        setModalError("Member added, but failed to refresh members.");
+        return;
+      }
       const data = await res.json();
       setMembers(data);
     } catch {
@@ -60,6 +79,32 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+  };
+
+
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
+
+    useEffect(() => {
+    fetchWithRefresh("/api/auth/me")
+        .then(res => res.json())
+        .then(data => setEmail(data.email));
+    }, []);
+
+  const handleResetKeys = async () => {
+    setModalError(null);
+    if (!password) return;
+
+    const { success, error } = await resetKeys(email, password);
+    if (!success) {
+      setModalError(error ?? "Error !");
+      return;
+    }
+
+    setPassword("");
+    setPublicKeyMissing(false);
+    setModalError(null);
   };
 
   const [members, setMembers] = useState<Member[]>([]);
@@ -72,12 +117,13 @@ export default function OrgMembersPage() {
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
-          return;
+          return null;
         }
         if (!res.ok) throw new Error("Failed to fetch members.");
         return res.json();
       })
       .then(data => {
+        if (!data) return;
         setMembers(data);
 
         fetchWithRefresh("/api/auth/me")
@@ -96,7 +142,7 @@ export default function OrgMembersPage() {
         setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate]);
 
 
   const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
@@ -156,18 +202,18 @@ export default function OrgMembersPage() {
   };
 
   return (
-    <OrgLayout title="Organization members" orgName={orgName} showActionButtons={false}>
+    <OrgLayout title="Organization members" orgName={orgName} orgDesc={orgDesc} showActionButtons={false}>
         { myRole === "admin" && (
           <div className={orgaStyles.header}>
-            <button 
-            className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`} 
+            <button
+            className={`${profileStyles.buttonChange} ${profileStyles.profileButton}`}
             onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
             >
             + Add a member
             </button>
           </div>
         )}
-            
+
         <ConfirmationModal
           isOpen={showAddMemberModal}
           fileName={memberEmail}
@@ -176,6 +222,17 @@ export default function OrgMembersPage() {
           isAddMember={true}
           inputValue={memberEmail}
           onInputChange={setMemberEmail}
+          errorMessage={modalError ?? undefined}
+        />
+
+        <ConfirmationModal
+          isOpen={publicKeyMissing}
+          fileName={orgName}
+          onConfirm={handleResetKeys}
+          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          isKeyMissing={true}
+          inputValue={password}
+          onInputChange={setPassword}
           errorMessage={modalError ?? undefined}
         />
 
@@ -190,7 +247,14 @@ export default function OrgMembersPage() {
             {members.map((member) => (
               <div key={member.user_id} className={orgaStyles.orgCard}>
                 <div className={orgaStyles.orgInfo}>
-                  <p className={orgaStyles.orgName}>{member.email}</p>
+                  <p className={orgaStyles.orgName}>
+                    {member.first_name || member.family_name
+                      ? `${member.first_name ?? ""} ${member.family_name ?? ""}`.trim()
+                      : member.email}
+                    {(member.first_name || member.family_name) && (
+                      <span> ({member.email})</span>
+                    )}
+                  </p>
                   <p className={orgaStyles.orgRole}>{member.role}</p>
                 </div>
 

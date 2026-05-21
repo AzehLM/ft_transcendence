@@ -36,6 +36,7 @@ services:
       - "--web.route-prefix=/"
     volumes:
       - ./services/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./services/monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - prometheus_data:/prometheus
     depends_on:
       caddy:
@@ -52,7 +53,6 @@ services:
     image: grafana/grafana-oss:12.2.0-17142428006@sha256:e270cc17e9afb68d6f288dbc48df16c7f72320ea923aa1eab2776338b8528af8
     networks:
       - monitoring
-      # - dev
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
@@ -70,6 +70,26 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_pwd
       - GF_SERVER_ROOT_URL=https://localhost:${PORT}/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+
+  alertmanager:
+    container_name: alertmanager
+    build:
+      context: ../
+      dockerfile: ./infra/services/monitoring/alertmanager/Dockerfile
+    networks:
+      - monitoring
+      - alerting
+    restart: unless-stopped
+    init: true
+    secrets:
+      - discord_webhook_url
+    volumes:
+      - alertmanager_data:/alertmanager
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9093/-/healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
   postgres:
     container_name: postgres
@@ -188,6 +208,7 @@ services:
       dockerfile: ./infra/services/storage/Dockerfile
     networks:
       - dev
+      - monitoring
     restart: unless-stopped
     secrets:
       - minio_admin_user
@@ -256,7 +277,7 @@ services:
       - no-new-privileges:true # suppress proccess to acquire new privilegies (setuid, setgid...)
     networks:
       - tunnel
-    restart: unless-stopped
+    # restart: unless-stopped
     secrets:
       - cloudflare_tunnel_token
     depends_on:
@@ -296,6 +317,7 @@ volumes:
   postgres_data:
   minio_data:
   redis_data:
+  alertmanager_data:
 
 networks:
   dev:
@@ -308,6 +330,9 @@ networks:
   tunnel:
     driver: bridge
     name: tunnel-network
+  alerting:
+    driver: bridge
+    name: alerting-network
 
 secrets:
   grafana_admin_user:
@@ -330,3 +355,5 @@ secrets:
     file: ../secrets/cloudflare_tunnel_token
   jwt_secret:
     file: ../secrets/jwt_secret
+  discord_webhook_url:
+    file: ../secrets/discord_webhook_url

@@ -322,6 +322,17 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 				continue
 			}
 			log.Printf("[INFO] sweep: removed ghost DB row %s", f.ID)
+
+			var decErr error
+			if f.OrgID != nil {
+				decErr = c.repo.DecrementOrgUsedSpace(*f.OrgID, f.FileSize)
+			} else {
+				decErr = c.repo.DecrementUserUsedSpace(f.OwnerUserID, f.FileSize)
+			}
+
+			if decErr != nil {
+				log.Printf("[WARN] sweep: quota decrement failed for row %s (already removed): %v", f.ID, decErr)
+			}
 		}
 	}
 
@@ -335,7 +346,14 @@ func (c *EventConsumer) sweepOrphanedElements(ctx context.Context) {
 	}
 
 	for _, f := range stalePending {
-		_ = c.minioClient.RemoveObject(ctx, "ostrom", f.MinioObjectKey.String(), minio.RemoveObjectOptions{})
+		if f.UploadID != nil {
+			core := minio.Core{Client: c.minioClient}
+			if err := core.AbortMultipartUpload(ctx, "ostrom", f.MinioObjectKey.String(), *f.UploadID); err != nil {
+				log.Printf("[WARN] sweep: AbortMultipartUpload failed for %s: %v", f.ID, err)
+			}
+		} else {
+			_ = c.minioClient.RemoveObject(ctx, "ostrom", f.MinioObjectKey.String(), minio.RemoveObjectOptions{})
+		}
 		if err := c.repo.DeleteFile(f.ID); err != nil {
 			log.Printf("[WARN] sweep: DeleteFile call failed %s: %v", f.ID, err)
 			continue

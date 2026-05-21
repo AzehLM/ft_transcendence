@@ -1,26 +1,75 @@
-import { useState } from "react";
-// import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import { useEffect, useState } from "react";
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "./SettingsLayout";
 import avatar from './assets/temp-avatar.png';
+import { EditableField } from "../../components/EditableField";
+import { fetchWithRefresh } from "../../services/api.service";
+import fieldStyles from "../../components/EditableField/EditableField.module.css"
 
 export default function ProfilePage() {
-//   const [privateKey, setPrivateKey] = useState<string | null>(null);
 
-// useEffect(() => {
-//   const init = async () => {
-//     const key = await getPrivateKeyFromSession();
-//     if (!key) return;
-//     const exported = await crypto.subtle.exportKey("pkcs8", key);
-//     const base64 = btoa(String.fromCharCode(...new Uint8Array(exported)));
-//     setPrivateKey(base64);
-//   };
-//   init();
+  const [firstName, setFirstName] = useState<string>("")
+  const [familyName, setFamilyName] = useState<string>("")
+  const [email, setEmail] = useState<string>("")
 
-// }, []);
-const [name] = useState<string>("Jean");
-const [sirname] = useState<string>("Dupont");
-const [email] = useState<string>("jeannot@gmail.com");
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchWithRefresh("/api/auth/me")
+      .then(res => {
+        // navigate to 404 if not found ?
+        if (!res.ok) throw new Error("Failed to fetch user");
+        return res.json();
+      })
+      .then(data => {
+        if (!cancelled && data) {
+          setFirstName(data.first_name);
+          setFamilyName(data.family_name);
+          setEmail(data.email);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) console.error("Failed to fetch user:", err);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleChangeFirstName = async (newFirstName: string) => {
+    const response = await fetchWithRefresh(`/api/auth/first-name`, {
+      method: "PATCH",
+      body: JSON.stringify({first_name: newFirstName}),
+    });
+    if (!response.ok) throw new Error("Failed to change first name");
+    setFirstName(newFirstName)
+  };
+
+  const handleResetFirstName = async () => {
+    const response = await fetchWithRefresh(`/api/auth/first-name`, {
+      method: "PATCH",
+      body: JSON.stringify({ first_name: "" }),
+    });
+    if (!response.ok) throw new Error("Failed to change first name.");
+    setFirstName("");
+  };
+
+  const handleChangeFamilyName = async (newFamilyName: string) => {
+    const response = await fetchWithRefresh(`/api/auth/family-name`, {
+      method: "PATCH",
+      body: JSON.stringify({family_name: newFamilyName}),
+    });
+    if (!response.ok) throw new Error("Failed to change family name");
+    setFamilyName(newFamilyName)
+  };
+
+  const handleResetFamilyName = async () => {
+    const response = await fetchWithRefresh(`/api/auth/family-name`, {
+      method: "PATCH",
+      body: JSON.stringify({ family_name: "" }),
+    });
+    if (!response.ok) throw new Error("Failed to change family name.");
+    setFamilyName("");
+  };
 
     return (
 
@@ -33,40 +82,29 @@ const [email] = useState<string>("jeannot@gmail.com");
                 <button className={`${styles.buttonChange} ${styles.profileButton}`}>Change Avatar</button>
               </div>
               <div className={styles.infoBox}>
-                <div className={styles.nameBox}>
-                  <div className={styles.inputBox}>
-                    <p>First Name</p>
-                    <input
-                      type="text"
-                      value={name}
-                      // onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.inputBox}>
-                    <p>Last Name</p>
-                    <input
-                      type="text"
-                      value={sirname}
-                    />
-                  </div>
-                </div>
-                <div className={styles.inputBox}>
-                  <p>Email</p>
-                  <input
-                    type="text"
-                    value={email}
-                  />
+                <EditableField
+                  label="First Name"
+                  value={firstName}
+                  maxCharac={250}
+                  onSave={handleChangeFirstName}
+                  isUserNames={true}
+                  handleReset={handleResetFirstName}
+                ></EditableField>
+                <EditableField
+                  label="Family Name"
+                  value={familyName}
+                  maxCharac={250}
+                  onSave={handleChangeFamilyName}
+                  isUserNames={true}
+                  handleReset={handleResetFamilyName}
+                ></EditableField>
+                <div className={fieldStyles.container}>
+                  <p className={fieldStyles.label}>Email</p>
+                  <p className={fieldStyles.value}>{email}</p>
                 </div>
               </div>
             </div>
           </div>
-          <div className={styles.buttons}>
-            <button className={`${styles.buttonChange} ${styles.profileButton}`}>Save Changes</button>
-            <button className={`${styles.buttonCancel} ${styles.profileButton}`}>Cancel</button>
-          </div>
-          {/* <div style={{ wordBreak: "break-all", fontSize: "12px" }}>
-            {privateKey ? `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----` : "Key not found"}
-          </div> */}
         </SettingsLayout>
     );
 }

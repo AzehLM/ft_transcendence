@@ -79,7 +79,7 @@ export default function RegisterPage() {
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
-            console.error("❌ Erreur:", err);
+            console.error("Erreur:", err);
             setError(err.message || "An error occurred during registration!");
             setIsLoading(false);
         }
@@ -95,7 +95,7 @@ export default function RegisterPage() {
                             <Package className="w-11 h-11 text-white" strokeWidth={2} />
                         </div>
                         <span className={styles.logo_title}>
-                            ft_box
+                            ostrom
                         </span>
                     </Link>
                     <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
@@ -115,8 +115,7 @@ export default function RegisterPage() {
                             icon={Mail}
                             placeholder="Enter your email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                            onChange={(e) => setEmail(e.target.value)} />
 
                         <InputField
                             label="Password"
@@ -124,8 +123,7 @@ export default function RegisterPage() {
                             icon={Lock}
                             placeholder="Create a strong password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
+                            onChange={(e) => setPassword(e.target.value)} />
 
                         <InputField
                             label="Confirm Password"
@@ -133,8 +131,7 @@ export default function RegisterPage() {
                             icon={Lock}
                             placeholder="Confirm your password"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
+                            onChange={(e) => setConfirmPassword(e.target.value)} />
 
                         {/* Security Notice */}
                         <div className={styles.security_notice}>
