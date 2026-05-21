@@ -96,16 +96,6 @@ export const FilesService = {
         return authenticatedRequest<FolderContents>(`/folders/${folderId}/contents`);
     },
 
-    // Get files in an organization folder
-    getOrgFolderContents: async (
-        orgId: string,
-        folderId: string
-    ): Promise<FolderContents> => {
-        return authenticatedRequest<FolderContents>(
-            `/orgs/${orgId}/folders/${folderId}/contents`
-        );
-    },
-
     // Create a new folder
     createFolder: async (
         name: string,
