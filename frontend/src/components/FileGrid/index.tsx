@@ -16,7 +16,8 @@ interface FileGridProps {
   files: FileItem[];
   loading: boolean;
   error: string | null;
-  onDelete: (id: string) => void;
+  onDeleteFile: (id: string) => void;
+  onDeleteFolder: (id: string) => void;
   showActionButtons?: boolean;
   isTrash?: boolean;
   orgName?: string;
@@ -28,7 +29,7 @@ interface FileGridProps {
   folders: FolderItem[];
 }
 
-export function FileGrid({ title, subtitle, files, loading, error, onDelete, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc, folders }: FileGridProps) {
+export function FileGrid({ title, subtitle, files, loading, error, onDeleteFile, onDeleteFolder, showActionButtons = true, isTrash = false, orgName, orgId, onUploadFile, onCreateFolder, onDownloadFile, orgDesc, folders }: FileGridProps) {
   const isOrgPage = orgName !== undefined;
 
   return (
@@ -52,10 +53,11 @@ export function FileGrid({ title, subtitle, files, loading, error, onDelete, sho
                 isFolder={true}
                 isTrash={false}
                 orgId={orgId}
+                onDelete={onDeleteFolder}
               />
             ))}
             {files.map((file) => (
-            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDelete} onDownload={onDownloadFile} orgId={orgId} />            ))}
+            <FileCard key={file.id} id={file.id} name={file.name} isTrash={isTrash} onDelete={onDeleteFile} onDownload={onDownloadFile} orgId={orgId} />            ))}
           </div>
         )}
       </div>

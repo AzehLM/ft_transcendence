@@ -79,22 +79,32 @@ export default function OrgFilesPage() {
     downloadAndDecryptOrg(fileId, id!);
   };
 
-  const handleDelete = async (fileId: string) => {
-      const response = await fetchWithRefresh(`/api/files/${fileId}`, { method: "DELETE" });
-      if (!response.ok) {
-        const text = await response.text();
-        let message = "Failed to delete file.";
-        try {
-          if (text) {
-            const data = JSON.parse(text);
-            message = data.error || data.message || message;
-          }
-        } catch {}
-        setError(message);
-        return;
-      }
-      setFiles(prev => prev.filter(f => f.id !== fileId));
+  const handleDeleteFile = async (fileId: string) => {
+        setSuccess("");
+         try {
+             setError(null);
+             await FilesService.deleteFile(fileId);
+             await loadFiles();
+         } catch (err) {
+             const errorMessage = err instanceof Error ? err.message : "Unknown error";
+             console.error("Failed to delete file:", err);
+             setError(`Failed to delete file: ${errorMessage}`);
+         }
   };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    setSuccess("");
+      try {
+          setError(null);
+          await FilesService.deleteFolder(folderId);
+          await loadFiles();
+          setSuccess("Folder deleted");
+      } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Unknown error";
+          console.error("Failed to delete folder:", err);
+          setError(`Failed to delete folder: ${errorMessage}`);
+      }
+};
 
   const handleCreateFolder = async () => {
     const folderName = prompt("Enter folder name:");
@@ -201,7 +211,8 @@ export default function OrgFilesPage() {
         folders={folders}
         loading={loading}
         error={error}
-        onDelete={handleDelete}
+        onDeleteFile={handleDeleteFile}
+        onDeleteFolder={handleDeleteFolder}
         orgName={orgName}
         orgId={id}
         orgDesc={orgDesc}
