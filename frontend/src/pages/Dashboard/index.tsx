@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
+import { FolderCard } from "../../components/FolderCard";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -261,13 +262,32 @@ export default function DashboardPage() {
                 {loading ? (
                     <p>Loading files...</p>
                     ) : files.length === 0 && folders.length === 0 ? (
-                    <p style={{ color: "#999", marginTop: "2rem"}}>No files yet.</p>
+                    <p className={styles.noFile}>No files yet.</p>
                     ) : (
-                    /* Files grid */
-                    <div className={styles.fileGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
-                        {folders.map((folder) => (
+                    <div className={styles.contentsGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
+                        {
+                            folders.length > 0 && (
+                                <div className={styles.itemsGrid}>
+                                    <p className={styles.itemsTitle}>FOLDERS</p>
+                                    <div className={styles.foldersGrid}>
+                                        {folders.map(folder => (
+                                        <FolderCard
+                                            key={folder.id}
+                                            id={folder.id}
+                                            name={folder.name}
+                                            createdAt={folder.created_at}
+                                            onDelete={handleDeleteFolder}
+                                            onRename={handleRenameFolder}
+                                            onMove={handleMoveFolder}
+                                        />
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        }
+                        {/* {folders.map((folder) => (
                             <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
-                        ))}
+                        ))} */}
                         {files.map((file) => (
                             <FileCard key={file.id} id={file.id} name={file.name} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
                         ))}

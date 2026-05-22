@@ -13,8 +13,39 @@
 }
 
 .subtitle {
-    font-size: 16px;
+    font-size: 26px;
     color: #8c7b75;
     margin: 0;
 }
 
+.noFile {
+    color: #999;
+    margin-top: 2rem;
+}
+
+.contentsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.itemsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.itemsTitle {
+    font-size: 16px;
+    color: #8c7b75;
+    margin: 0;
+    font-weight: 500;
+}
+
+.foldersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-bottom: 24px;
+}
