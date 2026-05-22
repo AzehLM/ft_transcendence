@@ -2,7 +2,7 @@
     flex: 1;
     overflow-y: auto;
     width: 100%;
-    background-color: #f5faff;
+    background-color: #f5f5f5;
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
@@ -84,12 +84,11 @@
 .buttonChange {
     background-color: var(--brand-primary);
     color: #fff;
-    box-shadow: 0 4px 14px rgba(222, 115, 86, 0.35);
+    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
 }
 
 .buttonChange:hover {
     background-color: var(--brand-primary-hover);
-    box-shadow: 0 6px 18px rgba(222, 115, 86, 0.45);
 }
 
 .buttonCancel {
