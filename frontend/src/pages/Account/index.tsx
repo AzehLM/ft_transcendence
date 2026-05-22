@@ -246,7 +246,6 @@ export default function AccountPage() {
                         setIsTwoFAEnabled(!isTwoFAEnabled);
                         setIsTwoFAModalOpen(false);
                     }}
-                    email={email}
                 />
                 <DangerZone
                     label="If you want to delete your account, click on the button"
