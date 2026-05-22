@@ -11,15 +11,15 @@
 }
 
 .row:hover {
-  border-color: #e8a045;
-  box-shadow: 0 2px 8px rgba(232, 160, 69, 0.12);
+  border-color: var(--brand-primary);
+  box-shadow: 0 2px 8px rgba(213, 79, 42, 0.08);
 }
 
 .icon {
   width: 36px;
   height: 36px;
   color: #4e3832;
-  background-color: #fcebe8;
+  background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
   padding: 5px;
   border-radius: 10px;
   flex-shrink: 0;
