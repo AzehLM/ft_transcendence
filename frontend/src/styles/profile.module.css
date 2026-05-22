@@ -2,22 +2,31 @@
     flex: 1;
     overflow-y: auto;
     width: 100%;
-    background-color: #f5f5f5;
+    background-color: #f5faff;
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .contentArea {
-    padding: 32px 40px;
+    padding: 40px 48px;
 }
 
 .title {
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 40px;
+    font-size: 34px;
     font-weight: 700;
     color: var(--brand-dark);
-    letter-spacing: 0px;
+    letter-spacing: -0.5px;
+}
+
+.pageSubtitle {
+    margin-top: 0;
+    margin-bottom: 32px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.5;
 }
 
 .subtitle {
@@ -60,32 +69,36 @@
 }
 
 .profileButton {
-    padding: 16px 16px;
-    width: 120px;
     min-width: fit-content;
-    min-height: 50px;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 18px;
-    color: var(--brand-dark);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 22px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
-    transition: opacity 0.3s ease;
-    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
-    max-width: 50%;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
     white-space: nowrap;
 }
 
 .buttonChange {
     background-color: var(--brand-primary);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(222, 115, 86, 0.35);
+}
+
+.buttonChange:hover {
+    background-color: var(--brand-primary-hover);
+    box-shadow: 0 6px 18px rgba(222, 115, 86, 0.45);
 }
 
 .buttonCancel {
-    background-color: #eeb9aa
+    background-color: #eeb9aa;
+    color: var(--brand-dark);
 }
 
-.profileButton:hover {
-    opacity: 0.8;
-    cursor: pointer;
+.buttonCancel:hover {
+    opacity: 0.85;
 }
 
 .infoBox {
@@ -170,19 +183,20 @@
 
 .sectionTitle {
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     color: var(--brand-dark);
+    letter-spacing: -0.3px;
 }
 
 .sectionDescription {
     margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 0.9rem;
-    color: var(--brand-dark);
-    opacity: 0.65;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #6b7280;
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
@@ -193,19 +207,33 @@
 }
 
 .statusEnabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     margin: 0;
-    font-size: 0.95rem;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 13px;
     font-family: 'IBM Plex Sans', sans-serif;
-    color: #16a34a;
     font-weight: 600;
+    color: #16a34a;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
 }
 
 .statusDisabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     margin: 0;
-    font-size: 0.95rem;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 13px;
     font-family: 'IBM Plex Sans', sans-serif;
-    color: #dc2626;
     font-weight: 600;
+    color: #dc2626;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
 }
 
 .statusText {
@@ -218,13 +246,18 @@
 .handlePassword {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     justify-content: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
 .handlePassword button {
-  align-self: flex-start;
+    align-self: flex-start;
+}
+
+.settingsCard .handlePassword button {
+    align-self: flex-end;
+    margin-top: 8px;
 }
 
 .accountBoxes {
@@ -236,57 +269,62 @@
 .settingsGrid {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     width: 100%;
 }
 
 .settingsCard {
     background-color: white;
     border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 28px 32px;
     width: 100%;
     box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .settingsCard input[type="password"],
 .settingsCard input[type="text"] {
-    border: 1.5px solid rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 11px 14px;
     width: 100%;
     box-sizing: border-box;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 14px;
     outline: none;
     background-color: #fafafa;
-    margin-top: 6px;
-    transition: border-color 0.2s ease;
+    margin-top: 8px;
+    color: var(--brand-dark);
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .settingsCard input[type="password"]:focus,
 .settingsCard input[type="text"]:focus {
     border-color: var(--brand-primary);
     background-color: white;
+    box-shadow: 0 0 0 3px rgba(222, 115, 86, 0.1);
+}
+
+.settingsCard input::placeholder {
+    color: #9ca3af;
 }
 
 .settingsCard .inputBox p {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--brand-dark);
+    color: #9ca3af;
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
+    letter-spacing: 1.5px;
 }
 
 .errorMessage {
-  color: #d32f2f;
-  margin-top: 8px;
-  font-size: 14px;
-  text-align: center;
-  font-weight: 500;
-  font-size: 20px;
+    color: #dc2626;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 /* still need to be checked */
 @media (max-width: 1080px) {
