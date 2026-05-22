@@ -26,7 +26,6 @@ export function TwoFAModal({
 }: TwoFAModalProps) {
     const [step, setStep] = useState<ModalStep>("choice");
     const [qrValue, setQrValue] = useState<string>("");
-    const [secret, setSecret] = useState<string>("");
     const [verificationCode, setVerificationCode] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [error, setError] = useState<string | null>(null);
@@ -39,7 +38,6 @@ export function TwoFAModal({
     const resetModal = () => {
         setStep("choice");
         setQrValue("");
-        setSecret("");
         setVerificationCode("");
         setPassword("");
         setError(null);
@@ -70,7 +68,6 @@ export function TwoFAModal({
 
             const data = await response.json();
             setQrValue(data.qrCodeURL);
-            setSecret(data.secret);
             setStep("enable-qr");
         } catch (err) {
             console.error("Error generating TOTP:", err);
@@ -240,15 +237,6 @@ export function TwoFAModal({
                     <div className={styles.totp_verify__spinner} />
                 </div>
             )}
-
-            <div className={styles.totp_verify__secret_box}>
-                <span className={styles.totp_verify__secret_label}>
-                    Can't scan? Enter this secret manually:
-                </span>
-                <div className={styles.totp_verify__secret_value}>
-                    {secret}
-                </div>
-            </div>
 
             {error && (
                 <div className={styles.totp_verify__error_message}>
