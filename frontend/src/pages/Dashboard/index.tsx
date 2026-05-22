@@ -305,9 +305,6 @@ export default function DashboardPage() {
                                 </div>
                             )
                         }
-                        {/* {files.map((file) => (
-                            <FileCard key={file.id} id={file.id} name={file.name} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
-                        ))} */}
                     </div>
                 )}
             </div>
