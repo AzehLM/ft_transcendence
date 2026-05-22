@@ -1,286 +1,267 @@
-.modalOverlay {
+/* ============================================================================
+   2FA MODAL COMPONENT (Same styling as SetupTOTP)
+   ============================================================================ */
+
+.totp_setup__overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: var(--color-dark-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    padding: var(--spacing-md);
+    z-index: 50;
 }
 
-.modalContent {
-    background-color: white;
-    border-radius: 8px;
-    padding: 2rem;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modalHeader {
-    margin-bottom: 1.5rem;
-}
-
-.modalTitle {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.modalBody {
-    margin-bottom: 1.5rem;
-}
-
-.description {
-    font-size: 0.95rem;
-    color: #666;
-    margin-bottom: 1rem;
-    line-height: 1.5;
-}
-
-.qrContainer {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background-color: #f5f5f5;
-    border-radius: 6px;
-}
-
-.qrImage {
-    max-width: 100%;
-    height: auto;
-}
-
-.secretKey {
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    text-align: center;
-    font-family: monospace;
-    word-break: break-all;
-}
-
-.secretLabel {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
-.inputBox {
-    margin-bottom: 1rem;
-}
-
-.inputLabel {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    font-size: 0.95rem;
-}
-
-.inputField {
+.totp_setup__modal {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 400px;
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 1rem;
+    padding: var(--spacing-3xl);
     box-sizing: border-box;
-    transition: border-color 0.2s;
 }
 
-.inputField:focus {
-    outline: none;
-    border-color: #4CAF50;
+.totp_setup__title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin: 0 0 var(--spacing-md) 0;
 }
 
-.recoveryCodesContainer {
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-}
-
-.recoveryCodesList {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    font-family: monospace;
-    font-size: 0.85rem;
-}
-
-.recoveryCode {
-    background-color: white;
-    padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    text-align: center;
-    word-break: break-all;
-}
-
-.errorMessage {
-    color: #d32f2f;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background-color: #ffebee;
-    border-radius: 6px;
-}
-
-.successMessage {
-    color: #388e3c;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background-color: #e8f5e9;
-    border-radius: 6px;
-}
-
-.warningMessage {
-    color: #f57c00;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background-color: #fff3e0;
-    border-radius: 6px;
-}
-
-.buttonsContainer {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-weight: 500;
-}
-
-.primaryButton {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.primaryButton:hover {
-    background-color: #45a049;
-}
-
-.primaryButton:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.dangerButton {
-    background-color: #d32f2f;
-    color: white;
-}
-
-.dangerButton:hover {
-    background-color: #b71c1c;
-}
-
-.secondaryButton {
-    background-color: #f0f0f0;
-    color: #333;
-    border: 1px solid #ddd;
-}
-
-.secondaryButton:hover {
-    background-color: #e0e0e0;
-}
-
-.steps {
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-}
-
-.stepsList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.stepItem {
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
+.totp_setup__description {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    color: #6b7280;
+    margin: 0 0 var(--spacing-md) 0;
     line-height: 1.5;
 }
 
-.stepNumber {
-    font-weight: 600;
-    color: #4CAF50;
+.totp_setup__qr_code_container {
+    display: flex;
+    justify-content: center;
+    background: var(--color-white);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-3xl);
 }
 
-.copyButton {
-    background-color: #2196F3;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
+.totp_setup__qr_code_image {
+    width: 256px;
+    height: 256px;
 }
 
-.copyButton:hover {
-    background-color: #1976D2;
+.totp_setup__loading_spinner {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-3xl) 0;
 }
 
-.spinner {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #4CAF50;
+.totp_setup__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--brand-light);
+    border-top-color: var(--brand-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
+    to {
         transform: rotate(360deg);
     }
 }
 
-.passwordValidation {
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background-color: #f5f5f5;
-    border-radius: 4px;
+.totp_setup__secret_box {
+    margin-bottom: var(--spacing-3xl);
 }
 
-.validationItem {
+.totp_setup__secret_label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0 0 var(--spacing-sm) 0;
+    display: block;
+}
+
+.totp_setup__secret_value {
+    background-color: var(--brand-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    word-break: break-all;
+    color: var(--brand-dark);
+}
+
+.totp_setup__warning_box {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-sm);
+}
+
+.totp_setup__warning_title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.totp_setup__warning_text {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #b45309;
+    margin: 0;
+}
+
+.totp_setup__codes_container {
+    margin-bottom: var(--spacing-md);
+    background-color: var(--brand-light);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    max-height: 192px;
+    overflow-y: auto;
+}
+
+.totp_setup__codes_list {
     display: flex;
-    align-items: center;
-    margin-bottom: 0.25rem;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
-.validationIcon {
-    margin-right: 0.5rem;
-    font-weight: bold;
+.totp_setup__code {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--brand-dark);
 }
 
-.valid {
-    color: #388e3c;
+.totp_setup__input_group {
+    margin-bottom: var(--spacing-md);
 }
 
-.invalid {
-    color: #d32f2f;
+.totp_setup__label {
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--brand-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.totp_setup__input {
+    width: 100%;
+    border: 1px solid var(--brand-dark);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 20px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--brand-dark);
+    background-color: var(--color-white);
+    box-sizing: border-box;
+}
+
+.totp_setup__input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.totp_setup__input:disabled {
+    opacity: 0.5;
+    background-color: var(--brand-light);
+    cursor: not-allowed;
+}
+
+.totp_setup__error_message {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: var(--radius-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+}
+
+.totp_setup__actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.totp_setup__action_button {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.totp_setup__action_button--primary {
+    background-color: var(--brand-primary);
+    color: var(--color-white);
+}
+
+.totp_setup__action_button--primary:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+.totp_setup__action_button--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.totp_setup__action_button--cancel {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_setup__action_button--cancel:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.totp_setup__action_button--cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.totp_setup__button_group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.totp_setup__secondary_button {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.totp_setup__secondary_button--secondary {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_setup__secondary_button--secondary:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.totp_setup__secondary_button--secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
