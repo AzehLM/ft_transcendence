@@ -262,7 +262,7 @@ export default function OrgFilesPage() {
         <div className={styles.headerSection}>
             <div className={styles.titleGroup}>
                 <h1>
-                    Personal space
+                    Organization space
                 </h1>
                 <h2 className={styles.subtitle}>
                     All files and folders
