@@ -8,8 +8,7 @@ import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
-import { ChevronRight } from "lucide-react";
-
+import { Breadcrumb } from "../../components/Breadcrumb";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -259,19 +258,8 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    <div className={styles.breadcrumb}>
-                    {breadcrumbs.map((item, index) => (
-                        <span key={index} className={styles.breadcrumbItem}>
-                        {index > 0 && <ChevronRight size={14} style={{ color: "#999" }} />}
-                        <button
-                        onClick={() => handleBreadcrumbClick(item, index)}
-                        className={`${styles.breadcrumbBtn} ${index === breadcrumbs.length - 1 ? styles.breadcrumbBtnActive : ""}`}
-                        >
-                        {item.name}
-                        </button>
-                        </span>
-                    ))}
-                    </div>
+                    <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbClick} />
+
 
                     {activeUploads.map(upload => (
                         <div key={upload.id} style={{ marginBottom: '20px' }}>
