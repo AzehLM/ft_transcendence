@@ -218,8 +218,8 @@ export default function AccountPage() {
                         Enable Two-Factor Authentication to add an extra layer of security to your account.
                     </p>
                     <div className={styles.statusRow}>
-                        <p className={styles.statusText}>
-                            Status: <strong>{isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}</strong>
+                        <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
+                            {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
                         </p>
                         <button
                             className={`${styles.buttonChange} ${styles.profileButton}`}

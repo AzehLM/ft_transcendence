@@ -189,7 +189,23 @@
 .statusRow {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+}
+
+.statusEnabled {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.statusDisabled {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #dc2626;
+    font-weight: 600;
 }
 
 .statusText {
