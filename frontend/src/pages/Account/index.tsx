@@ -171,8 +171,8 @@ export default function AccountPage() {
     return (
 
         <SettingsLayout>
-            <div className={styles.accountBoxes}>
-                <div className={styles.mainBox}>
+            <div className={styles.settingsGrid}>
+                <div className={styles.settingsCard}>
                     <h2 className={styles.sectionTitle}>Security</h2>
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
@@ -212,7 +212,7 @@ export default function AccountPage() {
                         >Update Password</button>
                     </div>
                 </div>
-                <div className={styles.mainBox}>
+                <div className={styles.settingsCard}>
                     <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
                     <p className={styles.sectionDescription}>
                         Enable Two-Factor Authentication to add an extra layer of security to your account.

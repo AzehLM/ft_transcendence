@@ -1,16 +1,13 @@
 .page {
     flex: 1;
-    padding: 2rem;
     overflow-y: auto;
-    /* position: relative; */
     width: 100%;
     background-color: #f5f5f5;
     font-family: 'IBM Plex Sans', sans-serif;
-
 }
 
 .contentArea {
-    padding: 5%;
+    padding: 32px 40px;
 }
 
 .title {
@@ -191,8 +188,9 @@
 
 .statusRow {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 24px;
 }
 
 .statusText {
@@ -218,6 +216,53 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+.settingsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+.settingsCard {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    padding: 28px 32px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.settingsCard input[type="password"],
+.settingsCard input[type="text"] {
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    background-color: #fafafa;
+    margin-top: 6px;
+    transition: border-color 0.2s ease;
+}
+
+.settingsCard input[type="password"]:focus,
+.settingsCard input[type="text"]:focus {
+    border-color: var(--brand-primary);
+    background-color: white;
+}
+
+.settingsCard .inputBox p {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-dark);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
 }
 
 .errorMessage {
