@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownloadOrg } from "../../hooks/useE2EEDownloadOrg";
 import styles from "../Dashboard/Dashboard.module.css";
+import { OrgLayout } from "./OrgLayout";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -177,6 +178,7 @@ export default function OrgFilesPage() {
 
   return (
     <>
+    <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.uploadContainer} style={{ margin: "20px 5%", marginTop: 0 }}>
         {error && (
           <div className={`${styles.statusMessage} ${styles.error}`}>
@@ -272,6 +274,7 @@ export default function OrgFilesPage() {
         onMoveFolder={handleMoveFolder}
         onMoveFile={handleMoveFile}
       />
+    </OrgLayout>
     </>
   );
 }

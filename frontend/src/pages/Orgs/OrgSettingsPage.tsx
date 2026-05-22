@@ -86,7 +86,7 @@ export default function OrgSettingsPage() {
 
   if (loading) {
     return (
-      <OrgLayout title="" showActionButtons={false}>
+      <OrgLayout orgName={orgName} orgDesc={orgDesc}>
         <div className={styles.container}>
            <div className={styles.sectionCard}>
              <p className={styles.subtitle}>Loading settings...</p>
@@ -97,7 +97,7 @@ export default function OrgSettingsPage() {
   }
 
   return (
-    <OrgLayout title="" showActionButtons={false}>
+      <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
         <div className={styles.headerSection}>
           <h1>Organization Settings</h1>
