@@ -32,8 +32,8 @@ export function VerifyTOTP({
             setLoading(true);
             setError("");
             const data = await verifyTOTPLogin(code, tempToken);
-            localStorage.setItem("token", data.token);
-            onSuccess(data.token);
+            localStorage.setItem("token", data.access_token);
+            onSuccess(data.access_token);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Invalid code");
             setCode("");
@@ -52,7 +52,7 @@ export function VerifyTOTP({
             setLoading(true);
             setError("");
             const data = await verifyRecoveryCode(code, tempToken);
-            localStorage.setItem("token", data.token);
+            localStorage.setItem("token", data.access_token);
             setRemainingCodes(data.remaining);
 
             // Show warning and complete
@@ -60,7 +60,7 @@ export function VerifyTOTP({
                 console.warn(data.warning);
             }
 
-            onSuccess(data.token);
+            onSuccess(data.access_token);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Invalid recovery code");
             setCode("");

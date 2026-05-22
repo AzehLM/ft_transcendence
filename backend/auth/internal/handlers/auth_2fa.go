@@ -323,9 +323,8 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
 	// Hash and save refresh token to database
 	hashedRefreshToken := hashToken(rawRefreshToken)
-	user.RefreshToken = &hashedRefreshToken
 
-	if err := h.DB.Save(&user).Error; err != nil {
+	if err := h.DB.Model(&user).Update("refresh_token", hashedRefreshToken).Error; err != nil {
 		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v\n", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
@@ -476,9 +475,8 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	// Hash and save refresh token to database
 	hashedRefreshToken := hashToken(rawRefreshToken)
-	user.RefreshToken = &hashedRefreshToken
 
-	if err := h.DB.Save(&user).Error; err != nil {
+	if err := h.DB.Model(&user).Update("refresh_token", hashedRefreshToken).Error; err != nil {
 		log.Printf("[ERROR] VerifyRecoveryCode: Failed to save refresh token for %s: %v\n", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
