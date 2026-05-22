@@ -258,13 +258,27 @@
 
     .orgCard {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
         padding: 16px;
         gap: 16px;
     }
 
     .orgInfo {
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orgName,
+     .orgDesc {
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
     }
 
     .orgActions {
@@ -279,6 +293,10 @@
 }
 
 @media (max-width: 480px) {
+    .titleGroup h1 {
+        font-size: 28px;
+    }
+
     .orgActions {
         flex-direction: column;
         align-items: flex-start;

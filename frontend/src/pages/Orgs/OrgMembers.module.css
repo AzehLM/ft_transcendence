@@ -251,6 +251,7 @@
 }
 
 @media (max-width: 480px) {
+
     .memberActions {
         flex-direction: row;
         align-items: center;
