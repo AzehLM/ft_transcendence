@@ -1,11 +1,13 @@
 import styles from "./TwoFAModal.module.css";
 import { useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
+import { generateLoginData } from "../../services/crypto.service";
 import { QRCodeSVG } from "qrcode.react";
 
 interface TwoFAModalProps {
     isOpen: boolean;
     isTwoFAEnabled: boolean;
+    email: string;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -21,6 +23,7 @@ type ModalStep =
 export function TwoFAModal({
     isOpen,
     isTwoFAEnabled,
+    email,
     onClose,
     onSuccess,
 }: TwoFAModalProps) {
@@ -61,7 +64,7 @@ export function TwoFAModal({
 
             if (!response.ok) {
                 const data = await response.json();
-                setError(data.message || "Failed to generate TOTP");
+                setError(data.error || "Failed to generate TOTP");
                 setLoading(false);
                 return;
             }
@@ -93,7 +96,7 @@ export function TwoFAModal({
 
             if (!response.ok) {
                 const data = await response.json();
-                setError(data.message || "Failed to verify code");
+                setError(data.error || "Failed to verify code");
                 setLoading(false);
                 return;
             }
@@ -118,14 +121,16 @@ export function TwoFAModal({
         setLoading(true);
         setError(null);
         try {
+            const { loginData } = await generateLoginData(email, password);
+
             const response = await fetchWithRefresh("/api/auth/2fa/disable", {
                 method: "POST",
-                body: JSON.stringify({ password }),
+                body: JSON.stringify({ password: loginData.auth_hash }),
             });
 
             if (!response.ok) {
                 const data = await response.json();
-                setError(data.message || "Failed to disable 2FA");
+                setError(data.error || "Failed to disable 2FA");
                 setLoading(false);
                 return;
             }
@@ -134,7 +139,7 @@ export function TwoFAModal({
             onSuccess();
         } catch (err) {
             console.error("Error disabling 2FA:", err);
-            setError("Network error, please try again.");
+            setError("Wrong password or network error.");
         } finally {
             setLoading(false);
         }

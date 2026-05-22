@@ -241,6 +241,7 @@ export default function AccountPage() {
                 <TwoFAModal
                     isOpen={isTwoFAModalOpen}
                     isTwoFAEnabled={isTwoFAEnabled}
+                    email={email}
                     onClose={() => setIsTwoFAModalOpen(false)}
                     onSuccess={() => {
                         setIsTwoFAEnabled(!isTwoFAEnabled);
