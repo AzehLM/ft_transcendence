@@ -40,7 +40,7 @@
     font-size: 16px;
     color: #8c7b75;
     margin: 0;
-    font-weight: 500;
+    font-weight: 700;
 }
 
 .foldersGrid {
@@ -48,4 +48,10 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px;
   margin-bottom: 24px;
+}
+
+
+.filesList {
+  display: flex;
+  flex-direction: column;
 }
