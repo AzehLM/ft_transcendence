@@ -13,30 +13,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     border: none;
     border-radius: 50%;
-    background-color: rgba(230, 225, 224, 0.684);
+    background-color: #e0e0e0;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.139);
 }
 
-.profileButton:hover {
-    background-color: rgba(230, 225, 224, 0.819);
-    transform: scale(1.05);
-}
-
-.profileButtonOpen {
-    background-color: rgba(230, 225, 224, 0.819);
-}
+ .profileButtonOpen {
+     background-color: #d0d0d0;
+ }
 
 .profileIcon {
-    width: 30px;
-    height: 30px;
-    color: var(--brand-primary);
+    width: 20px;
+    height: 20px;
+    color: #666;
 }
+
 
 .settingsIconButton {
     display: flex;

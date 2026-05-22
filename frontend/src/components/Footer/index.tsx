@@ -18,9 +18,9 @@ const FOOTER_COLUMNS = [
     },
 ];
 
-export function Footer() {
+export function Footer({ hasSidebar = false }: { hasSidebar?: boolean }) {
     return (
-        <footer className={styles.footer}>
+        <footer className={`${styles.footer} ${hasSidebar ? styles.footerWithSidebar : ''}`}>
             <div className={styles.footerGrid}>
                 {/* Brand */}
                 <div>
