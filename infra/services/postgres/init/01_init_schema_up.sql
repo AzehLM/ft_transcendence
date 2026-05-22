@@ -18,8 +18,6 @@ CREATE TABLE users (
     refresh_token VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    avatar_url VARCHAR(255),
-    recovery_key_hash BYTEA,
     two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     totp_secret_encrypted BYTEA,
     recovery_codes_hashed BYTEA
