@@ -1,4 +1,4 @@
-import { FileCard } from "../FileCard";
+import { FileCard } from "../FileCardOrg";
 import styles from "./FileGrid.module.css";
 import { OrgHeader } from "../OrgHeader";
 import { FolderItem } from "../../services/files.service";

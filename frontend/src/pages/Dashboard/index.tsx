@@ -1,4 +1,4 @@
-import { FileCard } from "../../components/FileCard"
+import { FileCard } from "../../components/FileCardOrg"
 import { ActionButtons } from "../../components/ActionButtons"
 import { useState, useEffect } from "react";
 import styles from "./Dashboard.module.css";
@@ -285,9 +285,6 @@ export default function DashboardPage() {
                                 </div>
                             )
                         }
-                        {/* {folders.map((folder) => (
-                            <FileCard key={folder.id} id={folder.id} name={folder.name} isFolder={true} onDelete={handleDeleteFolder} onDownload={downloadAndDecrypt} onRename={handleRenameFolder} onMove={handleMoveFolder} />
-                        ))} */}
                         {files.map((file) => (
                             <FileCard key={file.id} id={file.id} name={file.name} onDelete={handleDeleteFile} onDownload={downloadAndDecrypt} onMove={handleMoveFile} />
                         ))}
