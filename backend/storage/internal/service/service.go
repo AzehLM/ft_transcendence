@@ -67,6 +67,7 @@ type StorageService interface {
 	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error)
 	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
+	GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error)
 }
 
 type storageService struct {
@@ -635,7 +636,6 @@ func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delt
 	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
 }
 
-
 // multipart
 // https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
 func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
@@ -836,4 +836,28 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 
 	// again, no need to decrement user space here as the file is still PENDING
 	return s.repo.DeleteFile(file.ID)
+}
+
+func (s *storageService) GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error) {
+    folders, err := s.repo.GetFolderPath(folderID)
+ 	if err != nil {
+ 		if errors.Is(err, gorm.ErrRecordNotFound) {
+ 			return nil, ErrNotFound
+ 		}
+ 		return nil, err
+ 	}
+    if len(folders) == 0 {
+        return nil, ErrNotFound
+    }
+
+    rootFolder := folders[0]
+    err = s.rbac.CanReadFile(userID, rootFolder.OwnerUserID, rootFolder.OrgID)
+	if err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
+    }
+
+    return folders, nil
 }

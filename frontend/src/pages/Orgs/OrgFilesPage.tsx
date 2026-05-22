@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileItem } from "../../services/files.service";
+import { FileItem, FilesService, FolderItem } from "../../services/files.service";
 import { FileGrid } from "../../components/FileGrid";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
@@ -10,49 +10,68 @@ import styles from "../Dashboard/Dashboard.module.css";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
+  const { folderId } = useParams();
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
+
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
 
-  const loadFiles = async () => {
-    try {
-      const res = await fetchWithRefresh(`/api/storage/${id}/folders/00000000-0000-0000-0000-000000000000/contents`);
-      if (!res.ok) throw new Error("Failed to fetch files.");
-      const data = await res.json();
-      setFiles(data.files || []);
-    } catch (err) {
-      setError("Failed to load org files.");
-    }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setSuccess("");
+        const response = folderId
+          ? await FilesService.getOrgaFilesFolders(folderId, id!)
+          : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
+        setFiles(response.files || []);
+        setFolders(response.folders || []);
+      } catch (err: any) {
+        if (err.status === 400 || err.status === 404) {
+          navigate("/404");
+          return;
+        }
+        setError("Failed to load files.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [folderId, id]);
+
+  const loadFiles = async (currentFolderId?: string) => {
+    setSuccess("");
+    setError(null);
+    const response = currentFolderId
+      ? await FilesService.getOrgaFilesFolders(currentFolderId, id!)
+      : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
+    setFiles(response.files || []);
+    setFolders(response.folders || []);
   };
 
   useEffect(() => {
-  fetchWithRefresh(`/api/orgs/${id}`)
-    .then(res => {
-      if (res.status === 404 || res.status === 400) {
-        navigate("/404");
-        return;
-      }
-      if (!res.ok) throw new Error("Failed to fetch org.");
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        setOrgName(data.name);
-        setOrgDesc(data.description);
-      }
-    })
-    .catch(() => setOrgName("Unknown"));
-
-    loadFiles()
-      .finally(() => setLoading(false));
+    fetchWithRefresh(`/api/orgs/${id}`)
+      .then(res => {
+        if (res.status === 404 || res.status === 400) { navigate("/404"); return; }
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); } })
+      .catch(() => setOrgName("Unknown"));
   }, [id]);
 
   const { uploadFile, uploads } = useE2EEUpload(() => {
-    loadFiles();
-  }, id);
+    setSuccess("");
+    setError(null);
+    loadFiles(folderId);
+  }, id, folderId);
   
   const activeUploads = Object.values(uploads);
 
@@ -62,42 +81,99 @@ export default function OrgFilesPage() {
     downloadAndDecryptOrg(fileId, id!);
   };
 
-  const handleDelete = async (fileId: string) => {
-      const response = await fetchWithRefresh(`/api/files/${fileId}`, { method: "DELETE" });
-      if (!response.ok) {
-        const text = await response.text();
-        let message = "Failed to delete file.";
-        try {
-          if (text) {
-            const data = JSON.parse(text);
-            message = data.error || data.message || message;
-          }
-        } catch {}
-        setError(message);
-        return;
-      }
-      setFiles(prev => prev.filter(f => f.id !== fileId));
+  const handleDeleteFile = async (fileId: string) => {
+        setSuccess("");
+        setError(null);
+         try {
+             await FilesService.deleteFile(fileId);
+             await loadFiles(folderId);
+             setSuccess("File deleted");
+         } catch (err) {
+             const errorMessage = err instanceof Error ? err.message : "Unknown error";
+             console.error("Failed to delete file:", err);
+             setError(`Failed to delete file: ${errorMessage}`);
+         }
   };
 
-  const handleCreateFolder = async () => {
-    const folderName = prompt("Enter folder name:");
-    if (!folderName) return;
+  const handleDeleteFolder = async (folderIdDeleted: string) => {
+    setSuccess("");
+    setError(null);
+      try {
+          await FilesService.deleteFolder(folderIdDeleted);
+          await loadFiles(folderId);
+          setSuccess("Folder deleted");
+      } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Unknown error";
+          console.error("Failed to delete folder:", err);
+          setError(`Failed to delete folder: ${errorMessage}`);
+      }
+  };
+
+  const handleCreateFolder = async (name: string) => {
+    setSuccess("");
+    setError(null);
 
     try {
-      setError(null);
-      await fetchWithRefresh(`/api/folders`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: folderName,
-          org_id: id,
-        }),
-      });
-      await loadFiles();
-    } catch (err) {
+      await FilesService.createFolder(name, folderId, id);
+      await loadFiles(folderId);
+    } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to create folder: ${errorMessage}`);
     }
   };
+
+  const handleRenameFolder = async (id: string, newName: string) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.updateFolder(id, {
+              name: newName,
+          });
+          await loadFiles(folderId);
+          setSuccess("Folder renamed");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("Folder not found.");
+          } else {
+              setError(err.message || "Failed to rename folder.");
+          }
+      }
+  };
+
+  const handleMoveFolder = async (id: string, newParentId: string | null) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.updateFolder(id, {
+              parent_id: newParentId,
+          });
+          await loadFiles(folderId);
+          setSuccess("Folder moved");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("File or folder not found.");
+          } else {
+              setError(err.message || "Failed to move.");
+          }
+      }
+  };
+
+
+  const handleMoveFile = async (id: string, newParentId: string | null) => {
+      setSuccess("");
+      setError(null);
+      try {
+          await FilesService.moveFile(id, newParentId);
+          await loadFiles(folderId);
+          setSuccess("File moved");
+      } catch (err: any) {
+          if (err.status === 404) {
+              setError("File or folder not found.");
+          } else {
+              setError(err.message || "Failed to move.");
+          }
+      }
+    };
 
   return (
     <>
@@ -106,6 +182,11 @@ export default function OrgFilesPage() {
           <div className={`${styles.statusMessage} ${styles.error}`}>
             {error}
           </div>
+        )}
+        {success && (
+            <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}`}>
+                {success}
+            </div>
         )}
 
         {activeUploads.map(upload => (
@@ -176,16 +257,20 @@ export default function OrgFilesPage() {
         title="Organization files"
         subtitle="All files"
         files={files}
+        folders={folders}
         loading={loading}
-        error={error}
-        onDelete={handleDelete}
+        onDeleteFile={handleDeleteFile}
+        onDeleteFolder={handleDeleteFolder}
         orgName={orgName}
         orgId={id}
         orgDesc={orgDesc}
-      showActionButtons={true}
+        showActionButtons={true}
         onUploadFile={uploadFile}
         onCreateFolder={handleCreateFolder}
         onDownloadFile={handleDownload}
+        onRename={handleRenameFolder}
+        onMoveFolder={handleMoveFolder}
+        onMoveFile={handleMoveFile}
       />
     </>
   );

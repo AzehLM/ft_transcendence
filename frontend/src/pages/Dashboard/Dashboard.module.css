@@ -230,9 +230,9 @@
     bottom: 0;
     right: 0;
     background: linear-gradient(
-        90deg, 
-        rgba(255,255,255,0) 0%, 
-        rgba(255,255,255,0.2) 50%, 
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.2) 50%,
         rgba(255,255,255,0) 100%
     );
     animation: shimmer 2.5s infinite linear;
@@ -278,6 +278,33 @@
 
 .myAnimatedElement {
     animation: fadeIn 0.5s ease-in-out;
+}
+
+
+.breadcrumbBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--brand-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.breadcrumbBtn:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.breadcrumbBtnActive {
+  cursor: default;
+  font-weight: 600;
+  color: var(--brand-dark);
+}
+
+.breadcrumbBtnActive:hover {
+  background: none;
 }
 
 @keyframes fadeInUp {

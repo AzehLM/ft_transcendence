@@ -27,6 +27,13 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
           Dashboard
         </Link>
         <Link
+          to="/organizations"
+          onClick={onClose}
+          className={styles.dropdown__item}
+        >
+          Organizations
+        </Link>
+        <Link
           to="/profile"
           onClick={onClose}
           className={styles.dropdown__item}

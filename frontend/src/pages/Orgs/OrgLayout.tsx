@@ -13,12 +13,13 @@ interface OrgLayoutProps {
 
 
 export function OrgLayout({ title, orgName, orgDesc, showActionButtons = false, children }: OrgLayoutProps) {
+  const hasHeaderContent = orgName || orgDesc || showActionButtons;
 
   return (
         <div className={styles.page}>
-          <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} />
-          <div className={styles.contentArea}>
-            <h1 className={styles.title}>{title}</h1>
+          {hasHeaderContent && <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} />}
+          <div className={hasHeaderContent ? styles.contentArea : styles.contentAreaNoButtons}>
+            {title && <h1 className={styles.title}>{title}</h1>}
             <div className={orgaStyles.childrenArea}>
                 {children}
             </div>
