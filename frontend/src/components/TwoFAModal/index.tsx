@@ -168,37 +168,35 @@ export function TwoFAModal({
 
     const renderChoice = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Two-Factor Authentication
             </h2>
 
-            <div>
-                <p className={styles.totp_setup__description}>
-                    Current status: <strong>{isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}</strong>
-                </p>
-                <p className={styles.totp_setup__description}>
-                    Two-Factor Authentication adds an extra layer of security to your account by requiring
-                    a code from your authenticator app in addition to your password.
-                </p>
-            </div>
+            <p className={styles.totp_verify__description}>
+                Current status: <strong>{isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}</strong>
+            </p>
+            <p className={styles.totp_verify__description}>
+                Two-Factor Authentication adds an extra layer of security to your account by requiring
+                a code from your authenticator app in addition to your password.
+            </p>
 
             {error && (
-                <div className={styles.totp_setup__error_message}>
+                <div className={styles.totp_verify__error_message}>
                     {error}
                 </div>
             )}
 
-            <div className={styles.totp_setup__actions}>
+            <div className={styles.totp_verify__actions}>
                 <button
                     onClick={handleClose}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
                 >
                     Cancel
                 </button>
                 {isTwoFAEnabled ? (
                     <button
                         onClick={() => setStep("disable-password")}
-                        className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                        className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                     >
                         Disable 2FA
                     </button>
@@ -206,7 +204,7 @@ export function TwoFAModal({
                     <button
                         onClick={handleGenerateTOTP}
                         disabled={loading}
-                        className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                        className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                     >
                         {loading ? "Generating..." : "Enable 2FA"}
                     </button>
@@ -217,58 +215,58 @@ export function TwoFAModal({
 
     const renderEnableQR = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Enable 2FA
             </h2>
 
-            <p className={styles.totp_setup__description}>
+            <p className={styles.totp_verify__description}>
                 Scan this QR code with your authenticator app (Google Authenticator, Authy, Microsoft Authenticator, etc.)
             </p>
 
             {qrValue && (
-                <div className={styles.totp_setup__qr_code_container}>
+                <div className={styles.totp_verify__qr_code_container}>
                     <QRCodeSVG
                         value={qrValue}
                         size={256}
                         level="H"
                         includeMargin={true}
-                        className={styles.totp_setup__qr_code_image}
+                        className={styles.totp_verify__qr_code_image}
                     />
                 </div>
             )}
 
             {!qrValue && loading && (
-                <div className={styles.totp_setup__loading_spinner}>
-                    <div className={styles.totp_setup__spinner} />
+                <div className={styles.totp_verify__loading_spinner}>
+                    <div className={styles.totp_verify__spinner} />
                 </div>
             )}
 
-            <div className={styles.totp_setup__secret_box}>
-                <span className={styles.totp_setup__secret_label}>
+            <div className={styles.totp_verify__secret_box}>
+                <span className={styles.totp_verify__secret_label}>
                     Can't scan? Enter this secret manually:
                 </span>
-                <div className={styles.totp_setup__secret_value}>
+                <div className={styles.totp_verify__secret_value}>
                     {secret}
                 </div>
             </div>
 
             {error && (
-                <div className={styles.totp_setup__error_message}>
+                <div className={styles.totp_verify__error_message}>
                     {error}
                 </div>
             )}
 
-            <div className={styles.totp_setup__actions}>
+            <div className={styles.totp_verify__actions}>
                 <button
                     onClick={() => setStep("choice")}
                     disabled={loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={() => setStep("enable-verify")}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                 >
                     Next
                 </button>
@@ -278,15 +276,15 @@ export function TwoFAModal({
 
     const renderEnableVerify = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Verify 2FA
             </h2>
 
-            <p className={styles.totp_setup__description}>
+            <p className={styles.totp_verify__label}>
                 Enter the 6-digit code from your authenticator app:
             </p>
 
-            <div className={styles.totp_setup__input_group}>
+            <div className={styles.totp_verify__input_group}>
                 <input
                     type="text"
                     placeholder="000000"
@@ -297,29 +295,29 @@ export function TwoFAModal({
                         setError(null);
                     }}
                     maxLength={6}
-                    className={styles.totp_setup__input}
+                    className={`${styles.totp_verify__input} ${styles.totp_verify__input_code}`}
                     disabled={loading}
                 />
             </div>
 
             {error && (
-                <div className={styles.totp_setup__error_message}>
+                <div className={styles.totp_verify__error_message}>
                     {error}
                 </div>
             )}
 
-            <div className={styles.totp_setup__actions}>
+            <div className={styles.totp_verify__actions}>
                 <button
                     onClick={() => setStep("enable-qr")}
                     disabled={loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={handleVerifyTOTP}
                     disabled={verificationCode.length !== 6 || loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                 >
                     {loading ? "Verifying..." : "Verify"}
                 </button>
@@ -329,39 +327,37 @@ export function TwoFAModal({
 
     const renderEnableRecovery = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Save Recovery Codes
             </h2>
 
-            <div className={styles.totp_setup__warning_box}>
-                <p className={styles.totp_setup__warning_title}>
-                    ⚠️ Important
-                </p>
-                <p className={styles.totp_setup__warning_text}>
+            <div className={styles.totp_verify__warning_message}>
+                <strong>⚠️ Important</strong>
+                <p>
                     These codes will only be shown once. Save them in a safe place offline. Each code can be used once if you lose access to your authenticator.
                 </p>
             </div>
 
-            <div className={styles.totp_setup__codes_container}>
-                <div className={styles.totp_setup__codes_list}>
+            <div className={styles.totp_verify__codes_container}>
+                <div className={styles.totp_verify__codes_list}>
                     {recoveryCodes.map((code, index) => (
-                        <div key={index} className={styles.totp_setup__code}>
+                        <div key={index} className={styles.totp_verify__code}>
                             {code}
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className={styles.totp_setup__button_group}>
+            <div className={styles.totp_verify__button_group}>
                 <button
                     onClick={copyRecoveryCodes}
-                    className={`${styles.totp_setup__secondary_button} ${styles["totp_setup__secondary_button--secondary"]}`}
+                    className={styles.totp_verify__secondary_button}
                 >
                     {showCopyModal ? "Copied!" : "Copy All"}
                 </button>
                 <button
                     onClick={downloadRecoveryCodes}
-                    className={`${styles.totp_setup__secondary_button} ${styles["totp_setup__secondary_button--secondary"]}`}
+                    className={styles.totp_verify__secondary_button}
                 >
                     Download
                 </button>
@@ -372,7 +368,7 @@ export function TwoFAModal({
                     resetModal();
                     onSuccess();
                 }}
-                className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
             >
                 Complete Setup
             </button>
@@ -381,15 +377,15 @@ export function TwoFAModal({
 
     const renderDisablePassword = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Disable Two-Factor Authentication
             </h2>
 
-            <p className={styles.totp_setup__description}>
+            <p className={styles.totp_verify__label}>
                 To disable 2FA, please confirm your password:
             </p>
 
-            <div className={styles.totp_setup__input_group}>
+            <div className={styles.totp_verify__input_group}>
                 <input
                     type="password"
                     placeholder="Enter your password"
@@ -398,29 +394,29 @@ export function TwoFAModal({
                         setPassword(e.target.value);
                         setError(null);
                     }}
-                    className={styles.totp_setup__input}
+                    className={styles.totp_verify__input}
                     disabled={loading}
                 />
             </div>
 
             {error && (
-                <div className={styles.totp_setup__error_message}>
+                <div className={styles.totp_verify__error_message}>
                     {error}
                 </div>
             )}
 
-            <div className={styles.totp_setup__actions}>
+            <div className={styles.totp_verify__actions}>
                 <button
                     onClick={() => setStep("choice")}
                     disabled={loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={() => setStep("disable-confirm")}
                     disabled={loading || !password}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                 >
                     Continue
                 </button>
@@ -430,37 +426,35 @@ export function TwoFAModal({
 
     const renderDisableConfirm = () => (
         <>
-            <h2 className={styles.totp_setup__title}>
+            <h2 className={styles.totp_verify__title}>
                 Confirm Disable 2FA
             </h2>
 
-            <div className={styles.totp_setup__warning_box}>
-                <p className={styles.totp_setup__warning_title}>
-                    ⚠️ Warning
-                </p>
-                <p className={styles.totp_setup__warning_text}>
+            <div className={styles.totp_verify__warning_message}>
+                <strong>⚠️ Warning</strong>
+                <p>
                     Are you sure you want to disable Two-Factor Authentication? Your account will be less secure.
                 </p>
             </div>
 
             {error && (
-                <div className={styles.totp_setup__error_message}>
+                <div className={styles.totp_verify__error_message}>
                     {error}
                 </div>
             )}
 
-            <div className={styles.totp_setup__actions}>
+            <div className={styles.totp_verify__actions}>
                 <button
                     onClick={() => setStep("disable-password")}
                     disabled={loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={handleDisable2FA}
                     disabled={loading}
-                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
                 >
                     {loading ? "Disabling..." : "Disable 2FA"}
                 </button>
@@ -469,8 +463,8 @@ export function TwoFAModal({
     );
 
     return (
-        <div className={styles.totp_setup__overlay} onClick={handleClose}>
-            <div className={styles.totp_setup__modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.totp_verify__overlay} onClick={handleClose}>
+            <div className={styles.totp_verify__modal} onClick={(e) => e.stopPropagation()}>
                 {step === "choice" && renderChoice()}
                 {step === "enable-qr" && renderEnableQR()}
                 {step === "enable-verify" && renderEnableVerify()}
