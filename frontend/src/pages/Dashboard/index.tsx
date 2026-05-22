@@ -9,6 +9,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { Breadcrumb } from "../../components/Breadcrumb";
+import { UploadStatus } from "../../components/UploadStatus.tsx";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -247,82 +248,14 @@ export default function DashboardPage() {
                 </div>
 
                 <div className={styles.uploadContainer}>
-                    {error && (
-                        <div className={`${styles.statusMessage} ${styles.error}  ${hideMessage ? styles.hide : ''}`}>
-                            {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div className={`${styles.statusMessage} ${success.includes('Erreur') ? styles.error : styles.success}  ${hideMessage ? styles.hide : ''}`}>
-                            {success}
-                        </div>
-                    )}
-
                     <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbClick} />
-
-
-                    {activeUploads.map(upload => (
-                        <div key={upload.id} style={{ marginBottom: '20px' }}>
-                            <div className={`${styles.statusMessage} ${upload.status.includes('Erreur') ? styles.error : styles.loading}`}>
-                                {!upload.status.includes('Erreur') && <span className={styles.statusDot}></span>}
-                                {upload.status}
-                            </div>
-
-                            <div className={styles.fileInfoCard}>
-                                <div className={styles.fileName}>{upload.fileInfo.name}</div>
-                                <div className={styles.fileDetails}>
-                                    <span><strong>Type:</strong> {upload.fileInfo.type}</span>
-                                    <span><strong>Taille:</strong> {upload.fileInfo.size}</span>
-                                </div>
-                            </div>
-
-                            {upload.progress && (
-                                <div className={styles.progressContainer}>
-                                    <div className={styles.progressHeader}>
-                                        <div className={styles.progressTitleContainer}>
-                                            <div className={styles.progressTitle}>Chiffrement & Upload</div>
-                                            <div className={styles.progressSubtitle}>{upload.fileInfo.name}</div>
-                                        </div>
-                                        <div className={styles.progressPercentage}>{upload.progress.percentage}%</div>
-                                    </div>
-                                    <div className={styles.progressBarContainer}>
-                                        <div className={styles.progressBar}>
-                                            <div
-                                                className={styles.progressFill}
-                                                style={{ width: `${upload.progress.percentage}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className={styles.progressMetrics}>
-                                        <div className={styles.metric}>
-                                            <div className={styles.metricLabel}>Vitesse</div>
-                                            <div className={styles.metricValue}>
-                                                {(upload.progress.speed / (1024 * 1024)).toFixed(2)} MB/s
-                                            </div>
-                                        </div>
-                                        <div className={styles.metric}>
-                                            <div className={styles.metricLabel}>Progression</div>
-                                            <div className={styles.metricValue}>
-                                                {((upload.progress.uploadedBytes) / (1024 * 1024)).toFixed(1)} / {((upload.progress.totalBytes) / (1024 * 1024)).toFixed(0)} MB
-                                            </div>
-                                        </div>
-                                        <div className={styles.metric}>
-                                            <div className={styles.metricLabel}>Temps restant</div>
-                                            <div className={styles.metricValue}>
-                                                {Math.round(upload.progress.remainingTime)}s
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {downloadStatus && (
-                        <div className={`${styles.statusMessage} ${downloadStatus.includes('Erreur') ? styles.error : styles.success}`}>
-                            {downloadStatus}
-                        </div>
-                    )}
+                    <UploadStatus
+                        uploads={activeUploads}
+                        downloadStatus={downloadStatus}
+                        error={error}
+                        success={success}
+                        hideMessage={hideMessage}
+                    />
                 </div>
 
                 {loading ? (
