@@ -173,7 +173,7 @@ export default function AccountPage() {
         <SettingsLayout>
             <div className={styles.accountBoxes}>
                 <div className={styles.mainBox}>
-                    <h2 className={styles.subtitle}>Security</h2>
+                    <h2 className={styles.sectionTitle}>Security</h2>
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
@@ -213,22 +213,20 @@ export default function AccountPage() {
                     </div>
                 </div>
                 <div className={styles.mainBox}>
-                    <h2 className={styles.subtitle}>Two-Factor Authentication</h2>
-                    <p style={{ marginBottom: "1rem", fontSize: "0.9rem", color: "#666" }}>
+                    <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
+                    <p className={styles.sectionDescription}>
                         Enable Two-Factor Authentication to add an extra layer of security to your account.
                     </p>
-                    <div className={styles.handlePassword}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                            <p style={{ margin: 0 }}>
-                                Status: <strong>{isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}</strong>
-                            </p>
-                            <button
-                                className={`${styles.buttonChange} ${styles.profileButton}`}
-                                onClick={() => setIsTwoFAModalOpen(true)}
-                            >
-                                {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
-                            </button>
-                        </div>
+                    <div className={styles.statusRow}>
+                        <p className={styles.statusText}>
+                            Status: <strong>{isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}</strong>
+                        </p>
+                        <button
+                            className={`${styles.buttonChange} ${styles.profileButton}`}
+                            onClick={() => setIsTwoFAModalOpen(true)}
+                        >
+                            {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
+                        </button>
                     </div>
                 </div>
                 <ConfirmationModal
