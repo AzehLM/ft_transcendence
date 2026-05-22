@@ -11,7 +11,6 @@ interface SetupTOTPProps {
 export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
     const [step, setStep] = useState<"qr" | "verify" | "recovery">("qr");
     const [qrValue, setQrValue] = useState<string>("");
-    const [secret, setSecret] = useState<string>("");
     const [verificationCode, setVerificationCode] = useState<string>("");
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -26,7 +25,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                 setError("");
                 const data = await generateTOTPSecret();
                 setQrValue(data.qrCodeURL);
-                setSecret(data.secret);
             } catch (err) {
                 setError(
                     err instanceof Error ? err.message : "Failed to generate QR code"
