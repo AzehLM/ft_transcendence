@@ -1,0 +1,286 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: white;
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modalHeader {
+    margin-bottom: 1.5rem;
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modalBody {
+    margin-bottom: 1.5rem;
+}
+
+.description {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.qrContainer {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+}
+
+.qrImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.secretKey {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+.secretLabel {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.inputBox {
+    margin-bottom: 1rem;
+}
+
+.inputLabel {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.inputField {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.inputField:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.recoveryCodesContainer {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.recoveryCodesList {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.recoveryCode {
+    background-color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    text-align: center;
+    word-break: break-all;
+}
+
+.errorMessage {
+    color: #d32f2f;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #ffebee;
+    border-radius: 6px;
+}
+
+.successMessage {
+    color: #388e3c;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #e8f5e9;
+    border-radius: 6px;
+}
+
+.warningMessage {
+    color: #f57c00;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #fff3e0;
+    border-radius: 6px;
+}
+
+.buttonsContainer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.primaryButton {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.primaryButton:hover {
+    background-color: #45a049;
+}
+
+.primaryButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.dangerButton {
+    background-color: #d32f2f;
+    color: white;
+}
+
+.dangerButton:hover {
+    background-color: #b71c1c;
+}
+
+.secondaryButton {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.secondaryButton:hover {
+    background-color: #e0e0e0;
+}
+
+.steps {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.stepsList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.stepItem {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.stepNumber {
+    font-weight: 600;
+    color: #4CAF50;
+}
+
+.copyButton {
+    background-color: #2196F3;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.copyButton:hover {
+    background-color: #1976D2;
+}
+
+.spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.passwordValidation {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.validationItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.validationIcon {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.valid {
+    color: #388e3c;
+}
+
+.invalid {
+    color: #d32f2f;
+}
