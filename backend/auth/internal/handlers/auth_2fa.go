@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"sync"
@@ -298,21 +300,46 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	delete(failedAttempts, userID)
 	failedAttemptsMutex.Unlock()
 
+	// Create access token with 15 minutes expiration (matching normal login)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    user.ID.String(),
 		"user_email": user.Email,
-		"exp":        time.Now().Add(24 * time.Hour).Unix(),
+		"exp":        time.Now().Add(15 * time.Minute).Unix(),
 	})
 
 	jwtSecret := []byte(h.Env.JwtSecret)
-	fullToken, err := token.SignedString(jwtSecret)
+	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
 
+	// Generate refresh token (32 bytes)
+	rtBytes := make([]byte, 32)
+	if _, err := rand.Read(rtBytes); err != nil {
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to generate refresh token for %s: %v\n", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+	rawRefreshToken := hex.EncodeToString(rtBytes)
+
+	// Hash and save refresh token to database
+	hashedRefreshToken := hashToken(rawRefreshToken)
+	user.RefreshToken = &hashedRefreshToken
+
+	if err := h.DB.Save(&user).Error; err != nil {
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v\n", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+
+	// Set refresh token cookie
+	setRefreshTokenCookie(c, rawRefreshToken)
+
+	log.Printf("[INFO] User %s logged in via 2FA successfully", user.Email)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"token":   fullToken,
-		"message": "Logged in successfully",
+		"access_token":          accessToken,
+		"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+		"iv":                    base64.StdEncoding.EncodeToString(user.IV),
+		"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
 	})
 }
 
@@ -426,22 +453,48 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
 	}
 
+	// Create access token with 15 minutes expiration (matching normal login)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    user.ID.String(),
 		"user_email": user.Email,
-		"exp":        time.Now().Add(24 * time.Hour).Unix(),
+		"exp":        time.Now().Add(15 * time.Minute).Unix(),
 	})
 
 	jwtSecret := []byte(h.Env.JwtSecret)
-	fullToken, err := token.SignedString(jwtSecret)
+	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
 	}
 
+	// Generate refresh token (32 bytes)
+	rtBytes := make([]byte, 32)
+	if _, err := rand.Read(rtBytes); err != nil {
+		log.Printf("[ERROR] VerifyRecoveryCode: Failed to generate refresh token for %s: %v\n", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+	rawRefreshToken := hex.EncodeToString(rtBytes)
+
+	// Hash and save refresh token to database
+	hashedRefreshToken := hashToken(rawRefreshToken)
+	user.RefreshToken = &hashedRefreshToken
+
+	if err := h.DB.Save(&user).Error; err != nil {
+		log.Printf("[ERROR] VerifyRecoveryCode: Failed to save refresh token for %s: %v\n", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+
+	// Set refresh token cookie
+	setRefreshTokenCookie(c, rawRefreshToken)
+
+	log.Printf("[INFO] User %s logged in via recovery code successfully", user.Email)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"token":     fullToken,
-		"remaining": len(remainingCodes),
-		"warning":   "Use an authenticator app to add a new recovery code",
+		"access_token":          accessToken,
+		"remaining":             len(remainingCodes),
+		"warning":               "Use an authenticator app to add a new recovery code",
+		"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+		"iv":                    base64.StdEncoding.EncodeToString(user.IV),
+		"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
 	})
 
 }
