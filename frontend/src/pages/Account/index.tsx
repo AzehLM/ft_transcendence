@@ -1,28 +1,28 @@
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "../Profile/SettingsLayout";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { logout } from "../../services/auth.service";
 import { useNavigate } from "react-router-dom";
-import { ConfirmationModal } from "../../components/ConfirmationModal";
-import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
-import { changePasswordSchema } from "../../schemas/auth.schema";
 import { DangerZone } from "../../components/DangerZone";
+import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
+import { useEffect } from "react";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { changePasswordSchema } from "../../schemas/auth.schema";
+
 
 export default function AccountPage() {
     const navigate = useNavigate();
+    const [error, setError] = useState<string | null>(null);
+    const [isReset, setIsReset] = useState(false);
 
     const [password, setPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [pwdError, setPwdError] = useState<string | null>(null);
-    const [isReset, setIsReset] = useState(false);
-
-    const [email, setEmail] = useState<string>("");
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const [deleteError, setDeleteError] = useState<string | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [email, setEmail] = useState<string>("");
 
     useEffect(() => {
         fetchWithRefresh("/api/auth/me")
@@ -49,12 +49,42 @@ export default function AccountPage() {
         }
     }, []);
 
+    const handleDeleteAccount = async () => {
+        try {
+            const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
+
+            if (!response.ok) {
+            const text = await response.text();
+            let message = "Failed to delete account, please try again.";
+            try {
+                if (text) {
+                const data = JSON.parse(text);
+                message = data.message || data.error || message;
+                }
+            } catch {}
+            setError(message);
+            return;
+            }
+
+            await logout(navigate);
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+            if (err instanceof TypeError) {
+                setError("Network error, please try again.");
+            } else if (err instanceof SyntaxError) {
+                setError("Received an invalid server response. Please try again.");
+            } else {
+                setError("Failed to delete account. Please try again.");
+            }
+        }
+    };
+
     const handleChangePassword = async () => {
         setPwdError(null);
         setIsReset(false);
 
         const result = changePasswordSchema.safeParse({
-            current: password,        // ← doit correspondre exactement au nom dans ton schéma
+            current: password,
             newPassword,
             confirmPassword,
         });
@@ -74,13 +104,13 @@ export default function AccountPage() {
 
             const responseData = await response.json();
             if (!response.ok) {
-                setPwdError(responseData.message || "Current password is incorrect.");
+                setPwdError(responseData.message || "Current password is incorrect." /* previously "Error."*/);
                 return;
             }
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
-            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv, true);
 
             const data = await generateChangePasswordData(result.data.newPassword, privateKey);
             const passwordData = {
@@ -90,7 +120,6 @@ export default function AccountPage() {
                 new_encrypted_private_key: data.new_encrypted_private_key,
                 new_iv: data.new_iv,
             };
-
             const responsePut = await fetchWithRefresh("/api/auth/password", {
                 method: "PUT",
                 body: JSON.stringify(passwordData),
@@ -101,42 +130,35 @@ export default function AccountPage() {
                 let message = "Failed to change password.";
                 try {
                     if (text) {
-                        const parsed = JSON.parse(text);
-                        message = parsed.error || parsed.message || message;
+                        const data = JSON.parse(text);
+                        message = data.error || data.message || message;
                     }
                 } catch {}
-                setPwdError(message);
-                setPassword("");
-                setNewPassword("");
-                setConfirmPassword("");
-                return;
+                    setPwdError(message);
+                    setPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    return;
             }
 
             setPassword("");
             setNewPassword("");
             setConfirmPassword("");
+            setPwdError(null);
             sessionStorage.setItem("passwordChanged", "true");
             setIsReset(true);
-        } catch {
-            setPwdError("Network error, please try again.");
+
+        } catch (err) {
+            console.error("Failed to change password:", err);
+            if (err instanceof TypeError) {
+                setPwdError("Network error, please try again.");
+            } else if (err instanceof SyntaxError) {
+                setPwdError("Received an invalid server response. Please try again.");
+            } else {
+                setPwdError("Failed to change password. Please try again.");
+            }
         } finally {
             setIsUpdating(false);
-        }
-    };
-
-    const handleDeleteAccount = async () => {
-        try {
-            const response = await fetchWithRefresh("/api/auth/delete", { method: "DELETE" });
-            if (!response.ok) {
-                const data = await response.json();
-                setDeleteError(data.message || "Failed to delete account, please try again.");
-                setShowDeleteConfirm(false);
-                return;
-            }
-            await logout(navigate);
-        } catch {
-            setDeleteError("Network error, please try again.");
-            setShowDeleteConfirm(false);
         }
     };
 
@@ -201,7 +223,7 @@ export default function AccountPage() {
                 fileName="your account"
                 onConfirm={handleDeleteAccount}
                 isAccount={true}
-                error={deleteError}
+                error={error}
                 />
             </div>
         </SettingsLayout>
