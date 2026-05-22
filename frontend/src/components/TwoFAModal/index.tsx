@@ -8,7 +8,6 @@ interface TwoFAModalProps {
     isTwoFAEnabled: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    email: string;
 }
 
 type ModalStep =
@@ -24,7 +23,6 @@ export function TwoFAModal({
     isTwoFAEnabled,
     onClose,
     onSuccess,
-    email,
 }: TwoFAModalProps) {
     const [step, setStep] = useState<ModalStep>("choice");
     const [qrValue, setQrValue] = useState<string>("");
@@ -166,12 +164,6 @@ export function TwoFAModal({
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
-    };
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Copied to clipboard!");
-        });
     };
 
     const renderChoice = () => (
