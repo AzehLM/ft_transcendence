@@ -86,14 +86,14 @@ const getEventMeta = (event: string) => {
 
 const formatRelativeTime = (date: Date) => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  if (seconds < 5) return "À l'instant";
-  if (seconds < 60) return `Il y a ${seconds}s`;
+  if (seconds < 5) return "Just now";
+  if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `Il y a ${minutes}m`;
+  if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Il y a ${hours}h`;
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `Il y a ${days}j`;
+  return `${days}d ago`;
 };
 
 interface NotificationDropdownProps {
@@ -188,7 +188,7 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                title="Tout marquer comme lu"
+                title="Mark all as read"
                 style={{
                   background: "none",
                   border: "none",
@@ -210,7 +210,7 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
             {notifications.length > 0 && (
               <button
                 onClick={clearAll}
-                title="Tout effacer"
+                title="Clear all"
                 style={{
                   background: "none",
                   border: "none",
@@ -262,10 +262,10 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
                 <Bell size={24} />
               </div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: "var(--font-weight-medium)", color: "var(--brand-dark)" }}>
-                Tout est calme !
+                All quiet!
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "12px" }}>
-                Vous n'avez aucune notification.
+                You have no notifications.
               </p>
             </div>
           ) : (
@@ -343,7 +343,7 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
                     {!item.isRead ? (
                       <button
                         onClick={() => markAsRead(item.id)}
-                        title="Marquer comme lu"
+                        title="Mark as read"
                         style={{
                           background: "none",
                           border: "none",
@@ -362,7 +362,7 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
 
                     <button
                       onClick={() => clearNotification(item.id)}
-                      title="Supprimer"
+                      title="Delete"
                       style={{
                         background: "none",
                         border: "none",

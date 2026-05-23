@@ -12,7 +12,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(222, 115, 86, 0.15)",
         borderColor: "var(--brand-primary)",
         iconColor: "var(--brand-primary)",
-        title: "Nouveau membre",
+        title: "New member",
       };
     case "ADDED_TO_NEW_ORGA":
       return {
@@ -20,7 +20,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(43, 16, 8, 0.1)",
         borderColor: "var(--brand-dark)",
         iconColor: "var(--brand-dark)",
-        title: "Nouvelle organisation",
+        title: "New organization",
       };
     case "ORGA_DELETED":
       return {
@@ -28,7 +28,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(212, 24, 61, 0.1)",
         borderColor: "var(--destructive)",
         iconColor: "var(--destructive)",
-        title: "Organisation supprimée",
+        title: "Organization deleted",
       };
     case "ORGA_RENAMED":
       return {
@@ -36,7 +36,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(59, 130, 246, 0.1)",
         borderColor: "#3b82f6",
         iconColor: "#3b82f6",
-        title: "Organisation renommée",
+        title: "Organization renamed",
       };
     case "USER_PROFILE_UPDATED":
       return {
@@ -44,7 +44,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(16, 185, 129, 0.1)",
         borderColor: "#10b981",
         iconColor: "#10b981",
-        title: "Profil mis à jour",
+        title: "Profile updated",
       };
     case "file_uploaded":
       return {
@@ -52,7 +52,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(16, 185, 129, 0.15)",
         borderColor: "#10b981",
         iconColor: "#10b981",
-        title: "Fichier importé",
+        title: "File uploaded",
       };
     case "file_deleted":
       return {
@@ -60,7 +60,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(212, 24, 61, 0.15)",
         borderColor: "var(--destructive)",
         iconColor: "var(--destructive)",
-        title: "Fichier supprimé",
+        title: "File deleted",
       };
     case "file_moved":
       return {
@@ -68,7 +68,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(59, 130, 246, 0.15)",
         borderColor: "#3b82f6",
         iconColor: "#3b82f6",
-        title: "Fichier déplacé",
+        title: "File moved",
       };
     case "folder_created":
       return {
@@ -76,7 +76,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(222, 115, 86, 0.15)",
         borderColor: "var(--brand-primary)",
         iconColor: "var(--brand-primary)",
-        title: "Dossier créé",
+        title: "Folder created",
       };
     case "folder_deleted":
       return {
@@ -84,7 +84,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(212, 24, 61, 0.15)",
         borderColor: "var(--destructive)",
         iconColor: "var(--destructive)",
-        title: "Dossier supprimé",
+        title: "Folder deleted",
       };
     case "folder_renamed":
       return {
@@ -92,7 +92,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(59, 130, 246, 0.15)",
         borderColor: "#3b82f6",
         iconColor: "#3b82f6",
-        title: "Dossier renommé",
+        title: "Folder renamed",
       };
     case "folder_moved":
       return {
@@ -100,7 +100,7 @@ const getEventMeta = (event: string) => {
         bgColor: "rgba(59, 130, 246, 0.15)",
         borderColor: "#3b82f6",
         iconColor: "#3b82f6",
-        title: "Dossier déplacé",
+        title: "Folder moved",
       };
     default:
       return {
