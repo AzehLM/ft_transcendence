@@ -10,6 +10,7 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
 import { FolderCard } from "../../components/FolderCard";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -19,6 +20,7 @@ export default function DashboardPage() {
     const [folders, setFolders] = useState<FolderItem[]>([]);
     const { folderId } = useParams();
     const navigate = useNavigate();
+    const { registerListener, unregisterListener } = useNotifications();
 
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
     const [folderName, setFolderName] = useState("");
@@ -58,6 +60,31 @@ export default function DashboardPage() {
         setFiles(response.files || []);
         setFolders(response.folders || [])
     };
+
+    useEffect(() => {
+        const handleFilesChange = () => {
+            console.log("[WS Event] Re-fetching dashboard files & folders...");
+            loadFiles();
+        };
+
+        registerListener("file_uploaded", handleFilesChange);
+        registerListener("file_deleted", handleFilesChange);
+        registerListener("file_moved", handleFilesChange);
+        registerListener("folder_created", handleFilesChange);
+        registerListener("folder_deleted", handleFilesChange);
+        registerListener("folder_renamed", handleFilesChange);
+        registerListener("folder_moved", handleFilesChange);
+
+        return () => {
+            unregisterListener("file_uploaded", handleFilesChange);
+            unregisterListener("file_deleted", handleFilesChange);
+            unregisterListener("file_moved", handleFilesChange);
+            unregisterListener("folder_created", handleFilesChange);
+            unregisterListener("folder_deleted", handleFilesChange);
+            unregisterListener("folder_renamed", handleFilesChange);
+            unregisterListener("folder_moved", handleFilesChange);
+        };
+    }, [registerListener, unregisterListener, folderId]);
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
     setSuccess("");

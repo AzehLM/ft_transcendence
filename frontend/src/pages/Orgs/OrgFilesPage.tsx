@@ -13,6 +13,7 @@ import { FolderCard } from "../../components/FolderCard";
 import { FileCard } from "../../components/FileCard"
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ActionButtons } from "../../components/ActionButtons";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -20,6 +21,7 @@ export default function OrgFilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
+  const { registerListener, unregisterListener } = useNotifications();
 
 
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,31 @@ export default function OrgFilesPage() {
     setFiles(response.files || []);
     setFolders(response.folders || []);
   };
+
+  useEffect(() => {
+    const handleFilesChange = () => {
+      console.log("[WS Event] Re-fetching organization files & folders...");
+      loadFiles(folderId);
+    };
+
+    registerListener("file_uploaded", handleFilesChange);
+    registerListener("file_deleted", handleFilesChange);
+    registerListener("file_moved", handleFilesChange);
+    registerListener("folder_created", handleFilesChange);
+    registerListener("folder_deleted", handleFilesChange);
+    registerListener("folder_renamed", handleFilesChange);
+    registerListener("folder_moved", handleFilesChange);
+
+    return () => {
+      unregisterListener("file_uploaded", handleFilesChange);
+      unregisterListener("file_deleted", handleFilesChange);
+      unregisterListener("file_moved", handleFilesChange);
+      unregisterListener("folder_created", handleFilesChange);
+      unregisterListener("folder_deleted", handleFilesChange);
+      unregisterListener("folder_renamed", handleFilesChange);
+      unregisterListener("folder_moved", handleFilesChange);
+    };
+  }, [registerListener, unregisterListener, id, folderId]);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
