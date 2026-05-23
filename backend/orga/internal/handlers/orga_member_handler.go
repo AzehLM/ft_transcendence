@@ -414,6 +414,14 @@ func (h *OrgaHandler) GetMembers(c fiber.Ctx) error {
 		})
 	}
 
+	for i := range orgaMembers {
+		userIDStr := orgaMembers[i].UserID.String()
+		isOnline, err := h.Hub.Redis.SIsMember(c.Context(), "online_users", userIDStr).Result()
+		if err == nil {
+			orgaMembers[i].IsOnline = isOnline
+		}
+	}
+
 	return c.Status(fiber.StatusOK).JSON(orgaMembers)
 }
 

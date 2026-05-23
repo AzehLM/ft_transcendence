@@ -36,13 +36,50 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	}
 
 	log.Printf("[WS] New user: %s", userID)
+	ctx := context.Background()
+
+	if err := h.Redis.SAdd(ctx, "online_users", userID.String()).Err(); err != nil {
+		log.Printf("[WS] Redis SAdd error for user %s: %v", userID, err)
+	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
 	orgas, err := repo.GetMemberOrga(userID)
 	if err != nil {
 		log.Println("[WS] Error fetching organizations:", err)
+		h.Redis.SRem(ctx, "online_users", userID.String())
 		return
 	}
+
+	for _, org := range orgas {
+		event := WSEvent{
+			Event:   "USER_ONLINE",
+			OrgID:   org.ID.String(),
+			Message: "User is online",
+			Data: map[string]string{
+				"user_id": userID.String(),
+			},
+		}
+		_ = h.PublishToOrga(ctx, org.ID.String(), event)
+	}
+
+	defer func() {
+		ctxDel := context.Background()
+		if err := h.Redis.SRem(ctxDel, "online_users", userID.String()).Err(); err != nil {
+			log.Printf("[WS] Redis SRem error for user %s: %v", userID, err)
+		}
+
+		for _, org := range orgas {
+			event := WSEvent{
+				Event:   "USER_OFFLINE",
+				OrgID:   org.ID.String(),
+				Message: "User is offline",
+				Data: map[string]string{
+					"user_id": userID.String(),
+				},
+			}
+			_ = h.PublishToOrga(ctxDel, org.ID.String(), event)
+		}
+	}()
 
 	channels := make([]string, 0, len(orgas)+1)
 
@@ -51,8 +88,6 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	for _, org := range orgas {
 		channels = append(channels, "org_events:"+org.ID.String())
 	}
-
-	ctx := context.Background()
 	pubsub := h.Redis.Subscribe(ctx, channels...)
 
 	defer func() {

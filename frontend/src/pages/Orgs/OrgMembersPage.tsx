@@ -16,6 +16,7 @@ interface Member {
   role: string;
   family_name: string;
   first_name: string;
+  is_online?: boolean;
 }
 
 export default function OrgMembersPage() {
@@ -105,12 +106,38 @@ export default function OrgMembersPage() {
       fetchMembers();
     };
 
+    const handleUserOnline = (data: any) => {
+      console.log("[WS Event] User online:", data);
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: true } : m
+          )
+        );
+      }
+    };
+
+    const handleUserOffline = (data: any) => {
+      console.log("[WS Event] User offline:", data);
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: false } : m
+          )
+        );
+      }
+    };
+
     registerListener("MEMBER_ADDED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
+    registerListener("USER_ONLINE", handleUserOnline);
+    registerListener("USER_OFFLINE", handleUserOffline);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
       unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
+      unregisterListener("USER_ONLINE", handleUserOnline);
+      unregisterListener("USER_OFFLINE", handleUserOffline);
     };
   }, [registerListener, unregisterListener, id]);
 
@@ -267,8 +294,10 @@ export default function OrgMembersPage() {
                     {member.role}
                   </div>
                   <div className={styles.statusInfo}>
-                    <span className={`${styles.statusDot} ${styles.statusDotActive}`}></span>
-                    Active
+                    <span className={`${styles.statusDot} ${
+                      member.is_online ? styles.statusDotActive : styles.statusDotInactive
+                    }`}></span>
+                    {member.is_online ? "Active" : "Offline"}
                   </div>
                   {myRole === "admin" && (
                     <div className={styles.buttonsGroup}>

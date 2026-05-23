@@ -106,7 +106,7 @@ export default function OrgFilesPage() {
     setError(null);
     loadFiles(folderId);
   }, id, folderId);
-  
+
   const activeUploads = Object.values(uploads);
   const isUploading = activeUploads.some(u => u.isUploading);
 

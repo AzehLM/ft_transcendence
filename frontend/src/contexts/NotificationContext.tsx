@@ -105,7 +105,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         const actorId = payload.data?.owner_id || payload.data?.user_id;
         const isActorMe = currentUserIdRef.current && actorId && currentUserIdRef.current.toLowerCase() === actorId.toLowerCase();
 
-        if (!isActorMe) {
+        const isTechnicalEvent = eventType === "USER_ONLINE" || eventType === "USER_OFFLINE";
+
+        if (!isActorMe && !isTechnicalEvent) {
           const newNotification: NotificationItem = {
             id: crypto.randomUUID(),
             event: eventType,
@@ -125,7 +127,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           };
           setToasts((prev) => [...prev, newToast]);
         } else {
-          console.log("[WS] Skipping notification/toast because action was initiated by me");
+          console.log("[WS] Skipping notification/toast because action was initiated by me or is a technical presence event");
         }
 
         if (eventType && listenersRef.current[eventType]) {
