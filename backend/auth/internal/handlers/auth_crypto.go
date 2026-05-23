@@ -116,10 +116,3 @@ func decryptTOTPSecret(encryptedSecret []byte, clientSalt []byte, userID string)
 
 	return string(plaintext), nil
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
