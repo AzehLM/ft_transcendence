@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { fetchWithRefresh } from "../services/api.service";
+
 
 export interface NotificationItem {
   id: string;
@@ -45,6 +47,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const listenersRef = useRef<{ [event: string]: Set<ListenerCallback> }>({});
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const currentUserIdRef = useRef<string | null>(null);
 
   const registerListener = (event: string, callback: ListenerCallback) => {
     if (!listenersRef.current[event]) {
@@ -98,26 +101,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         const payload = JSON.parse(event.data);
         console.log("[WS] Received event:", payload);
 
-        const newNotification: NotificationItem = {
-          id: crypto.randomUUID(),
-          event: payload.event || "UNKNOWN",
-          message: payload.message || "New event received",
-          data: payload.data,
-          timestamp: new Date(),
-          isRead: false,
-        };
+        const eventType = payload.event || payload.type || "UNKNOWN";
+        const actorId = payload.data?.owner_id || payload.data?.user_id;
+        const isActorMe = currentUserIdRef.current && actorId && currentUserIdRef.current.toLowerCase() === actorId.toLowerCase();
 
-        setNotifications((prev) => [newNotification, ...prev]);
+        if (!isActorMe) {
+          const newNotification: NotificationItem = {
+            id: crypto.randomUUID(),
+            event: eventType,
+            message: payload.message || "New event received",
+            data: payload.data,
+            timestamp: new Date(),
+            isRead: false,
+          };
 
-        const newToast: ToastItem = {
-          id: newNotification.id,
-          event: newNotification.event,
-          message: newNotification.message,
-          data: newNotification.data,
-        };
-        setToasts((prev) => [...prev, newToast]);
+          setNotifications((prev) => [newNotification, ...prev]);
 
-        const eventType = payload.event;
+          const newToast: ToastItem = {
+            id: newNotification.id,
+            event: newNotification.event,
+            message: newNotification.message,
+            data: newNotification.data,
+          };
+          setToasts((prev) => [...prev, newToast]);
+        } else {
+          console.log("[WS] Skipping notification/toast because action was initiated by me");
+        }
+
         if (eventType && listenersRef.current[eventType]) {
           listenersRef.current[eventType].forEach((cb) => {
             try {
@@ -168,12 +178,39 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     connect();
 
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchWithRefresh("/api/auth/me")
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error();
+        })
+        .then((data) => {
+          currentUserIdRef.current = data.id;
+        })
+        .catch((err) => {
+          console.error("[WS] Failed to fetch user profile for filtering:", err);
+        });
+    }
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "token") {
         if (e.newValue) {
           connect();
+          fetchWithRefresh("/api/auth/me")
+            .then((res) => {
+              if (res.ok) return res.json();
+              throw new Error();
+            })
+            .then((data) => {
+              currentUserIdRef.current = data.id;
+            })
+            .catch((err) => {
+              console.error("[WS] Failed to fetch user profile for filtering:", err);
+            });
         } else {
           disconnect();
+          currentUserIdRef.current = null;
         }
       }
     };
