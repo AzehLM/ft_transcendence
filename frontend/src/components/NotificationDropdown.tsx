@@ -1,4 +1,4 @@
-import { UserPlus, Building2, Trash2, Edit3, User, Bell, Check, Trash, CheckSquare } from "lucide-react";
+import { UserPlus, Building2, Trash2, Edit3, User, Bell, Check, Trash, CheckSquare, File, Folder, FolderPlus, FolderMinus } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 
 const getEventMeta = (event: string) => {
@@ -32,6 +32,48 @@ const getEventMeta = (event: string) => {
         Icon: User,
         bgColor: "rgba(16, 185, 129, 0.08)",
         iconColor: "#10b981",
+      };
+    case "file_uploaded":
+      return {
+        Icon: File,
+        bgColor: "rgba(16, 185, 129, 0.08)",
+        iconColor: "#10b981",
+      };
+    case "file_deleted":
+      return {
+        Icon: Trash2,
+        bgColor: "rgba(212, 24, 61, 0.08)",
+        iconColor: "var(--destructive)",
+      };
+    case "file_moved":
+      return {
+        Icon: File,
+        bgColor: "rgba(59, 130, 246, 0.08)",
+        iconColor: "#3b82f6",
+      };
+    case "folder_created":
+      return {
+        Icon: FolderPlus,
+        bgColor: "rgba(222, 115, 86, 0.1)",
+        iconColor: "var(--brand-primary)",
+      };
+    case "folder_deleted":
+      return {
+        Icon: FolderMinus,
+        bgColor: "rgba(212, 24, 61, 0.08)",
+        iconColor: "var(--destructive)",
+      };
+    case "folder_renamed":
+      return {
+        Icon: Folder,
+        bgColor: "rgba(59, 130, 246, 0.08)",
+        iconColor: "#3b82f6",
+      };
+    case "folder_moved":
+      return {
+        Icon: Folder,
+        bgColor: "rgba(59, 130, 246, 0.08)",
+        iconColor: "#3b82f6",
       };
     default:
       return {

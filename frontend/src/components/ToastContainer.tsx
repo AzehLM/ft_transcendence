@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { UserPlus, Building2, Trash2, Edit3, User,  X, Bell } from "lucide-react";
+import { UserPlus, Building2, Trash2, Edit3, User, X, Bell, File, Folder, FolderPlus, FolderMinus } from "lucide-react";
 import { useNotifications, ToastItem } from "../contexts/NotificationContext";
 
 // Map event types to icons and styling
@@ -45,6 +45,62 @@ const getEventMeta = (event: string) => {
         borderColor: "#10b981",
         iconColor: "#10b981",
         title: "Profil mis à jour",
+      };
+    case "file_uploaded":
+      return {
+        Icon: File,
+        bgColor: "rgba(16, 185, 129, 0.15)",
+        borderColor: "#10b981",
+        iconColor: "#10b981",
+        title: "Fichier importé",
+      };
+    case "file_deleted":
+      return {
+        Icon: Trash2,
+        bgColor: "rgba(212, 24, 61, 0.15)",
+        borderColor: "var(--destructive)",
+        iconColor: "var(--destructive)",
+        title: "Fichier supprimé",
+      };
+    case "file_moved":
+      return {
+        Icon: File,
+        bgColor: "rgba(59, 130, 246, 0.15)",
+        borderColor: "#3b82f6",
+        iconColor: "#3b82f6",
+        title: "Fichier déplacé",
+      };
+    case "folder_created":
+      return {
+        Icon: FolderPlus,
+        bgColor: "rgba(222, 115, 86, 0.15)",
+        borderColor: "var(--brand-primary)",
+        iconColor: "var(--brand-primary)",
+        title: "Dossier créé",
+      };
+    case "folder_deleted":
+      return {
+        Icon: FolderMinus,
+        bgColor: "rgba(212, 24, 61, 0.15)",
+        borderColor: "var(--destructive)",
+        iconColor: "var(--destructive)",
+        title: "Dossier supprimé",
+      };
+    case "folder_renamed":
+      return {
+        Icon: Folder,
+        bgColor: "rgba(59, 130, 246, 0.15)",
+        borderColor: "#3b82f6",
+        iconColor: "#3b82f6",
+        title: "Dossier renommé",
+      };
+    case "folder_moved":
+      return {
+        Icon: Folder,
+        bgColor: "rgba(59, 130, 246, 0.15)",
+        borderColor: "#3b82f6",
+        iconColor: "#3b82f6",
+        title: "Dossier déplacé",
       };
     default:
       return {
