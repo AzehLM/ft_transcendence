@@ -456,6 +456,36 @@ export async function decryptFilename(
     return new TextDecoder().decode(decryptedBuffer);
 }
 
+export async function encryptFilenameAsymmetric(
+    filename: string,
+    publicKey: CryptoKey
+): Promise<string> {
+    const filenameBuffer = new TextEncoder().encode(filename);
+    const encryptedBuffer = await crypto.subtle.encrypt(
+        {
+            name: "RSA-OAEP",
+        },
+        publicKey,
+        filenameBuffer
+    );
+    return uint8ArrayToBase64(new Uint8Array(encryptedBuffer));
+}
+
+export async function decryptFilenameAsymmetric(
+    encryptedFilenameBase64: string,
+    privateKey: CryptoKey
+): Promise<string> {
+    const encryptedBuffer = base64ToUint8Array(encryptedFilenameBase64);
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        {
+            name: "RSA-OAEP",
+        },
+        privateKey,
+        toArrayBuffer(encryptedBuffer)
+    );
+    return new TextDecoder().decode(decryptedBuffer);
+}
+
 export async function generateChangePasswordData(
     password: string,
     privateKey: CryptoKey,
