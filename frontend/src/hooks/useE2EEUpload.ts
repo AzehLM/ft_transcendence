@@ -79,7 +79,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         file: File,
         cryptoKey: CryptoKey,
         baseIv: Uint8Array,
-        dek: Uint8Array,
         encryptedDEK: Uint8Array,
         publicKey: CryptoKey,
     ) => {
@@ -149,7 +148,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         file: File,
         cryptoKey: CryptoKey,
         baseIv: Uint8Array,
-        dek: Uint8Array,
         encryptedDEK: Uint8Array,
         startTime: number,
         publicKey: CryptoKey,
@@ -270,9 +268,9 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             // Branch by file size: single PUT vs multipart
             if (file.size <= UPLOAD_CONFIG.MULTIPART_THRESHOLD) {
-                await uploadSinglePut(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK), publicKey);
+                await uploadSinglePut(id, file, cryptoKey, baseIv, new Uint8Array(encryptedDEK), publicKey);
             } else {
-                await uploadMultipart(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK), startTime, publicKey);
+                await uploadMultipart(id, file, cryptoKey, baseIv, new Uint8Array(encryptedDEK), startTime, publicKey);
             }
 
             updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
