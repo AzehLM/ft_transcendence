@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
-import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilename } from '../services/crypto.service';
+import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilenameAsymmetric } from '../services/crypto.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
 import { validateFile, formatFileSize, getFileTypeLabel } from '../services/fileValidation.service';
 
@@ -81,6 +81,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         baseIv: Uint8Array,
         dek: Uint8Array,
         encryptedDEK: Uint8Array,
+        publicKey: CryptoKey,
     ) => {
         const numChunks = Math.ceil(file.size / UPLOAD_CONFIG.CHUNK_SIZE);
         const totalEncryptedSize = file.size + numChunks * 16;
@@ -130,7 +131,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             method: "POST",
             body: JSON.stringify({
                 object_id,
-                encrypted_filename: await encryptFilename(file.name, dek, baseIv),
+                encrypted_filename: await encryptFilenameAsymmetric(file.name, publicKey),
                 encrypted_dek: uint8ArrayToBase64(new Uint8Array(encryptedDEK)),
                 iv: uint8ArrayToBase64(baseIv),
                 org_id: orgId || null,
@@ -151,6 +152,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         dek: Uint8Array,
         encryptedDEK: Uint8Array,
         startTime: number,
+        publicKey: CryptoKey,
     ) => {
         const numChunks = Math.ceil(file.size / UPLOAD_CONFIG.CHUNK_SIZE);
         const totalEncryptedSize = file.size + numChunks * 16; // 1 GCM tag per chunk
@@ -215,7 +217,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             body: JSON.stringify({
                 object_id,
                 upload_id,
-                encrypted_filename: await encryptFilename(file.name, dek, baseIv),
+                encrypted_filename: await encryptFilenameAsymmetric(file.name, publicKey),
                 encrypted_dek: uint8ArrayToBase64(new Uint8Array(encryptedDEK)),
                 iv: uint8ArrayToBase64(baseIv),
                 org_id: orgId || null,
@@ -268,9 +270,9 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             // Branch by file size: single PUT vs multipart
             if (file.size <= UPLOAD_CONFIG.MULTIPART_THRESHOLD) {
-                await uploadSinglePut(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK));
+                await uploadSinglePut(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK), publicKey);
             } else {
-                await uploadMultipart(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK), startTime);
+                await uploadMultipart(id, file, cryptoKey, baseIv, dek, new Uint8Array(encryptedDEK), startTime, publicKey);
             }
 
             updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
