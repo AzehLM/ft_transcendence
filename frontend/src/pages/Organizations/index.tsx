@@ -7,6 +7,7 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 
 interface Organization {
@@ -19,6 +20,7 @@ interface Organization {
 
 export default function OrganizationsPage() {
   const navigate = useNavigate();
+  const { registerListener, unregisterListener } = useNotifications();
 
 
   const [orgs, setOrgs] = useState<Organization[]>([]);
@@ -26,7 +28,7 @@ export default function OrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [publicKeyMissing, setPublicKeyMissing] = useState(false);
 
-  useEffect(() => {
+  const fetchOrgs = () => {
     fetchWithRefresh("/api/orgs")
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch organizations.");
@@ -35,7 +37,32 @@ export default function OrganizationsPage() {
       .then(data => setOrgs(data))
       .catch(() => setOrgs([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchOrgs();
   }, []);
+
+  useEffect(() => {
+    const handleOrgChange = () => {
+      console.log("[WS Event] Re-fetching organizations list...");
+      fetchOrgs();
+    };
+
+    registerListener("ADDED_TO_NEW_ORGA", handleOrgChange);
+    registerListener("MEMBER_ADDED", handleOrgChange);
+    registerListener("ORGA_RENAMED", handleOrgChange);
+    registerListener("ORGA_DELETED", handleOrgChange);
+    registerListener("USER_PROFILE_UPDATED", handleOrgChange);
+
+    return () => {
+      unregisterListener("ADDED_TO_NEW_ORGA", handleOrgChange);
+      unregisterListener("MEMBER_ADDED", handleOrgChange);
+      unregisterListener("ORGA_RENAMED", handleOrgChange);
+      unregisterListener("ORGA_DELETED", handleOrgChange);
+      unregisterListener("USER_PROFILE_UPDATED", handleOrgChange);
+    };
+  }, [registerListener, unregisterListener]);
 
   const [modalError, setModalError] = useState<string | null>(null);
 
