@@ -5,7 +5,6 @@ interface ConfirmationModalProps {
     fileName: string;
     onConfirm: () => void;
     onCancel: () => void;
-    isTrash?: boolean;
     isAccount?: boolean;
     isLeaveOrga?: boolean;
     isMe?: boolean;
@@ -33,7 +32,6 @@ export function ConfirmationModal({
     fileName,
     onConfirm,
     onCancel,
-    isTrash = false,
     isAccount = false,
     isLeaveOrga = false,
     isMe = false,
@@ -83,8 +81,6 @@ export function ConfirmationModal({
     title = "Rename Folder?";
     } else if (isMove) {
     title = "Move location?";
-    } else if (isTrash) {
-    title = "Delete File?";
     } else if (isPasswordChanged) {
     title = "Password Updated";
     } else if (isKeyMissing) {

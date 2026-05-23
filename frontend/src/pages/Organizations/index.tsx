@@ -308,7 +308,6 @@ export default function OrganizationsPage() {
                 fileName={selectedOrg.name}
                 onConfirm={handleLeaveOrga}
                 onCancel={() => setShowLeaveConfirm(false)}
-                isTrash={false}
                 isAccount={false}
                 isLeaveOrga={true}
                 isMe={true}
