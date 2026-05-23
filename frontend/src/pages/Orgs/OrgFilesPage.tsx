@@ -14,6 +14,7 @@ import { FileCard } from "../../components/FileCard"
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ActionButtons } from "../../components/ActionButtons";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { OrgKeyProvider } from "../../contexts/OrgKeyContext";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -270,6 +271,7 @@ export default function OrgFilesPage() {
   return (
     <>
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
+      <OrgKeyProvider orgId={id}>
       <div className={styles.container}>
         <ConfirmationModal
         isOpen={isFolderModalOpen}
@@ -359,6 +361,7 @@ export default function OrgFilesPage() {
             )}
           </div>
       </div>
+      </OrgKeyProvider>
     </OrgLayout>
     </>
   );
