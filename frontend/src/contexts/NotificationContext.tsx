@@ -1,0 +1,236 @@
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+
+export interface NotificationItem {
+  id: string;
+  event: string;
+  message: string;
+  data?: any;
+  timestamp: Date;
+  isRead: boolean;
+}
+
+export interface ToastItem {
+  id: string;
+  event: string;
+  message: string;
+  data?: any;
+}
+
+type ListenerCallback = (data: any) => void;
+
+interface NotificationContextType {
+  notifications: NotificationItem[];
+  unreadCount: number;
+  toasts: ToastItem[];
+  status: "connecting" | "connected" | "disconnected";
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  clearNotification: (id: string) => void;
+  clearAll: () => void;
+  removeToast: (id: string) => void;
+  registerListener: (event: string, callback: ListenerCallback) => void;
+  unregisterListener: (event: string, callback: ListenerCallback) => void;
+}
+
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    return [];
+  });
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [status, setStatus] = useState<"connecting" | "connected" | "disconnected">("disconnected");
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const listenersRef = useRef<{ [event: string]: Set<ListenerCallback> }>({});
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+
+  const registerListener = (event: string, callback: ListenerCallback) => {
+    if (!listenersRef.current[event]) {
+      listenersRef.current[event] = new Set();
+    }
+    listenersRef.current[event].add(callback);
+  };
+
+  const unregisterListener = (event: string, callback: ListenerCallback) => {
+    if (listenersRef.current[event]) {
+      listenersRef.current[event].delete(callback);
+    }
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const connect = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStatus("disconnected");
+      return;
+    }
+
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.CONNECTING || wsRef.current.readyState === WebSocket.OPEN)) {
+      return;
+    }
+
+    setStatus("connecting");
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws/notifications?token=${encodeURIComponent(token)}`;
+
+    console.log("[WS] Connecting to:", wsUrl);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("[WS] Connected successfully!");
+      setStatus("connected");
+      reconnectAttemptsRef.current = 0;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        console.log("[WS] Received event:", payload);
+
+        const newNotification: NotificationItem = {
+          id: crypto.randomUUID(),
+          event: payload.event || "UNKNOWN",
+          message: payload.message || "New event received",
+          data: payload.data,
+          timestamp: new Date(),
+          isRead: false,
+        };
+
+        setNotifications((prev) => [newNotification, ...prev]);
+
+        const newToast: ToastItem = {
+          id: newNotification.id,
+          event: newNotification.event,
+          message: newNotification.message,
+          data: newNotification.data,
+        };
+        setToasts((prev) => [...prev, newToast]);
+
+        const eventType = payload.event;
+        if (eventType && listenersRef.current[eventType]) {
+          listenersRef.current[eventType].forEach((cb) => {
+            try {
+              cb(payload.data);
+            } catch (err) {
+              console.error("[WS] Error in event listener callback:", err);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("[WS] Failed to parse websocket message:", err, event.data);
+      }
+    };
+
+    ws.onclose = (event) => {
+      console.log("[WS] Closed connection:", event.code, event.reason);
+      setStatus("disconnected");
+      wsRef.current = null;
+
+      if (localStorage.getItem("token")) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+        console.log(`[WS] Reconnecting in ${delay}ms...`);
+        reconnectAttemptsRef.current += 1;
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, delay);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("[WS] Error encountered:", error);
+    };
+  };
+
+  const disconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    if (wsRef.current) {
+      console.log("[WS] Disconnecting websocket...");
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setStatus("disconnected");
+  };
+
+  useEffect(() => {
+    connect();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "token") {
+        if (e.newValue) {
+          connect();
+        } else {
+          disconnect();
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      disconnect();
+    };
+  }, []);
+
+  const markAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  };
+
+  const clearNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const clearAll = () => {
+    setNotifications([]);
+  };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  return (
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        toasts,
+        status,
+        markAsRead,
+        markAllAsRead,
+        clearNotification,
+        clearAll,
+        removeToast,
+        registerListener,
+        unregisterListener,
+      }}
+    >
+      {children}
+    </NotificationContext.Provider>
+  );
+}
+
+export function useNotifications() {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error("useNotifications must be used within a NotificationProvider");
+  }
+  return context;
+}
