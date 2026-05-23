@@ -8,6 +8,7 @@ import { UserMinus, Shield, UserPlus } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface Member {
   user_id: string;
@@ -20,6 +21,7 @@ interface Member {
 export default function OrgMembersPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { registerListener, unregisterListener } = useNotifications();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function OrgMembersPage() {
 
   }, [id]);
 
-  useEffect(() => {
+  const fetchMembers = () => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
@@ -91,7 +93,26 @@ export default function OrgMembersPage() {
         setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchMembers();
   }, [id, navigate]);
+
+  useEffect(() => {
+    const handleMemberChange = () => {
+      console.log("[WS Event] Re-fetching members list...");
+      fetchMembers();
+    };
+
+    registerListener("MEMBER_ADDED", handleMemberChange);
+    registerListener("USER_PROFILE_UPDATED", handleMemberChange);
+
+    return () => {
+      unregisterListener("MEMBER_ADDED", handleMemberChange);
+      unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
+    };
+  }, [registerListener, unregisterListener, id]);
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
