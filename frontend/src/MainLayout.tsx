@@ -1,10 +1,9 @@
 import { Outlet } from "react-router-dom";
 import { ProfileDropdown } from "./components/ProfileDropdown";
-import { SearchBar } from "./components/SearchBar";
 import { UserProfileButton } from "./components/UserProfileButton";
 import { useState } from "react";
 import styles from "./MainLayout.module.css";
-import { Bell } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import { Footer } from "./components/Footer";
 import { useNotifications } from "./contexts/NotificationContext";
 import { NotificationDropdown } from "./components/NotificationDropdown";
@@ -13,23 +12,35 @@ import { ToastContainer } from "./components/ToastContainer";
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { unreadCount } = useNotifications();
 
   return (
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      {sidebar}
+      <div className={`${styles.sidebarWrapper} ${sidebarOpen ? styles.sidebarActive : ""}`}>
+        {sidebar}
+      </div>
+
+      {sidebarOpen && (
+        <div
+          className={styles.sidebarBackdrop}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       <div className={styles.mainContainer}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "20px 40px",
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid rgba(0,0,0,0.05)"
-        }}>
-          <SearchBar placeholder="Search members..." />
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+        <div className={styles.header}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
+            <button
+              type="button"
+              className={styles.hamburgerButton}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+          <div className={styles.actionsContainer}>
 
             <div style={{ position: "relative" }}>
               <button
