@@ -39,7 +39,10 @@ const lockoutDuration = 5 * time.Minute
 
 func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
@@ -79,7 +82,10 @@ func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
 func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
@@ -216,7 +222,10 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
@@ -277,7 +286,7 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 			failedAttemptsMutex.Unlock()
 
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "too_many attempts",
+				"error": "too many attempts",
 			})
 		}
 		failedAttempts[userID] = attempt
@@ -354,7 +363,10 @@ func parseRecoveryCodes(hashedCodesBase64 []byte) [][]byte {
 
 func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
@@ -365,6 +377,10 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
+
+	failedAttemptsMutex.RLock()
+	attempt, exists := failedAttempts[userID]
+	failedAttemptsMutex.RUnlock()
 
 	req := new(VerifyTOTPRequest)
 
@@ -378,10 +394,6 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	givenCode := req.Code
 	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
-
-	failedAttemptsMutex.RLock()
-	attempt, exists := failedAttempts[userID]
-	failedAttemptsMutex.RUnlock()
 
 	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
@@ -492,7 +504,10 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 func (h *AuthHandler) GetRecoveryCodes(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
@@ -525,7 +540,10 @@ type DisableTwoFactorRequest struct {
 
 func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
