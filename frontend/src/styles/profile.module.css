@@ -76,12 +76,25 @@
     width: auto;
 }
 
-.profileAvatarCol img {
+.profileAvatarCol img,
+.avatarPlaceholder {
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    object-fit: cover;
     border: 2px solid rgba(215, 194, 189, 0.6);
+}
+
+.profileAvatarCol img {
+    object-fit: cover;
+}
+
+.avatarPlaceholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffe9e4;
+    color: var(--brand-primary);
+    flex-shrink: 0;
 }
 
 .profileButton {
@@ -349,11 +362,11 @@
     font-weight: 500;
     font-family: 'IBM Plex Sans', sans-serif;
 }
-/* still need to be checked */
 @media (max-width: 1080px) {
     .mainBox {
         max-width: 100%;
         margin-left: 0;
+        padding: 24px;
     }
 
     .settingsGrid {
@@ -361,8 +374,40 @@
         margin-left: 0;
     }
 
+    .settingsCard {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contentArea {
+        padding: 40px 20px 60px;
+    }
+
+    .title {
+        font-size: 26px;
+    }
+
     .mainBox {
         padding: 20px;
+    }
+
+    .settingsCard {
+        padding: 20px;
+    }
+
+    .profileBox {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profileAvatarCol {
+        width: 100%;
+        align-items: center;
+    }
+
+    .infoBox {
+        width: 100%;
     }
 
     .buttons {
@@ -372,12 +417,33 @@
 
     .profileButton {
         width: 100%;
+        text-align: center;
+    }
+
+    .statusRow {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .statusRow .profileButton {
+        width: auto;
     }
 }
 
+@media (max-width: 480px) {
+    .contentArea {
+        padding: 24px 16px 40px;
+    }
 
-@media (max-width: 1200px) {
-    .profileAvatarCol img {
-        width: 200px;
+    .title {
+        font-size: 22px;
+    }
+
+    .settingsCard {
+        padding: 16px;
+    }
+
+    .mainBox {
+        padding: 16px;
     }
 }

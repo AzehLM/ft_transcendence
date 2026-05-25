@@ -112,9 +112,28 @@
   color: #d32f2f;
 }
 
-/* still need to be checked */
-/* @media (max-width: 1100px) {
-  .container {
-    max-width: 250px;
+@media (max-width: 768px) {
+  .row {
+    flex-wrap: wrap;
   }
-} */
+
+  .fieldWrapper {
+    min-width: 0;
+  }
+
+  .input {
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
+}
+
+@media (max-width: 480px) {
+  .value,
+  .novalue,
+  .input {
+    font-size: 14px;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+}

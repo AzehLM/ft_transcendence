@@ -65,12 +65,45 @@
     gap: 20px;
 }
 
+@media (max-width: 1080px) {
+    .settingsGrid {
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .sectionCard {
+        padding: 24px 20px;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
-        padding: 20px;
+        padding: 40px 20px 60px;
+    }
+
+    .headerSection {
+        margin-bottom: 24px;
     }
 
     .headerSection h1 {
         font-size: 26px;
+    }
+
+    .sectionCard {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 24px 16px 40px;
+    }
+
+    .headerSection h1 {
+        font-size: 22px;
+    }
+
+    .sectionCard {
+        padding: 16px;
     }
 }
