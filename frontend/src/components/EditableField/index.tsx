@@ -57,6 +57,10 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
               className={styles.input}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSave();
+                if (e.key === "Escape") handleCancel();
+              }}
               autoFocus
             />
             <button className={styles.iconButton} onClick={handleSave} disabled={loading}>
@@ -67,7 +71,7 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
             </button> )}
           </>
         ) : (
-          <div className={styles.fieldWrapper}>
+          <div className={styles.fieldWrapper} onClick={() => { setInputValue(value); setEditing(true); }}>
             { isOrgaName && (
               <p className={styles.value}>{value}</p>
             )}
@@ -82,7 +86,7 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
             )}
             <div className={styles.fieldActions}>
               { (isOrgaDesc || isUserNames) && value !== "" && (
-                <button className={styles.iconButton} onClick={handleReset}>
+                <button className={styles.iconButton} onClick={(e) => { e.stopPropagation(); handleReset?.(); }}>
                   <X size={16} />
                 </button>
               )}
