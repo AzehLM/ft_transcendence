@@ -76,25 +76,25 @@
     width: auto;
 }
 
-.profileAvatarCol img,
-.avatarPlaceholder {
+.profileAvatarCol img {
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    border: 2px solid rgba(215, 194, 189, 0.6);
-}
-
-.profileAvatarCol img {
+    border: 1px solid #d7c2bd;
     object-fit: cover;
 }
 
 .avatarPlaceholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 1px solid #d7c2bd;
+    background-color: #f9e4de;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffe9e4;
-    color: var(--brand-primary);
     flex-shrink: 0;
+    color: #865142;
 }
 
 .profileButton {

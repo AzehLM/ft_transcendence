@@ -132,7 +132,7 @@ export default function ProfilePage() {
               <div className={styles.profileAvatarCol}>
                 {avatarBlobUrl
                   ? <img src={avatarBlobUrl} alt="Avatar" />
-                  : <div className={styles.avatarPlaceholder}><User size={40} strokeWidth={1.5} /></div>
+                  : <div className={styles.avatarPlaceholder}><User size={44} strokeWidth={1.5} /></div>
                 }
                 <button
                   className={`${styles.buttonChange} ${styles.profileButton}`}
