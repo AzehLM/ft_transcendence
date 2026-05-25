@@ -67,17 +67,12 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
             </button> )}
           </>
         ) : (
-          <>
-            { isOrgaName  && (
-              <p className={styles.value}>{value}</p> 
+          <div className={styles.fieldWrapper}>
+            { isOrgaName && (
+              <p className={styles.value}>{value}</p>
             )}
-            { ((isOrgaDesc || isUserNames) && value !== "") && (
-              <>
-                <p className={styles.value}>{value}</p>
-                <button className={styles.iconButton} onClick={handleReset}>
-                  <X size={18} />
-                </button> 
-              </>
+            { (isOrgaDesc || isUserNames) && value !== "" && (
+              <p className={styles.value}>{value}</p>
             )}
             { isOrgaDesc && value === "" && (
               <p className={styles.novalue}>No description yet, you can add one!</p>
@@ -85,10 +80,17 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
             { isUserNames && value === "" && (
               <p className={styles.novalue}>No name yet, you can add one!</p>
             )}
-            <button className={styles.iconButton} onClick={() => { setInputValue(value); setEditing(true); }}>
-              <Pencil size={18} />
-            </button>
-          </>
+            <div className={styles.fieldActions}>
+              { (isOrgaDesc || isUserNames) && value !== "" && (
+                <button className={styles.iconButton} onClick={handleReset}>
+                  <X size={16} />
+                </button>
+              )}
+              <button className={styles.iconButton} onClick={() => { setInputValue(value); setEditing(true); }}>
+                <Pencil size={16} />
+              </button>
+            </div>
+          </div>
         )}
       </div>)}
         { (role !== "admin" && isOrgaName) && (<div className={styles.row}>
