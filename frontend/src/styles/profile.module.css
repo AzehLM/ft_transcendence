@@ -44,7 +44,7 @@
 
 .mainBox {
     margin: 0 0 20px 3%;
-    padding: 28px;
+    padding: 32px 36px;
     background-color: white;
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 16px;
@@ -56,8 +56,8 @@
 
 .profileBox {
     display: flex;
-    gap: 28px;
-    align-items: flex-start;
+    gap: 36px;
+    align-items: center;
 }
 
 .profileAvatarCol {

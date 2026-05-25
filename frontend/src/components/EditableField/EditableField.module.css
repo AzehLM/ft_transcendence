@@ -25,36 +25,39 @@
 .novalue,
 .input {
   line-height: 24px;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
 }
 
 .value {
-  font-size: 17px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--brand-dark);
   word-break: break-word;
-  flex: 1;
+  background-color: #fafafa;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
 }
 
 .novalue {
-  font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   word-break: break-word;
-  flex: 1;
-  font-style: italic;
-  color: rgb(120, 120, 120);
+  font-style: normal;
+  color: #9ca3af;
+  background-color: #fafafa;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
 }
 
 .input {
-  font-size: 17px;
-  padding: 5px 10px;
+  font-weight: 400;
   border: 2px solid var(--brand-primary);
-  border-radius: 8px;
   outline: none;
-  font-family: 'IBM Plex Sans', sans-serif;
-  flex: 1;
-  min-width: 0;
   background-color: white;
-  box-sizing: border-box;
+  box-shadow: 0 0 0 3px rgba(222, 115, 86, 0.1);
+  color: var(--brand-dark);
 }
 
 .iconButton {
