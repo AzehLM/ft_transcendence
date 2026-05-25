@@ -5,7 +5,7 @@ function PrivacyPage() {
         <div className={styles.wrapper}>
             <main className={styles.container}>
                 <h1 className={styles.title}>Privacy Policy</h1>
-                <p className={styles.lastUpdated}>Last updated: April 2026</p>
+                <p className={styles.lastUpdated}>Last updated: Mai 2026</p>
 
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>Article 1. Introduction</h2>
@@ -36,7 +36,7 @@ function PrivacyPage() {
                         and authenticate a User account.
                     </p>
                     <p className={styles.paragraph}>
-                        <strong>File metadata</strong> — file name, size, upload date, folder hierarchy, and
+                        <strong>File metadata</strong> — file size, upload date, folder hierarchy, and
                         encryption parameters (encrypted key, initialization vector). File contents are
                         encrypted client-side and are never accessible to Ostrom.
                     </p>
@@ -148,7 +148,7 @@ function PrivacyPage() {
                     <p className={styles.paragraph}>
                         Due to the zero-knowledge architecture, Ostrom cannot provide access to or recovery of
                         file contents, as these are encrypted with keys that never leave the User's device.
-                        Only file metadata (name, size, upload date) can be accessed or deleted through a
+                        Only file metadata (size, upload date) can be accessed or deleted through a
                         data request.
                     </p>
                 </section>
