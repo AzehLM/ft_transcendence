@@ -25,17 +25,20 @@ var (
 )
 
 type tempTOTPData struct {
-	Secret    string
-	ExpiresAt time.Time
+	Secret		string
+	ExpiresAt	time.Time
 }
 
 type failedAttempt struct {
-	Count       int
-	LockedUntil time.Time
+	Count		int
+	LastAttempt	time.Time
+	LockedUntil	time.Time
 }
-
-const maxAttempts = 3
-const lockoutDuration = 5 * time.Minute
+const (
+	maxAttempts		= 3
+	lockoutDuration	= 5 * time.Minute
+	attemptWindowReset	= 5 * time.Minute
+)
 
 func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
@@ -89,7 +92,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id").Where("id = ?", userID).First(&user).Error
+	err := h.DB.Select("id, client_salt").Where("id = ?", userID).First(&user).Error
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
@@ -224,34 +227,7 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
 	}
 
-	var user models.User
-
-	err := h.DB.Select("id", "email", "totp_secret_encrypted").
-		Where("id = ?", userID).
-		First(&user).Error
-
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
-	}
-
-	failedAttemptsMutex.RLock()
-	attempt, exists := failedAttempts[userID]
-	failedAttemptsMutex.RUnlock()
-
-	if exists {
-		if time.Now().Before(attempt.LockedUntil) {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error":   "too many attempts",
-				"message": "Too many failed attempts. Try again later.",
-			})
-		}
-		failedAttemptsMutex.Lock()
-		delete(failedAttempts, userID)
-		failedAttemptsMutex.Unlock()
-	}
-
 	req := new(VerifyTOTPRequest)
-
 	if err := c.Bind().Body(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
@@ -260,38 +236,82 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 6 digits"})
 	}
 
+	for _, r := range req.Code {
+		if r < '0' || r > '9' {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 6 digits"})
+		}
+	}
 	code := req.Code
+
+	failedAttemptsMutex.RLock()
+	attempt, exists := failedAttempts[userID]
+	failedAttemptsMutex.RUnlock()
+
+	if exists {
+		if !attempt.LockedUntil.IsZero() && time.Now().Before(attempt.LockedUntil) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error":	"too many attempts",
+				"message":	"Too many failed attempts. Try again later.",
+			})
+		}
+
+		lockoutExpired := !attempt.LockedUntil.IsZero() && time.Now().After(attempt.LockedUntil)
+		tooOld := !attempt.LastAttempt.IsZero() && time.Since(attempt.LastAttempt) > attemptWindowReset
+
+		if lockoutExpired || tooOld {
+			failedAttemptsMutex.Lock()
+			delete(failedAttempts, userID)
+			failedAttemptsMutex.Unlock()
+		}
+	}
+
+	var user models.User
+	err := h.DB.Select("id", "email", "totp_secret_encrypted", "client_salt", "encrypted_private_key", "iv", "public_key").
+		Where("id = ?", userID).
+		First(&user).Error
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
 
 	// Base64 decode the stored encrypted secret
 	encryptedSecret, err := base64.StdEncoding.DecodeString(string(user.TOTPSecretEncrypted))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: base64 decode failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	secret, err := decryptTOTPSecret(encryptedSecret, user.ClientSalt, user.ID.String())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: decryption failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
 		failedAttemptsMutex.Lock()
 		attempt := failedAttempts[userID]
 		attempt.Count++
+		attempt.LastAttempt = time.Now()
+
 		if attempt.Count >= maxAttempts {
 			attempt.LockedUntil = time.Now().Add(lockoutDuration)
 			failedAttempts[userID] = attempt
 			failedAttemptsMutex.Unlock()
 
+			log.Printf("[WARN] VerifyTOTPLogin: User %s locked out after %d failed attempts", user.Email, attempt.Count)
+
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "too many attempts",
+				"error":	"too many attempts",
+				"message":	"Too many failed attempts. Try again later.",
 			})
 		}
 		failedAttempts[userID] = attempt
 		failedAttemptsMutex.Unlock()
 
+		log.Printf("[INFO] VerifyTOTPLogin: Invalid TOTP code for %s (attempt %d/%d)", user.Email, attempt.Count, maxAttempts)
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":              "invalid code",
-			"attempts_remaining": maxAttempts - attempt.Count,
+			"error":				"invalid code",
+			"attempts_remaining":	maxAttempts - attempt.Count,
 		})
 	}
 
@@ -309,22 +329,21 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	jwtSecret := []byte(h.Env.JwtSecret)
 	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token generation failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: token signing failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
-	// Generate refresh token (32 bytes)
 	rtBytes := make([]byte, 32)
 	if _, err := rand.Read(rtBytes); err != nil {
-		log.Printf("[ERROR] VerifyTOTPLogin: Failed to generate refresh token for %s: %v\n", user.Email, err)
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to generate refresh token for %s: %v", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	rawRefreshToken := hex.EncodeToString(rtBytes)
 
 	// Hash and save refresh token to database
 	hashedRefreshToken := hashToken(rawRefreshToken)
-
 	if err := h.DB.Model(&user).Update("refresh_token", hashedRefreshToken).Error; err != nil {
-		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v\n", user.Email, err)
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
@@ -334,10 +353,10 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	log.Printf("[INFO] User %s logged in via 2FA successfully", user.Email)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"access_token":          accessToken,
-		"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
-		"iv":                    base64.StdEncoding.EncodeToString(user.IV),
-		"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
+		"access_token":				accessToken,
+		"encrypted_private_key":	base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+		"iv":						base64.StdEncoding.EncodeToString(user.IV),
+		"public_key":				base64.StdEncoding.EncodeToString(user.PublicKey),
 	})
 }
 
