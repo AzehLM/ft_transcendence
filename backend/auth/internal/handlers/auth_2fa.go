@@ -46,7 +46,7 @@ func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -89,10 +89,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt").
-		Where("id = ?", userID).
-		First(&user).Error
-
+	err := h.DB.Select("id").Where("id = ?", userID).First(&user).Error
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
@@ -229,7 +226,7 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt", "totp_secret_encrypted").
+	err := h.DB.Select("id", "email", "totp_secret_encrypted").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -370,7 +367,7 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "recovery_codes_hashed").
+	err := h.DB.Select("id", "email", "recovery_codes_hashed").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -511,7 +508,7 @@ func (h *AuthHandler) GetRecoveryCodes(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "two_factor_enabled", "recovery_codes_hashed").
+	err := h.DB.Select("id", "two_factor_enabled", "recovery_codes_hashed").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -547,7 +544,7 @@ func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "auth_hash", "server_salt").
+	err := h.DB.Select("id", "auth_hash", "server_salt").
 		Where("id = ?", userID).
 		First(&user).Error
 
