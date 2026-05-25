@@ -19,7 +19,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 32px;
     font-weight: 700;
-    color: var(--brand-dark);
+    color: #241916;
     letter-spacing: -0.5px;
 }
 
@@ -38,7 +38,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 20px;
     font-weight: 600;
-    color: var(--brand-dark);
+    color: #241916;
     letter-spacing: -0.2px;
 }
 
@@ -111,24 +111,24 @@
 }
 
 .buttonChange {
-    background-color: var(--brand-primary);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(222, 115, 86, 0.3);
+    background-color: #865142;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(134, 81, 66, 0.25);
 }
 
 .buttonChange:hover {
-    background-color: var(--brand-primary-hover);
-    box-shadow: 0 6px 18px rgba(222, 115, 86, 0.35);
+    background-color: #6a3a2c;
+    box-shadow: 0 6px 18px rgba(134, 81, 66, 0.35);
 }
 
 .buttonCancel {
     background-color: transparent;
-    color: var(--brand-primary);
-    border: 1.5px solid var(--brand-primary);
+    color: #865142;
+    border: 1.5px solid #865142;
 }
 
 .buttonCancel:hover {
-    background-color: rgba(222, 115, 86, 0.06);
+    background-color: rgba(134, 81, 66, 0.06);
 }
 
 .infoBox {
@@ -156,7 +156,7 @@
   width: 100%;
   box-sizing: border-box;
   background-color: white;
-  border: 2px solid var(--brand-primary);
+  border: 2px solid #865142;
   border-radius: 8px;
   padding: 8px 12px;
   outline: none;
@@ -216,7 +216,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    color: var(--brand-dark);
+    color: #241916;
     letter-spacing: -0.2px;
 }
 
@@ -332,15 +332,15 @@
     outline: none;
     background-color: white;
     margin-top: 8px;
-    color: var(--brand-dark);
+    color: #241916;
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .settingsCard input[type="password"]:focus,
 .settingsCard input[type="text"]:focus {
-    border-color: var(--brand-primary);
+    border-color: #865142;
     background-color: white;
-    box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.1);
+    box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.12);
 }
 
 .settingsCard input::placeholder {

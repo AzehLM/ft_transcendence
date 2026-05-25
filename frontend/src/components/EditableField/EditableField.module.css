@@ -61,7 +61,7 @@
 
 .value {
   font-weight: 400;
-  color: var(--brand-dark);
+  color: #241916;
   word-break: break-word;
   background-color: white;
   border: 1.5px solid rgba(215, 194, 189, 0.8);
@@ -84,18 +84,18 @@
 
 .input {
   font-weight: 400;
-  border: 2px solid var(--brand-primary);
+  border: 2px solid #865142;
   outline: none;
   background-color: white;
-  box-shadow: 0 0 0 3px rgba(222, 115, 86, 0.1);
-  color: var(--brand-dark);
+  box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.1);
+  color: #241916;
 }
 
 .iconButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--brand-primary);
+  color: #865142;
   padding: 4px;
   border-radius: 6px;
   display: flex;
@@ -104,7 +104,7 @@
 }
 
 .iconButton:hover {
-  background-color: rgba(213, 79, 42, 0.08);
+  background-color: rgba(134, 81, 66, 0.08);
 }
 
 .error {
