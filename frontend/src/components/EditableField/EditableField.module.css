@@ -9,7 +9,7 @@
 .label {
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: #84736f;
   letter-spacing: 0.3px;
 }
 
@@ -25,12 +25,17 @@
   display: flex;
   align-items: center;
   flex: 1;
-  background-color: #fafafa;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border: 1.5px solid rgba(215, 194, 189, 0.8);
   border-radius: 8px;
   padding: 6px 8px 6px 12px;
   gap: 4px;
   min-height: 38px;
+  transition: border-color 0.2s ease;
+}
+
+.fieldWrapper:hover {
+  border-color: rgba(134, 81, 66, 0.4);
 }
 
 .fieldActions {
@@ -57,8 +62,8 @@
   font-weight: 400;
   color: var(--brand-dark);
   word-break: break-word;
-  background-color: #fafafa;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border: 1.5px solid rgba(215, 194, 189, 0.8);
 }
 
 /* inside fieldWrapper the wrapper provides the box — strip double border */
@@ -73,7 +78,7 @@
   font-weight: 400;
   word-break: break-word;
   font-style: normal;
-  color: #9ca3af;
+  color: #84736f;
 }
 
 .input {

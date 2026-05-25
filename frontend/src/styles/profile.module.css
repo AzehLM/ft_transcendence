@@ -3,7 +3,7 @@
     overflow-y: auto;
     width: 100%;
     min-height: 100%;
-    background-color: #fdf3ef;
+    background-color: #fff8f6;
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
@@ -28,7 +28,7 @@
     margin-bottom: 32px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 16px;
-    color: #6b7280;
+    color: #524440;
     line-height: 1.5;
 }
 
@@ -46,12 +46,18 @@
     margin: 0 0 20px 3%;
     padding: 32px 36px;
     background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(215, 194, 189, 0.5);
     border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
     max-width: 50vw;
     width: 100%;
     box-sizing: border-box;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mainBox:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
 }
 
 .profileBox {
@@ -75,7 +81,7 @@
     height: 96px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(0, 0, 0, 0.06);
+    border: 2px solid rgba(215, 194, 189, 0.6);
 }
 
 .profileButton {
@@ -206,7 +212,7 @@
     margin-bottom: 20px;
     font-size: 14px;
     line-height: 1.6;
-    color: #6b7280;
+    color: #524440;
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
@@ -250,7 +256,7 @@
     margin: 0;
     font-size: 0.95rem;
     font-family: 'IBM Plex Sans', sans-serif;
-    color: var(--brand-dark);
+    color: #524440;
 }
 
 .handlePassword {
@@ -287,17 +293,23 @@
 
 .settingsCard {
     background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(215, 194, 189, 0.5);
     border-radius: 16px;
     padding: 28px 32px;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.settingsCard:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
 }
 
 .settingsCard input[type="password"],
 .settingsCard input[type="text"] {
-    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    border: 1.5px solid rgba(215, 194, 189, 0.8);
     border-radius: 10px;
     padding: 11px 14px;
     width: 100%;
@@ -305,7 +317,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 14px;
     outline: none;
-    background-color: #fafafa;
+    background-color: white;
     margin-top: 8px;
     color: var(--brand-dark);
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
@@ -315,17 +327,17 @@
 .settingsCard input[type="text"]:focus {
     border-color: var(--brand-primary);
     background-color: white;
-    box-shadow: 0 0 0 3px rgba(222, 115, 86, 0.1);
+    box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.1);
 }
 
 .settingsCard input::placeholder {
-    color: #9ca3af;
+    color: #84736f;
 }
 
 .settingsCard .inputBox p {
     font-size: 13px;
     font-weight: 600;
-    color: #6b7280;
+    color: #84736f;
     margin: 0;
     letter-spacing: 0.2px;
 }

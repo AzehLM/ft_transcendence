@@ -2,6 +2,8 @@
     padding: 72px 48px 80px;
     width: 100%;
     box-sizing: border-box;
+    min-height: 100%;
+    background-color: #fff8f6;
 }
 
 .headerSection {
@@ -19,7 +21,7 @@
 
 .subtitle {
     font-size: 16px;
-    color: #6b7280;
+    color: #524440;
     margin: 0;
     font-family: 'IBM Plex Sans', sans-serif;
 }
@@ -35,11 +37,17 @@
 
 .sectionCard {
     background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(215, 194, 189, 0.5);
     border-radius: 16px;
     padding: 28px;
     width: 100%;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.sectionCard:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
 }
 
 .sectionTitle {

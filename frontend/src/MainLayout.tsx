@@ -45,7 +45,7 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", minWidth: 0, backgroundColor: "#fffcfb", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, overflow: "auto", minWidth: 0, backgroundColor: "#fff8f6", display: "flex", flexDirection: "column" }}>
           <div style={{ flex: 1 }}>
             <Outlet />
           </div>
