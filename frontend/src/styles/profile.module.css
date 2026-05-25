@@ -56,32 +56,36 @@
 
 .profileBox {
     display: flex;
-    gap: 15px;
+    gap: 28px;
+    align-items: flex-start;
 }
 
 .profileAvatarCol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 5%;
-    width: 50%;
-    min-width: 200px;
-    max-width: 600px;
+    gap: 12px;
+    padding: 0;
+    flex-shrink: 0;
+    width: auto;
 }
 
 .profileAvatarCol img {
-    width: 90%;
-    padding-bottom: 10%;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(0, 0, 0, 0.06);
 }
 
 .profileButton {
     min-width: fit-content;
     border: none;
-    border-radius: 12px;
-    padding: 12px 22px;
+    border-radius: 10px;
+    padding: 8px 16px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
     white-space: nowrap;
@@ -112,10 +116,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin: 10px;
+    margin: 0;
     width: 100%;
-    gap: 8%;
-    max-width: 600px;
+    gap: 16px;
     flex: 1;
 }
 
@@ -336,28 +339,25 @@
 }
 /* still need to be checked */
 @media (max-width: 1080px) {
-    .profileBox {
-        flex-direction: column;
-        align-items: center;
+    .mainBox {
+        max-width: 100%;
+        margin-left: 0;
     }
-    
-    .profileAvatarCol {
-        width: 100%;
+
+    .settingsGrid {
+        max-width: 100%;
+        margin-left: 0;
     }
-    
-    .infoBox {
-        width: 100%;
-    }
-    
+
     .mainBox {
         padding: 20px;
     }
-    
+
     .buttons {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .profileButton {
         width: 100%;
     }
