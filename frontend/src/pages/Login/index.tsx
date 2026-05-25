@@ -105,9 +105,7 @@ export default function LoginPage() {
 
     const handle2FASuccess = async (token: string) => {
         try {
-            console.log("✅ 2FA verification successful!");
             localStorage.setItem("token", token);
-
             // Use the stored masterKey and encrypted data to complete login
             if (masterKey && userEncryptedPrivateKey && userIv && userPublicKey) {
                 const encryptedPrivateKey = base64ToUint8Array(userEncryptedPrivateKey);
@@ -116,7 +114,16 @@ export default function LoginPage() {
                 const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
                 await storePrivateKey(privateKey);
 
-                sessionStorage.setItem("publicKey", userPublicKey);
+                const publicKeyArray = base64ToUint8Array(userPublicKey);
+                const publicKey = await crypto.subtle.importKey(
+                    "spki",
+                    new Uint8Array(publicKeyArray),
+                    { name: "RSA-OAEP", hash: "SHA-256" },
+                    true,
+                    ["encrypt"]
+                );
+                await storePublicKey(publicKey);
+
                 navigate("/dashboard");
             } else {
                 throw new Error("Missing required data for login completion");
