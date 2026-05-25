@@ -1,5 +1,5 @@
 .container {
-    padding: 24px 40px;
+    padding: 40px 48px;
     width: 100%;
     margin: 0;
 }
@@ -9,39 +9,44 @@
 }
 
 .headerSection h1 {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 700;
-    color: #4a3731;
+    color: var(--brand-dark);
     margin: 0 0 4px 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.5px;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .subtitle {
     font-size: 16px;
-    color: #8c7b75;
+    color: #6b7280;
     margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .settingsGrid {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     width: 100%;
 }
 
 .sectionCard {
     background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 16px;
-    padding: 24px;
+    padding: 28px;
     width: 100%;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .sectionTitle {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    color: #4a3731;
+    color: var(--brand-dark);
     margin: 0 0 20px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    letter-spacing: -0.2px;
 }
 
 .fieldGroup {
@@ -56,6 +61,6 @@
     }
 
     .headerSection h1 {
-        font-size: 32px;
+        font-size: 26px;
     }
 }
