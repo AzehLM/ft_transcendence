@@ -49,7 +49,6 @@ func hashToken(rawToken string) string {
 
 func encryptTOTPSecret(secret string, clientSalt []byte, userID string) ([]byte, error) {
 
-
 	key := pbkdf2.Key(
 		[]byte(userID),
 		clientSalt,
@@ -82,9 +81,8 @@ func decryptTOTPSecret(encryptedSecret []byte, clientSalt []byte, userID string)
 
 	// Check if encrypted secret is valid
 	if len(encryptedSecret) < 12 {
-		return "", fmt.Errorf("invalid_encrypted_secret: too short")
+		return "", fmt.Errorf("invalid encrypted_secret: too short")
 	}
-
 
 	key := pbkdf2.Key(
 		[]byte(userID),
@@ -93,7 +91,6 @@ func decryptTOTPSecret(encryptedSecret []byte, clientSalt []byte, userID string)
 		32,
 		sha256.New,
 	)
-
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

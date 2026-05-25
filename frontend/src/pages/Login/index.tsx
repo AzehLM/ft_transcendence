@@ -64,7 +64,6 @@ export default function LoginPage() {
 
             // Check if 2FA is required
             if (responseData.require_2fa) {
-                console.log("ℹ️ 2FA required for this account");
                 // Store the necessary data for after 2FA verification
                 setMasterKey(mk);
                 setUserEncryptedPrivateKey(responseData.encrypted_private_key);
@@ -105,7 +104,6 @@ export default function LoginPage() {
 
     const handle2FASuccess = async (token: string) => {
         try {
-            console.log("✅ 2FA verification successful!");
             localStorage.setItem("token", token);
 
             // Use the stored masterKey and encrypted data to complete login
