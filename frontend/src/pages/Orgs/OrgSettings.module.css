@@ -28,7 +28,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    max-width: 640px;
+    max-width: 50vw;
     margin-left: 3%;
     width: 100%;
 }
