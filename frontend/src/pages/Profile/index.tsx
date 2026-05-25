@@ -34,7 +34,7 @@ export default function ProfilePage() {
         if (!cancelled) console.error("Failed to fetch user:", err);
       });
 
-    fetchWithRefresh("/api/auth/user/me/avatar")
+    fetchWithRefresh("/api/user/me/avatar")
       .then(res => {
         if (!res.ok) return null;
         return res.blob();
@@ -95,7 +95,7 @@ export default function ProfilePage() {
     formData.append("avatar", file);
 
     try {
-      const res = await fetchWithRefresh("/api/auth/user/avatar", {
+      const res = await fetchWithRefresh("/api/user/avatar", {
         method: "PATCH",
         body: formData,
       });
