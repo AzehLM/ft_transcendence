@@ -6,7 +6,7 @@ export interface NotificationItem {
   id: string;
   event: string;
   message: string;
-  data?: any;
+  data?: unknown;
   timestamp: Date;
   isRead: boolean;
 }
@@ -15,10 +15,10 @@ export interface ToastItem {
   id: string;
   event: string;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
-type ListenerCallback = (data: any) => void;
+type ListenerCallback = (data: unknown) => void;
 
 interface NotificationContextType {
   notifications: NotificationItem[];
@@ -32,6 +32,7 @@ interface NotificationContextType {
   removeToast: (id: string) => void;
   registerListener: (event: string, callback: ListenerCallback) => void;
   unregisterListener: (event: string, callback: ListenerCallback) => void;
+  reconnect: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -139,6 +140,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             }
           });
         }
+
+        if (eventType === "ADDED_TO_NEW_ORGA" || eventType === "REMOVED_FROM_ORGA") {
+          console.log(`[WS] Membership changed (${eventType}). Reconnecting websocket to update subscriptions...`);
+          setTimeout(() => {
+            reconnect();
+          }, 100);
+        }
       } catch (err) {
         console.error("[WS] Failed to parse websocket message:", err, event.data);
       }
@@ -164,13 +172,26 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
   };
 
+  const reconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    reconnectAttemptsRef.current = 0;
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    connect();
+  };
+
   const disconnect = () => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
     if (wsRef.current) {
-      console.log("[WS] Disconnecting websocket...");
       wsRef.current.close();
       wsRef.current = null;
     }
@@ -259,6 +280,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         removeToast,
         registerListener,
         unregisterListener,
+        reconnect,
       }}
     >
       {children}

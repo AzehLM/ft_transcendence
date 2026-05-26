@@ -20,7 +20,7 @@ interface Organization {
 
 export default function OrganizationsPage() {
   const navigate = useNavigate();
-  const { registerListener, unregisterListener } = useNotifications();
+  const { registerListener, unregisterListener, reconnect } = useNotifications();
 
 
   const [orgs, setOrgs] = useState<Organization[]>([]);
@@ -108,6 +108,7 @@ export default function OrganizationsPage() {
       setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
       setShowCreateModal(false);
       setOrgName("");
+      reconnect();
     } catch (err) {
       console.error("Error:", err);
       setModalError("An error occurred, please try again.");
