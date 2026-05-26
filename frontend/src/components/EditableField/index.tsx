@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import styles from "./EditableField.module.css";
+import { organizationSchema, organizationDescriptionSchema } from "../../schemas/organization.schema";
 
 interface EditableFieldProps {
   label: string;
   value: string;
   role?: string | null;
-  maxCharac: number;
   isOrgaName?: boolean;
   isOrgaDesc?: boolean;
   isUserNames?: boolean;
@@ -14,30 +14,37 @@ interface EditableFieldProps {
   handleReset?: () => Promise<void>;
 }
 
-export function EditableField({ label, value, role, maxCharac, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
+export function EditableField({ label, value, role, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
   const handleSave = async () => {
-    if (!inputValue.trim() || inputValue === value) {
-      setEditing(false);
-      return;
-    }
-    if (inputValue.length > maxCharac) {
-        setError(`The input cannot exceed ${maxCharac} characters`)
+    if (inputValue === value) {
+        setEditing(false);
         return;
     }
+
+    const schema = isOrgaName ? organizationSchema : organizationDescriptionSchema;
+    const field = isOrgaName ? "name" : "description";
+
+    const result = schema.safeParse({ [field]: inputValue });
+    if (!result.success) {
+        setError(result.error.issues[0].message);
+        return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await onSave(inputValue);
+      await onSave(result.data[field as keyof typeof result.data]);
       setEditing(false);
     } catch {
-      setError("Failed to save.");
+        setError("Failed to save.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -69,14 +76,14 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
         ) : (
           <>
             { isOrgaName  && (
-              <p className={styles.value}>{value}</p> 
+              <p className={styles.value}>{value}</p>
             )}
             { ((isOrgaDesc || isUserNames) && value !== "") && (
               <>
                 <p className={styles.value}>{value}</p>
                 <button className={styles.iconButton} onClick={handleReset}>
                   <X size={18} />
-                </button> 
+                </button>
               </>
             )}
             { isOrgaDesc && value === "" && (
