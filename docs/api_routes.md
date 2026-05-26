@@ -1,4 +1,4 @@
-# ft_box - API Routes
+# Ostrom - API Routes
 
 Base URL : `/api/v1`
 
