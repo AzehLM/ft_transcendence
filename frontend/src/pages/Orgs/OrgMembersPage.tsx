@@ -8,6 +8,7 @@ import { UserMinus, Shield, UserPlus } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
+import { z } from "zod";
 
 interface Member {
   user_id: string;
@@ -75,7 +76,11 @@ export default function OrgMembersPage() {
   }, [id, navigate]);
 
   const handleAddMember = async () => {
-    if (!memberEmail.trim()) return;
+    const result = z.email().safeParse(memberEmail);
+    if (!result.success) {
+      setModalError("Please enter a valid email");
+      return ;
+    }
     setModalError(null);
 
     const userPrivateKey = await getPrivateKeyFromSession();
