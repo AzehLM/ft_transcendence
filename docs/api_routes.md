@@ -660,6 +660,20 @@ Reponse : `204 No Content`
 
 ---
 
+### `GET /folders/:folder_id/path`
+
+Retourne le path d'un dossier
+
+Reponse (200) :
+```json
+{
+  [
+    { "id": "<uuid>", "name": "documents" }
+  ],
+}
+```
+
+---
 ## Files
 
 > Les routes fichiers n'operent que sur les fichiers en statut ACTIVE. Les fichiers PENDING sont un etat transitoire interne et ne sont jamais exposes via l'API.
