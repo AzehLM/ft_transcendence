@@ -16,7 +16,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
   const navigate = useNavigate();
 
   // Load files
-  const loadFiles = useCallback(async () => { // not sure about callback
+  const loadFiles = useCallback(async () => {
     setSuccess("");
     setError(null);
     const response = await loadFn();
