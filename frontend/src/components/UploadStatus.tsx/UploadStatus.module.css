@@ -1,5 +1,11 @@
 /* Status and error message */
+.uploadWrapper {
+    animation: fadeInUp 0.3s ease-out;
+}
 
+.uploadWrapper.hide {
+    animation: fadeOutUp 0.4s ease forwards;
+}
 .statusMessage {
     padding: 0;
     margin-bottom: 16px;

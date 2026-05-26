@@ -14,6 +14,7 @@ interface Upload {
   isUploading: boolean;
   fileInfo: { name: string; type: string; size: string };
   progress?: UploadProgress | null;
+  hiding?: boolean;
 }
 
 interface UploadStatusProps {
@@ -40,13 +41,13 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
       )}
 
       {uploads.map(upload => (
-        <div key={upload.id} style={{ marginBottom: "20px" }}>
-          <div className={`${styles.statusMessage} ${upload.status.includes("Error") ? styles.error : styles.loading}`}>
+        <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
+        <div className={`${styles.statusMessage} ${upload.status.includes("Erreur") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
             {!upload.status.includes("Error") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
-          <div className={styles.fileInfoCard}>
+        <div className={`${styles.fileInfoCard} ${upload.hiding ? styles.hide : ""}`}>
             <div className={styles.fileName}>{upload.fileInfo.name}</div>
             <div className={styles.fileDetails}>
               <span><strong>Type:</strong> {upload.fileInfo.type}</span>
@@ -55,7 +56,7 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
           </div>
 
           {upload.progress && (
-            <div className={styles.progressContainer}>
+            <div className={`${styles.progressContainer} ${upload.hiding ? styles.hide : ""}`}>
               <div className={styles.progressHeader}>
                 <div className={styles.progressTitleContainer}>
                   <div className={styles.progressTitle}>Chiffrement & Upload</div>
