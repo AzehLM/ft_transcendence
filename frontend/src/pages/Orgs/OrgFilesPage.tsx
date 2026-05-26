@@ -42,7 +42,7 @@ export default function OrgFilesPage() {
   const activeUploads = Object.values(uploads);
   const isUploading = activeUploads.some(u => u.isUploading);
 
-  const { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage } = useE2EEDownloadOrg();
+  const { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError } = useE2EEDownloadOrg();
 
   const handleDownload = (fileId: string) => {
     downloadAndDecryptOrg(fileId, id!);
@@ -120,6 +120,7 @@ const {
                     error={error}
                     success={success}
                     hideMessage={hideMessage}
+                    downloadError={downloadError}
                 />
             </div>
 

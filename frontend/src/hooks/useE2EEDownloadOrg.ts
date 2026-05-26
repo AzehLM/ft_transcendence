@@ -21,6 +21,7 @@ export function useE2EEDownloadOrg() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [hideDownloadMessage, setHideDownloadMessage] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
 
     useEffect(() => {
         if (downloadStatus) {
@@ -42,10 +43,13 @@ export function useE2EEDownloadOrg() {
 
         setIsDownloading(true);
         setDownloadStatus(null);
+        setDownloadError(false);
+
         try {
             setDownloadStatus("1/5: Fetching organization keys...");
             const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`);
             if (!keysRes.ok) {
+                setDownloadError(true);
                 throw new Error("Unable to fetch organization keys.");
             }
             const { enc_org_priv_key, enc_aes_key, iv: orgIv } = await keysRes.json();
@@ -66,6 +70,7 @@ export function useE2EEDownloadOrg() {
             const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
 
             if (!metaRes.ok) {
+                setDownloadError(true);
                 throw new Error(metaRes.status === 404 ? "File not found on server." : `Unable to fetch metadata (${metaRes.status}).`);
             }
             const metadata: DownloadMetadata = await metaRes.json();
@@ -104,13 +109,17 @@ export function useE2EEDownloadOrg() {
                     const fileHandle = await window.showSaveFilePicker({ suggestedName: filename });
                     writable = await fileHandle.createWritable();
                 } catch (err) {
+                    setDownloadError(true);
                     throw new Error("Save cancelled by user.");
                 }
             }
 
             setDownloadStatus("Decrypting data on the fly...");
             const response = await fetch(metadata.presigned_url);
-            if (!response.ok || !response.body) throw new Error("Error accessing remote storage (MinIO).");
+            if (!response.ok || !response.body){
+                setDownloadError(true);
+                throw new Error("Error accessing remote storage (MinIO).");
+            }
 
             const reader = response.body.getReader();
             const chunks: Uint8Array[] = [];
@@ -199,11 +208,12 @@ export function useE2EEDownloadOrg() {
             setDownloadStatus(`Success! "${filename}" has been decrypted and saved.`);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Unknown error";
+            setDownloadError(true);
             setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
     };
 
-    return { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage };
+    return { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError };
 }
