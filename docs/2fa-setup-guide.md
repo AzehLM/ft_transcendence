@@ -229,7 +229,3 @@ Used by:
 - POST /auth/2fa/verify
 - POST /auth/2fa/recovery-code
 
----
-
-**Last Updated:** May 21, 2026  
-**Team:** Crypto & Auth Squad

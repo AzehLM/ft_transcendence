@@ -11,7 +11,6 @@ import (
 
 type TOTPService struct {
 	//nothing for now
-
 }
 
 func (s *TOTPService) GenerateTOTPSecret(userEmail string) (string, string, error) {
@@ -29,9 +28,7 @@ func (s *TOTPService) GenerateTOTPSecret(userEmail string) (string, string, erro
 }
 
 func (s *TOTPService) VerifyTOTPCode(secret, userCode string) bool {
-
 	return totp.Validate(userCode, secret)
-
 }
 
 func (s *TOTPService) GenerateRecoveryCodes(count int) ([]string, error) {
@@ -65,7 +62,7 @@ func (s *TOTPService) randomString(length int, charset string) (string, error) {
 	if _, err := rand.Read(randomByte); err != nil {
 		return "", err
 	}
-	for i := 0; i < length; i++ {
+	for i := range length {
 		randomIndex := int(randomByte[i]) % len(charset)
 		result += string(charset[randomIndex])
 	}
@@ -85,5 +82,4 @@ func (s *TOTPService) HashRecoveryCodes(codes []string) ([]byte, error) {
 	}
 
 	return json.Marshal(hashedCodes)
-
 }

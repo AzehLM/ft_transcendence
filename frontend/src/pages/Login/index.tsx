@@ -64,7 +64,6 @@ export default function LoginPage() {
 
             // Check if 2FA is required
             if (responseData.require_2fa) {
-                console.log("ℹ️ 2FA required for this account");
                 // Store the necessary data for after 2FA verification
                 setMasterKey(mk);
                 setUserEncryptedPrivateKey(responseData.encrypted_private_key);

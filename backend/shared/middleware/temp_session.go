@@ -25,7 +25,7 @@ func VerifyTempSession(jwtSecret string) fiber.Handler {
 
 		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "missing_or_invalid_token",
+				"error": "missing or invalid_token",
 			})
 		}
 
@@ -38,19 +38,19 @@ func VerifyTempSession(jwtSecret string) fiber.Handler {
 
 		if err != nil || !token.Valid {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "token_expired_or_invalid",
+				"error": "token expired or invalid",
 			})
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_claims"})
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid claims"})
 		}
 
 		scope, ok := claims["scope"].(string)
 		if !ok || scope != "2fa" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "invalid_token_scope",
+				"error": "invalid token scope",
 			})
 		}
 

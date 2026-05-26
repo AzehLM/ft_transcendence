@@ -25,40 +25,46 @@ var (
 )
 
 type tempTOTPData struct {
-	Secret    string
-	ExpiresAt time.Time
+	Secret		string
+	ExpiresAt	time.Time
 }
 
 type failedAttempt struct {
-	Count       int
-	LockedUntil time.Time
+	Count		int
+	LastAttempt	time.Time
+	LockedUntil	time.Time
 }
-
-const maxAttempts = 3
-const lockoutDuration = 5 * time.Minute
+const (
+	maxAttempts		= 3
+	lockoutDuration	= 5 * time.Minute
+	attemptWindowReset	= 5 * time.Minute
+)
 
 func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at").
+	err := h.DB.Select("id", "email").
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	if user.TwoFactorEnabled {
 		log.Printf("[WARN] 2FA already enabled %s", user.ID)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "2FA_already_enabled"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "2FA already enabled"})
 	}
 
 	secret, url, err := h.TOTPService.GenerateTOTPSecret(user.Email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal_server_error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	tempTOTPStoreMutex.Lock()
@@ -79,16 +85,16 @@ func (h *AuthHandler) GenerateTOTPSecret(c fiber.Ctx) error {
 
 func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt").
-		Where("id = ?", userID).
-		First(&user).Error
-
+	err := h.DB.Select("id, client_salt").Where("id = ?", userID).First(&user).Error
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	// Check if user is locked out
@@ -99,7 +105,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error":   "too_many_attempts",
+				"error":   "too many attempts",
 				"message": "Too many failed attempts. Generate a new QR code.",
 			})
 		}
@@ -111,11 +117,11 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	req := new(VerifyTOTPRequest)
 
 	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
 
 	if len(req.Code) != 6 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code_must_be_6_digits"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 6 digits"})
 	}
 
 	code := req.Code
@@ -135,7 +141,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 		delete(tempTOTPStore, userID)
 		tempTOTPStoreMutex.Unlock()
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":   "TOTP_secret_expired",
+			"error":   "TOTP secret expired",
 			"message": "Setup window expired. Generate a new QR code.",
 		})
 	}
@@ -156,7 +162,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 			tempTOTPStoreMutex.Unlock()
 
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "too_many_attempts",
+				"error": "too many attempts",
 			})
 		}
 		failedAttempts[userID] = attempt
@@ -178,22 +184,19 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 	encryptedSecret, err := encryptTOTPSecret(secret, user.ClientSalt, user.ID.String())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "encryption_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "encryption failed"})
 	}
 
 	// Base64 encode encrypted secret for safe database storage
 	encryptedSecretBase64 := []byte(base64.StdEncoding.EncodeToString(encryptedSecret))
 
-	logLen := len(encryptedSecret)
-	if logLen > 16 {
-		logLen = 16
-	}
-
 	recoveryCodes, err := h.TOTPService.GenerateRecoveryCodes(10)
-	hashedCodesJSON, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
-
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "hashing_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "generating recovery codes failed"})
+	}
+	hashedCodesJSON, err := h.TOTPService.HashRecoveryCodes(recoveryCodes)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "hashing failed"})
 	}
 
 	// Base64 encode the already-marshaled JSON for safe database storage
@@ -206,7 +209,7 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 	}).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -219,80 +222,96 @@ func (h *AuthHandler) VerifyTOTPSetup(c fiber.Ctx) error {
 
 func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
-
-	var user models.User
-
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "client_salt", "totp_secret_encrypted").
-		Where("id = ?", userID).
-		First(&user).Error
-
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
 	}
+
+	req := new(VerifyTOTPRequest)
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
+	}
+
+	if len(req.Code) != 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 6 digits"})
+	}
+
+	for _, r := range req.Code {
+		if r < '0' || r > '9' {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 6 digits"})
+		}
+	}
+	code := req.Code
 
 	failedAttemptsMutex.RLock()
 	attempt, exists := failedAttempts[userID]
 	failedAttemptsMutex.RUnlock()
 
 	if exists {
-		if time.Now().Before(attempt.LockedUntil) {
+		if !attempt.LockedUntil.IsZero() && time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error":   "too_many_attempts",
-				"message": "Too many failed attempts. Try again later.",
+				"error":	"too many attempts",
+				"message":	"Too many failed attempts. Try again later.",
 			})
 		}
-		failedAttemptsMutex.Lock()
-		delete(failedAttempts, userID)
-		failedAttemptsMutex.Unlock()
+
+		lockoutExpired := !attempt.LockedUntil.IsZero() && time.Now().After(attempt.LockedUntil)
+		tooOld := !attempt.LastAttempt.IsZero() && time.Since(attempt.LastAttempt) > attemptWindowReset
+
+		if lockoutExpired || tooOld {
+			failedAttemptsMutex.Lock()
+			delete(failedAttempts, userID)
+			failedAttemptsMutex.Unlock()
+		}
 	}
 
-	req := new(VerifyTOTPRequest)
-
-	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+	var user models.User
+	err := h.DB.Select("id", "email", "totp_secret_encrypted", "client_salt", "encrypted_private_key", "iv", "public_key").
+		Where("id = ?", userID).
+		First(&user).Error
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
 	}
 
-	if len(req.Code) != 6 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code_must_be_6_digits"})
-	}
-
-	code := req.Code
-
-	logLen := len(user.TOTPSecretEncrypted)
-	if logLen > 16 {
-		logLen = 16
-	}
 	// Base64 decode the stored encrypted secret
 	encryptedSecret, err := base64.StdEncoding.DecodeString(string(user.TOTPSecretEncrypted))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: base64 decode failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	secret, err := decryptTOTPSecret(encryptedSecret, user.ClientSalt, user.ID.String())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "decryption_failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: decryption failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
 	if !h.TOTPService.VerifyTOTPCode(secret, code) {
 		failedAttemptsMutex.Lock()
 		attempt := failedAttempts[userID]
 		attempt.Count++
+		attempt.LastAttempt = time.Now()
+
 		if attempt.Count >= maxAttempts {
 			attempt.LockedUntil = time.Now().Add(lockoutDuration)
 			failedAttempts[userID] = attempt
 			failedAttemptsMutex.Unlock()
 
+			log.Printf("[WARN] VerifyTOTPLogin: User %s locked out after %d failed attempts", user.Email, attempt.Count)
+
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "too_many_attempts",
+				"error":	"too many attempts",
+				"message":	"Too many failed attempts. Try again later.",
 			})
 		}
 		failedAttempts[userID] = attempt
 		failedAttemptsMutex.Unlock()
 
+		log.Printf("[INFO] VerifyTOTPLogin: Invalid TOTP code for %s (attempt %d/%d)", user.Email, attempt.Count, maxAttempts)
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":              "invalid_code",
-			"attempts_remaining": maxAttempts - attempt.Count,
+			"error":				"invalid code",
+			"attempts_remaining":	maxAttempts - attempt.Count,
 		})
 	}
 
@@ -310,22 +329,21 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	jwtSecret := []byte(h.Env.JwtSecret)
 	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+		log.Printf("[ERROR] VerifyTOTPLogin: token signing failed for %s: %v", user.Email, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
-	// Generate refresh token (32 bytes)
 	rtBytes := make([]byte, 32)
 	if _, err := rand.Read(rtBytes); err != nil {
-		log.Printf("[ERROR] VerifyTOTPLogin: Failed to generate refresh token for %s: %v\n", user.Email, err)
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to generate refresh token for %s: %v", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	rawRefreshToken := hex.EncodeToString(rtBytes)
 
 	// Hash and save refresh token to database
 	hashedRefreshToken := hashToken(rawRefreshToken)
-
 	if err := h.DB.Model(&user).Update("refresh_token", hashedRefreshToken).Error; err != nil {
-		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v\n", user.Email, err)
+		log.Printf("[ERROR] VerifyTOTPLogin: Failed to save refresh token for %s: %v", user.Email, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
@@ -335,10 +353,10 @@ func (h *AuthHandler) VerifyTOTPLogin(c fiber.Ctx) error {
 	log.Printf("[INFO] User %s logged in via 2FA successfully", user.Email)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"access_token":          accessToken,
-		"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
-		"iv":                    base64.StdEncoding.EncodeToString(user.IV),
-		"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
+		"access_token":				accessToken,
+		"encrypted_private_key":	base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+		"iv":						base64.StdEncoding.EncodeToString(user.IV),
+		"public_key":				base64.StdEncoding.EncodeToString(user.PublicKey),
 	})
 }
 
@@ -361,39 +379,42 @@ func parseRecoveryCodes(hashedCodesBase64 []byte) [][]byte {
 
 func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "recovery_codes_hashed").
+	err := h.DB.Select("id", "email", "recovery_codes_hashed").
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
-
-	req := new(VerifyTOTPRequest)
-
-	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
-	}
-
-	if len(req.Code) != 11 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code_must_be_11_characters"})
-	}
-
-	givenCode := req.Code
-	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
 
 	failedAttemptsMutex.RLock()
 	attempt, exists := failedAttempts[userID]
 	failedAttemptsMutex.RUnlock()
 
+	req := new(VerifyTOTPRequest)
+
+	if err := c.Bind().Body(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
+	}
+
+	if len(req.Code) != 11 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "code must be 11 characters"})
+	}
+
+	givenCode := req.Code
+	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
+
 	if exists {
 		if time.Now().Before(attempt.LockedUntil) {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error":   "too_many_attempts",
+				"error":   "too many attempts",
 				"message": "Too many failed attempts. Try again later.",
 			})
 		}
@@ -423,14 +444,14 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 			failedAttemptsMutex.Unlock()
 
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"error": "too_many_attempts",
+				"error": "too many attempts",
 			})
 		}
 		failedAttempts[userID] = attempt
 		failedAttemptsMutex.Unlock()
 
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":              "invalid_recovery_code",
+			"error":              "invalid recovery code",
 			"attempts_remaining": maxAttempts - attempt.Count,
 		})
 	}
@@ -441,7 +462,7 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	remainingCodesJSON, err := json.Marshal(remainingCodes)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "serialization_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "serialization failed"})
 	}
 
 	// Base64 encode for safe database storage (same format as setup)
@@ -449,7 +470,7 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 	err = h.DB.Model(&user).Update("RecoveryCodesHashed", remainingCodesBase64).Error
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
 
 	// Create access token with 15 minutes expiration (matching normal login)
@@ -462,7 +483,7 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 	jwtSecret := []byte(h.Env.JwtSecret)
 	accessToken, err := token.SignedString(jwtSecret)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token_generation_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token generation failed"})
 	}
 
 	// Generate refresh token (32 bytes)
@@ -499,20 +520,23 @@ func (h *AuthHandler) VerifyRecoveryCode(c fiber.Ctx) error {
 
 func (h *AuthHandler) GetRecoveryCodes(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "two_factor_enabled", "recovery_codes_hashed").
+	err := h.DB.Select("id", "two_factor_enabled", "recovery_codes_hashed").
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	if !user.TwoFactorEnabled {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "two_factor_not_enabled"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "two factor not enabled"})
 	}
 
 	userCodes := parseRecoveryCodes(user.RecoveryCodesHashed)
@@ -532,31 +556,34 @@ type DisableTwoFactorRequest struct {
 
 func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
 
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user_id missing or invalid"})
+	}
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "auth_hash", "server_salt").
+	err := h.DB.Select("id", "auth_hash", "server_salt").
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user_not_found"})
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
 	req := new(DisableTwoFactorRequest)
 
 	if err := c.Bind().Body(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_payload"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
 
 	if req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "password_required"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "password required"})
 	}
 
 	if !verifyArgon2idHash(req.Password, user.ServerSalt, user.AuthHash) {
 		log.Printf("[WARN] Failed to disable 2FA for %s: wrong password", user.ID)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_password"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid password"})
 	}
 
 	err = h.DB.Model(&user).Updates(map[string]interface{}{
@@ -566,7 +593,7 @@ func (h *AuthHandler) DisableTwoFactor(c fiber.Ctx) error {
 	}).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database_update_failed"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database update failed"})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
