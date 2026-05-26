@@ -647,7 +647,12 @@ Body :
 }
 ```
 
-Reponse : `200 OK`
+Reponse (200):
+```json
+{
+  "message": "folder updated"
+}
+```
 
 ---
 
@@ -849,7 +854,12 @@ Body :
 { "folder_id": "<uuid>" }
 ```
 
-Reponse : `200 OK`
+Reponse (200) :
+```json
+{
+  "message": "file moved"
+}
+```
 
 ---
 
