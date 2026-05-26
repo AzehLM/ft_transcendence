@@ -8,6 +8,7 @@ import { ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FilesService } from "../../services/files.service";
 import { useParams } from "react-router-dom";
+import { folderSchema } from "../../schemas/folder.schema";
 import dashboardStyles from "../../pages/Dashboard/Dashboard.module.css"
 
 interface FileItem {
@@ -47,12 +48,16 @@ export function FileGrid({ title, subtitle, files, loading, onDeleteFile, onDele
   const [folderError, setFolderError] = useState<string | null>(null);
 
   const handleCreateFolderSubmit = async () => {
-    if (!folderName.trim()) {
-        setFolderError("Invalid Name")
-        return;
+    setFolderError("");
+
+    const result = folderSchema.safeParse({ name: folderName });
+    if(!result.success) {
+        setFolderError(result.error.issues[0].message);
+        return ;
     }
+
     try {
-      await onCreateFolder?.(folderName);
+      await onCreateFolder?.(result.data.name);
       setFolderName("");
       setIsFolderModalOpen(false);
       setFolderError(null);
@@ -106,11 +111,11 @@ export function FileGrid({ title, subtitle, files, loading, onDeleteFile, onDele
         onInputChange={setFolderName}
         errorMessage={folderError ?? undefined}
       />
-      {isOrgPage && <OrgHeader 
-        orgName={orgName} 
-        orgDesc={orgDesc} 
-        showActionButtons={showActionButtons} 
-        onUploadFile={onUploadFile} 
+      {isOrgPage && <OrgHeader
+        orgName={orgName}
+        orgDesc={orgDesc}
+        showActionButtons={showActionButtons}
+        onUploadFile={onUploadFile}
         onCreateFolder={() => setIsFolderModalOpen(true)}></OrgHeader>}
       <div className={showActionButtons && !isOrgPage ? styles.contentArea : styles.contentAreaNoButtons}>
         <h1 className={styles.title}>{title}</h1>
@@ -148,15 +153,15 @@ export function FileGrid({ title, subtitle, files, loading, onDeleteFile, onDele
               />
             ))}
             {files.map((file) => (
-            <FileCard 
-              key={file.id} 
-              id={file.id} 
-              name={file.name} 
-              onDelete={onDeleteFile} 
-              onDownload={onDownloadFile} 
+            <FileCard
+              key={file.id}
+              id={file.id}
+              name={file.name}
+              onDelete={onDeleteFile}
+              onDownload={onDownloadFile}
               orgId={orgId}
               onMove={onMoveFile}
-            />            
+            />
             ))}
           </div>
         )}
