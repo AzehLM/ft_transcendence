@@ -5,7 +5,7 @@ function TermsPage() {
         <div className={styles.wrapper}>
             <main className={styles.container}>
                 <h1 className={styles.title}>Terms of Service</h1>
-                <p className={styles.lastUpdated}>Last updated: April 2026</p>
+                <p className={styles.lastUpdated}>Last updated: Mai 2026</p>
 
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>Article 1. Acceptance of Terms</h2>
@@ -79,10 +79,10 @@ function TermsPage() {
                         User's encryption key or the content of their files in the event of a lost password.</strong>{" "}
                         The User is solely responsible for preserving access to their credentials.
                     </p>
-                    {/* <p className={styles.paragraph}>
+                    <p className={styles.paragraph}>
                         The User may also enable two-factor authentication (2FA) via a TOTP-compatible application
                         (e.g. Google Authenticator). Enabling 2FA is recommended to protect account access.
-                    </p> */}
+                    </p>
                 </section>
 
                 <section className={styles.section}>
@@ -110,7 +110,7 @@ function TermsPage() {
                     <p className={styles.paragraph}>
                         Ostrom collects and processes only the data strictly necessary for the operation of the
                         service, including: account identifiers (email address, display name), file metadata
-                        (name, size, folder hierarchy, upload date), and usage metrics (storage quota consumed).
+                        (size, folder hierarchy, upload date), and usage metrics (storage quota consumed).
                         File contents are encrypted client-side and are never accessible to Ostrom.
                     </p>
                     <p className={styles.paragraph}>
