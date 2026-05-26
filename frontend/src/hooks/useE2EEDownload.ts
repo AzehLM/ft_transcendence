@@ -26,11 +26,17 @@ export function useE2EEDownload() {
     useEffect(() => {
         if (downloadStatus) {
             setHideDownloadMessage(false);
+            let clearStatusTimer: ReturnType<typeof setTimeout> | undefined;
             const timer = setTimeout(() => {
                 setHideDownloadMessage(true);
-                setTimeout(() => setDownloadStatus(null), 400);
+                clearStatusTimer = setTimeout(() => setDownloadStatus(null), 400);
             }, 3000);
-            return () => clearTimeout(timer);
+             return () => {
+                 clearTimeout(timer);
+                 if (clearStatusTimer) {
+                     clearTimeout(clearStatusTimer);
+                 }
+             };
         }
     }, [downloadStatus]);
 
