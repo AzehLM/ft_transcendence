@@ -1,6 +1,6 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
@@ -50,6 +50,11 @@ export default function DashboardPage() {
         setIsFolderModalOpen(false);
     };
 
+    const loadFn = useCallback(
+        () => folderId ? FilesService.getFolderContents(folderId) : FilesService.getAllFiles(),
+        [folderId]
+    );
+
     const {
         files, folders, loading, error, success,
         breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
@@ -57,7 +62,7 @@ export default function DashboardPage() {
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
         } = useFileManager(
-            () => folderId ? FilesService.getFolderContents(folderId) : FilesService.getAllFiles(),
+            loadFn,
             (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
     );
 

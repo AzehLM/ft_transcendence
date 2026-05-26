@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FilesService } from "../../services/files.service";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
@@ -71,6 +71,11 @@ export default function OrgFilesPage() {
     }
   };
 
+    const loadFn = useCallback(
+        () => FilesService.getOrgaFilesFolders(folderId ?? "00000000-0000-0000-0000-000000000000", id!),
+        [folderId, id]
+    );
+
 const {
     files, folders, loading, error, success,
     breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
@@ -78,7 +83,7 @@ const {
     handleRenameFolder, handleMoveFolder, handleMoveFile,
     handleBreadcrumbClick,
     } = useFileManager(
-        () => FilesService.getOrgaFilesFolders(folderId ?? "00000000-0000-0000-0000-000000000000", id!),
+        loadFn,
         (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
 );
 

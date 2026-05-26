@@ -37,7 +37,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
       }
     };
     load();
-  }, [folderId]);
+  }, [folderId, loadFiles, navigate]);
 
   // Handlers CRUD 
   const handleDeleteFile = async (id: string) => {
