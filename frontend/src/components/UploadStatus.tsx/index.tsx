@@ -19,12 +19,13 @@ interface Upload {
 interface UploadStatusProps {
   uploads: Upload[];
   downloadStatus?: string | null;
+  hideDownloadMessage?: boolean;
   error?: string | null;
   success?: string | null;
   hideMessage?: boolean;
 }
 
-export function UploadStatus({ uploads, downloadStatus, error, success, hideMessage }: UploadStatusProps) {
+export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, error, success, hideMessage }: UploadStatusProps) {
   return (
     <>
       {error && (
@@ -33,15 +34,15 @@ export function UploadStatus({ uploads, downloadStatus, error, success, hideMess
         </div>
       )}
       {success && (
-        <div className={`${styles.statusMessage} ${success.includes("Erreur") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
+        <div className={`${styles.statusMessage} ${success.includes("Error") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
           {success}
         </div>
       )}
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }}>
-          <div className={`${styles.statusMessage} ${upload.status.includes("Erreur") ? styles.error : styles.loading}`}>
-            {!upload.status.includes("Erreur") && <span className={styles.statusDot}></span>}
+          <div className={`${styles.statusMessage} ${upload.status.includes("Error") ? styles.error : styles.loading}`}>
+            {!upload.status.includes("Error") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
@@ -89,7 +90,7 @@ export function UploadStatus({ uploads, downloadStatus, error, success, hideMess
       ))}
 
       {downloadStatus && (
-        <div className={`${styles.statusMessage} ${downloadStatus.includes("Erreur") ? styles.error : styles.success}`}>
+        <div className={`${styles.statusMessage} ${downloadStatus.includes("Erreur") ? styles.error : styles.success} ${hideDownloadMessage ? styles.hide : ""}`}>
           {downloadStatus}
         </div>
       )}

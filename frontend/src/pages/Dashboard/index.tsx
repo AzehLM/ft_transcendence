@@ -27,7 +27,7 @@ export default function DashboardPage() {
     const activeUploads = Object.values(uploads);
     const isUploading = activeUploads.some(u => u.isUploading);
 
-    const { downloadAndDecrypt, downloadStatus, isDownloading } = useE2EEDownload();
+    const { downloadAndDecrypt, downloadStatus, isDownloading, hideDownloadMessage } = useE2EEDownload();
 
     const handleCreateFolderSubmit = async () => {
         setSuccess("");
@@ -93,6 +93,7 @@ export default function DashboardPage() {
                     <UploadStatus
                         uploads={activeUploads}
                         downloadStatus={downloadStatus}
+                        hideDownloadMessage={hideDownloadMessage}
                         error={error}
                         success={success}
                         hideMessage={hideMessage}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
@@ -20,6 +20,18 @@ interface DownloadMetadata {
 export function useE2EEDownloadOrg() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [hideDownloadMessage, setHideDownloadMessage] = useState(false);
+
+    useEffect(() => {
+        if (downloadStatus) {
+            setHideDownloadMessage(false);
+            const timer = setTimeout(() => {
+                setHideDownloadMessage(true);
+                setTimeout(() => setDownloadStatus(null), 400);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [downloadStatus]);
 
     const downloadAndDecryptOrg = async (fileId: string, orgId: string) => {
         const token = localStorage.getItem("token");
@@ -190,9 +202,8 @@ export function useE2EEDownloadOrg() {
             setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
-            setTimeout(() => setDownloadStatus(""), 3000);
         }
     };
 
-    return { downloadAndDecryptOrg, downloadStatus, isDownloading };
+    return { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage };
 }
