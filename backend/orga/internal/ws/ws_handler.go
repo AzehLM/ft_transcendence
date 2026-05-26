@@ -3,6 +3,7 @@ package ws
 import (
 	"backend/orga/internal/repository"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -133,7 +134,9 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 				return
 			}
 
-			err := c.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
+			payloadBytes := h.enrichEventMessage([]byte(msg.Payload))
+
+			err := c.WriteMessage(websocket.TextMessage, payloadBytes)
 			if err != nil {
 				return
 			}
@@ -144,4 +147,59 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 			}
 		}
 	}
+}
+
+func (h *Hub) enrichEventMessage(payload []byte) []byte {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(payload, &raw); err != nil {
+		return payload
+	}
+
+	eventType, _ := raw["type"].(string)
+	if eventType == "" {
+		eventType, _ = raw["event"].(string)
+	}
+
+	data, ok := raw["data"].(map[string]interface{})
+	if !ok {
+		return payload
+	}
+
+	orgIDStr, _ := data["org_id"].(string)
+	if orgIDStr == "" {
+		return payload
+	}
+
+	var orgName string
+	err := h.DB.Table("organizations").Select("name").Where("id = ?", orgIDStr).Row().Scan(&orgName)
+	if err != nil {
+		orgName = "Unknown Organization"
+	}
+
+	var enrichedMsg string
+
+	switch eventType {
+	case "file_uploaded":
+		enrichedMsg = fmt.Sprintf("[%s] A new file has been uploaded", orgName)
+	case "file_deleted":
+		enrichedMsg = fmt.Sprintf("[%s] A file has been deleted", orgName)
+	case "folder_created":
+		enrichedMsg = fmt.Sprintf("[%s] A new folder has been created", orgName)
+	case "folder_deleted":
+		enrichedMsg = fmt.Sprintf("[%s] A folder has been deleted", orgName)
+	case "folder_renamed":
+		enrichedMsg = fmt.Sprintf("[%s] A folder has been renamed", orgName)
+	default:
+		return payload
+	}
+
+	raw["message"] = enrichedMsg
+	data["org_name"] = orgName
+	raw["data"] = data
+
+	enrichedPayload, err := json.Marshal(raw)
+	if err != nil {
+		return payload
+	}
+	return enrichedPayload
 }
