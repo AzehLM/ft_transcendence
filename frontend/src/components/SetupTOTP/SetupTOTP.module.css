@@ -1,0 +1,267 @@
+/* ============================================================================
+   SETUP TOTP COMPONENT
+   ============================================================================ */
+
+.totp_setup__overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-dark-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    z-index: 50;
+}
+
+.totp_setup__modal {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 400px;
+    width: 100%;
+    padding: var(--spacing-3xl);
+    box-sizing: border-box;
+}
+
+.totp_setup__title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.totp_setup__description {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    color: #6b7280;
+    margin: 0 0 var(--spacing-md) 0;
+    line-height: 1.5;
+}
+
+.totp_setup__qr_code_container {
+    display: flex;
+    justify-content: center;
+    background: var(--color-white);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-3xl);
+}
+
+.totp_setup__qr_code_image {
+    width: 256px;
+    height: 256px;
+}
+
+.totp_setup__loading_spinner {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-3xl) 0;
+}
+
+.totp_setup__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--brand-light);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.totp_setup__secret_box {
+    margin-bottom: var(--spacing-3xl);
+}
+
+.totp_setup__secret_label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0 0 var(--spacing-sm) 0;
+    display: block;
+}
+
+.totp_setup__secret_value {
+    background-color: var(--brand-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    word-break: break-all;
+    color: var(--brand-dark);
+}
+
+.totp_setup__warning_box {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-sm);
+}
+
+.totp_setup__warning_title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.totp_setup__warning_text {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: #b45309;
+    margin: 0;
+}
+
+.totp_setup__codes_container {
+    margin-bottom: var(--spacing-md);
+    background-color: var(--brand-light);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    max-height: 192px;
+    overflow-y: auto;
+}
+
+.totp_setup__codes_list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.totp_setup__code {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--brand-dark);
+}
+
+.totp_setup__input_group {
+    margin-bottom: var(--spacing-md);
+}
+
+.totp_setup__label {
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--brand-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.totp_setup__input {
+    width: 100%;
+    border: 1px solid var(--brand-dark);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 20px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--brand-dark);
+    background-color: var(--color-white);
+    box-sizing: border-box;
+}
+
+.totp_setup__input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.totp_setup__input:disabled {
+    opacity: 0.5;
+    background-color: var(--brand-light);
+    cursor: not-allowed;
+}
+
+.totp_setup__error_message {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: var(--radius-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+}
+
+.totp_setup__actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.totp_setup__action_button {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.totp_setup__action_button--primary {
+    background-color: var(--brand-primary);
+    color: var(--color-white);
+}
+
+.totp_setup__action_button--primary:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+.totp_setup__action_button--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.totp_setup__action_button--cancel {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_setup__action_button--cancel:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.totp_setup__action_button--cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.totp_setup__button_group {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.totp_setup__secondary_button {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.totp_setup__secondary_button--secondary {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+}
+
+.totp_setup__secondary_button--secondary:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.totp_setup__secondary_button--secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

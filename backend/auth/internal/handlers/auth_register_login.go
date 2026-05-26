@@ -34,6 +34,35 @@ func (h *AuthHandler) LoginUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
 	}
 
+	// Check if user has 2FA enabled
+	if user.TwoFactorEnabled {
+		// Create temp token valid for 5 minutes with 2FA scope
+		tempToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"user_id": user.ID.String(),
+			"scope":   "2fa",
+			"exp":     time.Now().Add(5 * time.Minute).Unix(),
+		})
+
+		jwtSecret := []byte(h.Env.JwtSecret)
+		tempTokenString, err := tempToken.SignedString(jwtSecret)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token generation failed"})
+		}
+
+		log.Printf("[INFO] User %s requires 2FA verification", user.Email)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"require_2fa":           true,
+			"temp_token":            tempTokenString,
+			"methods":               []string{"totp", "recovery"},
+			"expires_in":            300,
+			"encrypted_private_key": base64.StdEncoding.EncodeToString(user.EncryptedPrivateKey),
+			"iv":                    base64.StdEncoding.EncodeToString(user.IV),
+			"public_key":            base64.StdEncoding.EncodeToString(user.PublicKey),
+		})
+	}
+
+	// No 2FA - proceed with normal login
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    user.ID.String(),
 		"user_email": user.Email,
