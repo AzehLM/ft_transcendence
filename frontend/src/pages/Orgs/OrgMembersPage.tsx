@@ -126,12 +126,14 @@ export default function OrgMembersPage() {
     };
 
     registerListener("MEMBER_ADDED", handleMemberChange);
+    registerListener("MEMBER_REMOVED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
     registerListener("USER_ONLINE", handleUserOnline);
     registerListener("USER_OFFLINE", handleUserOffline);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
+      unregisterListener("MEMBER_REMOVED", handleMemberChange);
       unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
       unregisterListener("USER_ONLINE", handleUserOnline);
       unregisterListener("USER_OFFLINE", handleUserOffline);
