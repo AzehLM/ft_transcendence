@@ -107,7 +107,7 @@ export default function OrgFilesPage() {
                         onCreateFolder={() => setIsFolderModalOpen(true)}
           />
 
-        <div className={styles.headerSection}>
+        <div className={styles.contentSection}>
             <div className={styles.titleGroup}>
                 <h1>
                     Organization space

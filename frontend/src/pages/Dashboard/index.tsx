@@ -33,7 +33,7 @@ export default function DashboardPage() {
             loadFn,
             (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
     );
-    
+     
     const { uploadFile, uploads } = useE2EEUpload(() => {
         setSuccess("");
         setError(null);
@@ -83,7 +83,7 @@ export default function DashboardPage() {
                            onCreateFolder={() => setIsFolderModalOpen(true)}
              />
 
-            <div className={styles.headerSection}>
+            <div className={styles.contentSection}>
                 <div className={styles.titleGroup}>
                     <h1>
                         Personal space
