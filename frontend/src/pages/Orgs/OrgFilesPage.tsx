@@ -33,59 +33,60 @@ export default function OrgFilesPage() {
       .catch(() => setOrgName("Unknown"));
   }, [id]);
 
-  const { uploadFile, uploads } = useE2EEUpload(() => {
-    setSuccess("");
-    setError(null);
-    loadFiles();
-  }, id, folderId);
-  
-  const activeUploads = Object.values(uploads);
-  const isUploading = activeUploads.some(u => u.isUploading);
-
-  const { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError } = useE2EEDownloadOrg();
-
-  const handleDownload = (fileId: string) => {
-    downloadAndDecryptOrg(fileId, id!);
-  };
-
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [folderName, setFolderName] = useState("");
-  const [folderError, setFolderError] = useState<string | null>(null);
-
-  const handleCreateFolderSubmit = async () => {
-        setSuccess("");
-        setError(null);
-    if (!folderName.trim()) {
-        setFolderError("Invalid Name")
-        return;
-    }
-    try {
-      await FilesService.createFolder(folderName, folderId, id);
-      await loadFiles();
-      setSuccess("Folder created");
-      setFolderName("");
-      setIsFolderModalOpen(false);
-      setFolderError(null);
-    } catch (err: any) {
-      setFolderError(err.message || "Failed to create folder.");
-    }
-  };
 
     const loadFn = useCallback(
         () => FilesService.getOrgaFilesFolders(folderId ?? "00000000-0000-0000-0000-000000000000", id!),
         [folderId, id]
     );
 
-const {
-    files, folders, loading, error, success,
-    breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
-    handleDeleteFile, handleDeleteFolder,
-    handleRenameFolder, handleMoveFolder, handleMoveFile,
-    handleBreadcrumbClick,
-    } = useFileManager(
-        loadFn,
-        (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
-);
+    const {
+        files, folders, loading, error, success,
+        breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+        handleDeleteFile, handleDeleteFolder,
+        handleRenameFolder, handleMoveFolder, handleMoveFile,
+        handleBreadcrumbClick,
+        } = useFileManager(
+            loadFn,
+            (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
+    );
+
+    const { uploadFile, uploads } = useE2EEUpload(() => {
+        setSuccess("");
+        setError(null);
+        loadFiles();
+    }, id, folderId);
+    
+    const activeUploads = Object.values(uploads);
+    const isUploading = activeUploads.some(u => u.isUploading);
+
+    const { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError } = useE2EEDownloadOrg();
+
+    const handleDownload = (fileId: string) => {
+        downloadAndDecryptOrg(fileId, id!);
+    };
+
+    const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+    const [folderName, setFolderName] = useState("");
+    const [folderError, setFolderError] = useState<string | null>(null);
+
+    const handleCreateFolderSubmit = async () => {
+            setSuccess("");
+            setError(null);
+        if (!folderName.trim()) {
+            setFolderError("Invalid Name")
+            return;
+        }
+        try {
+        await FilesService.createFolder(folderName, folderId, id);
+        await loadFiles();
+        setSuccess("Folder created");
+        setFolderName("");
+        setIsFolderModalOpen(false);
+        setFolderError(null);
+        } catch (err: any) {
+        setFolderError(err.message || "Failed to create folder.");
+        }
+    };
 
   return (
     <>

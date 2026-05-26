@@ -18,6 +18,22 @@ export default function DashboardPage() {
     const [folderName, setFolderName] = useState("");
     const [folderError, setFolderError] = useState<string | null>(null);
 
+    const loadFn = useCallback(
+        () => folderId ? FilesService.getFolderContents(folderId) : FilesService.getAllFiles(),
+        [folderId]
+    );
+
+    const {
+        files, folders, loading, error, success,
+        breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+        handleDeleteFile, handleDeleteFolder,
+        handleRenameFolder, handleMoveFolder, handleMoveFile,
+        handleBreadcrumbClick,
+        } = useFileManager(
+            loadFn,
+            (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
+    );
+    
     const { uploadFile, uploads } = useE2EEUpload(() => {
         setSuccess("");
         setError(null);
@@ -49,22 +65,6 @@ export default function DashboardPage() {
         setFolderName("");
         setIsFolderModalOpen(false);
     };
-
-    const loadFn = useCallback(
-        () => folderId ? FilesService.getFolderContents(folderId) : FilesService.getAllFiles(),
-        [folderId]
-    );
-
-    const {
-        files, folders, loading, error, success,
-        breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
-        handleDeleteFile, handleDeleteFolder,
-        handleRenameFolder, handleMoveFolder, handleMoveFile,
-        handleBreadcrumbClick,
-        } = useFileManager(
-            loadFn,
-            (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
-    );
 
     return (
         <div className={styles.container}>
