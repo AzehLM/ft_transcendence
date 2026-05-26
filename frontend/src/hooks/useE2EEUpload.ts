@@ -276,11 +276,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
             updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
 
-            // setTimeout(() => {
-            //     setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
-            // }, 4000);
-
-
             setTimeout(() => {
                 updateUpload(id, { hiding: true });
                 setTimeout(() => {
@@ -292,9 +287,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
 
         } catch (err: any) {
             updateUpload(id, { status: `Upload error: ${err.message}`, progress: null, isUploading: false, error: err.message });
-            // setTimeout(() => {
-            //     setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
-            // }, 5000);
 
             setTimeout(() => {
                 updateUpload(id, { hiding: true });

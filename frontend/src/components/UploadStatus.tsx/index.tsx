@@ -36,15 +36,15 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
         </div>
       )}
       {success && (
-        <div className={`${styles.statusMessage} ${success.includes("Error") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
-          {success}
+        <div className={`${styles.statusMessage} ${success.toLowerCase().includes("error") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
+            {success}
         </div>
       )}
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
-        <div className={`${styles.statusMessage} ${upload.status.includes("Error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
-            {!upload.status.includes("Error") && <span className={styles.statusDot}></span>}
+        <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
+            {!upload.status.toLowerCase().includes("error") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
