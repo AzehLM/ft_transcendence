@@ -8,7 +8,7 @@ import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams, useNavigate } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ChevronRight } from "lucide-react";
-
+import { folderSchema } from "../../schemas/folder.schema";
 
 export default function DashboardPage() {
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -72,22 +72,23 @@ export default function DashboardPage() {
     const handleCreateFolderSubmit = async () => {
         setSuccess("");
         setError(null);
-        if (!folderName.trim()) {
-            setFolderError("Invalid Name")
-            return;
+        setFolderError("");
+
+        const result = folderSchema.safeParse({ name: folderName });
+        if(!result.success) {
+            setFolderError(result.error.issues[0].message);
+            return ;
         }
         try {
-            await FilesService.createFolder(folderName, folderId);
+            await FilesService.createFolder(result.data.name, folderId);
             await loadFiles();
             setSuccess("Folder created");
         } catch (err: any) {
             setError(err.message || "Failed to create folder.");
+        } finally {
             setFolderName("");
             setIsFolderModalOpen(false);
         }
-        setFolderError("")
-        setFolderName("");
-        setIsFolderModalOpen(false);
     };
 
      const handleDeleteFile = async (id: string) => {
