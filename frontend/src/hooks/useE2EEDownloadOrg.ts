@@ -190,6 +190,7 @@ export function useE2EEDownloadOrg() {
             setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
+            setTimeout(() => setDownloadStatus(""), 3000);
         }
     };
 
