@@ -1,5 +1,6 @@
 import { UserPlus, Building2, Trash2, Edit3, User, Bell, Check, Trash, CheckSquare, File, Folder, FolderPlus, FolderMinus } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
+import styles from "./NotificationDropdown.module.css";
 
 const getEventMeta = (event: string) => {
   switch (event) {
@@ -118,33 +119,10 @@ export function NotificationDropdown({ isOpen, onClose }: NotificationDropdownPr
       {/* Backdrop overlay to close the dropdown when clicking outside */}
       <div
         onClick={onClose}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 998,
-        }}
+        className={styles.overlay}
       />
 
-      <div
-        style={{
-          position: "absolute",
-          top: "45px",
-          right: 0,
-          width: "min(380px, calc(100vw - 32px))",
-          backgroundColor: "#ffffff",
-          borderRadius: "var(--radius-md)",
-          boxShadow: "0 16px 48px rgba(43, 16, 8, 0.12)",
-          border: "1px solid rgba(43, 16, 8, 0.08)",
-          zIndex: 999,
-          display: "flex",
-          flexDirection: "column",
-          maxHeight: "480px",
-          overflow: "hidden",
-        }}
-      >
+      <div className={styles.dropdown}>
         {/* Header */}
         <div
           style={{
