@@ -26,22 +26,22 @@ func LoadEnv() (*Env, error) {
 	_ = godotenv.Load()
 
 	postgresPassword, err := ReadSecret("postgres_pwd")
-	if  err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("secret postgres_pwd: %v", err)
 	}
 
 	postgresUser, err := ReadSecret("postgres_user")
-	if  err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("secret postgres_user: %v", err)
 	}
 
 	jwtSecret, err := ReadSecret("jwt_secret")
-	if  err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("secret jwt_secret: %v", err)
 	}
 
 	redisPassword, err := ReadSecret("redis_pwd")
-	if  err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("secret redis_pwd: %v", err)
 	}
 
@@ -68,11 +68,10 @@ func LoadEnv() (*Env, error) {
 	return env, nil
 }
 
-
 func ReadSecret(name string) (string, error) {
 	data, err := os.ReadFile("/run/secrets/" + name)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(data)) , nil
+	return strings.TrimSpace(string(data)), nil
 }
