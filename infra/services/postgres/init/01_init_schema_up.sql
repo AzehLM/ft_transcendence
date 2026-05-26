@@ -51,7 +51,7 @@ CREATE TABLE org_members (
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'member')),
-    description VARCHAR(250),
+    description VARCHAR(255),
     enc_org_priv_key BYTEA NOT NULL,
     enc_aes_key     BYTEA NOT NULL,
     iv              BYTEA NOT NULL,
