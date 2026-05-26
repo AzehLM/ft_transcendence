@@ -73,7 +73,6 @@ export default function RegisterPage() {
                 localStorage.setItem("token", data.access_token);
             }
 
-            console.log("✅ Enregistrement réussi!");
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
