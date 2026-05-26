@@ -45,7 +45,6 @@ export default function OrganizationsPage() {
 
   useEffect(() => {
     const handleOrgChange = () => {
-      console.log("[WS Event] Re-fetching organizations list...");
       fetchOrgs();
     };
 
@@ -149,7 +148,7 @@ export default function OrganizationsPage() {
         return;
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
-      
+
 
       if (!response.ok) {
         const text = await response.text();
@@ -216,8 +215,8 @@ export default function OrganizationsPage() {
             <h1>Organizations</h1>
             <p className={styles.subtitle}>Manage your organizations and memberships</p>
           </div>
-          <button 
-            className={styles.addButton} 
+          <button
+            className={styles.addButton}
             onClick={() => { setShowCreateModal(true); setModalError(null); }}
           >
             <Plus size={20} />
@@ -269,7 +268,7 @@ export default function OrganizationsPage() {
               <p className={styles.emptyDescription}>
                 Create your first organization to start collaborating and sharing files with your team securely.
               </p>
-              <button 
+              <button
                 className={styles.emptyButton}
                 onClick={() => { setShowCreateModal(true); setModalError(null); }}
               >
@@ -280,9 +279,9 @@ export default function OrganizationsPage() {
         ) : (
             <div className={styles.orgList}>
             {orgs.map((org) => (
-                <div key={org.id} className={styles.orgCard} 
+                <div key={org.id} className={styles.orgCard}
                   onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
-                  
+
                   <div className={styles.orgAvatar}>
                     <span className={styles.initialsAvatar}>
                       {getInitials(org.name)}
@@ -343,7 +342,7 @@ export default function OrganizationsPage() {
             )}
 
             </div>
-        )}    
+        )}
     </div>
   );
 }

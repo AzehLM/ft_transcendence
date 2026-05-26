@@ -42,7 +42,6 @@ export default function DashboardPage() {
                 navigate("/404");
                 return;
             }
-        console.log("Failed to load files:", err);
         setError("Failed to load files.");
         } finally {
         setLoading(false);
@@ -63,7 +62,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const handleFilesChange = () => {
-            console.log("[WS Event] Re-fetching dashboard files & folders...");
             loadFiles();
         };
 

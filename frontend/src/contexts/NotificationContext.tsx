@@ -83,12 +83,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws/notifications?token=${encodeURIComponent(token)}`;
 
-    console.log("[WS] Connecting to:", wsUrl);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("[WS] Connected successfully!");
       setStatus("connected");
       reconnectAttemptsRef.current = 0;
       if (reconnectTimeoutRef.current) {
@@ -100,7 +98,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        console.log("[WS] Received event:", payload);
 
         const eventType = payload.event || payload.type || "UNKNOWN";
         const actorId = payload.data?.owner_id || payload.data?.user_id;
@@ -128,7 +125,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           };
           setToasts((prev) => [...prev, newToast]);
         } else {
-          console.log("[WS] Skipping notification/toast because action was initiated by me or is a technical presence event");
         }
 
         if (eventType && listenersRef.current[eventType]) {
@@ -142,7 +138,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
 
         if (eventType === "ADDED_TO_NEW_ORGA" || eventType === "REMOVED_FROM_ORGA") {
-          console.log(`[WS] Membership changed (${eventType}). Reconnecting websocket to update subscriptions...`);
           setTimeout(() => {
             reconnect();
           }, 100);
@@ -152,14 +147,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
     };
 
-    ws.onclose = (event) => {
-      console.log("[WS] Closed connection:", event.code, event.reason);
+    ws.onclose = () => {
       setStatus("disconnected");
       wsRef.current = null;
 
       if (localStorage.getItem("token")) {
         const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-        console.log(`[WS] Reconnecting in ${delay}ms...`);
         reconnectAttemptsRef.current += 1;
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();

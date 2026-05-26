@@ -102,12 +102,10 @@ export default function OrgMembersPage() {
 
   useEffect(() => {
     const handleMemberChange = () => {
-      console.log("[WS Event] Re-fetching members list...");
       fetchMembers();
     };
 
     const handleUserOnline = (data: any) => {
-      console.log("[WS Event] User online:", data);
       if (data && data.user_id) {
         setMembers((prev) =>
           prev.map((m) =>
@@ -118,7 +116,6 @@ export default function OrgMembersPage() {
     };
 
     const handleUserOffline = (data: any) => {
-      console.log("[WS Event] User offline:", data);
       if (data && data.user_id) {
         setMembers((prev) =>
           prev.map((m) =>

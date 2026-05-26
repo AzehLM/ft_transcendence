@@ -2,20 +2,16 @@ import { toArrayBuffer, wrapPrivateKey, getPublicKeyFromSession, generateRSAKeyP
 import { fetchWithRefresh } from "./api.service";
 
 export async function generateOrganization(name: string) {
-  console.log("1 - Génération de la paire RSA-OAEP pour Organization...");
   const keyPair = await generateRSAKeyPair();
 
-  console.log("2 - Génération d'une clé AES temporaire...");
   const aesKey = await crypto.subtle.generateKey(
     { name: "AES-GCM", length: 256 },
     true,
     ["encrypt", "decrypt"]
   );
 
-  console.log("3 - Wrap de la clé privée org avec la clé AES...");
   const { encryptedPrivateKey, iv } = await wrapPrivateKey(keyPair.privateKey, aesKey);
 
-  console.log("4 - Chiffrement de la clé AES avec la clé publique user (RSA)...");
   const userPublicKey = await getPublicKeyFromSession();
   if (!userPublicKey) throw new Error("No public key in session");
 
@@ -26,7 +22,6 @@ export async function generateOrganization(name: string) {
     aesKeyRaw
   );
 
-  console.log("5 - Export de la clé publique org...");
   const orgPublicKey = await exportPublicKey(keyPair.publicKey);
 
   return {
@@ -48,11 +43,9 @@ export async function encryptOrgKeyForMember(
   enc_aes_key: string;
   iv: string;
 }> {
-  console.log("Encrypt Key for orga member (1) - get private key")
   const userPrivateKey = await getPrivateKeyFromSession();
   if (!userPrivateKey) throw new Error("No private key in session");
 
-  console.log("Encrypt Key for orga member (2) - decrypt aes")
 
   const encAesKeyBuffer = base64ToUint8Array(encAesKey);
   const aesKeyRaw = await crypto.subtle.decrypt(
@@ -61,7 +54,6 @@ export async function encryptOrgKeyForMember(
     toArrayBuffer(encAesKeyBuffer)
   );
 
-  console.log("Encrypt Key for orga member (3) - import aes")
 
   const aesKey = await crypto.subtle.importKey(
     "raw",
@@ -71,10 +63,8 @@ export async function encryptOrgKeyForMember(
     ["decrypt"]
   );
 
-  console.log("Encrypt Key for orga member (4) - derypt private key of orga")
 
-  // console.log("encOrgPrivKey raw:", encOrgPrivKey);
-  // console.log("iv raw:", iv); 
+
   const encOrgPrivKeyBuffer = base64ToUint8Array(encOrgPrivKey);
   const ivBuffer = base64ToUint8Array(iv);
   const orgPrivKeyRaw = await crypto.subtle.decrypt(
@@ -83,7 +73,6 @@ export async function encryptOrgKeyForMember(
     toArrayBuffer(encOrgPrivKeyBuffer)
   );
 
-  console.log("Encrypt Key for orga member (5) - get public key from inviting user")
 
   const memberPublicKeyBuffer = base64ToUint8Array(memberPublicKeyB64);
   const memberPublicKey = await crypto.subtle.importKey(
@@ -94,7 +83,6 @@ export async function encryptOrgKeyForMember(
     ["encrypt"]
   );
 
-  console.log("Encrypt Key for orga member (6) - generate aes for new user")
 
   const newAesKey = await crypto.subtle.generateKey(
     { name: "AES-GCM", length: 256 },
@@ -102,7 +90,6 @@ export async function encryptOrgKeyForMember(
     ["encrypt", "decrypt"]
   );
 
-  console.log("Encrypt Key for orga member (7) - encrypt private key")
 
   const newIv = crypto.getRandomValues(new Uint8Array(12));
   const newEncOrgPrivKey = await crypto.subtle.encrypt(
@@ -111,7 +98,6 @@ export async function encryptOrgKeyForMember(
     orgPrivKeyRaw
   );
 
-  console.log("Encrypt Key for orga member (8) - encrypt aes")
 
   const newAesKeyRaw = await crypto.subtle.exportKey("raw", newAesKey);
   const newEncAesKey = await crypto.subtle.encrypt(

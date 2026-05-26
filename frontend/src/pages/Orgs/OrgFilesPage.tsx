@@ -67,7 +67,6 @@ export default function OrgFilesPage() {
 
   useEffect(() => {
     const handleFilesChange = () => {
-      console.log("[WS Event] Re-fetching organization files & folders...");
       loadFiles(folderId);
     };
 
