@@ -21,6 +21,7 @@ export function useE2EEDownload() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [hideDownloadMessage, setHideDownloadMessage] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
 
     useEffect(() => {
         if (downloadStatus) {
@@ -36,11 +37,13 @@ export function useE2EEDownload() {
     const downloadAndDecrypt = async (fileId: string) => {
         setIsDownloading(true);
         setDownloadStatus(null);
+        setDownloadError(false);
         try {
             setDownloadStatus("1/4 :Fetching secure metadata...");
             const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
 
             if (!metaRes.ok) {
+                setDownloadError(true);
                 throw new Error(metaRes.status === 404 ? "File not found on server." : `Unable to fetch metadata (${metaRes.status}).`);
             }
             const metadata: DownloadMetadata = await metaRes.json();
@@ -48,7 +51,10 @@ export function useE2EEDownload() {
             setDownloadStatus("2/4: Decrypting session key (Zero-Knowledge)...");
 
             const tempPrivateKey = await getPrivateKeyFromSession();
-            if (!tempPrivateKey) throw new Error("Private key not found. Please make sure you are logged in.");
+            if (!tempPrivateKey) {
+                setDownloadError(true);
+                throw new Error("Private key not found. Please make sure you are logged in.");
+            }
 
             const encryptedDekBytes = base64ToUint8Array(metadata.encrypted_dek);
             const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, tempPrivateKey);
@@ -82,13 +88,17 @@ export function useE2EEDownload() {
                     const fileHandle = await window.showSaveFilePicker({ suggestedName: filename });
                     writable = await fileHandle.createWritable();
                 } catch (err) {
+                    setDownloadError(true);
                     throw new Error("Save cancelled by user.");
                 }
             }
 
             setDownloadStatus("4/4: Decrypting data on the fly...");
             const response = await fetch(metadata.presigned_url);
-            if (!response.ok || !response.body) throw new Error("Error accessing remote storage (MinIO).");
+            if (!response.ok || !response.body) {
+                setDownloadError(true);
+                throw new Error("Error accessing remote storage (MinIO).");
+            }
 
             const reader = response.body.getReader();
             const chunks: Uint8Array[] = [];
@@ -177,11 +187,12 @@ export function useE2EEDownload() {
             setDownloadStatus(`Success! "${filename}" has been decrypted and saved.`);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Unknown error";
+            setDownloadError(true);
             setDownloadStatus(` ${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
     };
 
-    return { downloadAndDecrypt, downloadStatus, isDownloading, hideDownloadMessage };
+    return { downloadAndDecrypt, downloadStatus, isDownloading, hideDownloadMessage, downloadError };
 }
