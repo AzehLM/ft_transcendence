@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { VerifyTOTP } from "../../components/VerifyTOTP/VerifyTOTP";
 
 
 export default function LoginPage() {
@@ -13,6 +14,12 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [show2FA, setShow2FA] = useState(false);
+    const [tempToken, setTempToken] = useState("");
+    const [masterKey, setMasterKey] = useState<CryptoKey | null>(null);
+    const [userEncryptedPrivateKey, setUserEncryptedPrivateKey] = useState("");
+    const [userIv, setUserIv] = useState("");
+    const [userPublicKey, setUserPublicKey] = useState("");
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +44,7 @@ export default function LoginPage() {
 
         setIsLoading(true);
         try {
-            const { masterKey, loginData } = await generateLoginData(email, password);
+            const { masterKey: mk, loginData } = await generateLoginData(email, password);
 
             const response = await fetch("/api/auth/login", {
                 method: "POST",
@@ -55,13 +62,26 @@ export default function LoginPage() {
                 return;
             }
 
-            localStorage.setItem("token", responseData.access_token);
+            // Check if 2FA is required
+            if (responseData.require_2fa) {
+                // Store the necessary data for after 2FA verification
+                setMasterKey(mk);
+                setUserEncryptedPrivateKey(responseData.encrypted_private_key);
+                setUserIv(responseData.iv);
+                setUserPublicKey(responseData.public_key);
+                setTempToken(responseData.temp_token);
+                setShow2FA(true);
+                setIsLoading(false);
+                return;
+            }
 
+            // No 2FA - proceed with normal login
+            localStorage.setItem("token", responseData.access_token);
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
 
-            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, mk, iv);
             await storePrivateKey(privateKey);
 
             const publicKeyArray = base64ToUint8Array(responseData.public_key);
@@ -77,11 +97,47 @@ export default function LoginPage() {
             navigate("/dashboard");
 
         } catch (err: any) {
-            console.error("Erreur:", err);
             setError(err.message || "An error occurred during login!");
             setIsLoading(false);
         }
     };
+
+    const handle2FASuccess = async (token: string) => {
+        try {
+            localStorage.setItem("token", token);
+
+            // Use the stored masterKey and encrypted data to complete login
+            if (masterKey && userEncryptedPrivateKey && userIv && userPublicKey) {
+                const encryptedPrivateKey = base64ToUint8Array(userEncryptedPrivateKey);
+                const iv = base64ToUint8Array(userIv);
+
+                const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv);
+                await storePrivateKey(privateKey);
+
+                sessionStorage.setItem("publicKey", userPublicKey);
+                navigate("/dashboard");
+            } else {
+                throw new Error("Missing required data for login completion");
+            }
+        } catch (err: any) {
+            setError(err.message || "Failed to process 2FA verification");
+        }
+    };
+
+    // Show 2FA verification if required
+    if (show2FA) {
+        return (
+                <VerifyTOTP
+                    tempToken={tempToken}
+                    onSuccess={handle2FASuccess}
+                    onCancel={() => {
+                        setShow2FA(false);
+                        setTempToken("");
+                        setError("");
+                    }}
+                />
+        );
+    }
 
     return (
         <div className={styles.login_page_wrapper} style={{ background: "linear-gradient(to bottom right, #fef9f7, white)" }}>
