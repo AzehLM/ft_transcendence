@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import styles from "./EditableField.module.css";
 import { organizationSchema, organizationDescriptionSchema } from "../../schemas/organization.schema";
+import { firstNameSchema, familyNameSchema } from "../../schemas/names.schema";
 
 interface EditableFieldProps {
   label: string;
@@ -9,12 +10,13 @@ interface EditableFieldProps {
   role?: string | null;
   isOrgaName?: boolean;
   isOrgaDesc?: boolean;
-  isUserNames?: boolean;
+  isFirstName?: boolean;
+  isFamilyName?: boolean;
   onSave: (newValue: string) => Promise<void>;
   handleReset?: () => Promise<void>;
 }
 
-export function EditableField({ label, value, role, isOrgaName = false, isOrgaDesc = false, isUserNames = false, onSave, handleReset }: EditableFieldProps) {
+export function EditableField({ label, value, role, isOrgaName = false, isOrgaDesc = false, isFirstName = false, isFamilyName = false, onSave, handleReset }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
@@ -22,30 +24,37 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
 
 
   const handleSave = async () => {
-    if (inputValue === value) {
-        setEditing(false);
-        return;
-    }
+      if (inputValue === value) {
+          setEditing(false);
+          return;
+      }
 
-    const schema = isOrgaName ? organizationSchema : organizationDescriptionSchema;
-    const field = isOrgaName ? "name" : "description";
+      const schema = isOrgaName ? organizationSchema
+          : isOrgaDesc ? organizationDescriptionSchema
+          : isFirstName ? firstNameSchema
+          : familyNameSchema;
 
-    const result = schema.safeParse({ [field]: inputValue });
-    if (!result.success) {
-        setError(result.error.issues[0].message);
-        return;
-    }
+      const field = isOrgaName ? "name"
+          : isOrgaDesc ? "description"
+          : isFirstName ? "firstName"
+          : "familyName"
 
-    setLoading(true);
-    setError(null);
-    try {
-      await onSave(result.data[field as keyof typeof result.data]);
-      setEditing(false);
-    } catch {
-        setError("Failed to save.");
-    } finally {
-        setLoading(false);
-    }
+      const result = schema.safeParse({ [field]: inputValue });
+      if (!result.success) {
+          setError(result.error.issues[0].message);
+          return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+          await onSave(result.data[field as keyof typeof result.data]);
+          setEditing(false);
+      } catch {
+          setError("Failed to save.");
+      } finally {
+          setLoading(false);
+      }
   };
 
   const handleCancel = () => {
@@ -57,7 +66,7 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
   return (
     <div className={styles.container}>
       <p className={styles.label}>{label}</p>
-      { ((isOrgaName && role === "admin") || isOrgaDesc || isUserNames) && (<div className={styles.row}>
+      { ((isOrgaName && role === "admin") || isOrgaDesc || isFirstName || isFamilyName) && (<div className={styles.row}>
         {editing ? (
           <>
             <input
@@ -78,7 +87,7 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
             { isOrgaName  && (
               <p className={styles.value}>{value}</p>
             )}
-            { ((isOrgaDesc || isUserNames) && value !== "") && (
+            { ((isOrgaDesc || isFirstName || isFamilyName) && value !== "") && (
               <>
                 <p className={styles.value}>{value}</p>
                 <button className={styles.iconButton} onClick={handleReset}>
@@ -89,7 +98,10 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
             { isOrgaDesc && value === "" && (
               <p className={styles.novalue}>No description yet, you can add one!</p>
             )}
-            { isUserNames && value === "" && (
+            { isFirstName && value === "" && (
+              <p className={styles.novalue}>No name yet, you can add one!</p>
+            )}
+            { isFamilyName && value === "" && (
               <p className={styles.novalue}>No name yet, you can add one!</p>
             )}
             <button className={styles.iconButton} onClick={() => { setInputValue(value); setEditing(true); }}>
