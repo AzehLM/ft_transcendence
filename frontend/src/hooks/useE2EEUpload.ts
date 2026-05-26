@@ -291,7 +291,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             onSuccess();
 
         } catch (err: any) {
-            updateUpload(id, { status: `Erreur d'upload: ${err.message}`, progress: null, isUploading: false, error: err.message });
+            updateUpload(id, { status: `Upload error: ${err.message}`, progress: null, isUploading: false, error: err.message });
             // setTimeout(() => {
             //     setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
             // }, 5000);
