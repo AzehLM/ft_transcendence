@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { organizationSchema } from "../../schemas/organization.schema";
 import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
-
+import { z } from "zod";
 
 interface Organization {
   id: string;
@@ -92,10 +92,17 @@ export default function OrganizationsPage() {
   // Add a member
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
+  const [addMemberError, setAddMemberError] = useState<string | null>(null);
 
   const handleAddMember = async () => {
+    const result = z.email().safeParse(memberEmail);
+    if (!result.success) {
+      setAddMemberError("Please enter a valid email");
+      return ;
+    }
+
     if (!memberEmail.trim() || !selectedOrg) return;
-    setModalError(null);
+    setAddMemberError(null);
 
     const userPrivateKey = await getPrivateKeyFromSession();
     if (!userPrivateKey) {
@@ -105,7 +112,7 @@ export default function OrganizationsPage() {
 
     const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
     if (!success) {
-      setModalError(error ?? "Failed to add member.");
+      setAddMemberError(error ?? "Failed to add member.");
       return;
     }
 
@@ -215,11 +222,14 @@ export default function OrganizationsPage() {
           isOpen={showAddMemberModal}
           fileName={memberEmail}
           onConfirm={handleAddMember}
-          onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
+          onCancel={() => { setShowAddMemberModal(false); setAddMemberError(null); }}
           isAddMember={true}
           inputValue={memberEmail}
-          onInputChange={setMemberEmail}
-          errorMessage={modalError ?? undefined}
+          onInputChange={(value) => {
+            setMemberEmail(value);
+            if (addMemberError) setAddMemberError(null);
+          }}
+          errorMessage={addMemberError ?? undefined}
         />
         <ConfirmationModal
           isOpen={publicKeyMissing}
