@@ -31,7 +31,7 @@ export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onM
 
   const handleEnterFolder = () => {
     if (orgId) {
-      navigate(`/orgs/${orgId}/files/${id}`);
+      navigate(`/orgs/${orgId}/folder/${id}`);
     } else {
       navigate(`/dashboard/folder/${id}`);
     }
