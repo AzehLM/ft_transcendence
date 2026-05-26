@@ -13,10 +13,14 @@ services:
       - tunnel
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${PORT}:443"
+      - "0.0.0.0:${PORT}:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - ../secrets/ssl/cert.pem:/etc/caddy/certs/cert.pem:ro
+      - ../secrets/ssl/key.pem:/etc/caddy/certs/key.pem:ro
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
     healthcheck:
       test: [ "CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile" ]
       interval: 5s # the shorter the better, 10s is too long in dev mode
