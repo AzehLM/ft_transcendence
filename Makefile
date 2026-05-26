@@ -1,7 +1,14 @@
 export DOCKER_BUILDKIT=1
 
+-include .env
+export
+
 ENV_FILE			:= .env
 ENV_EXAMPLE			:= .env.example
+
+DOMAIN_NAME := $(shell hostname)
+
+export DOMAIN_NAME
 
 COMPOSE_FILE		:= infra/docker-compose.yml
 COMPOSE_DEV_FILE	:= infra/docker-compose.dev.yml
@@ -11,11 +18,16 @@ COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE) --env-file $(ENV_FILE)
 SECRETS_PATH		:= secrets/
 GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 
-$(SECRETS_PATH):
+HOSTNAME_FILE	:= $(SSL_PATH).hostname
+SSL_PATH		:= $(SECRETS_PATH)/ssl/
+CERT_PATH		:= $(SSL_PATH)cert.pem
+KEY_PATH		:= $(SSL_PATH)key.pem
+
+$(SECRETS_PATH) $(SSL_PATH):
 	@mkdir -p $@
 
 BACKUP_DIR			:= $(or $(HOME),/tmp)/backups/ostrom/
-# BACKUP_DIR			:= $(HOME)/backups/ostrom/
+
 BACKUP_DAILY_DIR	:= $(BACKUP_DIR)daily
 BACKUP_WEEKLY_DIR	:= $(BACKUP_DIR)weekly
 BACKUP_MINIO_DIR	:= $(BACKUP_DIR)minio
@@ -29,8 +41,23 @@ $(ENV_FILE):
 	cp $(ENV_EXAMPLE) $(ENV_FILE)
 	@echo "$(ENV_FILE) created from $(ENV_EXAMPLE) — edit it before running."
 
+
+$(CERT_PATH) $(KEY_PATH): $(HOSTNAME_FILE)
+	@openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
+		-subj "/C=FR/ST=France/L=Lyon/O=42Lyon/OU=DevOps/CN=$(DOMAIN_NAME)" \
+		-addext "subjectAltName=DNS:$(DOMAIN_NAME),DNS:localhost,IP:127.0.0.1" \
+		-keyout $(KEY_PATH) -out $(CERT_PATH)
+
+$(HOSTNAME_FILE): | $(SSL_PATH)
+	@if [ ! -f $@ ] || [ "$$(cat $@)" != "$(DOMAIN_NAME)" ]; then \
+		echo "$(DOMAIN_NAME)" > $@; \
+	fi
+
 .PHONY: dirs
 dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
+
+.PHONY: ssl
+ssl: $(CERT_PATH) $(KEY_PATH)
 
 # ---------------------------------- rules -------------------------------------
 
@@ -38,11 +65,11 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 .DEFAULT_GOAL := dev
 
 .PHONY: up
-up: $(ENV_FILE) dirs
+up: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_CMD) up -d --build --remove-orphans
 
 .PHONY: dev
-dev: $(ENV_FILE) dirs
+dev: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: stop
@@ -136,6 +163,7 @@ fclean: clean
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 	@rm -rf ${HOME}/backups
+	@rm -rf $(SSL_PATH)*
 
 .PHONY: db-reset
 db-reset:
