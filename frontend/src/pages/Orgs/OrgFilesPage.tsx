@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileItem, FilesService, FolderItem } from "../../services/files.service";
+import { FilesService } from "../../services/files.service";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -13,54 +13,14 @@ import { FolderCard } from "../../components/FolderCard";
 import { FileCard } from "../../components/FileCard"
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ActionButtons } from "../../components/ActionButtons";
+import { useFileManager } from "../../hooks/useFileManager";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
   const { folderId } = useParams();
-  const [files, setFiles] = useState<FileItem[]>([]);
-  const [folders, setFolders] = useState<FolderItem[]>([]);
-  const [success, setSuccess] = useState<string | null>(null);
-
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setSuccess("");
-        const response = folderId
-          ? await FilesService.getOrgaFilesFolders(folderId, id!)
-          : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
-        setFiles(response.files || []);
-        setFolders(response.folders || []);
-      } catch (err: any) {
-        if (err.status === 400 || err.status === 404) {
-          navigate("/404");
-          return;
-        }
-        setError("Failed to load files.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [folderId, id]);
-
-  const loadFiles = async (currentFolderId?: string) => {
-    setSuccess("");
-    setError(null);
-    const response = currentFolderId
-      ? await FilesService.getOrgaFilesFolders(currentFolderId, id!)
-      : await FilesService.getOrgaFilesFolders("00000000-0000-0000-0000-000000000000", id!);
-    setFiles(response.files || []);
-    setFolders(response.folders || []);
-  };
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -76,7 +36,7 @@ export default function OrgFilesPage() {
   const { uploadFile, uploads } = useE2EEUpload(() => {
     setSuccess("");
     setError(null);
-    loadFiles(folderId);
+    loadFiles();
   }, id, folderId);
   
   const activeUploads = Object.values(uploads);
@@ -87,87 +47,6 @@ export default function OrgFilesPage() {
   const handleDownload = (fileId: string) => {
     downloadAndDecryptOrg(fileId, id!);
   };
-
-  const handleDeleteFile = async (fileId: string) => {
-        setSuccess("");
-        setError(null);
-         try {
-             await FilesService.deleteFile(fileId);
-             await loadFiles(folderId);
-             setSuccess("File deleted");
-         } catch (err) {
-             const errorMessage = err instanceof Error ? err.message : "Unknown error";
-             console.error("Failed to delete file:", err);
-             setError(`Failed to delete file: ${errorMessage}`);
-         }
-  };
-
-  const handleDeleteFolder = async (folderIdDeleted: string) => {
-    setSuccess("");
-    setError(null);
-      try {
-          await FilesService.deleteFolder(folderIdDeleted);
-          await loadFiles(folderId);
-          setSuccess("Folder deleted");
-      } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : "Unknown error";
-          console.error("Failed to delete folder:", err);
-          setError(`Failed to delete folder: ${errorMessage}`);
-      }
-  };
-
-  const handleRenameFolder = async (id: string, newName: string) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.updateFolder(id, {
-              name: newName,
-          });
-          await loadFiles(folderId);
-          setSuccess("Folder renamed");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("Folder not found.");
-          } else {
-              setError(err.message || "Failed to rename folder.");
-          }
-      }
-  };
-
-  const handleMoveFolder = async (id: string, newParentId: string | null) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.updateFolder(id, {
-              parent_id: newParentId,
-          });
-          await loadFiles(folderId);
-          setSuccess("Folder moved");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("File or folder not found.");
-          } else {
-              setError(err.message || "Failed to move.");
-          }
-      }
-  };
-
-
-  const handleMoveFile = async (id: string, newParentId: string | null) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.moveFile(id, newParentId);
-          await loadFiles(folderId);
-          setSuccess("File moved");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("File or folder not found.");
-          } else {
-              setError(err.message || "Failed to move.");
-          }
-      }
-    };
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
@@ -182,7 +61,7 @@ export default function OrgFilesPage() {
     }
     try {
       await FilesService.createFolder(folderName, folderId, id);
-      await loadFiles(folderId);
+      await loadFiles();
       setSuccess("Folder created");
       setFolderName("");
       setIsFolderModalOpen(false);
@@ -192,53 +71,16 @@ export default function OrgFilesPage() {
     }
   };
 
-    const [breadcrumbs, setBreadcrumbs] = useState<{ id: string | null; name: string }[]>([
-    { id: null, name: "Root" }
-    ]);
-
-    const handleBreadcrumbClick = (item: { id: string | null }, index: number) => {
-    setBreadcrumbs(prev => prev.slice(0, index + 1));
-    if (item.id) {
-        navigate(`/orgs/${id}/files/${item.id}`);
-    } else {
-        navigate(`/orgs/${id}/files`);
-    }
-    };
-
-    useEffect(() => {
-    if (!folderId) {
-        setBreadcrumbs([{ id: null, name: "Root" }]);
-        return;
-    }
-
-    FilesService.getFolderPath(folderId)
-        .then(data => {
-        setBreadcrumbs([
-            { id: null, name: "Root" },
-            ...data.map((f) => ({ id: f.id, name: f.name }))
-        ]);
-        })
-        .catch(() => setBreadcrumbs([{ id: null, name: "Root" }]));
-    }, [folderId]);
-
-    const [hideMessage, setHideMessage] = useState(false);
-
-        useEffect(() => {
-        if (success || error) {
-            setHideMessage(false);
-
-            const timer = setTimeout(() => {
-                setHideMessage(true);
-
-                setTimeout(() => {
-                    setSuccess('');
-                    setError('');
-                }, 400);
-            }, 3000);
-
-            return () => clearTimeout(timer);
-        }
-    }, [success, error]);
+const {
+    files, folders, loading, error, success,
+    breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+    handleDeleteFile, handleDeleteFolder,
+    handleRenameFolder, handleMoveFolder, handleMoveFile,
+    handleBreadcrumbClick,
+    } = useFileManager(
+        () => FilesService.getOrgaFilesFolders(folderId ?? "00000000-0000-0000-0000-000000000000", id!),
+        (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
+);
 
   return (
     <>
