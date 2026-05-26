@@ -6,7 +6,8 @@ import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { Folder } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MoveModal } from "../MoveModal";
-
+import { folderSchema } from "../../schemas/folder.schema";
+import { safeParse } from "zod";
 
 interface FileCardProps {
   id: string;
@@ -73,12 +74,12 @@ export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownl
 
   const handleConfirmRename = async () => {
     try {
-      if (!renameValue.trim()) {
-        setModalError("Invalid name");
-        return;
+      const result = folderSchema.safeParse({ name: renameValue });
+      if(!result.success) {
+        setModalError(result.error.issues[0].message);
+        return ;
       }
-
-      await onRename?.(id, renameValue);
+      await onRename?.(id, result.data.name);
 
       setShowRenameConfirm(false);
       setModalError(null);
@@ -169,12 +170,12 @@ export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownl
   if (isFolder) {
   return (
     <>
-    <div className={styles.folderCard} onClick={handleEnterFolder}> 
+    <div className={styles.folderCard} onClick={handleEnterFolder}>
       <div className={styles.folderCard__background} />
         <Folder className={styles.folderCard__icon} />
         <div className={styles.folderCard__name}>{name}</div>
         <div className={styles.fileCard__menu} ref={menuRef}>
-          <button   
+          <button
             onClick={(e) => {
               handleMenuClick(e);
             }}
@@ -183,27 +184,27 @@ export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownl
           </button>
           {showMenu && (
             <div className={styles.fileCard__menu__dropdown}>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMove();
-                  }} 
+                  }}
                   className={styles.fileCard__menu__item}>
                   Move
                 </button>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRename();
-                  }} 
+                  }}
                   className={styles.fileCard__menu__item}>
                   Rename
                 </button>
-              <button 
+              <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete();
-                  }}  
+                  }}
                 className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}>
                 Delete
               </button>
