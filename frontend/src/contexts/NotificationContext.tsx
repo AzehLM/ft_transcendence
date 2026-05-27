@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { fetchWithRefresh } from "../services/api.service";
 
 
@@ -50,24 +50,26 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const reconnectAttemptsRef = useRef(0);
   const currentUserIdRef = useRef<string | null>(null);
 
-  const registerListener = (event: string, callback: ListenerCallback) => {
+  const reconnectRef = useRef<() => void>(() => {});
+
+  const registerListener = useCallback((event: string, callback: ListenerCallback) => {
     if (!listenersRef.current[event]) {
       listenersRef.current[event] = new Set();
     }
     listenersRef.current[event].add(callback);
-  };
+  }, []);
 
-  const unregisterListener = (event: string, callback: ListenerCallback) => {
+  const unregisterListener = useCallback((event: string, callback: ListenerCallback) => {
     if (listenersRef.current[event]) {
       listenersRef.current[event].delete(callback);
     }
-  };
+  }, []);
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, []);
 
-  const connect = () => {
+  const connect = useCallback(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       setStatus("disconnected");
@@ -140,7 +142,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         if (eventType === "ADDED_TO_NEW_ORGA" || eventType === "REMOVED_FROM_ORGA") {
           setTimeout(() => {
-            reconnect();
+            reconnectRef.current();
           }, 100);
         }
       } catch (err) {
@@ -164,9 +166,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     ws.onerror = (error) => {
       console.error("[WS] Error encountered:", error);
     };
-  };
+  }, []);
 
-  const reconnect = () => {
+  const reconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -178,9 +180,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       wsRef.current = null;
     }
     connect();
-  };
+  }, [connect]);
 
-  const disconnect = () => {
+  useEffect(() => {
+    reconnectRef.current = reconnect;
+  }, [reconnect]);
+
+  const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -191,7 +197,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       wsRef.current = null;
     }
     setStatus("disconnected");
-  };
+  }, []);
 
   useEffect(() => {
     connect();
@@ -239,45 +245,58 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       window.removeEventListener("storage", handleStorageChange);
       disconnect();
     };
-  }, []);
+  }, [connect, disconnect]);
 
-  const markAsRead = (id: string) => {
+  const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
-  };
+  }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
+  }, []);
 
-  const clearNotification = (id: string) => {
+  const clearNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  }, []);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setNotifications([]);
-  };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  const contextValue = useMemo(() => ({
+    notifications,
+    unreadCount,
+    toasts,
+    status,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAll,
+    removeToast,
+    registerListener,
+    unregisterListener,
+    reconnect,
+  }), [
+    notifications,
+    unreadCount,
+    toasts,
+    status,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAll,
+    removeToast,
+    registerListener,
+    unregisterListener,
+    reconnect,
+  ]);
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        toasts,
-        status,
-        markAsRead,
-        markAllAsRead,
-        clearNotification,
-        clearAll,
-        removeToast,
-        registerListener,
-        unregisterListener,
-        reconnect,
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );
