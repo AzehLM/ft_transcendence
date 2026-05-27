@@ -235,12 +235,17 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	userIDRaw := c.Locals("user_id")
+	userIDStr, _ := userIDRaw.(string)
+
 	event := ws.WSEvent{
 		Event:   "ORGA_RENAMED",
 		OrgID:   orgID.String(),
 		Message: "Organization name updated",
 		Data: fiber.Map{
+			"org_id":   orgID.String(),
 			"new_name": body.Name,
+			"user_id":  userIDStr,
 		},
 	}
 	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {

@@ -208,13 +208,24 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 		return payload
 	}
 
-	orgName, found := orgNames[orgIDStr]
-	if !found {
-		err := h.DB.Table("organizations").Select("name").Where("id = ?", orgIDStr).Row().Scan(&orgName)
-		if err != nil {
-			orgName = "Unknown Organization"
+	var orgName string
+	if eventType == "ORGA_RENAMED" {
+		if newOrgName, ok := data["new_name"].(string); ok && newOrgName != "" {
+			orgName = newOrgName
+			orgNames[orgIDStr] = newOrgName
 		}
-		orgNames[orgIDStr] = orgName
+	}
+
+	if orgName == "" {
+		var found bool
+		orgName, found = orgNames[orgIDStr]
+		if !found {
+			err := h.DB.Table("organizations").Select("name").Where("id = ?", orgIDStr).Row().Scan(&orgName)
+			if err != nil {
+				orgName = "Unknown Organization"
+			}
+			orgNames[orgIDStr] = orgName
+		}
 	}
 
 	var enrichedMsg string
@@ -230,6 +241,8 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 		enrichedMsg = fmt.Sprintf("[%s] A folder has been deleted", orgName)
 	case "folder_renamed":
 		enrichedMsg = fmt.Sprintf("[%s] A folder has been renamed", orgName)
+	case "ORGA_RENAMED":
+		enrichedMsg = fmt.Sprintf("Organization has been renamed to %s", orgName)
 	default:
 		return payload
 	}
