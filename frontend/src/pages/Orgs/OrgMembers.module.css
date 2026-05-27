@@ -165,6 +165,10 @@
     background-color: #4CAF50;
 }
 
+.statusDotInactive {
+    background-color: #b0bec5;
+}
+
 .buttonsGroup {
     display: flex;
     align-items: center;

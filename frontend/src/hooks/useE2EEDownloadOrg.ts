@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
-    decryptFilename,
+    decryptFilenameAsymmetric,
 } from '../services/crypto.service';
 import { decryptOrgPrivateKey } from '../services/organizations.service';
 import { fetchWithRefresh } from '../services/api.service';
@@ -98,7 +98,7 @@ export function useE2EEDownloadOrg() {
             const encryptedFilenameBase64 = metadata.encrypted_filename;
             let filename: string;
             try {
-                filename = await decryptFilename(encryptedFilenameBase64, dek, baseIv);
+                filename = await decryptFilenameAsymmetric(encryptedFilenameBase64, orgPrivateKey);
             } catch (err) {
                 console.error("Failed to decrypt filename:", err);
                 filename = "downloaded_file";

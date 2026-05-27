@@ -72,7 +72,6 @@ export default function RegisterPage() {
             if (data.access_token) {
                 localStorage.setItem("token", data.access_token);
             }
-
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
