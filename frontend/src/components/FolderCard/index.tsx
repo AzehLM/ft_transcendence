@@ -4,6 +4,7 @@ import styles from "./FolderCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useNavigate } from "react-router-dom";
+import { folderSchema } from "../../schemas/folder.schema";
 
 interface FolderProps {
   id: string;
@@ -59,13 +60,16 @@ export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onM
     };
 
     const handleConfirmRename = async () => {
-    try {
-        if (!renameValue.trim()) {
-        setRenameError("Invalid name");
-        return;
-        }
+    setRenameError(null);
 
-        await onRename?.(id, renameValue);
+    const result = folderSchema.safeParse({ name: renameValue });
+    if (!result.success) {
+      setRenameError(result.error.issues[0].message)
+      return ;
+    }
+
+    try {
+        await onRename?.(id, result.data.name);
 
         setShowRenameModal(false);
         setRenameError(null);
