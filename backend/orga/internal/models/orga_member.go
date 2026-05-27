@@ -26,4 +26,5 @@ type OrgaMemberResponse struct {
 	Email		string 		`json:"email"`
 	FamilyName	string 		`json:"family_name"`
 	FirstName	string 		`json:"first_name"`
+	IsOnline	bool        `json:"is_online"`
 }

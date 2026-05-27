@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -37,6 +38,20 @@ func main() {
 	dbConn := db.InitDB(env)
 
 	wsHub := ws.NewHub(redisClient, dbConn)
+
+	ctxStartup := context.Background()
+	_ = redisClient.Del(ctxStartup, "online_users").Err()
+	var cursor uint64
+	for {
+		keys, nextCursor, err := redisClient.Scan(ctxStartup, cursor, "user_sessions:*", 100).Result()
+		if err == nil && len(keys) > 0 {
+			_ = redisClient.Del(ctxStartup, keys...).Err()
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
 
 	app := fiber.New(fiber.Config{
 		AppName:   "ostrom_orga v1.0",

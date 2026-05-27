@@ -13,11 +13,14 @@ import { FolderCard } from "../../components/FolderCard";
 import { FileCard } from "../../components/FileCard"
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ActionButtons } from "../../components/ActionButtons";
+import { useNotifications } from "../../contexts/NotificationContext";
+import { OrgKeyProvider } from "../../contexts/OrgKeyContext";
 import { useFileManager } from "../../hooks/useFileManager";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
   const { folderId } = useParams();
+  const { registerListener, unregisterListener } = useNotifications();
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const navigate = useNavigate();
@@ -34,6 +37,7 @@ export default function OrgFilesPage() {
   }, [id]);
 
 
+
     const loadFn = useCallback(
         () => FilesService.getOrgaFilesFolders(folderId ?? "00000000-0000-0000-0000-000000000000", id!),
         [folderId, id]
@@ -45,10 +49,42 @@ export default function OrgFilesPage() {
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
-        } = useFileManager(
-            loadFn,
-            (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
+    } = useFileManager(
+        loadFn,
+        (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
     );
+
+    useEffect(() => {
+        const handleFilesChange = () => {
+            loadFiles();
+        };
+
+        const handleOrgaRenamed = (data: any) => {
+            if (data && data.new_name) {
+                setOrgName(data.new_name);
+            }
+        };
+
+        registerListener("file_uploaded", handleFilesChange);
+        registerListener("file_deleted", handleFilesChange);
+        registerListener("file_moved", handleFilesChange);
+        registerListener("folder_created", handleFilesChange);
+        registerListener("folder_deleted", handleFilesChange);
+        registerListener("folder_renamed", handleFilesChange);
+        registerListener("folder_moved", handleFilesChange);
+        registerListener("ORGA_RENAMED", handleOrgaRenamed);
+
+        return () => {
+            unregisterListener("file_uploaded", handleFilesChange);
+            unregisterListener("file_deleted", handleFilesChange);
+            unregisterListener("file_moved", handleFilesChange);
+            unregisterListener("folder_created", handleFilesChange);
+            unregisterListener("folder_deleted", handleFilesChange);
+            unregisterListener("folder_renamed", handleFilesChange);
+            unregisterListener("folder_moved", handleFilesChange);
+            unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+        };
+    }, [registerListener, unregisterListener, loadFiles]);
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
         setSuccess("");
@@ -91,6 +127,7 @@ export default function OrgFilesPage() {
   return (
     <>
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
+      <OrgKeyProvider orgId={id}>
       <div className={styles.container}>
         <ConfirmationModal
         isOpen={isFolderModalOpen}
@@ -182,6 +219,7 @@ export default function OrgFilesPage() {
             )}
           </div>
       </div>
+      </OrgKeyProvider>
     </OrgLayout>
     </>
   );

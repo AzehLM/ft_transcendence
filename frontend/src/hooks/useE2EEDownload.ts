@@ -3,7 +3,7 @@ import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
     getPrivateKeyFromSession,
-    decryptFilename,
+    decryptFilenameAsymmetric,
 } from '../services/crypto.service';
 import { fetchWithRefresh } from '../services/api.service';
 import { UPLOAD_CONFIG } from '../config/uploadConfig';
@@ -77,7 +77,7 @@ export function useE2EEDownload() {
             const encryptedFilenameBase64 = metadata.encrypted_filename;
             let filename: string;
             try {
-                filename = await decryptFilename(encryptedFilenameBase64, dek, baseIv);
+                filename = await decryptFilenameAsymmetric(encryptedFilenameBase64, tempPrivateKey);
             } catch (err) {
                 console.error("Failed to decrypt filename:", err);
                 filename = "downloaded_file";

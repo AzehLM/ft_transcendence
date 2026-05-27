@@ -1,6 +1,6 @@
 import { FileCard } from "../../components/FileCard"
 import { ActionButtons } from "../../components/ActionButtons"
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./Dashboard.module.css";
 import { FilesService } from "../../services/files.service";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
@@ -10,10 +10,12 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
 import { FolderCard } from "../../components/FolderCard";
+import { useNotifications } from "../../contexts/NotificationContext";
 import { useFileManager } from "../../hooks/useFileManager";
 
 export default function DashboardPage() {
     const { folderId } = useParams();
+    const { registerListener, unregisterListener } = useNotifications();
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
     const [folderName, setFolderName] = useState("");
     const [folderError, setFolderError] = useState<string | null>(null);
@@ -29,11 +31,34 @@ export default function DashboardPage() {
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
-        } = useFileManager(
-            loadFn,
-            (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
+    } = useFileManager(
+        loadFn,
+        (folderId) => folderId ? `/dashboard/folder/${folderId}` : "/dashboard"
     );
-     
+
+    useEffect(() => {
+        const handleFilesChange = () => {
+            loadFiles();
+        };
+
+        registerListener("file_uploaded", handleFilesChange);
+        registerListener("file_deleted", handleFilesChange);
+        registerListener("file_moved", handleFilesChange);
+        registerListener("folder_created", handleFilesChange);
+        registerListener("folder_deleted", handleFilesChange);
+        registerListener("folder_renamed", handleFilesChange);
+        registerListener("folder_moved", handleFilesChange);
+
+        return () => {
+            unregisterListener("file_uploaded", handleFilesChange);
+            unregisterListener("file_deleted", handleFilesChange);
+            unregisterListener("file_moved", handleFilesChange);
+            unregisterListener("folder_created", handleFilesChange);
+            unregisterListener("folder_deleted", handleFilesChange);
+            unregisterListener("folder_renamed", handleFilesChange);
+            unregisterListener("folder_moved", handleFilesChange);
+        };
+    }, [registerListener, unregisterListener, loadFiles]);
     const { uploadFile, uploads } = useE2EEUpload(() => {
         setSuccess("");
         setError(null);
