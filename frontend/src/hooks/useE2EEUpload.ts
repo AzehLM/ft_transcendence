@@ -20,6 +20,7 @@ export interface UploadTask {
     progress: UploadProgress | null;
     isUploading: boolean;
     error: string | null;
+    hiding?: boolean;
 }
 
 interface PartURL {
@@ -276,16 +277,23 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             updateUpload(id, { status: UPLOAD_MESSAGES.SUCCESS(file.name), progress: null, isUploading: false });
 
             setTimeout(() => {
-                setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+                updateUpload(id, { hiding: true });
+                setTimeout(() => {
+                    setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+                }, 400);
             }, 4000);
 
             onSuccess();
 
         } catch (err: any) {
-            updateUpload(id, { status: `Erreur d'upload: ${err.message}`, progress: null, isUploading: false, error: err.message });
+            updateUpload(id, { status: `Upload error: ${err.message}`, progress: null, isUploading: false, error: err.message });
+
             setTimeout(() => {
-                setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
-            }, 5000);
+                updateUpload(id, { hiding: true });
+                setTimeout(() => {
+                    setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+                }, 400);
+            }, 4000);
         }
     };
 

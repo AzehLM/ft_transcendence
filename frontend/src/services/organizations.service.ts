@@ -64,7 +64,6 @@ export async function encryptOrgKeyForMember(
   );
 
 
-
   const encOrgPrivKeyBuffer = base64ToUint8Array(encOrgPrivKey);
   const ivBuffer = base64ToUint8Array(iv);
   const orgPrivKeyRaw = await crypto.subtle.decrypt(

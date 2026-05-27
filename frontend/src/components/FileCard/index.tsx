@@ -70,25 +70,24 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
               <Trash2 size={16} />
             </button>
           </div>
-
-            <div className={styles.menuWrapper} ref={menuRef}>
+          <div className={styles.menuWrapper} ref={menuRef}>
             <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
-                <MoreVertical size={16} />
+              <MoreVertical size={16} />
             </button>
             {showMenu && (
-                <div className={styles.dropdown}>
-                <button onClick={() => onDownload?.(id)}>
-                    <Download size={14} /> Download
+              <div className={styles.dropdown}>
+                <button onClick={() => { onDownload?.(id); setShowMenu(false); }}>
+                  <Download size={14} /> Download
                 </button>
-                <button onClick={() => setShowMoveModal(true)}>
-                    <Move size={14} /> Move
+                <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
+                  <Move size={14} /> Move
                 </button>
-                <button className={styles.deleteBtn} onClick={() => setShowDeleteModal(true)}>
-                    <Trash2 size={14} /> Delete
+                <button className={styles.deleteBtn} onClick={() => { setShowDeleteModal(true); setShowMenu(false); }}>
+                  <Trash2 size={14} /> Delete
                 </button>
-                </div>
+              </div>
             )}
-            </div>
+          </div>
 
         </div>
       </div>
