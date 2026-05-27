@@ -6,8 +6,7 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
 import { UserMinus, Shield, UserPlus } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
-import { getPrivateKeyFromSession } from "../../services/crypto.service";
-import { resetKeys } from "../../services/auth.service";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface Member {
   user_id: string;
@@ -37,12 +36,12 @@ export default function OrgMembersPage() {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
 
-  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
+
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -80,7 +79,6 @@ export default function OrgMembersPage() {
             return res.json();
           })
           .then(me => {
-            setEmail(me.email);
             const myMember = data.find((m: Member) => m.email === me.email);
             if (myMember) setMyRole(myMember.role);
           })
@@ -97,10 +95,9 @@ export default function OrgMembersPage() {
     if (!memberEmail.trim()) return;
     setModalError(null);
 
-    const userPrivateKey = await getPrivateKeyFromSession();
-    if (!userPrivateKey) {
-      setPublicKeyMissing(true);
-      return;
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
     }
 
     const { success, error } = await addMemberToOrg(id!, memberEmail);
@@ -119,21 +116,6 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
-  };
-
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
-      return;
-    }
-
-    setPassword("");
-    setPublicKeyMissing(false);
-    setModalError(null);
   };
 
   const handleChangeRole = async () => {
@@ -295,14 +277,14 @@ export default function OrgMembersPage() {
       />
 
       <ConfirmationModal
-        isOpen={publicKeyMissing}
+        isOpen={keyMissing}
         fileName=""
         onConfirm={handleResetKeys}
-        onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+        onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
         isKeyMissing={true}
         inputValue={password}
         onInputChange={setPassword}
-        errorMessage={modalError ?? undefined}
+        errorMessage={keyModalError ?? undefined}
       />
 
       <ConfirmationModal

@@ -4,9 +4,7 @@ import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
-import { getPrivateKeyFromSession } from "../../services/crypto.service";
-import { resetKeys } from "../../services/auth.service";
-import { fetchWithRefresh } from "../../services/api.service";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface FileCardProps {
   id: string;
@@ -23,41 +21,16 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
   const [showMoveModal, setShowMoveModal] = useState(false);
   const { decryptedName, loading } = useDecryptFilename(id, orgId);
   const displayName = loading ? "..." : (decryptedName || name);
-  const [keyMissing, setKeyMissing] = useState(false);
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [modalError, setModalError] = useState<string | null>(null);
 
-
-  useEffect(() => {
-  fetchWithRefresh("/api/auth/me")
-      .then(res => res.json())
-      .then(data => setEmail(data.email));
-  }, []);
-
-
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
-      return;
-    }
-
-    setPassword("");
-    setKeyMissing(false);
-    setModalError(null);
-  };
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
 
   const handleDownloadClick = async () => {
-    const userPrivateKey = await getPrivateKeyFromSession();
-    if (!userPrivateKey) {
-      setKeyMissing(true)
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
       return;
     }
-    console.log("private key found")
     onDownload?.(id)
   }
 
@@ -135,11 +108,11 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
         isOpen={keyMissing}
         fileName={""}
         onConfirm={handleResetKeys}
-        onCancel={() => { setKeyMissing(false); setModalError(null); }}
+        onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
         isKeyMissing={true}
         inputValue={password}
         onInputChange={setPassword}
-        errorMessage={modalError ?? undefined}
+        errorMessage={keyModalError ?? undefined}
       />
       <ConfirmationModal
         isOpen={showDeleteModal}

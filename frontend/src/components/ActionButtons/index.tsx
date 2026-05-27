@@ -1,11 +1,9 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import { UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
 import { getAcceptAttribute } from "../../services/fileValidation.service";
-import { getPublicKeyFromSession } from "../../services/crypto.service";
 import { ConfirmationModal } from "../ConfirmationModal";
-import { resetKeys } from "../../services/auth.service";
-import { fetchWithRefresh } from "../../services/api.service";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface ActionButtonsProps {
   onUploadFile?: (file: File) => void;
@@ -14,22 +12,14 @@ interface ActionButtonsProps {
 
 export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [keyMissing, setKeyMissing] = useState(false);
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [modalError, setModalError] = useState<string | null>(null);
-
-    useEffect(() => {
-    fetchWithRefresh("/api/auth/me")
-        .then(res => res.json())
-        .then(data => setEmail(data.email));
-    }, []);
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
 
   const handleUploadClick = async () => {
-    const userPublicKey = await getPublicKeyFromSession();
-    if (!userPublicKey) {
-      setKeyMissing(true)
-      return;
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
     }
     fileInputRef.current?.click();
   };
@@ -45,32 +35,17 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
     }
   };
 
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
-      return;
-    }
-
-    setPassword("");
-    setKeyMissing(false);
-    setModalError(null);
-  };
-
   return (
     <>
         <ConfirmationModal
           isOpen={keyMissing}
           fileName={""}
           onConfirm={handleResetKeys}
-          onCancel={() => { setKeyMissing(false); setModalError(null); }}
+          onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
           isKeyMissing={true}
           inputValue={password}
           onInputChange={setPassword}
-          errorMessage={modalError ?? undefined}
+          errorMessage={keyModalError ?? undefined}
         />
     <div className={styles.container}>
 

@@ -5,9 +5,7 @@ import { UserPlus, UserMinus, Plus, Building2 } from "lucide-react";
 import { generateOrganization, addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
-import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
-import { resetKeys } from "../../services/auth.service";
-
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface Organization {
   id: string;
@@ -19,12 +17,13 @@ interface Organization {
 
 export default function OrganizationsPage() {
   const navigate = useNavigate();
-
-
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [keyMissing, setKeyMissing] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
 
   useEffect(() => {
     fetchWithRefresh("/api/orgs")
@@ -37,8 +36,6 @@ export default function OrganizationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const [modalError, setModalError] = useState<string | null>(null);
-
   // Create an orga
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [orgName, setOrgName] = useState("");
@@ -50,11 +47,9 @@ export default function OrganizationsPage() {
     }
     try {
 
-      // handle missing public key
-      const userPublicKey = await getPublicKeyFromSession();
-      if (!userPublicKey) {
-        setKeyMissing(true)
-        return;
+      const hasKeys = await checkKeys();
+      if (!hasKeys) {
+        return
       }
 
       const data = await generateOrganization(orgName);
@@ -95,10 +90,9 @@ export default function OrganizationsPage() {
     if (!memberEmail.trim() || !selectedOrg) return;
     setModalError(null);
 
-    const userPrivateKey = await getPrivateKeyFromSession();
-    if (!userPrivateKey) {
-      setKeyMissing(true)
-      return;
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
     }
 
     const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
@@ -153,30 +147,6 @@ export default function OrganizationsPage() {
     }
   };
 
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-
-    useEffect(() => {
-    fetchWithRefresh("/api/auth/me")
-        .then(res => res.json())
-        .then(data => setEmail(data.email));
-    }, []);
-
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
-      return;
-    }
-
-    setPassword("");
-    setKeyMissing(false);
-    setModalError(null);
-  };
-
   const getInitials = (name: string) => {
     return name.substring(0, 2).toUpperCase();
   };
@@ -223,11 +193,11 @@ export default function OrganizationsPage() {
           isOpen={keyMissing}
           fileName={orgName}
           onConfirm={handleResetKeys}
-          onCancel={() => { setKeyMissing(false); setModalError(null); }}
+          onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
           isKeyMissing={true}
           inputValue={password}
           onInputChange={setPassword}
-          errorMessage={modalError ?? undefined}
+          errorMessage={keyModalError ?? undefined}
         />
 
         {loading ? (
