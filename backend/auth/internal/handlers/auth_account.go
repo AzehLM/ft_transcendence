@@ -296,6 +296,13 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "first name updated",
@@ -345,6 +352,13 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "family name updated",
