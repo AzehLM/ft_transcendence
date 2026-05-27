@@ -44,6 +44,12 @@ export default function OrgMembersPage() {
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
 
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    return () => { Object.values(avatarUrls).forEach(URL.revokeObjectURL); };
+  }, [avatarUrls]);
+
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
@@ -73,6 +79,21 @@ export default function OrgMembersPage() {
       .then(data => {
         if (!data) return;
         setMembers(data);
+
+        data.forEach((member: Member) => {
+          fetchWithRefresh(`/api/user/${member.user_id}/avatar`)
+            .then(res => {
+              if (!res.ok) return null;
+              return res.blob();
+            })
+            .then(blob => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                setAvatarUrls(prev => ({ ...prev, [member.user_id]: url }));
+              }
+            })
+            .catch(() => {});
+        });
 
         fetchWithRefresh("/api/auth/me")
           .then(res => {
@@ -229,9 +250,17 @@ export default function OrgMembersPage() {
             {members.map((member) => (
               <div key={member.user_id} className={styles.memberCard}>
                 <div className={styles.avatar}>
-                  <span className={styles.initialsAvatar}>
-                    {getInitials(member)}
-                  </span>
+                  {avatarUrls[member.user_id] ? (
+                    <img
+                      src={avatarUrls[member.user_id]}
+                      alt={getName(member)}
+                      className={styles.avatarImg}
+                    />
+                  ) : (
+                    <span className={styles.initialsAvatar}>
+                      {getInitials(member)}
+                    </span>
+                  )}
                 </div>
                 <div className={styles.memberInfo}>
                   <h3 className={styles.memberName}>{getName(member)}</h3>
