@@ -116,13 +116,6 @@ const getEventMeta = (event: string) => {
 function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
   const { Icon, bgColor, borderColor, iconColor, title } = getEventMeta(toast.event);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onClose]);
 
   return (
     <motion.div
@@ -227,6 +220,7 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
         initial={{ width: "100%" }}
         animate={{ width: "0%" }}
         transition={{ duration: 5, ease: "linear" }}
+        onAnimationComplete={onClose}
         style={{
           position: "absolute",
           bottom: 0,
