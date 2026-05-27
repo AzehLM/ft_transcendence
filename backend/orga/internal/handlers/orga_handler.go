@@ -227,6 +227,10 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 	repo := repository.NewOrganizationRepository(h.DB)
+
+	var oldName string
+	_ = h.DB.Table("organizations").Select("name").Where("id = ?", orgID).Row().Scan(&oldName)
+
 	updated, err := repo.UpdateOrgaName(orgID, body.Name)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -244,6 +248,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 		Message: "Organization name updated",
 		Data: fiber.Map{
 			"org_id":   orgID.String(),
+			"old_name": oldName,
 			"new_name": body.Name,
 			"user_id":  userIDStr,
 		},

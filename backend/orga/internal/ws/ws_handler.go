@@ -242,7 +242,11 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 	case "folder_renamed":
 		enrichedMsg = fmt.Sprintf("[%s] A folder has been renamed", orgName)
 	case "ORGA_RENAMED":
-		enrichedMsg = fmt.Sprintf("Organization has been renamed to %s", orgName)
+		oldName, _ := data["old_name"].(string)
+		if oldName == "" {
+			oldName = "Organization"
+		}
+		enrichedMsg = fmt.Sprintf("%s has been renamed to %s", oldName, orgName)
 	default:
 		return payload
 	}
