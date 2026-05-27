@@ -129,7 +129,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
 
         if (eventType && listenersRef.current[eventType]) {
-          listenersRef.current[eventType].forEach((cb) => {
+          const callbacks = Array.from(listenersRef.current[eventType]);
+          callbacks.forEach((cb) => {
             try {
               cb(payload.data);
             } catch (err) {

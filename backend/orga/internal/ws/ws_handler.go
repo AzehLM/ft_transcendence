@@ -46,10 +46,10 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 		log.Printf("[WS] Redis SAdd session error for user %s: %v", userID, err)
 	}
 
-	activeConns, err := h.Redis.SCard(ctx, userSessionsKey).Result()
+	isFirst, err := h.Redis.SAdd(ctx, "online_users", userID.String()).Result()
 	if err != nil {
-		log.Printf("[WS] Redis SCard error for user %s: %v", userID, err)
-		activeConns = 1
+		log.Printf("[WS] Redis SAdd online_users error for user %s: %v", userID, err)
+		isFirst = 0
 	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
@@ -57,19 +57,16 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	if err != nil {
 		log.Println("[WS] Error fetching organizations:", err)
 		_ = h.Redis.SRem(ctx, userSessionsKey, connID).Err()
-		remConns, remErr := h.Redis.SCard(ctx, userSessionsKey).Result()
-		if remErr == nil && remConns == 0 {
-			_ = h.Redis.SRem(ctx, "online_users", userID.String()).Err()
-			_ = h.Redis.Del(ctx, userSessionsKey).Err()
+		if isFirst == 1 {
+			remConns, remErr := h.Redis.SCard(ctx, userSessionsKey).Result()
+			if remErr == nil && remConns == 0 {
+				_ = h.Redis.SRem(ctx, "online_users", userID.String()).Err()
+			}
 		}
 		return
 	}
 
-	if activeConns == 1 {
-		if err := h.Redis.SAdd(ctx, "online_users", userID.String()).Err(); err != nil {
-			log.Printf("[WS] Redis SAdd error for user %s: %v", userID, err)
-		}
-
+	if isFirst == 1 {
 		for _, org := range orgas {
 			event := WSEvent{
 				Event:   "USER_ONLINE",
@@ -96,21 +93,24 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 		}
 
 		if remConns == 0 {
-			if err := h.Redis.SRem(ctxDel, "online_users", userID.String()).Err(); err != nil {
+			removed, err := h.Redis.SRem(ctxDel, "online_users", userID.String()).Result()
+			if err != nil {
 				log.Printf("[WS] Redis SRem error for user %s: %v", userID, err)
+				removed = 0
 			}
-			_ = h.Redis.Del(ctxDel, userSessionsKey).Err()
 
-			for _, org := range orgas {
-				event := WSEvent{
-					Event:   "USER_OFFLINE",
-					OrgID:   org.ID.String(),
-					Message: "User is offline",
-					Data: map[string]string{
-						"user_id": userID.String(),
-					},
+			if removed == 1 {
+				for _, org := range orgas {
+					event := WSEvent{
+						Event:   "USER_OFFLINE",
+						OrgID:   org.ID.String(),
+						Message: "User is offline",
+						Data: map[string]string{
+							"user_id": userID.String(),
+						},
+					}
+					_ = h.PublishToOrga(ctxDel, org.ID.String(), event)
 				}
-				_ = h.PublishToOrga(ctxDel, org.ID.String(), event)
 			}
 		}
 	}()
