@@ -125,7 +125,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             data: newNotification.data,
           };
           setToasts((prev) => [...prev, newToast]);
-        } else {
         }
 
         if (eventType && listenersRef.current[eventType]) {

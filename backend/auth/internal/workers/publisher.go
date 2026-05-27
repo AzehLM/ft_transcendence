@@ -54,12 +54,14 @@ func (p *EventPublisher) PublishUserProfileUpdated(ctx context.Context, userID u
 	err = p.redis.Publish(ctx, "user_events:"+userID.String(), payload).Err()
 	if err != nil {
 		log.Printf("[EventPublisher] Error publishing profile update to user_events:%s: %v", userID, err)
+		return err
 	}
 
 	for _, orgID := range orgIDs {
 		err = p.redis.Publish(ctx, "org_events:"+orgID, payload).Err()
 		if err != nil {
 			log.Printf("[EventPublisher] Error publishing profile update to org_events:%s: %v", orgID, err)
+			return err
 		}
 	}
 
