@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
-import { UserMinus, Shield, UserPlus } from "lucide-react";
+import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
@@ -206,13 +206,6 @@ export default function OrgMembersPage() {
     setMemberToRemove(null);
   };
 
-  const getInitials = (member: Member) => {
-    if (member.first_name && member.family_name) {
-      return `${member.first_name[0]}${member.family_name[0]}`.toUpperCase();
-    }
-    return member.email[0].toUpperCase();
-  };
-
   const getName = (member: Member) => {
     if (member.first_name || member.family_name) {
       return `${member.first_name ?? ""} ${member.family_name ?? ""}`.trim();
@@ -257,9 +250,7 @@ export default function OrgMembersPage() {
                       className={styles.avatarImg}
                     />
                   ) : (
-                    <span className={styles.initialsAvatar}>
-                      {getInitials(member)}
-                    </span>
+                    <User size={22} strokeWidth={1.5} color="#865142" />
                   )}
                 </div>
                 <div className={styles.memberInfo}>

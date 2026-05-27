@@ -15,21 +15,30 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    border: none;
+    border: 1px solid #d7c2bd;
     border-radius: 50%;
-    background-color: #e0e0e0;
+    background-color: #f9e4de;
     cursor: pointer;
     transition: all 0.2s ease;
+    overflow: hidden;
+    padding: 0;
 }
 
- .profileButtonOpen {
-     background-color: #d0d0d0;
- }
+.profileButtonOpen {
+    background-color: #f0d5cd;
+}
 
 .profileIcon {
     width: 20px;
     height: 20px;
-    color: #666;
+    color: #865142;
+}
+
+.profileAvatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 
