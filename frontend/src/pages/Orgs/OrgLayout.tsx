@@ -1,29 +1,35 @@
-import styles from "../../components/FileGrid/FileGrid.module.css";
 import type { ReactNode } from "react";
-import { OrgHeader } from "../../components/OrgHeader";
-import orgaStyles from "./OrgLayout.module.css"
+import styles from "./OrgLayout.module.css"
+import { Building2, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface OrgLayoutProps {
-  title: string;
   orgName?: string;
   orgDesc?: string;
   children: ReactNode;
-  showActionButtons?: boolean;
 }
 
 
-export function OrgLayout({ title, orgName, orgDesc, showActionButtons = false, children }: OrgLayoutProps) {
-  const hasHeaderContent = orgName || orgDesc || showActionButtons;
-
+export function OrgLayout({ orgName, orgDesc, children }: OrgLayoutProps) {
   return (
-        <div className={styles.page}>
-          {hasHeaderContent && <OrgHeader orgName={orgName} orgDesc={orgDesc} showActionButtons={showActionButtons} />}
-          <div className={hasHeaderContent ? styles.contentArea : styles.contentAreaNoButtons}>
-            {title && <h1 className={styles.title}>{title}</h1>}
-            <div className={orgaStyles.childrenArea}>
-                {children}
-            </div>
-          </div>
-        </div>
+    <div>
+      <div className={styles.header}>
+        <Building2
+          size={22}
+          className={styles.logo}
+        />
+          <Link to="/organizations" className={styles.org}>Organizations</Link>
+          <ChevronRight size={14} className={styles.separator} />
+          {orgName && <span className={styles.orgName}>{orgName}</span>}
+
+          {orgDesc && (
+            <span className={styles.orgDesc}> ({orgDesc})</span>
+          )}
+      </div>
+
+      <div className={styles.childrenArea}>
+        {children}
+      </div>
+    </div>
   );
 }
