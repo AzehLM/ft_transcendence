@@ -50,6 +50,7 @@ export default function OrganizationsPage() {
 
     registerListener("ADDED_TO_NEW_ORGA", handleOrgChange);
     registerListener("MEMBER_ADDED", handleOrgChange);
+    registerListener("MEMBER_REMOVED", handleOrgChange);
     registerListener("ORGA_RENAMED", handleOrgChange);
     registerListener("ORGA_DELETED", handleOrgChange);
     registerListener("USER_PROFILE_UPDATED", handleOrgChange);
@@ -57,6 +58,7 @@ export default function OrganizationsPage() {
     return () => {
       unregisterListener("ADDED_TO_NEW_ORGA", handleOrgChange);
       unregisterListener("MEMBER_ADDED", handleOrgChange);
+      unregisterListener("MEMBER_REMOVED", handleOrgChange);
       unregisterListener("ORGA_RENAMED", handleOrgChange);
       unregisterListener("ORGA_DELETED", handleOrgChange);
       unregisterListener("USER_PROFILE_UPDATED", handleOrgChange);
