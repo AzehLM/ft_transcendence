@@ -214,6 +214,10 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 			orgName = newOrgName
 			orgNames[orgIDStr] = newOrgName
 		}
+	} else if eventType == "ORGA_DELETED" {
+		if deletedOrgName, ok := data["org_name"].(string); ok && deletedOrgName != "" {
+			orgName = deletedOrgName
+		}
 	}
 
 	if orgName == "" {
@@ -247,6 +251,8 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 			oldName = "Organization"
 		}
 		enrichedMsg = fmt.Sprintf("%s has been renamed to %s", oldName, orgName)
+	case "ORGA_DELETED":
+		enrichedMsg = fmt.Sprintf("Organization %s has been permanently deleted", orgName)
 	default:
 		return payload
 	}
