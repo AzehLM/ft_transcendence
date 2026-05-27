@@ -66,6 +66,11 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 		return
 	}
 
+	orgNames := make(map[string]string, len(orgas))
+	for _, org := range orgas {
+		orgNames[org.ID.String()] = org.Name
+	}
+
 	if isFirst == 1 {
 		for _, org := range orgas {
 			event := WSEvent{
@@ -167,7 +172,7 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 				return
 			}
 
-			payloadBytes := h.enrichEventMessage([]byte(msg.Payload))
+			payloadBytes := h.enrichEventMessage([]byte(msg.Payload), orgNames)
 
 			err := c.WriteMessage(websocket.TextMessage, payloadBytes)
 			if err != nil {
@@ -182,7 +187,7 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	}
 }
 
-func (h *Hub) enrichEventMessage(payload []byte) []byte {
+func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []byte {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return payload
@@ -203,10 +208,13 @@ func (h *Hub) enrichEventMessage(payload []byte) []byte {
 		return payload
 	}
 
-	var orgName string
-	err := h.DB.Table("organizations").Select("name").Where("id = ?", orgIDStr).Row().Scan(&orgName)
-	if err != nil {
-		orgName = "Unknown Organization"
+	orgName, found := orgNames[orgIDStr]
+	if !found {
+		err := h.DB.Table("organizations").Select("name").Where("id = ?", orgIDStr).Row().Scan(&orgName)
+		if err != nil {
+			orgName = "Unknown Organization"
+		}
+		orgNames[orgIDStr] = orgName
 	}
 
 	var enrichedMsg string
