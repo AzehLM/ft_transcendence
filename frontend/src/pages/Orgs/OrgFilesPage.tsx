@@ -26,7 +26,6 @@ export default function OrgFilesPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) { navigate("/404"); return; }
