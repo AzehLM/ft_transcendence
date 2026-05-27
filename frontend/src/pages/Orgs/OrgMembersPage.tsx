@@ -22,7 +22,7 @@ interface Member {
 export default function OrgMembersPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { registerListener, unregisterListener } = useNotifications();
+  const { registerListener, unregisterListener, status } = useNotifications();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export default function OrgMembersPage() {
 
   useEffect(() => {
     fetchMembers();
-  }, [id, navigate]);
+  }, [id, navigate, status]);
 
   useEffect(() => {
     const handleMemberChange = () => {
