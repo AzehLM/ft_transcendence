@@ -209,12 +209,13 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 	}
 
 	var orgName string
-	if eventType == "ORGA_RENAMED" {
+	switch eventType {
+	case "ORGA_RENAMED":
 		if newOrgName, ok := data["new_name"].(string); ok && newOrgName != "" {
 			orgName = newOrgName
 			orgNames[orgIDStr] = newOrgName
 		}
-	} else if eventType == "ORGA_DELETED" {
+	case "ORGA_DELETED":
 		if deletedOrgName, ok := data["org_name"].(string); ok && deletedOrgName != "" {
 			orgName = deletedOrgName
 		}
