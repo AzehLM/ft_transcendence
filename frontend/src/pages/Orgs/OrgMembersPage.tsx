@@ -125,11 +125,18 @@ export default function OrgMembersPage() {
       }
     };
 
+    const handleOrgaRenamed = (data: any) => {
+      if (data && data.new_name) {
+        setOrgName(data.new_name);
+      }
+    };
+
     registerListener("MEMBER_ADDED", handleMemberChange);
     registerListener("MEMBER_REMOVED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
     registerListener("USER_ONLINE", handleUserOnline);
     registerListener("USER_OFFLINE", handleUserOffline);
+    registerListener("ORGA_RENAMED", handleOrgaRenamed);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
@@ -137,6 +144,7 @@ export default function OrgMembersPage() {
       unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
       unregisterListener("USER_ONLINE", handleUserOnline);
       unregisterListener("USER_OFFLINE", handleUserOffline);
+      unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
     };
   }, [registerListener, unregisterListener, id]);
 

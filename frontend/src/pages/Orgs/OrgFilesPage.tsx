@@ -59,6 +59,12 @@ export default function OrgFilesPage() {
             loadFiles();
         };
 
+        const handleOrgaRenamed = (data: any) => {
+            if (data && data.new_name) {
+                setOrgName(data.new_name);
+            }
+        };
+
         registerListener("file_uploaded", handleFilesChange);
         registerListener("file_deleted", handleFilesChange);
         registerListener("file_moved", handleFilesChange);
@@ -66,6 +72,7 @@ export default function OrgFilesPage() {
         registerListener("folder_deleted", handleFilesChange);
         registerListener("folder_renamed", handleFilesChange);
         registerListener("folder_moved", handleFilesChange);
+        registerListener("ORGA_RENAMED", handleOrgaRenamed);
 
         return () => {
             unregisterListener("file_uploaded", handleFilesChange);
@@ -75,6 +82,7 @@ export default function OrgFilesPage() {
             unregisterListener("folder_deleted", handleFilesChange);
             unregisterListener("folder_renamed", handleFilesChange);
             unregisterListener("folder_moved", handleFilesChange);
+            unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
         };
     }, [registerListener, unregisterListener, loadFiles]);
 
