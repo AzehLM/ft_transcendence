@@ -68,3 +68,37 @@ func (p *EventPublisher) PublishUserProfileUpdated(ctx context.Context, userID u
 	return nil
 }
 
+func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.UUID, orgIDs []string) error {
+	type WSEvent struct {
+		Event   string      `json:"event"`
+		OrgID   string      `json:"org_id,omitempty"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data,omitempty"`
+	}
+
+	for _, orgID := range orgIDs {
+		event := WSEvent{
+			Event:   "MEMBER_REMOVED",
+			OrgID:   orgID,
+			Message: "A member has left the organization (account deleted)",
+			Data: map[string]interface{}{
+				"user_id": userID.String(),
+			},
+		}
+
+		payload, err := json.Marshal(event)
+		if err != nil {
+			log.Printf("[EventPublisher] Error marshaling MEMBER_REMOVED event: %v", err)
+			continue
+		}
+
+		err = p.redis.Publish(ctx, "org_events:"+orgID, payload).Err()
+		if err != nil {
+			log.Printf("[EventPublisher] Error publishing MEMBER_REMOVED to org_events:%s: %v", orgID, err)
+		}
+	}
+
+	return nil
+}
+
+
