@@ -2,13 +2,33 @@ import { Outlet } from "react-router-dom";
 import { ProfileDropdown } from "./components/ProfileDropdown"
 import { SearchBar } from "./components/SearchBar";
 import { UserProfileButton } from "./components/UserProfileButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./MainLayout.module.css";
 import { Bell} from "lucide-react";
 import { Footer } from "./components/Footer";
+import { useLocation, useNavigate } from "react-router-dom";
+import { getPrivateKeyFromSession, getPublicKeyFromSession } from "./services/crypto.service";
+import { logout } from "./services/auth.service";
 
 export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+      const checkKeys = async () => {
+        const privateKey = await getPrivateKeyFromSession();
+        const publicKey = await getPublicKeyFromSession();
+
+        if (!privateKey || !publicKey) {
+          logout((path) => navigate(path));
+        }
+      };
+
+      checkKeys();
+    }, [location.pathname]);
+
   return (
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       {sidebar}
