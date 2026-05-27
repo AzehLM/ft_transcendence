@@ -56,7 +56,6 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	// fmt.Println("mail: ", body.Email, "and key: ", body.EncOrgaPrivateKey)
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
@@ -73,9 +72,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var user models.User
 	repo := repository.NewOrganizationRepository(h.DB)
 	userErr := repo.GetUserByEmail(body.Email, &user)
-
 	if userErr != nil {
-		// fmt.Println("error is ", userErr)
 		if errors.Is(userErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}

@@ -68,8 +68,6 @@ func main() {
 	org.Get("/", member, orgaHandler.GetOrgaInfo)
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", admin, orgaHandler.DeleteOrga)
-	org.Patch("/maxspace", admin, orgaHandler.PatchMaxSpace)
-	org.Patch("/usedspace", member, orgaHandler.PatchUsedSpace)
 	org.Get("/public-key", member, orgaHandler.GetOrgaPublicKey)
 
 	// members
