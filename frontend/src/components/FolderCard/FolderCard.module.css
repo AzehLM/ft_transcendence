@@ -1,11 +1,13 @@
 .row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
   background: white;
   border: 1px solid #f0f0f0;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .row:hover {
@@ -13,23 +15,24 @@
   box-shadow: 0 2px 8px rgba(213, 79, 42, 0.08);
 }
 
-.left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-
 .icon {
-  width: 20px;
-  height: 20px;
-  color: var(--brand-primary);
+  width: 36px;
+  height: 36px;
+  color: #4e3832;
+  background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  padding: 5px;
+  border-radius: 10px;
   flex-shrink: 0;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .name {
-  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: var(--brand-dark);
@@ -38,52 +41,11 @@
   text-overflow: ellipsis;
 }
 
-.right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
-.size {
-  font-size: 13px;
+.date {
+  font-size: 12px;
   color: #999;
-  font-family: 'IBM Plex Sans', sans-serif;
-  min-width: 60px;
-  text-align: right;
 }
-
-.actionBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #bbb;
-  padding: 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s, background-color 0.15s;
-}
-
-.actionBtn:hover {
-  color: var(--brand-primary);
-  background: rgba(213, 79, 42, 0.08);
-}
-
-.deleteBtn:hover {
-  color: #d32f2f;
-  background: rgba(211, 47, 47, 0.08);
-}
-
-.actions {
-  display: flex;
-  gap: 4px;
-}
-
-.menuWrapper {
-  display: none;
-  position: relative;
-}
+.menuWrapper { position: relative; }
 
 .menuBtn {
   background: none;
@@ -131,12 +93,3 @@
 .dropdown button:hover { background: #f5f5f5; }
 .deleteBtn { color: #d32f2f !important; }
 .deleteBtn:hover { background: rgba(211,47,47,0.08) !important; }
-
-@media (max-width: 600px) {
-  .actions {
-    display: none;
-  }
-  .menuWrapper {
-    display: block;
-  }
-}

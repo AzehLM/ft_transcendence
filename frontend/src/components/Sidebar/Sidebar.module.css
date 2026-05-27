@@ -88,6 +88,10 @@
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 15px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .sidebar__button__icon {

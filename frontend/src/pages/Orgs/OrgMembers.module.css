@@ -163,6 +163,10 @@
     background-color: #4CAF50;
 }
 
+.statusDotInactive {
+    background-color: #b0bec5;
+}
+
 .buttonsGroup {
     display: flex;
     align-items: center;
@@ -212,13 +216,27 @@
 
     .memberCard {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
         padding: 16px;
         gap: 16px;
     }
 
     .memberInfo {
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .memberName,
+     .memberEmail {
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
     }
 
     .memberActions {
@@ -237,15 +255,17 @@
 }
 
 @media (max-width: 480px) {
+
     .memberActions {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
         gap: 12px;
     }
 
     .buttonsGroup {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: center;
     }
 }
 

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     base64ToUint8Array,
     decryptDEKWithPrivateKey,
-    decryptFilename,
+    decryptFilenameAsymmetric,
 } from '../services/crypto.service';
 import { decryptOrgPrivateKey } from '../services/organizations.service';
 import { fetchWithRefresh } from '../services/api.service';
@@ -20,25 +20,47 @@ interface DownloadMetadata {
 export function useE2EEDownloadOrg() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [hideDownloadMessage, setHideDownloadMessage] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
+
+    useEffect(() => {
+        if (downloadStatus) {
+            setHideDownloadMessage(false);
+            let clearStatusTimer: ReturnType<typeof setTimeout> | undefined;
+            const timer = setTimeout(() => {
+                setHideDownloadMessage(true);
+                clearStatusTimer = setTimeout(() => setDownloadStatus(null), 400);
+            }, 3000);
+             return () => {
+                 clearTimeout(timer);
+                 if (clearStatusTimer) {
+                     clearTimeout(clearStatusTimer);
+                 }
+             };
+        }
+    }, [downloadStatus]);
 
     const downloadAndDecryptOrg = async (fileId: string, orgId: string) => {
         const token = localStorage.getItem("token");
         if (!token) {
-            setDownloadStatus("Session expirée. Veuillez vous reconnecter.");
+            setDownloadStatus("Session expired. Please log in again.");
             return;
         }
 
         setIsDownloading(true);
         setDownloadStatus(null);
+        setDownloadError(false);
+
         try {
-            setDownloadStatus("1/5 : Récupération des clés d'organisation...");
+            setDownloadStatus("1/5: Fetching organization keys...");
             const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`);
             if (!keysRes.ok) {
-                throw new Error("Impossible de récupérer les clés d'organisation.");
+                setDownloadError(true);
+                throw new Error("Unable to fetch organization keys.");
             }
             const { enc_org_priv_key, enc_aes_key, iv: orgIv } = await keysRes.json();
 
-            setDownloadStatus("2/5 : Déchiffrement de la clé privée d'organisation...");
+            setDownloadStatus("2/5: Decrypting organization private key...");
             const orgPrivKeyB64 = await decryptOrgPrivateKey(enc_org_priv_key, enc_aes_key, orgIv);
 
             const orgPrivKeyBuffer = base64ToUint8Array(orgPrivKeyB64);
@@ -50,16 +72,17 @@ export function useE2EEDownloadOrg() {
                 ["decrypt"]
             );
 
-            setDownloadStatus("3/5 : Récupération des métadonnées du fichier...");
+            setDownloadStatus("3/5 : Fetching secure metadata...");
             const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
 
             if (!metaRes.ok) {
-                throw new Error(metaRes.status === 404 ? "Fichier introuvable sur le serveur." : `Impossible de récupérer les métadonnées (${metaRes.status}).`);
+                setDownloadError(true);
+                throw new Error(metaRes.status === 404 ? "File not found on server." : `Unable to fetch metadata (${metaRes.status}).`);
             }
             const metadata: DownloadMetadata = await metaRes.json();
 
             // Decrypt DEK with organization private key
-            setDownloadStatus("4/5 : Déchiffrement de la clé de session (Zero-Knowledge)...");
+            setDownloadStatus("4/5 : Decrypting session key (Zero-Knowledge)...");
             const encryptedDekBytes = base64ToUint8Array(metadata.encrypted_dek);
             const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, orgPrivateKey);
             const cryptoKey = await window.crypto.subtle.importKey(
@@ -75,13 +98,13 @@ export function useE2EEDownloadOrg() {
             const encryptedFilenameBase64 = metadata.encrypted_filename;
             let filename: string;
             try {
-                filename = await decryptFilename(encryptedFilenameBase64, dek, baseIv);
+                filename = await decryptFilenameAsymmetric(encryptedFilenameBase64, orgPrivateKey);
             } catch (err) {
                 console.error("Failed to decrypt filename:", err);
                 filename = "downloaded_file";
             }
 
-            setDownloadStatus("5/5 : Initialisation du flux de téléchargement...");
+            setDownloadStatus("5/5 : Initializing download stream...");
             const supportsFileSystemAccess = 'showSaveFilePicker' in window;
             let writable: FileSystemWritableFileStream | null = null;
             const firefoxFallbackChunks: BlobPart[] = [];
@@ -92,13 +115,17 @@ export function useE2EEDownloadOrg() {
                     const fileHandle = await window.showSaveFilePicker({ suggestedName: filename });
                     writable = await fileHandle.createWritable();
                 } catch (err) {
-                    throw new Error("Sauvegarde annulée par l'utilisateur.");
+                    setDownloadError(true);
+                    throw new Error("Save cancelled by user.");
                 }
             }
 
-            setDownloadStatus("Déchiffrement et téléchargement des données à la volée...");
+            setDownloadStatus("Decrypting data on the fly...");
             const response = await fetch(metadata.presigned_url);
-            if (!response.ok || !response.body) throw new Error("Erreur d'accès au stockage distant (MinIO).");
+            if (!response.ok || !response.body){
+                setDownloadError(true);
+                throw new Error("Error accessing remote storage (MinIO).");
+            }
 
             const reader = response.body.getReader();
             const chunks: Uint8Array[] = [];
@@ -184,14 +211,15 @@ export function useE2EEDownloadOrg() {
                 URL.revokeObjectURL(downloadUrl);
             }
 
-            setDownloadStatus(`Succès ! "${filename}" a été déchiffré et sauvegardé.`);
+            setDownloadStatus(`Success! "${filename}" has been decrypted and saved.`);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
+            const errorMessage = err instanceof Error ? err.message : "Unknown error";
+            setDownloadError(true);
             setDownloadStatus(`${errorMessage}`);
         } finally {
             setIsDownloading(false);
         }
     };
 
-    return { downloadAndDecryptOrg, downloadStatus, isDownloading };
+    return { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError };
 }

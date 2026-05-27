@@ -3,3 +3,52 @@
     flex-direction: column;
     gap: 20px;
 }
+
+.header {
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    margin-bottom: 15px;
+}
+
+.logo {
+    color: #8c7b75;
+}
+
+.org {
+    color: #8c7b75;
+    font-size: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.org:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+
+.orgName {
+    color: #8c7b75;
+    font-size: 14px;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.separator { color: #999; }
+
+.orgDesc {
+    color: #999;
+    font-size: 14px;
+    font-style: italic;
+    word-break: break-word;
+}

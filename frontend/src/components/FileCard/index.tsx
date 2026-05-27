@@ -1,33 +1,35 @@
-import { MoreVertical } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { File, Download, Move, Trash2, MoreVertical } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
-import { useDecryptFilename } from "../../hooks/useDecryptFilename";
-import { Folder } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { MoveModal } from "../MoveModal";
-import { folderSchema } from "../../schemas/folder.schema";
-import { safeParse } from "zod";
+import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 
 interface FileCardProps {
   id: string;
   name: string;
-  isFolder?: boolean;
-  onDelete?: (id: string) => void;
-  onMove?: (id: string, newParentId: string | null) => Promise<void>;
-  onDownload?: (id: string) => void;
-  onRename?: (id: string, newName: string) => Promise<void>;
+  fileSize: number;
   orgId?: string;
+  onDelete?: (id: string) => void;
+  onDownload?: (id: string) => void;
+  onMove?: (id: string, newParentId: string | null) => Promise<void>;
 }
 
-export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownload, onRename, orgId }: FileCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const { decryptedName, loading } = useDecryptFilename(isFolder ? null : id, orgId);
-  const navigate = useNavigate();
+export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMove }: FileCardProps) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const { decryptedName, loading } = useDecryptFilename(name, orgId);
+  const displayName = loading ? "..." : (decryptedName || name);
 
-  const displayName = isFolder ? name : (loading ? "..." : (decryptedName || name));
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  };
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [showMenu, setShowMenu] = useState(false);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -43,206 +45,72 @@ export function FileCard({ id, name, isFolder = false, onDelete, onMove, onDownl
     }
   }, [showMenu]);
 
-  const handleMenuClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(!showMenu);
-  };
 
-  const handleDownload = () => {
-    onDownload?.(id);
-    setShowMenu(false);
-  };
-
-  const handleDelete = () => {
-    setShowMenu(false);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleConfirmDelete = () => {
-    setShowDeleteConfirm(false);
-    onDelete?.(id);
-  };
-
-  const handleRename = () => {
-    setShowMenu(false);
-    setShowRenameConfirm(true);
-  };
-
-  const [renameValue, setRenameValue] = useState(name);
-  const [showRenameConfirm, setShowRenameConfirm] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-
-  const handleConfirmRename = async () => {
-    try {
-      const result = folderSchema.safeParse({ name: renameValue });
-      if(!result.success) {
-        setModalError(result.error.issues[0].message);
-        return ;
-      }
-      await onRename?.(id, result.data.name);
-
-      setShowRenameConfirm(false);
-      setModalError(null);
-    } catch (err) {
-      setModalError("Failed to rename folder");
-    }
-  };
-
-  const [showMoveModal, setShowMoveModal] = useState(false);
-
-  const handleMove = () => {
-    setShowMenu(false);
-    setShowMoveModal(true);
-  };
-
-  const handleEnterFolder = () => {
-    if (orgId) {
-      navigate(`/orgs/${orgId}/files/${id}`);
-    } else {
-      navigate(`/dashboard/folder/${id}`);
-    }
-  };
-
-  if (!isFolder) {
-    return (
-      <>
-        <div className={styles.fileCard}>
-          <div className={styles.fileCard__background} />
-          <div className={styles.fileCard__blur} />
-          <div className={styles.fileCard__name}>
-            {displayName}
-          </div>
-          <div className={styles.fileCard__menu} ref={menuRef}>
+  return (
+    <>
+      <div className={styles.row}>
+        <div className={styles.left}>
+          <File className={styles.icon} />
+          <span className={styles.name}>{displayName}</span>
+        </div>
+        <div className={styles.right}>
+          <span className={styles.size}>{formatSize(fileSize)}</span>
+          <div className={styles.actions}>
+            <button className={styles.actionBtn} onClick={() => onDownload?.(id)} title="Download">
+              <Download size={16} />
+            </button>
+            <button className={styles.actionBtn} onClick={() => setShowMoveModal(true)} title="Move">
+              <Move size={16} />
+            </button>
             <button
-              onClick={handleMenuClick}
-              className={styles.fileCard__menu__button}
-              aria-label="File options"
+              className={`${styles.actionBtn} ${styles.deleteBtn}`}
+              onClick={() => setShowDeleteModal(true)}
+              title="Delete"
             >
-              <MoreVertical className={styles.fileCard__menu__button__icon} strokeWidth={2} />
+              <Trash2 size={16} />
+            </button>
+          </div>
+          <div className={styles.menuWrapper} ref={menuRef}>
+            <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
+              <MoreVertical size={16} />
             </button>
             {showMenu && (
-              <div className={styles.fileCard__menu__dropdown}>
-                <button
-                  onClick={handleMove}
-                  className={styles.fileCard__menu__item}
-                >
-                  Move
+              <div className={styles.dropdown}>
+                <button onClick={() => { onDownload?.(id); setShowMenu(false); }}>
+                  <Download size={14} /> Download
                 </button>
-                <button
-                  onClick={handleDownload}
-                  className={styles.fileCard__menu__item}
-                >
-                  Download
+                <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
+                  <Move size={14} /> Move
                 </button>
-                <button
-                  onClick={handleDelete}
-                  className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}
-                >
-                  Delete
+                <button className={styles.deleteBtn} onClick={() => { setShowDeleteModal(true); setShowMenu(false); }}>
+                  <Trash2 size={14} /> Delete
                 </button>
               </div>
             )}
           </div>
         </div>
-        <ConfirmationModal
-          isOpen={showDeleteConfirm}
-          fileName={displayName}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setShowDeleteConfirm(false)}
-          isDeleteFile={true}
-        />
-        {showMoveModal && (
-          <MoveModal
-            isOpen={showMoveModal}
-            fileName={displayName}
-            onConfirm={(folderId) => {
-              onMove?.(id, folderId === "" ? null : folderId);
-              setShowMoveModal(false);
-            }}
-            onCancel={() => setShowMoveModal(false)}
-            orgId={orgId}
-          />
-        )}
-      </>
-    );
-  }
-  else {
-  if (isFolder) {
-  return (
-    <>
-    <div className={styles.folderCard} onClick={handleEnterFolder}>
-      <div className={styles.folderCard__background} />
-        <Folder className={styles.folderCard__icon} />
-        <div className={styles.folderCard__name}>{name}</div>
-        <div className={styles.fileCard__menu} ref={menuRef}>
-          <button
-            onClick={(e) => {
-              handleMenuClick(e);
-            }}
-            className={styles.fileCard__menu__button}>
-            <MoreVertical className={styles.fileCard__menu__button__icon} strokeWidth={2} />
-          </button>
-          {showMenu && (
-            <div className={styles.fileCard__menu__dropdown}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMove();
-                  }}
-                  className={styles.fileCard__menu__item}>
-                  Move
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRename();
-                  }}
-                  className={styles.fileCard__menu__item}>
-                  Rename
-                </button>
-              <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                  }}
-                className={`${styles.fileCard__menu__item} ${styles["fileCard__menu__item--delete"]}`}>
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
       </div>
+
       <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        fileName={name}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
-        isDeleteFolder={true}
+        isOpen={showDeleteModal}
+        fileName={displayName}
+        onConfirm={() => { onDelete?.(id); setShowDeleteModal(false); }}
+        onCancel={() => setShowDeleteModal(false)}
+        isDeleteFile={true}
       />
-      <ConfirmationModal
-        isOpen={showRenameConfirm}
-        fileName={name}
-        onConfirm={handleConfirmRename}
-        onCancel={() => { setShowRenameConfirm(false); setModalError(null); }}
-        isRenameFolder={true}
-        inputValue={renameValue}
-        onInputChange={setRenameValue}
-        errorMessage={modalError ?? undefined}
-      />
+
       {showMoveModal && (
         <MoveModal
           isOpen={showMoveModal}
-          fileName={name}
-          onConfirm={(folderId) => {
-            onMove?.(id, folderId === "" ? null : folderId);
+          fileName={displayName}
+          orgId={orgId}
+          onConfirm={async (newParentId) => {
+            await onMove?.(id, newParentId);
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}
-          orgId={orgId}
         />
       )}
     </>
   );
-}
-  }
 }

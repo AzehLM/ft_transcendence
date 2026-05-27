@@ -48,6 +48,11 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
+	var orgIDs []string
+	if err := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; err != nil {
+		log.Printf("[WARN] Failed to pluck org_ids for user %s: %v", userID, err)
+	}
+
 	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not publish user deleted event"})
@@ -56,6 +61,12 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
+	}
+
+	if len(orgIDs) > 0 {
+		if err := h.Publisher.PublishMemberRemoved(context.TODO(), userID, orgIDs); err != nil {
+			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
+		}
 	}
 
 	clearRefreshTokenCookie(c)
@@ -296,6 +307,14 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "first name updated",
 	})
@@ -342,6 +361,14 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
     }
 	if result.RowsAffected == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
