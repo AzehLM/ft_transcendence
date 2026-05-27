@@ -23,3 +23,30 @@ export function useRequireAuth() {
 
   return { isReady };
 }
+
+export function useRequireUnauth() {
+  const [isReady, setIsReady] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("/api/auth/refresh", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (res.ok) {
+          return res.json().then((data) => {
+            localStorage.setItem("token", data.access_token);
+            navigate("/dashboard");
+          });
+        } else {
+          setIsReady(true);
+        }
+      })
+      .catch(() => {
+        setIsReady(true);
+      });
+  }, []);
+
+  return { isReady };
+}
