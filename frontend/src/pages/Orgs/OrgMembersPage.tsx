@@ -41,6 +41,25 @@ export default function OrgMembersPage() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
 
+  const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
+
+  useEffect(() => {
+    fetchWithRefresh(`/api/orgs/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch org name.");
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setOrgName(data.name);
+          setOrgDesc(data.description);
+        }
+      })
+      .catch(() => setOrgName("Unknown"));
+
+  }, [id]);
+
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
       .then(res => {
@@ -181,7 +200,7 @@ export default function OrgMembersPage() {
   };
 
   return (
-    <OrgLayout title="" showActionButtons={false}>
+    <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>

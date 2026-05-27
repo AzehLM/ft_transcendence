@@ -48,10 +48,8 @@ export default function RegisterPage() {
 
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques...");
             const registrationData = await generateRegistrationData(email, password);
 
-            console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/register", {
                 method: "POST",
                 credentials: "include",
@@ -75,7 +73,6 @@ export default function RegisterPage() {
                 localStorage.setItem("token", data.access_token);
             }
 
-            console.log("✅ Enregistrement réussi!");
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {

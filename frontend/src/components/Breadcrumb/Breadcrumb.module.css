@@ -1,0 +1,47 @@
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 5% 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    margin-bottom: 15px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--brand-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.btn:hover {
+  background-color: rgba(213, 79, 42, 0.08);
+}
+
+.active {
+  cursor: default;
+  font-weight: 600;
+  color: var(--brand-dark);
+}
+
+.btn.active:hover {
+  background: none;
+}
+
+.separator { color: #999; }
