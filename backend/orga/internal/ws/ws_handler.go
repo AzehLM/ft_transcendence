@@ -39,46 +39,79 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 	log.Printf("[WS] New user: %s", userID)
 	ctx := context.Background()
 
-	if err := h.Redis.SAdd(ctx, "online_users", userID.String()).Err(); err != nil {
-		log.Printf("[WS] Redis SAdd error for user %s: %v", userID, err)
+	connID := uuid.New().String()
+	userSessionsKey := "user_sessions:" + userID.String()
+
+	if err := h.Redis.SAdd(ctx, userSessionsKey, connID).Err(); err != nil {
+		log.Printf("[WS] Redis SAdd session error for user %s: %v", userID, err)
+	}
+
+	activeConns, err := h.Redis.SCard(ctx, userSessionsKey).Result()
+	if err != nil {
+		log.Printf("[WS] Redis SCard error for user %s: %v", userID, err)
+		activeConns = 1
 	}
 
 	repo := repository.NewOrganizationRepository(h.DB)
 	orgas, err := repo.GetMemberOrga(userID)
 	if err != nil {
 		log.Println("[WS] Error fetching organizations:", err)
-		h.Redis.SRem(ctx, "online_users", userID.String())
+		_ = h.Redis.SRem(ctx, userSessionsKey, connID).Err()
+		remConns, remErr := h.Redis.SCard(ctx, userSessionsKey).Result()
+		if remErr == nil && remConns == 0 {
+			_ = h.Redis.SRem(ctx, "online_users", userID.String()).Err()
+			_ = h.Redis.Del(ctx, userSessionsKey).Err()
+		}
 		return
 	}
 
-	for _, org := range orgas {
-		event := WSEvent{
-			Event:   "USER_ONLINE",
-			OrgID:   org.ID.String(),
-			Message: "User is online",
-			Data: map[string]string{
-				"user_id": userID.String(),
-			},
-		}
-		_ = h.PublishToOrga(ctx, org.ID.String(), event)
-	}
-
-	defer func() {
-		ctxDel := context.Background()
-		if err := h.Redis.SRem(ctxDel, "online_users", userID.String()).Err(); err != nil {
-			log.Printf("[WS] Redis SRem error for user %s: %v", userID, err)
+	if activeConns == 1 {
+		if err := h.Redis.SAdd(ctx, "online_users", userID.String()).Err(); err != nil {
+			log.Printf("[WS] Redis SAdd error for user %s: %v", userID, err)
 		}
 
 		for _, org := range orgas {
 			event := WSEvent{
-				Event:   "USER_OFFLINE",
+				Event:   "USER_ONLINE",
 				OrgID:   org.ID.String(),
-				Message: "User is offline",
+				Message: "User is online",
 				Data: map[string]string{
 					"user_id": userID.String(),
 				},
 			}
-			_ = h.PublishToOrga(ctxDel, org.ID.String(), event)
+			_ = h.PublishToOrga(ctx, org.ID.String(), event)
+		}
+	}
+
+	defer func() {
+		ctxDel := context.Background()
+		if err := h.Redis.SRem(ctxDel, userSessionsKey, connID).Err(); err != nil {
+			log.Printf("[WS] Redis SRem session error for user %s: %v", userID, err)
+		}
+
+		remConns, remErr := h.Redis.SCard(ctxDel, userSessionsKey).Result()
+		if remErr != nil {
+			log.Printf("[WS] Redis SCard error for user %s on disconnect: %v", userID, remErr)
+			return
+		}
+
+		if remConns == 0 {
+			if err := h.Redis.SRem(ctxDel, "online_users", userID.String()).Err(); err != nil {
+				log.Printf("[WS] Redis SRem error for user %s: %v", userID, err)
+			}
+			_ = h.Redis.Del(ctxDel, userSessionsKey).Err()
+
+			for _, org := range orgas {
+				event := WSEvent{
+					Event:   "USER_OFFLINE",
+					OrgID:   org.ID.String(),
+					Message: "User is offline",
+					Data: map[string]string{
+						"user_id": userID.String(),
+					},
+				}
+				_ = h.PublishToOrga(ctxDel, org.ID.String(), event)
+			}
 		}
 	}()
 
