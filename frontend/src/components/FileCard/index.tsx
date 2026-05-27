@@ -4,6 +4,9 @@ import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
+import { getPrivateKeyFromSession } from "../../services/crypto.service";
+import { resetKeys } from "../../services/auth.service";
+import { fetchWithRefresh } from "../../services/api.service";
 
 interface FileCardProps {
   id: string;
@@ -20,6 +23,43 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
   const [showMoveModal, setShowMoveModal] = useState(false);
   const { decryptedName, loading } = useDecryptFilename(id, orgId);
   const displayName = loading ? "..." : (decryptedName || name);
+  const [keyMissing, setKeyMissing] = useState(false);
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [modalError, setModalError] = useState<string | null>(null);
+
+
+  useEffect(() => {
+  fetchWithRefresh("/api/auth/me")
+      .then(res => res.json())
+      .then(data => setEmail(data.email));
+  }, []);
+
+
+  const handleResetKeys = async () => {
+    setModalError(null);
+    if (!password) return;
+
+    const { success, error } = await resetKeys(email, password);
+    if (!success) {
+      setModalError(error ?? "Error !");
+      return;
+    }
+
+    setPassword("");
+    setKeyMissing(false);
+    setModalError(null);
+  };
+
+  const handleDownloadClick = async () => {
+    const userPrivateKey = await getPrivateKeyFromSession();
+    if (!userPrivateKey) {
+      setKeyMissing(true)
+      return;
+    }
+    console.log("private key found")
+    onDownload?.(id)
+  }
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -56,7 +96,7 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
         <div className={styles.right}>
           <span className={styles.size}>{formatSize(fileSize)}</span>
           <div className={styles.actions}>
-            <button className={styles.actionBtn} onClick={() => onDownload?.(id)} title="Download">
+            <button className={styles.actionBtn} onClick={() => handleDownloadClick()} title="Download">
               <Download size={16} />
             </button>
             <button className={styles.actionBtn} onClick={() => setShowMoveModal(true)} title="Move">
@@ -76,7 +116,7 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
             </button>
             {showMenu && (
               <div className={styles.dropdown}>
-                <button onClick={() => { onDownload?.(id); setShowMenu(false); }}>
+                <button onClick={() => { handleDownloadClick(); setShowMenu(false); }}>
                   <Download size={14} /> Download
                 </button>
                 <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
@@ -91,7 +131,16 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
 
         </div>
       </div>
-
+      <ConfirmationModal
+        isOpen={keyMissing}
+        fileName={""}
+        onConfirm={handleResetKeys}
+        onCancel={() => { setKeyMissing(false); setModalError(null); }}
+        isKeyMissing={true}
+        inputValue={password}
+        onInputChange={setPassword}
+        errorMessage={modalError ?? undefined}
+      />
       <ConfirmationModal
         isOpen={showDeleteModal}
         fileName={displayName}

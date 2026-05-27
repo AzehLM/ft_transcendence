@@ -24,7 +24,7 @@ export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
+  const [keyMissing, setKeyMissing] = useState(false);
 
   useEffect(() => {
     fetchWithRefresh("/api/orgs")
@@ -53,7 +53,7 @@ export default function OrganizationsPage() {
       // handle missing public key
       const userPublicKey = await getPublicKeyFromSession();
       if (!userPublicKey) {
-        setPublicKeyMissing(true)
+        setKeyMissing(true)
         return;
       }
 
@@ -97,7 +97,7 @@ export default function OrganizationsPage() {
 
     const userPrivateKey = await getPrivateKeyFromSession();
     if (!userPrivateKey) {
-      setPublicKeyMissing(true)
+      setKeyMissing(true)
       return;
     }
 
@@ -173,7 +173,7 @@ export default function OrganizationsPage() {
     }
 
     setPassword("");
-    setPublicKeyMissing(false);
+    setKeyMissing(false);
     setModalError(null);
   };
 
@@ -220,10 +220,10 @@ export default function OrganizationsPage() {
           errorMessage={modalError ?? undefined}
         />
         <ConfirmationModal
-          isOpen={publicKeyMissing}
+          isOpen={keyMissing}
           fileName={orgName}
           onConfirm={handleResetKeys}
-          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          onCancel={() => { setKeyMissing(false); setModalError(null); }}
           isKeyMissing={true}
           inputValue={password}
           onInputChange={setPassword}
