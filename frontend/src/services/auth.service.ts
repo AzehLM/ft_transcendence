@@ -14,7 +14,6 @@ export async function logout(navigate: (path: string) => void) {
     localStorage.removeItem("token");
     await clearAllKeys();
 
-  sessionStorage.removeItem("passwordChanged");
     navigate("/login");
   }
 }

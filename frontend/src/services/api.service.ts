@@ -1,3 +1,5 @@
+import { logout } from "./auth.service";
+
 export async function fetchWithRefresh(url: string, options: RequestInit = {}) {
     let token = localStorage.getItem("token") || "";
 
@@ -28,6 +30,7 @@ export async function fetchWithRefresh(url: string, options: RequestInit = {}) {
                 }
 
         if (!refreshResponse.ok) {
+            await logout((path) => { window.location.href = path; });
             throw new Error("Session Expired, cannot refresh token");
         }
 
