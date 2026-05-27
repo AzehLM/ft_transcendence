@@ -20,7 +20,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 	}
 
 	var body struct {
-		FileSize int64      `json:"file_size" validate:"required"`
+		FileSize int64      `json:"file_size"`
 		FolderID *uuid.UUID `json:"folder_id,omitempty"`
 		OrgID    *uuid.UUID `json:"org_id,omitempty"`
 	}
@@ -72,10 +72,10 @@ func (h *StorageHandler) RequestMultipartUpload(c fiber.Ctx) error {
 	}
 
 	var body struct {
-		FileSize	int64		`json:"file_size" validate:"required,min=1"`
-		FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
-		OrgID		*uuid.UUID	`json:"org_id,omitempty"`
-		PartCount	int			`json:"part_count" validate:"required,min=1"`
+		FileSize  int64      `json:"file_size" validate:"min=1"`
+		FolderID  *uuid.UUID `json:"folder_id,omitempty"`
+		OrgID     *uuid.UUID `json:"org_id,omitempty"`
+		PartCount int        `json:"part_count" validate:"min=1"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -375,8 +375,8 @@ func (h *StorageHandler) AbortMultipartUpload(c fiber.Ctx) error {
 	}
 
 	var body struct {
-		ObjectID	uuid.UUID	`json:"object_id"`
-		UploadID	string		`json:"upload_id"`
+		ObjectID uuid.UUID `json:"object_id"`
+		UploadID string    `json:"upload_id"`
 	}
 
 	if len(c.Body()) == 0 {

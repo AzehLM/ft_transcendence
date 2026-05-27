@@ -4,11 +4,12 @@ import (
 	"backend/auth/internal/models"
 	"context"
 	"encoding/base64"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"time"
-	"errors"
+
 	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v3"
@@ -29,12 +30,12 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id":         user.ID,
-		"email":      user.Email,
-		"used_space": user.UsedSpace,
-		"max_space":  user.MaxSpace,
-		"created_at": user.CreatedAt,
-		"first_name": user.FirstName,
+		"id":          user.ID,
+		"email":       user.Email,
+		"used_space":  user.UsedSpace,
+		"max_space":   user.MaxSpace,
+		"created_at":  user.CreatedAt,
+		"first_name":  user.FirstName,
 		"family_name": user.FamilyName,
 	})
 }
@@ -61,7 +62,6 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	clearRefreshTokenCookie(c)
 
 	log.Printf("[INFO] User %s deleted their account", userIDStr)
-
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "account deleted successfully",
@@ -248,14 +248,14 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"public_key": base64.StdEncoding.EncodeToString(user.PublicKey),
+	})
 }
 
 func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	var body struct {
-		FirstName string `json:"first_name" validate:"required"`
+		FirstName string `json:"first_name"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -287,11 +287,11 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	}
 
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("first_name", body.FirstName)
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": result.Error.Error(),
-        })
-    }
+	if result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": result.Error.Error(),
+		})
+	}
 	if result.RowsAffected == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
@@ -303,7 +303,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 
 func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	var body struct {
-		FamilyName string `json:"family_name" validate:"required"`
+		FamilyName string `json:"family_name"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -335,11 +335,11 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	}
 
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("family_name", body.FamilyName)
-    if result.Error != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": result.Error.Error(),
-        })
-    }
+	if result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": result.Error.Error(),
+		})
+	}
 	if result.RowsAffected == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}

@@ -56,11 +56,11 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 
 func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 	var body struct {
-		Name              string `json:"name" validate:"required"`
-		PublicKey         string `json:"public_key" validate:"required"`
-		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-		EncAesKey         string `json:"enc_aes_key" validate:"required"`
-		Iv                string `json:"iv" validate:"required"`
+		Name              string `json:"name"`
+		PublicKey         string `json:"public_key"`
+		EncOrgaPrivateKey string `json:"enc_org_priv_key"`
+		EncAesKey         string `json:"enc_aes_key"`
+		Iv                string `json:"iv"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -202,7 +202,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 
 func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	var body struct {
-		Name string `json:"name" validate:"required"`
+		Name string `json:"name"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -315,7 +315,7 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
 
-    role, err := repo.GetMemberRole(orgID, userID)
+	role, err := repo.GetMemberRole(orgID, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "you are not a member of this organization"})
@@ -323,7 +323,7 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch organization"})
 	}
 
-    description, err := repo.GetDescription(orgID, userID)
+	description, err := repo.GetDescription(orgID, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "you are not a member of this organization"})
@@ -332,19 +332,18 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id":   orga.ID,
-		"name": orga.Name,
-		"used_space" : orga.UsedSpace,
-		"max_space" : orga.MaxSpace,
-		"role": role,
+		"id":          orga.ID,
+		"name":        orga.Name,
+		"used_space":  orga.UsedSpace,
+		"max_space":   orga.MaxSpace,
+		"role":        role,
 		"description": description,
-
 	})
 }
 
 func (h *OrgaHandler) ChangeDescription(c fiber.Ctx) error {
 	var body struct {
-		Description string `json:"description" validate:"required"`
+		Description string `json:"description"`
 	}
 
 	if len(c.Body()) == 0 {

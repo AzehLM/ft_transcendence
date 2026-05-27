@@ -15,10 +15,10 @@ import (
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
-		Email             string `json:"user_email" validate:"required"`
-		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-		EncAesKey         string `json:"enc_aes_key" validate:"required"`
-		Iv                string `json:"iv" validate:"required"`
+		Email             string `json:"user_email"`
+		EncOrgaPrivateKey string `json:"enc_org_priv_key"`
+		EncAesKey         string `json:"enc_aes_key"`
+		Iv                string `json:"iv"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -163,7 +163,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	var body struct {
-		Role string `json:"role" validate:"required"`
+		Role string `json:"role"`
 	}
 
 	if len(c.Body()) == 0 {
