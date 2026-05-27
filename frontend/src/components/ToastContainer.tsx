@@ -222,6 +222,20 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
       >
         <X size={14} />
       </button>
+
+      <motion.div
+        initial={{ width: "100%" }}
+        animate={{ width: "0%" }}
+        transition={{ duration: 5, ease: "linear" }}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          height: "3px",
+          backgroundColor: borderColor,
+          opacity: 0.8,
+        }}
+      />
     </motion.div>
   );
 }
