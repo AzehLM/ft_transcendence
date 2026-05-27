@@ -186,6 +186,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       reconnectTimeoutRef.current = null;
     }
     if (wsRef.current) {
+      wsRef.current.onclose = null;
       wsRef.current.close();
       wsRef.current = null;
     }
