@@ -242,7 +242,7 @@ export default function AccountPage() {
                     email={email}
                     onClose={() => setIsTwoFAModalOpen(false)}
                     onSuccess={() => {
-                        setIsTwoFAEnabled(!isTwoFAEnabled);
+                        setIsTwoFAEnabled(prev => !prev);
                         setIsTwoFAModalOpen(false);
                     }}
                 />
