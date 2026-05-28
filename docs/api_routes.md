@@ -1,6 +1,6 @@
 # Ostrom - API Routes
 
-Base URL : `/api/v1`
+Base URL : `/api/`
 
 
 ---
@@ -9,7 +9,7 @@ Base URL : `/api/v1`
 
 ### `POST /auth/salt`
 
-Recup le salt d'un user pour pouvoir deriver la KEK cote client.
+Retrieve the user's salt in order to derive the Key Encryption Key (KEK) on the client side.
 
 Body :
 ```json
@@ -18,7 +18,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 { "salt": "<base64>" }
 ```
@@ -27,7 +27,7 @@ Reponse (200) :
 
 ### `POST /auth/register`
 
-Cree un nouveau compte. Le serveur voit jamais le mdp ni la KEK.
+Create a new account. The server never has access to the password or the KEK.
 
 Body :
 ```json
@@ -41,18 +41,20 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "message": "User successfully registered",
   "access_token": "<jwt>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
++ set the Refresh Token that is used to refresh the JWT when expired in cookie HttpOnly
 
 ---
 
 ### `POST /auth/login`
+
+Log in the user
 
 Body :
 ```json
@@ -62,21 +64,27 @@ Body :
 }
 ```
 
-Reponse si 2FA desactivee (200) :
+Response if 2FA not activated (200) :
 ```json
 {
   "access_token": "<jwt>",
   "encrypted_private_key": "<base64>",
-  "iv": "<base64>"
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
++ Refresh JWT in cookie HttpOnly
 
-Reponse si 2FA activee (200) :
+Response if 2FA activated (200) :
 ```json
 {
   "requires_2fa": true,
-  "tmp_token": "<token_5min>"
+  "tmp_token": "<token_5min>",
+  "methods": "",
+  "expires_in": "300",
+  "encrypted_private_key": "<base64>",
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
 
@@ -84,9 +92,9 @@ Reponse si 2FA activee (200) :
 
 ### `POST /auth/refresh`
 
-Pas de body. Le Refresh JWT est dans le cookie HttpOnly.
+No body. Generate a new JWT with the Refresh JWT which is in cookie HttpOnly.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "access_token": "<jwt>"
@@ -97,9 +105,9 @@ Reponse (200) :
 
 ### `POST /auth/logout`
 
-Supprime le refresh token + clear le cookie.
+Delete the Refresh JWK and clear the cookie.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "logged_out_successfully"
@@ -108,9 +116,9 @@ Reponse (200) :
 
 ---
 
-### `PUT /users/password`
+### `PUT /auth/password`
 
-Change le mdp. Faut re-wrapper la PrivKey avec la nouvelle KEK.
+Update Password. 
 
 Body :
 ```json
@@ -123,21 +131,18 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "message": "password_updated_please_login_again"
+  "message": "password updated"
 }
 ```
-
-Invalide les refresh tokens des autres sessions.
-
 
 ---
 
 ### `PATCH /auth/first-name`
 
-Change le prénom de l'utilisateur.
+Change the first name of an user.
 
 Body :
 ```json
@@ -146,7 +151,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "first name updated"
@@ -157,7 +162,7 @@ Reponse (200) :
 
 ### `PATCH /auth/family-name`
 
-Change le nom de l'utilisateur.
+Change the family name of an user.
 
 Body :
 ```json
@@ -166,7 +171,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "family name updated"
@@ -175,8 +180,9 @@ Reponse (200) :
 
 ---
 
-### `GET /users/public-key?email=alice@42lyon.fr`
-Récupère la clé publique d'un user par email.
+### `GET /users/public-key?email=student@42lyon.fr`
+
+Get the public key of an user with its email.
 
 Response `200 OK` :
 ```json
@@ -184,16 +190,30 @@ Response `200 OK` :
   "public_key": "<base64>"
 }
 ```
-Response `404` : user not found
 
+---
 ### `PATCH /user/avatar`
 
-Met a jour l'avatar d'un user
+Updates the avatar of the authenticated user.
+
+#### Request Headers
+| Header | Value | Description |
+| :--- | :--- | :--- |
+| `Content-Type` | `multipart/form-data` | Required for file uploads |
+| `Authorization` | `Bearer <token>` | Required to authenticate the user |
+
+#### Request Body
+The body must be sent as `multipart/form-data`.
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `avatar` | `file` | Yes | The image file to upload (JPEG, PNG). Max size: 5MB. |
 
 Response `200 OK`:
+
 ```json
 {
-  "message": "avatar_uploaded_successfully"
+  "message": "avatar uploaded successfully"
 }
 ```
 
@@ -201,30 +221,62 @@ Response `200 OK`:
 
 ### `GET /user/me/avatar`
 
-User connecté recupère (en bytes) son avatar ainsi que le `Content-Type` de son avatar
+User logged in can retrieve (in bytes) its avatar as well as the `Content-Type` of its avatar
 
 Response `200 OK`
+- The response body contains the binary stream of the image.
+- Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
+- Response Body: Binary Data (The actual image file)
 
 ---
 
 ### `GET /users/{user_id}/avatar`
 
-N'importe quel user recupère l'avatar d'un user spécifique ainsi que le `Content-Type` de l'avatar
+Any user can retrieve the avatar of a specific user as well as the `Content-Type` of its avatar
 
 Response `200 OK`
+- The response body contains the binary stream of the image.
+- Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
+- Response Body: Binary Data (The actual image file)
 
 ---
 
 ## 2FA
 
-### `POST /auth/2fa/enable`
+### `POST /auth/2fa/totp/generate`
 
-Genere le secret TOTP.
+Generates a new TOTP (Time-based One-Time Password) secret and QR code URL to begin the Two-Factor Authentication (2FA) setup. The secret is temporarily stored on the server for 5 minutes and must be confirmed (validated) by the user before 2FA is definitively enabled.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "otpauth_uri": "otpauth://totp/ft_box:student@42lyon.fr?secret=XXXX&issuer=ft_box"
+		"qrCodeURL": "url",
+		"secret":    "secret",
+		"message":   "Scan QR with authenticator app",
+		"expiresIn": 300,
+}
+```
+
+---
+
+### `POST /auth/2fa/totp/verify`
+Verifies the 6-digit TOTP code provided by the user to complete the 2FA setup. If the code is valid, the server encrypts the TOTP secret, enables 2FA on the user's profile, and generates 10 one-time recovery codes that the user must save.
+
+Body :
+```json
+{ "code": "123456" }
+```
+
+Response (200) :
+```json
+{
+  "success": true,
+  "recoveryCodes": [
+    "AAAA-BBBB-CCCC",
+    "DDDD-EEEE-FFFF",
+    "... (10 codes total)"
+  ],
+  "message": "Save these 10 codes in a safe place offline!"
 }
 ```
 
@@ -232,58 +284,57 @@ Reponse (200) :
 
 ### `POST /auth/2fa/verify`
 
-Confirme l'activation en validant un premier code. Renvoie les recovery codes une seule fois.
+Confime the activation by validating a first code.
 
 Body :
 ```json
 { "code": "123456" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "recovery_codes": ["abc12345", "def67890", "..."]
+  "access_token": "<jwt>",
+  "encrypted_private_key": "<base64>",
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
 
 ---
 
-### `POST /auth/2fa/validate`
+### `GET /auth/2fa/recovery-codes`
+Retrieves the 2FA status of the authenticated user and checks how many backup recovery codes they have left.
 
-Pendant le login, valide le code TOTP pour obtenir les vrais JWT.
-
-Body :
+Response (200):
 ```json
 {
-  "tmp_token": "<token>",
-  "code": "123456"
+  "enabled": true,
+  "remaining": 10,
+  "message": "You have backup codes remaining"
 }
 ```
-
-Reponse (200) :
-```json
-{
-  "access_token": "<jwt>",
-  "encrypted_private_key": "<base64>",
-  "iv": "<base64>"
-}
-```
-+ Refresh JWT en cookie HttpOnly
-
-Le champ `code` peut aussi etre un recovery code a usage unique.
 
 ---
 
 ### `POST /auth/2fa/disable`
 
+Disable the 2fa for an user.
+
 Body :
 ```json
-{ "code": "123456" }
+{ "password": "password" }
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
+```json
+{
+  	"success": true,
+		"message": "2FA has been disabled",
+}
+```
 
-Supprime le secret TOTP + les recovery codes.
+Delete the secret TOTP + the recovery codes.
 
 
 ---
@@ -292,7 +343,9 @@ Supprime le secret TOTP + les recovery codes.
 
 ### `GET /auth/me`
 
-Reponse (200) :
+Retrieve information about the user logged in.
+
+Response (200) :
 ```json
 {
   "id": "<uuid>",
@@ -307,19 +360,17 @@ Reponse (200) :
 
 ---
 
-### `DELETE /users/me`
+### `DELETE /auth/me`
 
-Supprime le compte. Refuse si le user est dernier admin d'une orga.
+Delete the account (with personal files on Minio, BD entries - cascade, refresh token, close ws). 
+If user is last admin of an organization, and there are no other members. The organization is deleted. If there are other members, the oldest added member becomes admin and get the ownership of its files and folders. If there are other admin, the oldest admin get the ownership of its files and folders.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "message": "account_deleted_successfully"
+  "message": "account deleted successfully"
 }
 ```
-
-Supprime : fichiers perso sur MinIO, entries DB (cascade), refresh tokens, ferme la WS.
-
 
 ---
 
@@ -327,9 +378,9 @@ Supprime : fichiers perso sur MinIO, entries DB (cascade), refresh tokens, ferme
 
 ### `GET /orgs`
 
-Liste les orgas dont le user est membre.
+List all the organizations the user is part of.
 
-Reponse (200) :
+Response (200) :
 ```json
 [
   {
@@ -348,13 +399,14 @@ Reponse (200) :
 ---
 
 ### `GET /orgs/{org_id}`
-Récupère les informations d'une organisation.
+
+Retrieve the information of a specific organization.
 
 Response `200 OK` :
 ```json
 {
-  "user_id": "",
-  "id": "",
+  "user_id": "<uuid>",
+  "id": "<uuid>",
   "name": "42_Projects",
   "used_space" : "",
   "max_space" : "",
@@ -362,13 +414,12 @@ Response `200 OK` :
   "description": "description"
 }
 ```
-Response `404` : organization not found
 
 ---
 
 ### `POST /orgs`
 
-Cree une orga. Le createur devient admin.
+Create an organiation. The creator becomes the admin. 
 
 Body :
 ```json
@@ -381,7 +432,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "id": "<uuid>",
@@ -393,15 +444,15 @@ Reponse (201) :
 
 ### `DELETE /orgs/{org_id}`
 
-Admin only. Supprime l'orga + tous ses fichiers sur MinIO.
+Admin only. Delete an organization and all its Minio objetcs
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 ---
 
 ### `PATCH /orgs/{org_id}`
 
-Renommer une orga. Admin only.
+Admin only. Rename an organization.
 
 Body :
 ```json
@@ -410,7 +461,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "id": "<uuid>",
@@ -419,53 +470,14 @@ Reponse (200) :
 ```
 ---
 
-### `PATCH /orgs/{org_id}/maxspace`
-
-Modifier l'espace max de l'organisation. Admin only.
-
-Body :
-```json
-{
-  "space": int
-}
-```
-
-Reponse (200) :
-```json
-{
-  "max_pace": newMaxSpace
-}
-```
-
----
-
-### `PATCH /orgs/{org_id}/usedspace`
-
-Modifier l'espace utilisé de l'organisation.
-
-Body :
-```json
-{
-  "space": int
-}
-```
-
-Reponse (200) :
-```json
-{
-  "used_space": newUsedSpace
-}
-```
-
----
-
 ### `GET /orgs/{org_id}/public-key`
-Récupère la clé publique de l'organisation.
+
+Retrieve the public key of an organization.
 
 Response `200 OK` :
 ```json
 {
-  "public_key": ""
+  "public_key": "<base64>"
 }
 ```
 
@@ -474,12 +486,12 @@ Response `200 OK` :
 ## Org Members
 
 ### `POST /orgs/{org_id}/members`
-Invite un membre. L'admin chiffre la clé privée de l'orga pour le nouveau membre via chiffrement hybride RSA+AES.
+Add a member to an organization. The admin encrypts the organization private key of the new member with the new member's public key.
 
 Body :
 ```json
 {
-  "user_email": "alice@42lyon.fr",
+  "user_email": "student@42lyon.fr",
   "enc_org_priv_key": "<base64>",
   "enc_aes_key": "<base64>",
   "iv": "<base64>"
@@ -493,35 +505,37 @@ Response `201 Created` :
 }
 ```
 
-Response `404` : user not found
-
 ---
 
 ### `GET /orgs/{org_id}/members`
 
-Récupérer tous les membres d'une organisation.
+Retrieve all the members of an organization.
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
-{
+[
+  {
   "user_id": "id",
-  "user_email": "alice@42lyon.fr",
+  "user_email": "student@42lyon.fr",
   "role": "admin"
-}
+  }
+]
 ```
 
 ---
 
 ### `PATCH /orgs/{org_id}/members/{user_id}`
 
-Change le role d'un membre. Admin only. Refuse de retirer le dernier admin.
+Admin only. Change the user's role. If last admin, cannot become member.
 
 Body :
 ```json
-{ "role": "admin" }
+{ 
+  "role": "admin"
+}
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
 {
   "message":  "role updated"
@@ -532,14 +546,16 @@ Reponse : `200 OK`
 
 ### `PATCH /orgs/{org_id}/members/me/description`
 
-Ajoute une description propre au membre pour l'organisation.
+Add a description to the organization that is specific to the user.
 
 Body :
 ```json
-{ "description": "description" }
+{
+  "description": "description"
+}
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
 {
   "message":  "organization description updated"
@@ -551,29 +567,30 @@ Reponse : `200 OK`
 
 ### `DELETE /orgs/{org_id}/members/me`
 
-Quitter l'orga. Interdit si dernier admin.
+Leave the organization. Unable if last admin.
 
-Reponse : `204 No content`
+Response : `204 No content`
 
 ---
 
 ### `DELETE /orgs/{org_id}/members/{user_id}`
 
-Virer un membre. Admin only.
+Delete a member of the organization. Unable if last admin.
 
-Reponse : `204 No content`
+Response : `204 No content`
 
 ---
 
 ### `GET /orgs/{org_id}/members/keys`
-Récupère les clés chiffrées du membre connecté pour cette organisation.
+
+Retrieve the envrypted keys of a logged in user in an organization.
 
 Response `200 OK` :
 ```json
 {
-  "enc_org_priv_key": "",
-  "enc_aes_key": "",
-  "iv": ""
+  "enc_org_priv_key": "<base64>",
+  "enc_aes_key": "<base64>",
+  "iv": "<base64>"
 }
 ```
 
@@ -583,9 +600,9 @@ Response `200 OK` :
 
 ### `GET /folders?parent_id=xxx`
 
-Liste les dossiers + fichiers. Sans parent_id = racine perso.
+List all the personal folders and files of an user according to a parent_id. If no parent_id, the list will be the on of root.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "folders": [
@@ -601,17 +618,17 @@ Reponse (200) :
 
 ### `GET /folders/{folder_id}/contents`
 
-Pareil mais pour un dossier specifique.
+Same but for a specific folder. 
 
-Meme format de reponse que ci-dessus.
+Same response as above.
 
 ---
 
 ### `GET /orgs/{org_id}/folders/{folder_id}/contents`
 
-Contenu d'un dossier d'orga. Check que le user est bien membre.
+List the content of an organization. 
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "folders": [
@@ -621,10 +638,13 @@ Reponse (200) :
     { "id": "<uuid>", "name": "rapport.pdf", "file_size": 1048576, "created_at": "2026-01-21T09:00:00Z", "owner_user_id": "<uuid>" }
   ]
 }
+```
 
 ---
 
 ### `POST /folders`
+
+Create a folder.
 
 Body :
 ```json
@@ -635,7 +655,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "id": "<uuid>",
@@ -647,7 +667,7 @@ Reponse (201) :
 
 ### `PATCH /folders/{folder_id}`
 
-Renommer ou deplacer un dossier.
+Rename or move a folder.
 
 Body :
 ```json
@@ -657,7 +677,7 @@ Body :
 }
 ```
 
-Reponse (200):
+Response (200):
 ```json
 {
   "message": "folder updated"
@@ -668,18 +688,18 @@ Reponse (200):
 
 ### `DELETE /folders/{folder_id}`
 
-Faut que le dossier soit vide (ON DELETE RESTRICT sur les fichiers).
+Delete a folder. Only if empty.
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 
 ---
 
 ### `GET /folders/:folder_id/path`
 
-Retourne le path d'un dossier
+Retrieve the path of a folder.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   [
@@ -691,11 +711,11 @@ Reponse (200) :
 ---
 ## Files
 
-> Les routes fichiers n'operent que sur les fichiers en statut ACTIVE. Les fichiers PENDING sont un etat transitoire interne et ne sont jamais exposes via l'API.
+> File routes only operate on files with an ACTIVE status. PENDING files are an internal transient state and are never exposed via the API.
 
 ### `POST /files/upload-url`
 
-Demande une presigned URL pour upload direct vers MinIO. Check le quota.
+Ask for a presigned URL to directly upload towards MinIO. Check the quota.
 
 Body :
 ```json
@@ -706,7 +726,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "presigned_url": "https://minio.../bucket/object?X-Amz-...",
@@ -719,14 +739,14 @@ Reponse (200) :
 
 ### `POST /files/multipart/init`
 
-Demande **des** presigned URL pour upload par chunk vers MinIO, renvoie chaque URL associée a la partie
+Ask **multiple** presigned URL to upload by chunk towards MinIO, return each URL associated to the chunk
 
 Body:
 ```json
 {
   "file_size": 2147483648,
   "folder_id": "<uuid_optional>",
-  "org_id": "<uuid_optional>"
+  "org_id": "<uuid_optional>",
   "part_count": "<number between 1 - 100>"
 }
 ```
@@ -752,7 +772,7 @@ Response (200):
 
 ### `POST /files/finalize`
 
-Apres l'upload MinIO reussi, stocke les metadonnees crypto en DB et retourne l'ID du fichier créé.
+After MinIO upload succeeded, store the crypto metadata in DB and return the ID of the created file.
 
 Body :
 ```json
@@ -765,7 +785,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "file_id": "<uuid>",
@@ -776,7 +796,7 @@ Reponse (201) :
 
 ### `POST /files/multipart/finalize`
 
-Finalise un upload multipart : déclenche l'assemblage des parts côté MinIO, active le fichier en DB, et incrémente le quota (user ou organization selon `org_id`).
+Finalizes a multipart upload: triggers part assembly on the MinIO side, activates the file in the DB, and increments the quota (user or organization depending on `org_id`).
 
 Body:
 ```json
@@ -799,7 +819,7 @@ Body:
 }
 ```
 
-Reponse (201):
+Response (201):
 ```json
 {
   "file_id": "<uuid>"
@@ -810,7 +830,7 @@ Reponse (201):
 
 ### `POST /files/multipart/abort`
 
-Annule un upload multipart en cours : libère les parts côté MinIO et supprime la ligne PENDING en DB. Seul l'uploader peut annuler son propre upload. Aucun effet sur le quota.
+Cancels an ongoing multipart upload: releases the parts on the MinIO side and deletes the PENDING row in the DB. Only the uploader can cancel their own upload. No effect on the quota.
 
 Body:
 ```json
@@ -820,15 +840,15 @@ Body:
 }
 ```
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 ---
 
 ### `GET /files/{file_id}`
 
-Recupere les metadonnees d'un fichier sans declencher de download. Check RBAC. Ne retourne que les fichiers ACTIVE. (metadonnées a update si besoin)
+Retrieve the metadata of a file without launching a download. Check RBAC, Return only ACTIVE files.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "file_size": 1048576,
@@ -841,9 +861,9 @@ Reponse (200) :
 
 ### `GET /files/{file_id}/download`
 
-Check RBAC, genere une presigned URL GET MinIO.
+Check RBAC, generate a presigned URL GET MinIO.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "presigned_url": "https://minio.../bucket/object?X-Amz-...",
@@ -857,14 +877,14 @@ Reponse (200) :
 
 ### `PATCH /files/{file_id}`
 
-Deplacer un fichier.
+Move a file.
 
 Body :
 ```json
 { "folder_id": "<uuid>" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "file moved"
@@ -875,9 +895,9 @@ Reponse (200) :
 
 ### `DELETE /files/{file_id}`
 
-Supprime les metadonnees en DB + l'objet sur MinIO. Met a jour used_space.
+Delete the metadata in DB + MinIO object. Update used_space.
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 
 ---
@@ -885,20 +905,19 @@ Reponse : `204 No Content`
 ## Misc
 
 ### `GET /metrics`
+> This route is specific to the `storage` microservice. It is used internally by Prometheus to scrape alert metrics.
 
-> Cette route est spécifique au micro-service `storage`. Elle sert intérieurement Prometheus pour récupérer les métriques d'alertes.
-
-Pas de réponse JSON ni de status code - retourne les métriques au format texte Prometheus.
+No JSON response or status code — returns metrics in the Prometheus text format.
 
 ---
 
 ### `GET /health`
 
-> Exposée par le micro-service `health-aggregator` (`:8084`). Ce service poll `GET /health` sur `auth` (`:8081`), `orga` (`:8082`) et `storage` (`:8083`) et agrège les résultats. Les routes `/health` internes à chaque micro-service ne sont pas exposées publiquement.
+> Exposed by the `health-aggregator` microservice (`:8084`). This service polls `GET /health` on `auth` (`:8081`), `orga` (`:8082`), and `storage` (`:8083`), then aggregates the results. The internal `/health` routes of each microservice are not publicly exposed.
 
-Récupère le statut des services utilisés par les micro-services du backend.
+Retrieves the status of the services used by the backend microservices. 
 
-Réponse : `200 OK`
+Response : `200 OK`
 ```json
 {
     "services": {
@@ -939,7 +958,7 @@ Réponse : `200 OK`
 
 ## WebSocket
 
-### Connexion : `wss://api.../ws`
+### Connection : `wss://api.../ws`
 
 Auth via Access JWT (query param ou header).
 
