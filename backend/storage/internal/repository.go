@@ -29,6 +29,7 @@ type StorageRepository interface {
 	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)   // used for org_deleted event handling
 	DeleteOrgData(orgID uuid.UUID) error
 	DeleteUserData(userID uuid.UUID) error
+	TransferOwnership(oldOwnerID uuid.UUID, orgID uuid.UUID, newOwnerID uuid.UUID) error
 
 	// periodic sweep utils
 	FindAllActiveFiles() ([]File, error)
@@ -356,6 +357,23 @@ func (r *storageRepository) DeleteUserData(userID uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+func (r *storageRepository) TransferOwnership(oldOwnerID uuid.UUID, orgID uuid.UUID, newOwnerID uuid.UUID) error {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&File{}).
+			Where("owner_user_id = ? AND org_id = ?", oldOwnerID, orgID).
+			Update("owner_user_id", newOwnerID).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&Folder{}).
+			Where("owner_user_id = ? AND org_id = ?", oldOwnerID, orgID).
+			Update("owner_user_id", newOwnerID).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 func (r *storageRepository) FindAllActiveFiles() ([]File, error) {
