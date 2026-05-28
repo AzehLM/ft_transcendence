@@ -34,7 +34,7 @@ This will:
 
 > ⚠️ **All secrets must exists** even if empty. Docker compose references every secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
 
-A few secrets cannot be generated, as they depend on external services. `make setup` creates them as empty files; fill them manually if you need the following features:
+A few secrets cannot be generated, as they depend on external services. `make setup` creates them as empty files. Fill them manually if you need the following features:
 - `cloudflare_tunnel_token` - Cloudflare tunnel if you want the application deployed on your own domain name.
 - `discord_webhook_url` - for Alertmanager alerting features.
 
@@ -112,7 +112,7 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 - [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
 - Claude / Perplexity / Gemini / ChatGPT for:
   - debugging and identifying bugs or performance improvement (e.g. quota race conditions (and avoid TOCTOU), RBAC edge cases)
-  - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus);
+  - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus)
   - ...
 - ...
 
@@ -134,7 +134,7 @@ As a developer, owns the storage microservice (client-side encrypted file storag
 
 # TEMP
 
-Before starting Ostrom, each member proposed project ideas and a preferred backend/frontend stack; the core stack was decided collectively from there. We worked through GitHub Pull Requests, so every member participated in reviewing code changes.
+Before starting Ostrom, each member proposed project ideas and a preferred backend/frontend stack. The core stack was decided collectively from there. We worked through GitHub Pull Requests, so every member participated in reviewing code changes.
 
 ---
 
@@ -174,7 +174,7 @@ For each member we need:
 
 **MinIO** - provides S3-compatible object storage that can be self-hosted, avoiding any third-party cloud provider. It stores only client-side encrypted blobs and issues presigned URLs so file data never transits through the API server.
 
-**Cloudflare Tunnel + Caddy** - allows exposing the platform publicly without a VPS or open inbound ports; the tunnel always routes to Caddy on a single local port, which keeps dev and prod networking identical.
+**Cloudflare Tunnel + Caddy** - allows exposing the platform publicly without a VPS or open inbound ports. The tunnel always routes to Caddy on a single local port, which keeps dev and prod networking identical.
 
 **Client-side encryption** (Web Crypto API) - AES-GCM 256-bit with PBKDF2 key derivation, performed entirely in the browser, enforcing the zero-knowledge guarantee that the server never sees plaintext.
 
@@ -230,8 +230,38 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Org creation with shared cryptography** - each org has its own RSA keypair. The org's private key is wrapped with a per-member AES key, itself RSA-encrypted with each member's public key. New members get their own wrapped copy.
 - **Roles (admin / member)** - admins manage members, settings, and quota. Members read and contribute. Enforced by a middleware.
 - **Member management** - invite/add, change role, remove member, leave organization, set personal description in the org.
-- **Org-scoped storage** - lbuisson for orga & gueberso for storage integration - files and folders can belong to an organization; the RBAC checker resolves permissions based on membership.
+- **Org-scoped storage** - lbuisson for orga & gueberso for storage integration - files and folders can belong to an organization. The RBAC checker resolves permissions based on membership.
 - **Org settings** - rename, delete, retrieve public key for member onboarding.
+
+### Real-time & Notifications
+
+- **WebSocket hub** - **pnaessen & ? QUI** - single /ws/notifications endpoint multiplexed per user. Per-user Redis pub/sub channels re-broadcast to connected clients.
+- **Online presence tracking** - **lbuisson ?** - Redis sets track active sessions. Org members see who's online in real time.
+- **Toast + dropdown notifications** - **QUI ? Je commence a avoir la flemme lol** - frontend `NotificationContext` manages connection lifecycle, reconnection backoff, listener registration, unread counts, and toast queue.
+- **Cross-service event propagation** - gueberso - Redis Streams with consumer groups guarantee delivery of cleanup events between auth, orga, and storage.
+
+### Design System & UI
+
+- **Reusable component library** - vicperri & lbuisson - 30+ components under frontend/src/components/: Button, Input, FileCard, FolderCard, FileGrid, Breadcrumb, ConfirmationModal, MoveModal, StorageBar, Sidebar, etc.
+- **Tailwind v4 + CSS Modules** - vicperri & lbuisson - utility-first base with scoped module styles per page (auth.module.css, dashboard.module.css, profile.module.css, etc.).
+- **Self-hosted IBM Plex Sans** - gueberso - loaded via @font-face (no Google Fonts dependency, helps CSP compliance).
+- **Theming & animations** - vicperri & lbuisson - theme.css design tokens. Framer-motion for transitions.
+- **Icon system** - vicperri - lucide-react, consistent specification.
+- **Static pages** - pnaessen & gueberso - Home, About, Privacy Policy, Terms of Service, 404.
+
+### DevOps & Infrastructure (fully done by gueberso)
+
+- **Docker Compose orchestration** - two modes (dev/up), 12 (**a verifier ca fait longtemps j'ai pas lancer**) services in prod, dev mode adds Adminer, exposes additional ports.
+- **Caddy reverse proxy** - TLS termination, security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy), MinIO `Host`-header rewrite for presigned URLs, routing for all microservices and Grafana sub-path.
+- **Cloudflare Tunnel** - public exposure without a VPS or open inbound ports. Same internal port in dev and prod.
+- **Docker secrets** - every credential (Postgres, MinIO, Redis, Grafana, JWT, Cloudflare token, Discord webhook) is read from `/run/secrets/`, never from environment variables in plaintext.
+- **Prometheus + Grafana** - Caddy metrics, MinIO metrics, custom `ostrom_user_used_space_bytes` collector, pre-provisioned dashboards.
+- **Alertmanager + Discord webhook** - alerts routed to a Discord channel.
+- **Status page** - dedicated `health-aggregator` microservice + `/status` page on the frontend listing each service's state.
+- **Automated backups** - `backup` container with `supercronic`, scheduled `pg_dump` (daily rotation 7 days / weekly 4 weeks) and `mc mirror` of the MinIO bucket. `make backup-restore` for recovery.
+- **CI/CD** - GitHub Actions: golangci-lint matrix (one job per service: storage / auth / orga / shared) and a Postman collection run on every PR with the full stack spun up in dev mode.
+- **Self-signed TLS cert generation** - Makefile generates a per-host SSL cert on first build for local development (whic is also used in prod).
+
 
 
 
