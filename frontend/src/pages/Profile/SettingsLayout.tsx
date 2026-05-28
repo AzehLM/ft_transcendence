@@ -6,6 +6,7 @@ export function SettingsLayout({ children }: { children: ReactNode }) {
         <div className={styles.page}>
           <div className={styles.contentArea}>
             <h1 className={styles.title}>Settings</h1>
+            <p className={styles.pageSubtitle}>Manage your account security and preferences.</p>
             <div>
                 {children}
             </div>
