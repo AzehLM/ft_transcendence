@@ -1,4 +1,5 @@
 import styles from "./ConfirmationModal.module.css";
+import { useState } from "react";
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -146,7 +147,21 @@ export function ConfirmationModal({
     : isRenameFolder
     ? "Rename Folder"
     : "Move to Trash";
-    
+
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleConfirm = async () => {
+        if (isLoading) return;
+        
+        setIsLoading(true);
+        try {
+            await onConfirm();
+        } catch (error) {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <>
             <div className={styles.modal__overlay} 
@@ -178,7 +193,7 @@ export function ConfirmationModal({
                         }}>
                         Cancel
                     </button>)}
-                    <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={onConfirm}>
+                    <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={handleConfirm} disabled={isLoading}>
                         {buttonText}
                     </button>
                 </div>
