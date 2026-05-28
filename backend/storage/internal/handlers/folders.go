@@ -300,12 +300,12 @@ func (h *StorageHandler) ListOrgContents(c fiber.Ctx) error {
 
 	folderItems = make([]storage.FolderItem, len(folders))
 	for i, f := range folders {
-		folderItems[i] = storage.FolderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt}
+		folderItems[i] = storage.FolderItem{ID: f.ID, Name: f.Name, CreatedAt: f.CreatedAt, OwnerUserID: f.OwnerUserID}
 	}
 
 	filesItems = make([]storage.FilesItem, len(files))
 	for i, f := range files {
-		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt}
+		filesItems[i] = storage.FilesItem{ID: f.ID, Name: f.Name, FileSize: f.FileSize, CreatedAt: f.CreatedAt, OwnerUserID: f.OwnerUserID}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
