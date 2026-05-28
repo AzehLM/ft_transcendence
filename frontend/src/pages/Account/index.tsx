@@ -8,27 +8,31 @@ import { DangerZone } from "../../components/DangerZone";
 import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { useEffect } from "react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { TwoFAModal } from "../../components/TwoFAModal";
 
 
 export default function AccountPage() {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
+    const [email, setEmail] = useState<string>("");
+    const [isTwoFAEnabled, setIsTwoFAEnabled] = useState<boolean>(false);
+    const [isTwoFAModalOpen, setIsTwoFAModalOpen] = useState(false);
 
     const handleDeleteAccount = async () => {
         try {
             const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
             if (!response.ok) {
-            const text = await response.text();
-            let message = "Failed to delete account, please try again.";
-            try {
-                if (text) {
-                const data = JSON.parse(text);
-                message = data.message || data.error || message;
-                }
-            } catch {}
-            setError(message);
-            return;
+                const text = await response.text();
+                let message = "Failed to delete account, please try again.";
+                try {
+                    if (text) {
+                        const data = JSON.parse(text);
+                        message = data.message || data.error || message;
+                    }
+                } catch { }
+                setError(message);
+                return;
             }
 
             await logout(navigate);
@@ -50,12 +54,13 @@ export default function AccountPage() {
     const [pwdError, setPwdError] = useState<string | null>(null);
     const [isReset, setIsReset] = useState(false);
 
-    const [email, setEmail] = useState<string>("");
-
     useEffect(() => {
-    fetchWithRefresh("/api/auth/me")
-        .then(res => res.json())
-        .then(data => setEmail(data.email));
+        fetchWithRefresh("/api/auth/me")
+            .then(res => res.json())
+            .then(data => {
+                setEmail(data.email);
+                setIsTwoFAEnabled(data.two_factor_enabled || false);
+            });
     }, []);
 
     const handleChangePassword = async () => {
@@ -91,7 +96,7 @@ export default function AccountPage() {
             setConfirmPassword("");
             return;
         }
-        
+
         try {
 
             const { masterKey, loginData } = await generateLoginData(email, password);
@@ -125,8 +130,8 @@ export default function AccountPage() {
                 new_iv: data.new_iv,
             };
             const responsePut = await fetchWithRefresh("/api/auth/password", {
-            method: "PUT",
-            body: JSON.stringify(passwordData),
+                method: "PUT",
+                body: JSON.stringify(passwordData),
             });
 
             if (!responsePut.ok) {
@@ -134,15 +139,15 @@ export default function AccountPage() {
                 let message = "Failed to change password.";
                 try {
                     if (text) {
-                    const data = JSON.parse(text);
-                    message = data.error || data.message || message;
+                        const data = JSON.parse(text);
+                        message = data.error || data.message || message;
                     }
-                } catch {}
-                    setPwdError(message);
-                    setPassword("");
-                    setNewPassword("");
-                    setConfirmPassword("");
-                    return;
+                } catch { }
+                setPwdError(message);
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                return;
             }
 
             setPassword("");
@@ -166,45 +171,62 @@ export default function AccountPage() {
     return (
 
         <SettingsLayout>
-            <div className={styles.accountBoxes}>
-                <div className={styles.mainBox}>
-                    <h2 className={styles.subtitle}>Security</h2>
+            <div className={styles.settingsGrid}>
+                <div className={styles.settingsCard}>
+                    <h2 className={styles.sectionTitle}>Security</h2>
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
                             <input type="password" style={{ display: "none" }} />
                             <input
-                            type="password"
-                            autoComplete="current-password"
-                            value={password}
-                            placeholder="Enter current password"
-                            onChange={(e) => setPassword(e.target.value)}
+                                type="password"
+                                autoComplete="current-password"
+                                value={password}
+                                placeholder="Enter current password"
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
                         <div className={styles.inputBox}>
                             <p>New Password</p>
                             <input
-                            type="password"
-                            autoComplete="new-password"
-                            value={newPassword}
-                            placeholder="Enter new password"
-                            onChange={(e) => setNewPassword(e.target.value)}
+                                type="password"
+                                autoComplete="new-password"
+                                value={newPassword}
+                                placeholder="Enter new password"
+                                onChange={(e) => setNewPassword(e.target.value)}
                             />
                         </div>
                         <div className={styles.inputBox}>
                             <p>Confirm your new password</p>
                             <input
-                            type="password"
-                            autoComplete="new-password"
-                            value={confirmPassword}
-                            placeholder="Confirm new password"
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                type="password"
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                placeholder="Confirm new password"
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                             />
                         </div>
                         {pwdError && <p className={styles.errorMessage}>{pwdError}</p>}
                         <button className={`${styles.buttonChange} ${styles.profileButton}`}
                             onClick={handleChangePassword}
                         >Update Password</button>
+                    </div>
+                </div>
+                <div className={styles.settingsCard}>
+                    <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
+                    <p className={styles.sectionDescription}>
+                        Enable Two-Factor Authentication to add an extra layer of security to your account.
+                    </p>
+                    <div className={styles.statusRow}>
+                        <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
+                            {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
+                        </p>
+                        <button
+                            className={`${styles.buttonChange} ${styles.profileButton}`}
+                            onClick={() => setIsTwoFAModalOpen(true)}
+                        >
+                            {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
+                        </button>
                     </div>
                 </div>
                 <ConfirmationModal
@@ -214,14 +236,24 @@ export default function AccountPage() {
                     onCancel={() => setIsReset(false)}
                     isPasswordChanged={true}
                 />
+                <TwoFAModal
+                    isOpen={isTwoFAModalOpen}
+                    isTwoFAEnabled={isTwoFAEnabled}
+                    email={email}
+                    onClose={() => setIsTwoFAModalOpen(false)}
+                    onSuccess={() => {
+                        setIsTwoFAEnabled(prev => !prev);
+                        setIsTwoFAModalOpen(false);
+                    }}
+                />
                 <DangerZone
-                label="If you want to delete your account, click on the button"
-                description="This action cannot be undone"
-                buttonText="Delete Account"
-                fileName="your account"
-                onConfirm={handleDeleteAccount}
-                isAccount={true}
-                error={error}
+                    label="If you want to delete your account, click on the button"
+                    description="This action cannot be undone"
+                    buttonText="Delete Account"
+                    fileName="your account"
+                    onConfirm={handleDeleteAccount}
+                    isAccount={true}
+                    error={error}
                 />
             </div>
         </SettingsLayout>
