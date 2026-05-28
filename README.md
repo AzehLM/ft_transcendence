@@ -180,8 +180,7 @@ For more details on technical choices, again refer to [tech-lead.md](https://git
 | 10 | Complete 2FA system for the users | User Management | Minor | 1 |
 | 11 | Backend as Microservices | DevOps | Major | 2 |
 | 12 | Monitoring (Prometheus + Grafana) | DevOps | Major | 2 |
-| 13 | Health check and status page system with automated backups and disaster
-recovery procedures | DevOps | Minor | 1 |
+| 13 | Health check and status page system with automated backups and disaster recovery procedures | DevOps | Minor | 1 |
 | 14 | Client-Side Encryption (Zero-Knowledge) | Custom | Major | 2 |
 | | | | **Total** | **21** |
 
