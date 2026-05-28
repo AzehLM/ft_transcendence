@@ -113,6 +113,17 @@
     font-size: var(--text-base);
 }
 
+.totp_verify__warning_message strong {
+    display: block;
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+}
+
+.totp_verify__warning_message p {
+    margin: 0;
+    line-height: 1.5;
+}
+
 .totp_verify__codes_container {
     background: #f3f4f6;
     border-radius: var(--radius-sm);
@@ -207,6 +218,7 @@
 
 .totp_verify__action_button {
     flex: 1;
+    width: 100%;
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-sm);
     border: none;
@@ -215,6 +227,7 @@
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
 .totp_verify__action_button--primary {
