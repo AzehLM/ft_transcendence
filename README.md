@@ -32,7 +32,7 @@ This will:
 - Create a `.env` from `.env.example` (if it doesn't already exist)
 - Generate the auto-generatable secrets (DB credentials, MinIO credentials, etc.) with random values
 
-> ⚠️ **All secrets must exists** even if empty. Docker compose references ever secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
+> ⚠️ **All secrets must exists** even if empty. Docker compose references every secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
 
 A few secrets cannot be generated, as they depend on external services. `make setup` creates them as empty files; fill them manually if you need the following features:
 - `cloudflare_tunnel_token` - Cloudflare tunnel if you want the application deployed on your own domain name.
@@ -40,11 +40,35 @@ A few secrets cannot be generated, as they depend on external services. `make se
 
 **Expected folder structure**
 
-```bash
-tree
 ```
- ⚠️ a modifier plus tard pour mettre le vrai tree partant du root et ne montrant que le .env et .env.example + secrets/ et les sous-dossiers
-
+.
+├── Makefile
+├── README.md
+├── .env
+├── .env.example
+├── secrets/
+│   ├── grafana/
+│   │   ├── grafana_admin_pwd.txt
+│   │   └── grafana_admin_user.txt
+│   ├── minio/
+│   │   ├── minio_admin_pwd.txt
+│   │   ├── minio_admin_user.txt
+│   ├── postgres/
+│   │   ├── postgres_db.txt
+│   │   ├── postgres_pwd.txt
+│   │   └── postgres_user.txt
+│   ├── redis/
+│   │   ├── redis_pwd.txt
+│   ├── ssl/
+│   │   ├── .hostname
+│   │   ├── cert.pem
+│   │   └── key.pem
+│   ├── cloudflare_tunnel_token
+│   ├── discord_webhook_url
+│   └── jwt_secret
+└── ...
+```
+> The SSL certificate will be generated at the first build and placed in the secrets directory automatically.
 
 ## Running the project
 Two available modes:
