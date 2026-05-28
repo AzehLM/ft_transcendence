@@ -78,8 +78,8 @@ export default function OrgMembersPage() {
 
   }, [id]);
 
-  const fetchMembers = () => {
-    fetchWithRefresh(`/api/orgs/${id}/members`)
+  const fetchMembers = (signal?: AbortSignal) => {
+    fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
@@ -93,7 +93,7 @@ export default function OrgMembersPage() {
         setMembers(data);
 
         data.forEach((member: Member) => {
-          fetchWithRefresh(`/api/user/${member.user_id}/avatar`)
+          fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
             .then(res => {
               if (!res.ok) return null;
               return res.blob();
@@ -104,10 +104,10 @@ export default function OrgMembersPage() {
                 setAvatarUrl(member.user_id, url);
               }
             })
-            .catch(() => {});
+            .catch(err => { if (err?.name !== "AbortError") {} });
         });
 
-        fetchWithRefresh("/api/auth/me")
+        fetchWithRefresh("/api/auth/me", { signal })
           .then(res => {
             if (!res.ok) throw new Error("Failed to fetch user.");
             return res.json();
@@ -117,9 +117,10 @@ export default function OrgMembersPage() {
             const myMember = data.find((m: Member) => m.email === me.email);
             if (myMember) setMyRole(myMember.role);
           })
-          .catch(() => setMyRole(null));
+          .catch(err => { if (err?.name !== "AbortError") setMyRole(null); });
       })
-      .catch(() => {
+      .catch(err => {
+        if (err?.name === "AbortError") return;
         setMembers([]);
         setError("Failed to load members.");
       })
@@ -127,7 +128,9 @@ export default function OrgMembersPage() {
   };
 
   useEffect(() => {
-    fetchMembers();
+    const controller = new AbortController();
+    fetchMembers(controller.signal);
+    return () => controller.abort();
   }, [id, navigate, status]);
 
   useEffect(() => {
