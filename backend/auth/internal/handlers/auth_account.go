@@ -136,7 +136,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 			}
 			filesToCleanup = append(filesToCleanup, orgKeys...)
 
-			if err := tx.Table("organizations").Where("id IN ?", orgsToDelete).Delete(nil).Error; err != nil {
+			if err := tx.Exec("DELETE FROM organizations WHERE id IN ?", orgsToDelete).Error; err != nil {
 				return err
 			}
 		}
