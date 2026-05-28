@@ -160,7 +160,7 @@ export default function LoginPage() {
                             ostrom
                         </span>
                     </Link>
-                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
+                    <h1 className={styles.page_title}>
                         Welcome Back
                     </h1>
                     <p className={styles.logo_subtitle}>
