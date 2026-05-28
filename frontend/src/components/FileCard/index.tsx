@@ -26,7 +26,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
   const displayName = loading ? "..." : (decryptedName || name);
 
   const { keyMissing, setKeyMissing, password, 
-    setPassword, keyModalError, setKeyModalError, 
+    setPassword, keyModalError, isResetting, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
 
   const handleDownloadClick = async () => {
@@ -124,6 +124,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
         inputValue={password}
         onInputChange={setPassword}
         errorMessage={keyModalError ?? undefined}
+        isLoading={isResetting}
       />
       <ConfirmationModal
         isOpen={showDeleteModal}

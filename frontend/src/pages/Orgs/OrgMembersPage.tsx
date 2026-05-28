@@ -43,7 +43,7 @@ export default function OrgMembersPage() {
   const [orgDesc, setOrgDesc] = useState<string>("");
 
   const { keyMissing, setKeyMissing, password, 
-    setPassword, keyModalError, setKeyModalError, 
+    setPassword, isResetting, keyModalError, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
     
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
@@ -374,6 +374,7 @@ export default function OrgMembersPage() {
         inputValue={password}
         onInputChange={setPassword}
         errorMessage={keyModalError ?? undefined}
+        isLoading={isResetting}
       />
 
       <ConfirmationModal

@@ -13,7 +13,7 @@ interface ActionButtonsProps {
 export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { keyMissing, setKeyMissing, password, 
-    setPassword, keyModalError, setKeyModalError, 
+    setPassword, keyModalError, isResetting, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
 
   const handleUploadClick = async () => {
@@ -46,6 +46,7 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
           inputValue={password}
           onInputChange={setPassword}
           errorMessage={keyModalError ?? undefined}
+          isLoading={isResetting}
         />
     <div className={styles.container}>
 

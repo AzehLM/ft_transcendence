@@ -24,7 +24,7 @@ export default function OrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const { keyMissing, setKeyMissing, password, 
-    setPassword, keyModalError, setKeyModalError, 
+    setPassword, isResetting, keyModalError, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
 
   const fetchOrgs = () => {
@@ -227,6 +227,7 @@ export default function OrganizationsPage() {
           inputValue={password}
           onInputChange={setPassword}
           errorMessage={keyModalError ?? undefined}
+          isLoading={isResetting}
         />
 
         {loading ? (
