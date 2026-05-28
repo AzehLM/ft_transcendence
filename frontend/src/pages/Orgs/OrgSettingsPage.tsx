@@ -6,10 +6,12 @@ import { StorageBar } from "../../components/StorageBar";
 import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 export default function OrgSettingsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { registerListener, unregisterListener } = useNotifications();
 
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
@@ -41,6 +43,20 @@ export default function OrgSettingsPage() {
       .catch(() => setOrgName("Unknown"))
       .finally(() => setLoading(false));
   }, [id, navigate]);
+
+  useEffect(() => {
+    const handleOrgaRenamed = (data: any) => {
+      if (data && data.new_name) {
+        setOrgName(data.new_name);
+      }
+    };
+
+    registerListener("ORGA_RENAMED", handleOrgaRenamed);
+
+    return () => {
+      unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+    };
+  }, [registerListener, unregisterListener, id]);
 
   const handleDeleteOrga = async () => {
     try {

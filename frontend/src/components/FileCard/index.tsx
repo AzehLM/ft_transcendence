@@ -19,7 +19,7 @@ interface FileCardProps {
 export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMove }: FileCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const { decryptedName, loading } = useDecryptFilename(id, orgId);
+  const { decryptedName, loading } = useDecryptFilename(name, orgId);
   const displayName = loading ? "..." : (decryptedName || name);
 
   const { keyMissing, setKeyMissing, password, 

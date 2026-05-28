@@ -6,6 +6,7 @@ import { generateOrganization, addMemberToOrg } from "../../services/organizatio
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface Organization {
   id: string;
@@ -17,6 +18,7 @@ interface Organization {
 
 export default function OrganizationsPage() {
   const navigate = useNavigate();
+  const { registerListener, unregisterListener, reconnect } = useNotifications();
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -25,7 +27,7 @@ export default function OrganizationsPage() {
     setPassword, keyModalError, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
 
-  useEffect(() => {
+  const fetchOrgs = () => {
     fetchWithRefresh("/api/orgs")
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch organizations.");
@@ -34,7 +36,33 @@ export default function OrganizationsPage() {
       .then(data => setOrgs(data))
       .catch(() => setOrgs([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchOrgs();
   }, []);
+
+  useEffect(() => {
+    const handleOrgChange = () => {
+      fetchOrgs();
+    };
+
+    registerListener("ADDED_TO_NEW_ORGA", handleOrgChange);
+    registerListener("MEMBER_ADDED", handleOrgChange);
+    registerListener("MEMBER_REMOVED", handleOrgChange);
+    registerListener("ORGA_RENAMED", handleOrgChange);
+    registerListener("ORGA_DELETED", handleOrgChange);
+    registerListener("USER_PROFILE_UPDATED", handleOrgChange);
+
+    return () => {
+      unregisterListener("ADDED_TO_NEW_ORGA", handleOrgChange);
+      unregisterListener("MEMBER_ADDED", handleOrgChange);
+      unregisterListener("MEMBER_REMOVED", handleOrgChange);
+      unregisterListener("ORGA_RENAMED", handleOrgChange);
+      unregisterListener("ORGA_DELETED", handleOrgChange);
+      unregisterListener("USER_PROFILE_UPDATED", handleOrgChange);
+    };
+  }, [registerListener, unregisterListener]);
 
   // Create an orga
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -76,6 +104,7 @@ export default function OrganizationsPage() {
       setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
       setShowCreateModal(false);
       setOrgName("");
+      reconnect();
     } catch (err) {
       console.error("Error:", err);
       setModalError("An error occurred, please try again.");
@@ -115,7 +144,7 @@ export default function OrganizationsPage() {
         return;
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
-      
+
 
       if (!response.ok) {
         const text = await response.text();
@@ -158,8 +187,8 @@ export default function OrganizationsPage() {
             <h1>Organizations</h1>
             <p className={styles.subtitle}>Manage your organizations and memberships</p>
           </div>
-          <button 
-            className={styles.addButton} 
+          <button
+            className={styles.addButton}
             onClick={() => { setShowCreateModal(true); setModalError(null); }}
           >
             <Plus size={20} />
@@ -211,7 +240,7 @@ export default function OrganizationsPage() {
               <p className={styles.emptyDescription}>
                 Create your first organization to start collaborating and sharing files with your team securely.
               </p>
-              <button 
+              <button
                 className={styles.emptyButton}
                 onClick={() => { setShowCreateModal(true); setModalError(null); }}
               >
@@ -222,9 +251,9 @@ export default function OrganizationsPage() {
         ) : (
             <div className={styles.orgList}>
             {orgs.map((org) => (
-                <div key={org.id} className={styles.orgCard} 
+                <div key={org.id} className={styles.orgCard}
                   onClick={() => navigate(`/orgs/${org.id}/files`, { state: { orgName: org.name } })}>
-                  
+
                   <div className={styles.orgAvatar}>
                     <span className={styles.initialsAvatar}>
                       {getInitials(org.name)}
@@ -285,7 +314,7 @@ export default function OrganizationsPage() {
             )}
 
             </div>
-        )}    
+        )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import styles from "./OrgMembers.module.css";
 import { UserMinus, Shield, UserPlus } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface Member {
   user_id: string;
@@ -14,11 +15,13 @@ interface Member {
   role: string;
   family_name: string;
   first_name: string;
+  is_online?: boolean;
 }
 
 export default function OrgMembersPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { registerListener, unregisterListener, status } = useNotifications();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -59,7 +62,7 @@ export default function OrgMembersPage() {
 
   }, [id]);
 
-  useEffect(() => {
+  const fetchMembers = () => {
     fetchWithRefresh(`/api/orgs/${id}/members`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
@@ -89,7 +92,59 @@ export default function OrgMembersPage() {
         setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, [id, navigate, status]);
+
+  useEffect(() => {
+    const handleMemberChange = () => {
+      fetchMembers();
+    };
+
+    const handleUserOnline = (data: any) => {
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: true } : m
+          )
+        );
+      }
+    };
+
+    const handleUserOffline = (data: any) => {
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: false } : m
+          )
+        );
+      }
+    };
+
+    const handleOrgaRenamed = (data: any) => {
+      if (data && data.new_name) {
+        setOrgName(data.new_name);
+      }
+    };
+
+    registerListener("MEMBER_ADDED", handleMemberChange);
+    registerListener("MEMBER_REMOVED", handleMemberChange);
+    registerListener("USER_PROFILE_UPDATED", handleMemberChange);
+    registerListener("USER_ONLINE", handleUserOnline);
+    registerListener("USER_OFFLINE", handleUserOffline);
+    registerListener("ORGA_RENAMED", handleOrgaRenamed);
+
+    return () => {
+      unregisterListener("MEMBER_ADDED", handleMemberChange);
+      unregisterListener("MEMBER_REMOVED", handleMemberChange);
+      unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
+      unregisterListener("USER_ONLINE", handleUserOnline);
+      unregisterListener("USER_OFFLINE", handleUserOffline);
+      unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+    };
+  }, [registerListener, unregisterListener, id]);
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
@@ -228,8 +283,10 @@ export default function OrgMembersPage() {
                     {member.role}
                   </div>
                   <div className={styles.statusInfo}>
-                    <span className={`${styles.statusDot} ${styles.statusDotActive}`}></span>
-                    Active
+                    <span className={`${styles.statusDot} ${
+                      member.is_online ? styles.statusDotActive : styles.statusDotInactive
+                    }`}></span>
+                    {member.is_online ? "Active" : "Offline"}
                   </div>
                   {myRole === "admin" && (
                     <div className={styles.buttonsGroup}>

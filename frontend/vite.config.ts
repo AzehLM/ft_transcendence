@@ -10,6 +10,12 @@ export default defineConfig({
         target: 'https://localhost:443', // Caddy reverse proxy
         changeOrigin: true,
         secure: false // Allow self-signed certs in dev
+      },
+      '/ws': {
+        target: 'https://localhost:443',
+        ws: true,
+        changeOrigin: true,
+        secure: false
       }
     }
   },
