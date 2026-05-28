@@ -48,10 +48,8 @@ export default function RegisterPage() {
 
         setIsLoading(true);
         try {
-            console.log("🔐 Génération des données cryptographiques...");
             const registrationData = await generateRegistrationData(email, password);
 
-            console.log("📤 Envoi au serveur...");
             const response = await fetch("/api/auth/register", {
                 method: "POST",
                 credentials: "include",
@@ -74,8 +72,6 @@ export default function RegisterPage() {
             if (data.access_token) {
                 localStorage.setItem("token", data.access_token);
             }
-
-            console.log("✅ Enregistrement réussi!");
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
@@ -98,7 +94,7 @@ export default function RegisterPage() {
                             ostrom
                         </span>
                     </Link>
-                    <h1 style={{ fontSize: "40px", fontWeight: "bold", color: "var(--brand-dark)", marginBottom: "12px" }}>
+                    <h1 className={styles.page_title}>
                         Create Your Account
                     </h1>
                     <p className={styles.logo_subtitle}>

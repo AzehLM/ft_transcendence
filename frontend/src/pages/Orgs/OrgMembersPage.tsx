@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
-import { UserMinus, Shield, UserPlus } from "lucide-react";
+import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { getPrivateKeyFromSession } from "../../services/crypto.service";
 import { resetKeys } from "../../services/auth.service";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface Member {
   user_id: string;
@@ -15,11 +16,13 @@ interface Member {
   role: string;
   family_name: string;
   first_name: string;
+  is_online?: boolean;
 }
 
 export default function OrgMembersPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { registerListener, unregisterListener, status } = useNotifications();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -41,8 +44,42 @@ export default function OrgMembersPage() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
 
+  const [orgName, setOrgName] = useState<string>("");
+  const [orgDesc, setOrgDesc] = useState<string>("");
+
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const avatarUrlsRef = useRef<Record<string, string>>({});
+
   useEffect(() => {
-    fetchWithRefresh(`/api/orgs/${id}/members`)
+    return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
+  }, []);
+
+  const setAvatarUrl = (userId: string, newUrl: string) => {
+    if (avatarUrlsRef.current[userId]) {
+      URL.revokeObjectURL(avatarUrlsRef.current[userId]);
+    }
+    avatarUrlsRef.current[userId] = newUrl;
+    setAvatarUrls((prev: Record<string, string>) => ({ ...prev, [userId]: newUrl }));
+  };
+
+  useEffect(() => {
+    fetchWithRefresh(`/api/orgs/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch org name.");
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setOrgName(data.name);
+          setOrgDesc(data.description);
+        }
+      })
+      .catch(() => setOrgName("Unknown"));
+
+  }, [id]);
+
+  const fetchMembers = (signal?: AbortSignal) => {
+    fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
@@ -55,7 +92,22 @@ export default function OrgMembersPage() {
         if (!data) return;
         setMembers(data);
 
-        fetchWithRefresh("/api/auth/me")
+        data.forEach((member: Member) => {
+          fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
+            .then(res => {
+              if (!res.ok) return null;
+              return res.blob();
+            })
+            .then(blob => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                setAvatarUrl(member.user_id, url);
+              }
+            })
+            .catch(err => { if (err?.name !== "AbortError") {} });
+        });
+
+        fetchWithRefresh("/api/auth/me", { signal })
           .then(res => {
             if (!res.ok) throw new Error("Failed to fetch user.");
             return res.json();
@@ -65,14 +117,69 @@ export default function OrgMembersPage() {
             const myMember = data.find((m: Member) => m.email === me.email);
             if (myMember) setMyRole(myMember.role);
           })
-          .catch(() => setMyRole(null));
+          .catch(err => { if (err?.name !== "AbortError") setMyRole(null); });
       })
-      .catch(() => {
+      .catch(err => {
+        if (err?.name === "AbortError") return;
         setMembers([]);
         setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
-  }, [id, navigate]);
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMembers(controller.signal);
+    return () => controller.abort();
+  }, [id, navigate, status]);
+
+  useEffect(() => {
+    const handleMemberChange = () => {
+      fetchMembers();
+    };
+
+    const handleUserOnline = (data: any) => {
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: true } : m
+          )
+        );
+      }
+    };
+
+    const handleUserOffline = (data: any) => {
+      if (data && data.user_id) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, is_online: false } : m
+          )
+        );
+      }
+    };
+
+    const handleOrgaRenamed = (data: any) => {
+      if (data && data.new_name) {
+        setOrgName(data.new_name);
+      }
+    };
+
+    registerListener("MEMBER_ADDED", handleMemberChange);
+    registerListener("MEMBER_REMOVED", handleMemberChange);
+    registerListener("USER_PROFILE_UPDATED", handleMemberChange);
+    registerListener("USER_ONLINE", handleUserOnline);
+    registerListener("USER_OFFLINE", handleUserOffline);
+    registerListener("ORGA_RENAMED", handleOrgaRenamed);
+
+    return () => {
+      unregisterListener("MEMBER_ADDED", handleMemberChange);
+      unregisterListener("MEMBER_REMOVED", handleMemberChange);
+      unregisterListener("USER_PROFILE_UPDATED", handleMemberChange);
+      unregisterListener("USER_ONLINE", handleUserOnline);
+      unregisterListener("USER_OFFLINE", handleUserOffline);
+      unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+    };
+  }, [registerListener, unregisterListener, id]);
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
@@ -166,13 +273,6 @@ export default function OrgMembersPage() {
     setMemberToRemove(null);
   };
 
-  const getInitials = (member: Member) => {
-    if (member.first_name && member.family_name) {
-      return `${member.first_name[0]}${member.family_name[0]}`.toUpperCase();
-    }
-    return member.email[0].toUpperCase();
-  };
-
   const getName = (member: Member) => {
     if (member.first_name || member.family_name) {
       return `${member.first_name ?? ""} ${member.family_name ?? ""}`.trim();
@@ -181,7 +281,7 @@ export default function OrgMembersPage() {
   };
 
   return (
-    <OrgLayout title="" showActionButtons={false}>
+    <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
@@ -210,9 +310,15 @@ export default function OrgMembersPage() {
             {members.map((member) => (
               <div key={member.user_id} className={styles.memberCard}>
                 <div className={styles.avatar}>
-                  <span className={styles.initialsAvatar}>
-                    {getInitials(member)}
-                  </span>
+                  {avatarUrls[member.user_id] ? (
+                    <img
+                      src={avatarUrls[member.user_id]}
+                      alt={getName(member)}
+                      className={styles.avatarImg}
+                    />
+                  ) : (
+                    <User size={22} strokeWidth={1.5} color="#865142" />
+                  )}
                 </div>
                 <div className={styles.memberInfo}>
                   <h3 className={styles.memberName}>{getName(member)}</h3>
@@ -227,8 +333,10 @@ export default function OrgMembersPage() {
                     {member.role}
                   </div>
                   <div className={styles.statusInfo}>
-                    <span className={`${styles.statusDot} ${styles.statusDotActive}`}></span>
-                    Active
+                    <span className={`${styles.statusDot} ${
+                      member.is_online ? styles.statusDotActive : styles.statusDotInactive
+                    }`}></span>
+                    {member.is_online ? "Active" : "Offline"}
                   </div>
                   {myRole === "admin" && (
                     <div className={styles.buttonsGroup}>

@@ -171,6 +171,9 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	orgIDParam := c.Params("org_id")
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
+	var orgName string
+	_ = h.DB.Table("organizations").Select("name").Where("id = ?", orgID).Row().Scan(&orgName)
+
 	if err := h.Publisher.PublishOrgDeleted(context.TODO(), orgID); err != nil {
 		log.Printf("[EVENT] failed to publish org_deleted for org %s: %v", orgID.String(), err)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
@@ -187,10 +190,18 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	userIDRaw := c.Locals("user_id")
+	userIDStr, _ := userIDRaw.(string)
+
 	event := ws.WSEvent{
 		Event:   "ORGA_DELETED",
 		OrgID:   orgID.String(),
 		Message: "Organization has been permanently deleted",
+		Data: fiber.Map{
+			"org_id":   orgID.String(),
+			"org_name": orgName,
+			"user_id":  userIDStr,
+		},
 	}
 	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
 		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
@@ -227,6 +238,10 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 	orgID, _ := uuid.Parse(orgIDParam) // not checked as the function should be used after CheckOrgaExist
 
 	repo := repository.NewOrganizationRepository(h.DB)
+
+	var oldName string
+	_ = h.DB.Table("organizations").Select("name").Where("id = ?", orgID).Row().Scan(&oldName)
+
 	updated, err := repo.UpdateOrgaName(orgID, body.Name)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -235,12 +250,18 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
 	}
 
+	userIDRaw := c.Locals("user_id")
+	userIDStr, _ := userIDRaw.(string)
+
 	event := ws.WSEvent{
 		Event:   "ORGA_RENAMED",
 		OrgID:   orgID.String(),
 		Message: "Organization name updated",
 		Data: fiber.Map{
+			"org_id":   orgID.String(),
+			"old_name": oldName,
 			"new_name": body.Name,
+			"user_id":  userIDStr,
 		},
 	}
 	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
@@ -461,6 +482,7 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"user_id": userID,
 		"id":   orga.ID,
 		"name": orga.Name,
 		"used_space" : orga.UsedSpace,

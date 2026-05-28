@@ -111,7 +111,7 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                                         value={qrValue}
                                         size={256}
                                         level="H"
-                                        includeMargin={true}
+                                        marginSize={2}
                                         className={styles.totp_setup__qr_code_image}
                                     />
                                 </div>
@@ -156,11 +156,10 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                             Verify 2FA
                         </h2>
 
-                        <p className={styles.totp_setup__description}>
-                            Enter the 6-digit code from your authenticator app:
-                        </p>
-
                         <div className={styles.totp_setup__input_group}>
+                            <label className={styles.totp_setup__label}>
+                                Enter the 6-digit code from your authenticator app:
+                            </label>
                             <input
                                 type="text"
                                 placeholder="000000"

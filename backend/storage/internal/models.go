@@ -11,7 +11,7 @@ type File struct {
 	OwnerUserID		uuid.UUID	`gorm:"type:uuid;not null" json:"owner_user_id"`
 	OrgID			*uuid.UUID	`gorm:"type:uuid" json:"org_id"`
 	FolderID		*uuid.UUID	`gorm:"type:uuid" json:"folder_id"`
-	Name			string		`gorm:"size:100;not null" json:"name"`
+	Name			string		`gorm:"size:2048;not null" json:"name"`
 	FileSize		int64		`gorm:"not null" json:"file_size"`
 	MinioObjectKey	uuid.UUID	`gorm:"type:uuid;uniqueIndex;not null" json:"minio_object_key"`
 	UploadID		*string		`gorm:"type:varchar(255)" json:"-"`  // nullable so pointer
@@ -47,6 +47,7 @@ type FolderItem struct {
 	ID			uuid.UUID	`json:"id"`
 	Name		string		`json:"name"`
 	CreatedAt	time.Time	`json:"created_at"`
+	OwnerUserID uuid.UUID	`json:"owner_user_id"`
 }
 
 type FilesItem struct {
@@ -54,4 +55,5 @@ type FilesItem struct {
 	Name		string		`json:"name"`
 	FileSize	int64		`json:"file_size"`
 	CreatedAt	time.Time	`json:"created_at"`
+	OwnerUserID uuid.UUID	`json:"owner_user_id"`
 }

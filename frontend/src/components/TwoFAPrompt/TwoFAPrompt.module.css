@@ -22,6 +22,8 @@
     padding: var(--spacing-3xl);
     box-sizing: border-box;
     position: relative;
+    max-height: calc(100dvh - var(--spacing-md) * 2);
+    overflow-y: auto;
 }
 
 .prompt_close {
@@ -139,4 +141,19 @@
     opacity: 0.6;
     text-align: center;
     margin: 0;
+}
+
+@media (max-width: 480px), (max-height: 700px) {
+    .prompt_modal {
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-sm);
+    }
+
+    .prompt_title {
+        font-size: 18px;
+    }
+
+    .prompt_benefits {
+        margin-bottom: var(--spacing-lg);
+    }
 }
