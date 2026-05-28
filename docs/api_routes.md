@@ -353,6 +353,7 @@ Récupère les informations d'une organisation.
 Response `200 OK` :
 ```json
 {
+  "user_id": "",
   "id": "",
   "name": "42_Projects",
   "used_space" : "",
@@ -610,7 +611,16 @@ Meme format de reponse que ci-dessus.
 
 Contenu d'un dossier d'orga. Check que le user est bien membre.
 
-Meme format de reponse.
+Reponse (200) :
+```json
+{
+  "folders": [
+    { "id": "<uuid>", "name": "documents", "created_at": "2026-01-20T14:00:00Z", "owner_user_id": "<uuid>" }
+  ],
+  "files": [
+    { "id": "<uuid>", "name": "rapport.pdf", "file_size": 1048576, "created_at": "2026-01-21T09:00:00Z", "owner_user_id": "<uuid>" }
+  ]
+}
 
 ---
 
@@ -621,7 +631,7 @@ Body :
 {
   "name": "photos",
   "parent_id": "<uuid_optional>",
-  "org_id": "<uuid_optional>"
+  "org_id": "<uuid_optional>",
 }
 ```
 
