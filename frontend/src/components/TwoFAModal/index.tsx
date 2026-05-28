@@ -1,5 +1,5 @@
 import styles from "./TwoFAModal.module.css";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { generateLoginData } from "../../services/crypto.service";
 import { QRCodeSVG } from "qrcode.react";
@@ -35,6 +35,8 @@ export function TwoFAModal({
     const [loading, setLoading] = useState(false);
     const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
     const [showCopyModal, setShowCopyModal] = useState(false);
+    const [copyError, setCopyError] = useState(false);
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     if (!isOpen) return null;
 
@@ -145,11 +147,16 @@ export function TwoFAModal({
         }
     };
 
-    const copyRecoveryCodes = () => {
-        const text = recoveryCodes.join("\n");
-        navigator.clipboard.writeText(text);
-        setShowCopyModal(true);
-        setTimeout(() => setShowCopyModal(false), 2000);
+    const copyRecoveryCodes = async () => {
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        try {
+            await navigator.clipboard.writeText(recoveryCodes.join("\n"));
+            setCopyError(false);
+            setShowCopyModal(true);
+            copyTimeoutRef.current = setTimeout(() => setShowCopyModal(false), 2000);
+        } catch {
+            setCopyError(true);
+        }
     };
 
     const downloadRecoveryCodes = () => {
@@ -346,7 +353,7 @@ export function TwoFAModal({
                     onClick={copyRecoveryCodes}
                     className={styles.totp_verify__secondary_button}
                 >
-                    {showCopyModal ? "Copied!" : "Copy All"}
+                    {copyError ? "Copy failed" : showCopyModal ? "Copied!" : "Copy All"}
                 </button>
                 <button
                     onClick={downloadRecoveryCodes}
