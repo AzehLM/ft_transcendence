@@ -10,12 +10,15 @@ interface FileCardProps {
   name: string;
   fileSize: number;
   orgId?: string;
+  owner_user_id?: string;
+  role?: string;
+  user_id?: string;
   onDelete?: (id: string) => void;
   onDownload?: (id: string) => void;
   onMove?: (id: string, newParentId: string | null) => Promise<void>;
 }
 
-export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMove }: FileCardProps) {
+export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_id, onDelete, onDownload, onMove }: FileCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const { decryptedName, loading } = useDecryptFilename(name, orgId);
@@ -59,16 +62,20 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
             <button className={styles.actionBtn} onClick={() => onDownload?.(id)} title="Download">
               <Download size={16} />
             </button>
-            <button className={styles.actionBtn} onClick={() => setShowMoveModal(true)} title="Move">
-              <Move size={16} />
-            </button>
-            <button
-              className={`${styles.actionBtn} ${styles.deleteBtn}`}
-              onClick={() => setShowDeleteModal(true)}
-              title="Delete"
-            >
-              <Trash2 size={16} />
-            </button>
+            {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+              <>
+              <button className={styles.actionBtn} onClick={() => setShowMoveModal(true)} title="Move">
+                <Move size={16} />
+              </button>
+              <button
+                className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                onClick={() => setShowDeleteModal(true)}
+                title="Delete"
+              >
+                <Trash2 size={16} />
+              </button>
+              </>
+            )}
           </div>
           <div className={styles.menuWrapper} ref={menuRef}>
             <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
@@ -79,12 +86,16 @@ export function FileCard({ id, name, fileSize, orgId, onDelete, onDownload, onMo
                 <button onClick={() => { onDownload?.(id); setShowMenu(false); }}>
                   <Download size={14} /> Download
                 </button>
+              {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+                <>
                 <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
                   <Move size={14} /> Move
                 </button>
                 <button className={styles.deleteBtn} onClick={() => { setShowDeleteModal(true); setShowMenu(false); }}>
                   <Trash2 size={14} /> Delete
                 </button>
+                </>
+              )}
               </div>
             )}
           </div>
