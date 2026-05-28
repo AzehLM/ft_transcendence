@@ -1,6 +1,6 @@
 # Ostrom - API Routes
 
-Base URL : `/api/v1`
+Base URL : `/api/`
 
 
 ---
@@ -9,7 +9,7 @@ Base URL : `/api/v1`
 
 ### `POST /auth/salt`
 
-Recup le salt d'un user pour pouvoir deriver la KEK cote client.
+Retrieve the user's salt in order to derive the Key Encryption Key (KEK) on the client side.
 
 Body :
 ```json
@@ -18,7 +18,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 { "salt": "<base64>" }
 ```
@@ -27,7 +27,7 @@ Reponse (200) :
 
 ### `POST /auth/register`
 
-Cree un nouveau compte. Le serveur voit jamais le mdp ni la KEK.
+Create a new account. The server never has access to the password or the KEK.
 
 Body :
 ```json
@@ -41,18 +41,20 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "message": "User successfully registered",
   "access_token": "<jwt>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
++ set the Refresh Token that is used to refresh the JWT when expired in cookie HttpOnly
 
 ---
 
 ### `POST /auth/login`
+
+Log in the user
 
 Body :
 ```json
@@ -62,21 +64,27 @@ Body :
 }
 ```
 
-Reponse si 2FA desactivee (200) :
+Response if 2FA not activated (200) :
 ```json
 {
   "access_token": "<jwt>",
   "encrypted_private_key": "<base64>",
-  "iv": "<base64>"
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
-+ Refresh JWT en cookie HttpOnly
++ Refresh JWT in cookie HttpOnly
 
-Reponse si 2FA activee (200) :
+Response if 2FA activated (200) :
 ```json
 {
   "requires_2fa": true,
-  "tmp_token": "<token_5min>"
+  "tmp_token": "<token_5min>",
+  "methods": "",
+  "expires_in": "300",
+  "encrypted_private_key": "<base64>",
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
 
@@ -84,9 +92,9 @@ Reponse si 2FA activee (200) :
 
 ### `POST /auth/refresh`
 
-Pas de body. Le Refresh JWT est dans le cookie HttpOnly.
+No body. Generate a new JWT with the Refresh JWT which is in cookie HttpOnly.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "access_token": "<jwt>"
@@ -97,9 +105,9 @@ Reponse (200) :
 
 ### `POST /auth/logout`
 
-Supprime le refresh token + clear le cookie.
+Delete the Refresh JWK and clear the cookie.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "logged_out_successfully"
@@ -108,9 +116,9 @@ Reponse (200) :
 
 ---
 
-### `PUT /users/password`
+### `PUT /auth/password`
 
-Change le mdp. Faut re-wrapper la PrivKey avec la nouvelle KEK.
+Update Password. 
 
 Body :
 ```json
@@ -123,21 +131,18 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "message": "password_updated_please_login_again"
+  "message": "password updated"
 }
 ```
-
-Invalide les refresh tokens des autres sessions.
-
 
 ---
 
 ### `PATCH /auth/first-name`
 
-Change le prénom de l'utilisateur.
+Change the first name of an user.
 
 Body :
 ```json
@@ -146,7 +151,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "first name updated"
@@ -157,7 +162,7 @@ Reponse (200) :
 
 ### `PATCH /auth/family-name`
 
-Change le nom de l'utilisateur.
+Chnage the family name of an user.
 
 Body :
 ```json
@@ -166,7 +171,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "family name updated"
@@ -175,8 +180,9 @@ Reponse (200) :
 
 ---
 
-### `GET /users/public-key?email=alice@42lyon.fr`
-Récupère la clé publique d'un user par email.
+### `GET /users/public-key?email=student@42lyon.fr`
+
+Get the public key of an user with its email.
 
 Response `200 OK` :
 ```json
@@ -184,16 +190,30 @@ Response `200 OK` :
   "public_key": "<base64>"
 }
 ```
-Response `404` : user not found
 
+---
 ### `PATCH /user/avatar`
 
-Met a jour l'avatar d'un user
+Updates the avatar of the authenticated user.
+
+#### Request Headers
+| Header | Value | Description |
+| :--- | :--- | :--- |
+| `Content-Type` | `multipart/form-data` | Required for file uploads |
+| `Authorization` | `Bearer <token>` | Required to authenticate the user |
+
+#### Request Body
+The body must be sent as `multipart/form-data`.
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `avatar` | `file` | Yes | The image file to upload (JPEG, PNG). Max size: 5MB. |
 
 Response `200 OK`:
+
 ```json
 {
-  "message": "avatar_uploaded_successfully"
+  "message": "avatar uploaded successfully"
 }
 ```
 
@@ -201,30 +221,62 @@ Response `200 OK`:
 
 ### `GET /user/me/avatar`
 
-User connecté recupère (en bytes) son avatar ainsi que le `Content-Type` de son avatar
+User logged in can retrieve (in bytes) its avatar as well as the `Content-Type` of its avatar
 
 Response `200 OK`
+- The response body contains the binary stream of the image.
+- Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
+- Response Body: Binary Data (The actual image file)
 
 ---
 
 ### `GET /users/{user_id}/avatar`
 
-N'importe quel user recupère l'avatar d'un user spécifique ainsi que le `Content-Type` de l'avatar
+Any user can retrieve the avatar of a specific user as well as the `Content-Type` of its avatar
 
 Response `200 OK`
+- The response body contains the binary stream of the image.
+- Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
+- Response Body: Binary Data (The actual image file)
 
 ---
 
 ## 2FA
 
-### `POST /auth/2fa/enable`
+### `POST /auth/2fa/totp/generate`
 
-Genere le secret TOTP.
+Generates a new TOTP (Time-based One-Time Password) secret and QR code URL to begin the Two-Factor Authentication (2FA) setup. The secret is temporarily stored on the server for 5 minutes and must be confirmed (validated) by the user before 2FA is definitively enabled.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "otpauth_uri": "otpauth://totp/ft_box:student@42lyon.fr?secret=XXXX&issuer=ft_box"
+		"qrCodeURL": "url",
+		"secret":    "secret",
+		"message":   "Scan QR with authenticator app",
+		"expiresIn": 300,
+}
+```
+
+---
+
+### `POST /auth/2fa/totp/verify`
+Verifies the 6-digit TOTP code provided by the user to complete the 2FA setup. If the code is valid, the server encrypts the TOTP secret, enables 2FA on the user's profile, and generates 10 one-time recovery codes that the user must save.
+
+Body :
+```json
+{ "code": "123456" }
+```
+
+Response (200) :
+```json
+{
+  "success": true,
+  "recoveryCodes": [
+    "AAAA-BBBB-CCCC",
+    "DDDD-EEEE-FFFF",
+    "... (10 codes total)"
+  ],
+  "message": "Save these 10 codes in a safe place offline!"
 }
 ```
 
@@ -232,58 +284,57 @@ Reponse (200) :
 
 ### `POST /auth/2fa/verify`
 
-Confirme l'activation en validant un premier code. Renvoie les recovery codes une seule fois.
+Confime the activation by validating a first code.
 
 Body :
 ```json
 { "code": "123456" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "recovery_codes": ["abc12345", "def67890", "..."]
+  "access_token": "<jwt>",
+  "encrypted_private_key": "<base64>",
+  "iv": "<base64>",
+  "public_key": "<base64>"
 }
 ```
 
 ---
 
-### `POST /auth/2fa/validate`
+### `GET /auth/2fa/recovery-codes`
+Retrieves the 2FA status of the authenticated user and checks how many backup recovery codes they have left.
 
-Pendant le login, valide le code TOTP pour obtenir les vrais JWT.
-
-Body :
+Response (200):
 ```json
 {
-  "tmp_token": "<token>",
-  "code": "123456"
+  "enabled": true,
+  "remaining": 10,
+  "message": "You have backup codes remaining"
 }
 ```
-
-Reponse (200) :
-```json
-{
-  "access_token": "<jwt>",
-  "encrypted_private_key": "<base64>",
-  "iv": "<base64>"
-}
-```
-+ Refresh JWT en cookie HttpOnly
-
-Le champ `code` peut aussi etre un recovery code a usage unique.
 
 ---
 
 ### `POST /auth/2fa/disable`
 
+Disable the 2fa for an user.
+
 Body :
 ```json
-{ "code": "123456" }
+{ "password": "password" }
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
+```json
+{
+  	"success": true,
+		"message": "2FA has been disabled",
+}
+```
 
-Supprime le secret TOTP + les recovery codes.
+Delete the secret TOTP + the recovery codes.
 
 
 ---
@@ -292,7 +343,9 @@ Supprime le secret TOTP + les recovery codes.
 
 ### `GET /auth/me`
 
-Reponse (200) :
+Retrieve information about the user logged in.
+
+Response (200) :
 ```json
 {
   "id": "<uuid>",
@@ -307,19 +360,16 @@ Reponse (200) :
 
 ---
 
-### `DELETE /users/me`
+### `DELETE /auth/me`
 
-Supprime le compte. Refuse si le user est dernier admin d'une orga.
+Delete the account (with personal files on Minio, BD entries - cascade, refresh token, close ws). (what happened if part of the organization ?)
 
-Reponse (200) :
+Response (200) :
 ```json
 {
-  "message": "account_deleted_successfully"
+  "message": "account deleted successfully"
 }
 ```
-
-Supprime : fichiers perso sur MinIO, entries DB (cascade), refresh tokens, ferme la WS.
-
 
 ---
 
@@ -329,7 +379,7 @@ Supprime : fichiers perso sur MinIO, entries DB (cascade), refresh tokens, ferme
 
 Liste les orgas dont le user est membre.
 
-Reponse (200) :
+Response (200) :
 ```json
 [
   {
@@ -381,7 +431,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "id": "<uuid>",
@@ -395,7 +445,7 @@ Reponse (201) :
 
 Admin only. Supprime l'orga + tous ses fichiers sur MinIO.
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 ---
 
@@ -410,7 +460,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "id": "<uuid>",
@@ -430,7 +480,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "max_pace": newMaxSpace
@@ -450,7 +500,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "used_space": newUsedSpace
@@ -501,7 +551,7 @@ Response `404` : user not found
 
 Récupérer tous les membres d'une organisation.
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
 {
   "user_id": "id",
@@ -521,7 +571,7 @@ Body :
 { "role": "admin" }
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
 {
   "message":  "role updated"
@@ -539,7 +589,7 @@ Body :
 { "description": "description" }
 ```
 
-Reponse : `200 OK`
+Response : `200 OK`
 ```json
 {
   "message":  "organization description updated"
@@ -553,7 +603,7 @@ Reponse : `200 OK`
 
 Quitter l'orga. Interdit si dernier admin.
 
-Reponse : `204 No content`
+Response : `204 No content`
 
 ---
 
@@ -561,7 +611,7 @@ Reponse : `204 No content`
 
 Virer un membre. Admin only.
 
-Reponse : `204 No content`
+Response : `204 No content`
 
 ---
 
@@ -585,7 +635,7 @@ Response `200 OK` :
 
 Liste les dossiers + fichiers. Sans parent_id = racine perso.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "folders": [
@@ -611,7 +661,7 @@ Meme format de reponse que ci-dessus.
 
 Contenu d'un dossier d'orga. Check que le user est bien membre.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "folders": [
@@ -635,7 +685,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "id": "<uuid>",
@@ -657,7 +707,7 @@ Body :
 }
 ```
 
-Reponse (200):
+Response (200):
 ```json
 {
   "message": "folder updated"
@@ -670,7 +720,7 @@ Reponse (200):
 
 Faut que le dossier soit vide (ON DELETE RESTRICT sur les fichiers).
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 
 ---
@@ -679,7 +729,7 @@ Reponse : `204 No Content`
 
 Retourne le path d'un dossier
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   [
@@ -706,7 +756,7 @@ Body :
 }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "presigned_url": "https://minio.../bucket/object?X-Amz-...",
@@ -765,7 +815,7 @@ Body :
 }
 ```
 
-Reponse (201) :
+Response (201) :
 ```json
 {
   "file_id": "<uuid>",
@@ -799,7 +849,7 @@ Body:
 }
 ```
 
-Reponse (201):
+Response (201):
 ```json
 {
   "file_id": "<uuid>"
@@ -820,7 +870,7 @@ Body:
 }
 ```
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 ---
 
@@ -828,7 +878,7 @@ Reponse : `204 No Content`
 
 Recupere les metadonnees d'un fichier sans declencher de download. Check RBAC. Ne retourne que les fichiers ACTIVE. (metadonnées a update si besoin)
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "file_size": 1048576,
@@ -843,7 +893,7 @@ Reponse (200) :
 
 Check RBAC, genere une presigned URL GET MinIO.
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "presigned_url": "https://minio.../bucket/object?X-Amz-...",
@@ -864,7 +914,7 @@ Body :
 { "folder_id": "<uuid>" }
 ```
 
-Reponse (200) :
+Response (200) :
 ```json
 {
   "message": "file moved"
@@ -877,7 +927,7 @@ Reponse (200) :
 
 Supprime les metadonnees en DB + l'objet sur MinIO. Met a jour used_space.
 
-Reponse : `204 No Content`
+Response : `204 No Content`
 
 
 ---
