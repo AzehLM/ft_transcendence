@@ -128,6 +128,20 @@ For each member we need:
 
 # Technical Stack
 
+| Layer | Technology | Role |
+|-------|-----------|------|
+| **Frontend** | React 18 + TypeScript 5.x | UI, client-side encryption, file management |
+| **Styling** | Custom CSS styling + Tailwind CSS | Utility-first CSS framework |
+| **Backend** | Go + Fiber | REST API, WebSocket broker, business logic |
+| **ORM** | GORM | Type-safe database access |
+| **Database** | PostgreSQL | Metadata, users, file hierarchy |
+| **Object Storage** | MinIO (S3-compatible) | Encrypted file blob storage |
+| **Monitoring** | Prometheus + Grafana | Metrics collection, dashboards, alerting |
+| **2FA** | TOTP (pquerna/otp) | Two-factor authentication via Google Authenticator |
+| **Containerization** | Docker + Docker Compose | Single-command deployment |
+
+For more details on technical choices, again refer to [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md).
+
 - Frontend techno and frameworks used
 - Backend techno and frameworks used
 - Database system and why it was chosen
@@ -148,11 +162,34 @@ For each member we need:
 
 # Modules
 
+## Modules
+
+### Points Summary
+
+| # | Module | Category | Type | Points |
+|---|--------|----------|------|--------|
+| 1 | Framework for both frontend an backend | Web | Major | 2 |
+| 2 | Real-time features (WebSockets) | Web | Major | 2 |
+| 3 | ORM for the database | Web | Minor | 1 |
+| 4 | Complete notification system   | Web | Minor | 1 |
+| 5 | Custom-made design system with reusable components | Web | Minor | 1 |
+| 6 | File upload and management system | Web | Minor | 1 |
+| 7 | Support for additional browsers | Accessibility | Minor | 1 |
+| 8 | Standard user management & authentication | User Management | Major | 2 |
+| 9 | Organization system | User Management | Major | 2 |
+| 10 | Complete 2FA system for the users | User Management | Minor | 1 |
+| 11 | Backend as Microservices | DevOps | Major | 2 |
+| 12 | Monitoring (Prometheus + Grafana) | DevOps | Major | 2 |
+| 13 | Health check and status page system with automated backups and disaster
+recovery procedures | DevOps | Minor | 1 |
+| 14 | Client-Side Encryption (Zero-Knowledge) | Custom | Major | 2 |
+| | | | **Total** | **21** |
+
 - list of all chosen modules (major and minor)
 - Point calculation
 - **Justification for each module choice**
 - How each module was implemented
-- Which tesm member worked on each module
+- Which team member worked on each module
 
 # Individual contribution
 
