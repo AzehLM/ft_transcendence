@@ -12,6 +12,51 @@ Its defining principle is that the server never sees plaintext. All files are en
 
 # Instructions
 
+## Prerequisites
+
+The entire stack runs in Docker containers — no local Go, Node, or database toolchain is required.
+
+- **Docker engine** >= 24.0
+- **Docker compose** v2
+- **GNU Make**
+
+## Configuration
+
+The project relies on a `.env` file and a set of Docker secrets for credentials stored under `secrets/`. You can generate these secrets randomly with:
+
+```bash
+make setup
+```
+
+This will:
+- Create a `.env` from `.env.example` (if it doesn't already exist)
+- Generate the auto-generatable secrets (DB credentials, MinIO credentials, etc.) with random values
+
+> ⚠️ **All secrets must exists** even if empty. Docker compose references ever secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
+
+A few secrets cannot be generated, as they depend on external services. `make setup` creates them as empty files; fill them manually if you need the following features:
+- `cloudflare_tunnel_token` - Cloudflare tunnel if you want the application deployed on your own domain name.
+- `discord_webhook_url` - for Alertmanager alerting features.
+
+**Expected folder structure**
+
+```bash
+tree
+```
+ ⚠️ a modifier plus tard pour mettre le vrai tree partant du root et ne montrant que le .env et .env.example + secrets/ et les sous-dossiers
+
+
+## Running the project
+Two available modes:
+
+| Mode | Command | Notes |
+|:----:|:----:|:----|
+| Development | `make dev`| Includes Adminer (DB UI), relaxed infrastructure constraints, served at http://localhost:<PORT> |
+| Production | `make prod`| Hardened setup, adminer, minio, prometheus services not accessible unless locally |
+
+Usage of Makefile that calls docker-compose, 2 differents mode, prod/dev. dev mode has few more things such as adminer and less constraints in the infrastructure setup/rules, its more lax
+prerequisites are make/docker/ a .env (can be created via Makefile for random credentials), secrets as well except for few secrets (cloudflare/discord_webhook for example cannot be randomly generated)
+
 - Contain relevant information about compilation, installation, and/or execution
 - Should include prerequisites (software, tools, versions, configuration like .env/secrets) + step-by-step instructions to run the project
   - Include secrets handling + schema of what the folder structure should look like
