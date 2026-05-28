@@ -238,7 +238,7 @@ export function TwoFAModal({
                         value={qrValue}
                         size={256}
                         level="H"
-                        includeMargin={true}
+                        marginSize={2}
                         className={styles.totp_verify__qr_code_image}
                     />
                 </div>

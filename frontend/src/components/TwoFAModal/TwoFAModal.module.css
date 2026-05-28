@@ -21,6 +21,8 @@
     width: 100%;
     padding: var(--spacing-3xl);
     box-sizing: border-box;
+    max-height: calc(100dvh - var(--spacing-md) * 2);
+    overflow-y: auto;
 }
 
 .totp_verify__title {
@@ -270,4 +272,52 @@
 .totp_verify__secondary_button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+@media (max-width: 480px), (max-height: 700px) {
+    .totp_verify__modal {
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-sm);
+    }
+
+    .totp_verify__title {
+        font-size: 18px;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__codes_container {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__button_group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__input_group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__qr_code_container {
+        margin-bottom: var(--spacing-lg);
+        padding: var(--spacing-sm);
+    }
+
+    .totp_verify__qr_code_image {
+        width: min(180px, 100%);
+        height: auto;
+    }
+
+    .totp_verify__warning_message {
+        font-size: 13px;
+        padding: var(--spacing-sm);
+    }
+
+    .totp_verify__code {
+        padding: var(--spacing-sm);
+        font-size: 12px;
+    }
+
+    .totp_verify__input_code {
+        font-size: 24px;
+    }
 }
