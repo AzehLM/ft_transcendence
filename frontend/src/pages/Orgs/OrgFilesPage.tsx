@@ -23,6 +23,9 @@ export default function OrgFilesPage() {
   const { registerListener, unregisterListener } = useNotifications();
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
+  const [myRole, setMyRole] = useState<string>("");
+  const [userID, setUserID] = useState<string>("");
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export default function OrgFilesPage() {
         if (!res.ok) throw new Error();
         return res.json();
       })
-      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); } })
+      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); setMyRole(data.role); setUserID(data.user_id)} })
       .catch(() => setOrgName("Unknown"));
   }, [id]);
 
@@ -188,6 +191,9 @@ export default function OrgFilesPage() {
                                         onRename={handleRenameFolder}
                                         onMove={handleMoveFolder}
                                         orgId={id}
+                                        role={myRole}
+                                        owner_user_id={folder.owner_user_id}
+                                        user_id={userID}
                                     />
                                     ))}
                                 </div>
@@ -209,6 +215,9 @@ export default function OrgFilesPage() {
                                         onDownload={handleDownload}
                                         onMove={handleMoveFile}
                                         orgId={id}
+                                        role={myRole}
+                                        owner_user_id={file.owner_user_id}
+                                        user_id={userID}
                                     />
                                     ))}
                                 </div>

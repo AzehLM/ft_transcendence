@@ -47,6 +47,7 @@ type FolderItem struct {
 	ID			uuid.UUID	`json:"id"`
 	Name		string		`json:"name"`
 	CreatedAt	time.Time	`json:"created_at"`
+	OwnerUserID uuid.UUID	`json:"owner_user_id"`
 }
 
 type FilesItem struct {
@@ -54,4 +55,5 @@ type FilesItem struct {
 	Name		string		`json:"name"`
 	FileSize	int64		`json:"file_size"`
 	CreatedAt	time.Time	`json:"created_at"`
+	OwnerUserID uuid.UUID	`json:"owner_user_id"`
 }
