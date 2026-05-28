@@ -29,17 +29,6 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   return (
     <div className={styles.container}>
 
-      {/* Create folder button */}
-      <button
-        className={`${styles.button} ${styles["button--create-folder"]}`}
-        onClick={onCreateFolder}
-      >
-        <FolderPlus className={styles["button__icon"]} />
-        <span className={styles["button__text"]}>
-          Create folder
-        </span>
-      </button>
-
       {/* Upload button */}
       <button
         className={`${styles.button} ${styles["button--upload"]}`}
@@ -48,6 +37,17 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
         <UploadCloud className={styles["button__icon"]} />
         <span className={styles["button__text"]}>
           Upload
+        </span>
+      </button>
+
+      {/* Create folder button */}
+      <button
+        className={`${styles.button} ${styles["button--create-folder"]}`}
+        onClick={onCreateFolder}
+      >
+        <FolderPlus className={styles["button__icon"]} />
+        <span className={styles["button__text"]}>
+          Create folder
         </span>
       </button>
 
