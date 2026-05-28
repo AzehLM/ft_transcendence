@@ -62,15 +62,18 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 		for _, orgIDStr := range orgIDs {
 			var transferTargetID string
-			var otherAdminID uuid.UUID
+			type AdminInfo struct {
+				UserID uuid.UUID `gorm:"column:user_id"`
+			}
+			var otherAdmin AdminInfo
 			errQueryAdmin := tx.Table("org_members").
 				Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
 				Select("user_id").
 				Limit(1).
-				Take(&otherAdminID).Error
+				Take(&otherAdmin).Error
 
 			if errQueryAdmin == nil {
-				transferTargetID = otherAdminID.String()
+				transferTargetID = otherAdmin.UserID.String()
 				transfers[orgIDStr] = transferTargetID
 			} else if errors.Is(errQueryAdmin, gorm.ErrRecordNotFound) {
 				type MemberInfo struct {
