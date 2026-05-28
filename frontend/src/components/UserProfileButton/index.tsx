@@ -14,19 +14,26 @@ export function UserProfileButton({ isOpen = false, onClick }: UserProfileButton
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        let cancelled = false;
-        fetchWithRefresh("/api/user/me/avatar")
+        const controller = new AbortController();
+        const { signal } = controller;
+        let createdUrl: string | null = null;
+
+        fetchWithRefresh("/api/user/me/avatar", { signal })
             .then(res => {
                 if (!res.ok) return null;
                 return res.blob();
             })
             .then(blob => {
-                if (!cancelled && blob) setAvatarUrl(URL.createObjectURL(blob));
+                if (blob) {
+                    createdUrl = URL.createObjectURL(blob);
+                    setAvatarUrl(createdUrl);
+                }
             })
             .catch(() => {});
+
         return () => {
-            cancelled = true;
-            if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+            controller.abort();
+            if (createdUrl) URL.revokeObjectURL(createdUrl);
         };
     }, []);
 
