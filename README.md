@@ -167,7 +167,7 @@ For more details on technical choices, again refer to [tech-lead.md](https://git
 ### Points Summary
 
 | # | Module | Category | Type | Points |
-|---|--------|----------|------|--------|
+|:---:|--------|:----------:|------|:--------:|
 | 1 | Framework for both frontend an backend | Web | Major | 2 |
 | 2 | Real-time features (WebSockets) | Web | Major | 2 |
 | 3 | ORM for the database | Web | Minor | 1 |
