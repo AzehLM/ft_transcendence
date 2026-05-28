@@ -25,11 +25,17 @@ interface UploadStatusProps {
   success?: string | null;
   hideMessage?: boolean;
   downloadError?: boolean;
+  mainError?: string | null;
 }
 
-export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, error, success, hideMessage, downloadError = false }: UploadStatusProps) {
+export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, error, success, hideMessage, downloadError = false, mainError }: UploadStatusProps) {
   return (
     <>
+      {mainError && (
+        <div className={`${styles.statusMessage} ${styles.error}`}>
+          {mainError}
+        </div>
+      )}
       {error && (
         <div className={`${styles.statusMessage} ${styles.error} ${hideMessage ? styles.hide : ""}`}>
           {error}

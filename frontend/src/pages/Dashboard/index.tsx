@@ -26,7 +26,7 @@ export default function DashboardPage() {
     );
 
     const {
-        files, folders, loading, error, success,
+        files, folders, loading, error, mainError, success,
         breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
@@ -128,6 +128,7 @@ export default function DashboardPage() {
                         success={success}
                         hideMessage={hideMessage}
                         downloadError={downloadError}
+                        mainError={mainError}
                     />
                 </div>
 

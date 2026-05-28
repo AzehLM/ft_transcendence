@@ -9,6 +9,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mainError, setMainError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<{ id: string | null; name: string }[]>([{ id: null, name: "Root" }]);
   const [hideMessage, setHideMessage] = useState(false);
@@ -31,7 +32,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
         await loadFiles();
       } catch (err: any) {
         if (err.status === 400 || err.status === 404) { navigate("/404"); return; }
-        setError("Failed to load files.");
+        setMainError("Failed to load files.");
       } finally {
         setLoading(false);
       }
@@ -161,7 +162,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
   }, [success, error]);
 
   return {
-    files, folders, loading, error, success,
+    files, folders, loading, error, mainError, success,
     breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
     handleDeleteFile, handleDeleteFolder,
     handleRenameFolder, handleMoveFolder, handleMoveFile,
