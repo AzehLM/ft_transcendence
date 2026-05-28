@@ -377,7 +377,7 @@ Response (200) :
 
 ### `GET /orgs`
 
-Liste les orgas dont le user est membre.
+List all the organizations the user is part of.
 
 Response (200) :
 ```json
@@ -398,13 +398,14 @@ Response (200) :
 ---
 
 ### `GET /orgs/{org_id}`
-Récupère les informations d'une organisation.
+
+Retrieve the information of a specific organization.
 
 Response `200 OK` :
 ```json
 {
-  "user_id": "",
-  "id": "",
+  "user_id": "<uuid>",
+  "id": "<uuid>",
   "name": "42_Projects",
   "used_space" : "",
   "max_space" : "",
@@ -412,13 +413,12 @@ Response `200 OK` :
   "description": "description"
 }
 ```
-Response `404` : organization not found
 
 ---
 
 ### `POST /orgs`
 
-Cree une orga. Le createur devient admin.
+Create an organiation. The creator becomes the admin. 
 
 Body :
 ```json
@@ -443,7 +443,7 @@ Response (201) :
 
 ### `DELETE /orgs/{org_id}`
 
-Admin only. Supprime l'orga + tous ses fichiers sur MinIO.
+Admin only. Delete an organization and all its Minio objetcs
 
 Response : `204 No Content`
 
@@ -451,7 +451,7 @@ Response : `204 No Content`
 
 ### `PATCH /orgs/{org_id}`
 
-Renommer une orga. Admin only.
+Admin only. Rename an organization.
 
 Body :
 ```json
@@ -469,53 +469,14 @@ Response (200) :
 ```
 ---
 
-### `PATCH /orgs/{org_id}/maxspace`
-
-Modifier l'espace max de l'organisation. Admin only.
-
-Body :
-```json
-{
-  "space": int
-}
-```
-
-Response (200) :
-```json
-{
-  "max_pace": newMaxSpace
-}
-```
-
----
-
-### `PATCH /orgs/{org_id}/usedspace`
-
-Modifier l'espace utilisé de l'organisation.
-
-Body :
-```json
-{
-  "space": int
-}
-```
-
-Response (200) :
-```json
-{
-  "used_space": newUsedSpace
-}
-```
-
----
-
 ### `GET /orgs/{org_id}/public-key`
-Récupère la clé publique de l'organisation.
+
+Retrieve the public key of an organization.
 
 Response `200 OK` :
 ```json
 {
-  "public_key": ""
+  "public_key": "<base64>"
 }
 ```
 
@@ -524,12 +485,12 @@ Response `200 OK` :
 ## Org Members
 
 ### `POST /orgs/{org_id}/members`
-Invite un membre. L'admin chiffre la clé privée de l'orga pour le nouveau membre via chiffrement hybride RSA+AES.
+Add a member to an organization. The admin encrypt the organization private key of the new member with the new member's public key.
 
 Body :
 ```json
 {
-  "user_email": "alice@42lyon.fr",
+  "user_email": "student@42lyon.fr",
   "enc_org_priv_key": "<base64>",
   "enc_aes_key": "<base64>",
   "iv": "<base64>"
@@ -543,19 +504,17 @@ Response `201 Created` :
 }
 ```
 
-Response `404` : user not found
-
 ---
 
 ### `GET /orgs/{org_id}/members`
 
-Récupérer tous les membres d'une organisation.
+Retrieve all the members of an organization.
 
 Response : `200 OK`
 ```json
 {
   "user_id": "id",
-  "user_email": "alice@42lyon.fr",
+  "user_email": "student@42lyon.fr",
   "role": "admin"
 }
 ```
@@ -564,11 +523,13 @@ Response : `200 OK`
 
 ### `PATCH /orgs/{org_id}/members/{user_id}`
 
-Change le role d'un membre. Admin only. Refuse de retirer le dernier admin.
+Admin only. Change the user's role. If last admin, cannot become member.
 
 Body :
 ```json
-{ "role": "admin" }
+{ 
+  "role": "admin"
+}
 ```
 
 Response : `200 OK`
@@ -582,11 +543,13 @@ Response : `200 OK`
 
 ### `PATCH /orgs/{org_id}/members/me/description`
 
-Ajoute une description propre au membre pour l'organisation.
+Add a description to the organization that is specific to the user.
 
 Body :
 ```json
-{ "description": "description" }
+{
+  "description": "description"
+}
 ```
 
 Response : `200 OK`
@@ -601,7 +564,7 @@ Response : `200 OK`
 
 ### `DELETE /orgs/{org_id}/members/me`
 
-Quitter l'orga. Interdit si dernier admin.
+Leave the organization. Unable if last admin.
 
 Response : `204 No content`
 
@@ -609,21 +572,22 @@ Response : `204 No content`
 
 ### `DELETE /orgs/{org_id}/members/{user_id}`
 
-Virer un membre. Admin only.
+Delete a member of the organization. Unable if last admin.
 
 Response : `204 No content`
 
 ---
 
 ### `GET /orgs/{org_id}/members/keys`
-Récupère les clés chiffrées du membre connecté pour cette organisation.
+
+Retrieve the envrypted keys of a logged in user in an organization.
 
 Response `200 OK` :
 ```json
 {
-  "enc_org_priv_key": "",
-  "enc_aes_key": "",
-  "iv": ""
+  "enc_org_priv_key": "<base64>",
+  "enc_aes_key": "<base64>",
+  "iv": "<base64>"
 }
 ```
 
@@ -633,7 +597,7 @@ Response `200 OK` :
 
 ### `GET /folders?parent_id=xxx`
 
-Liste les dossiers + fichiers. Sans parent_id = racine perso.
+List all the personal folders and files of an user according to a parent_id. If no parent_id, the list will be the on of root.
 
 Response (200) :
 ```json
@@ -651,15 +615,15 @@ Response (200) :
 
 ### `GET /folders/{folder_id}/contents`
 
-Pareil mais pour un dossier specifique.
+Same but for a specific folder. 
 
-Meme format de reponse que ci-dessus.
+Same response as above.
 
 ---
 
 ### `GET /orgs/{org_id}/folders/{folder_id}/contents`
 
-Contenu d'un dossier d'orga. Check que le user est bien membre.
+List the content of an organization. 
 
 Response (200) :
 ```json
@@ -671,10 +635,13 @@ Response (200) :
     { "id": "<uuid>", "name": "rapport.pdf", "file_size": 1048576, "created_at": "2026-01-21T09:00:00Z", "owner_user_id": "<uuid>" }
   ]
 }
+```
 
 ---
 
 ### `POST /folders`
+
+Create a folder.
 
 Body :
 ```json
@@ -697,7 +664,7 @@ Response (201) :
 
 ### `PATCH /folders/{folder_id}`
 
-Renommer ou deplacer un dossier.
+Rename or move a folder.
 
 Body :
 ```json
@@ -718,7 +685,7 @@ Response (200):
 
 ### `DELETE /folders/{folder_id}`
 
-Faut que le dossier soit vide (ON DELETE RESTRICT sur les fichiers).
+Delete a folder. Only if empty.
 
 Response : `204 No Content`
 
@@ -727,7 +694,7 @@ Response : `204 No Content`
 
 ### `GET /folders/:folder_id/path`
 
-Retourne le path d'un dossier
+Retrieve the path of a folder.
 
 Response (200) :
 ```json
@@ -741,11 +708,11 @@ Response (200) :
 ---
 ## Files
 
-> Les routes fichiers n'operent que sur les fichiers en statut ACTIVE. Les fichiers PENDING sont un etat transitoire interne et ne sont jamais exposes via l'API.
+> File routes only operate on files with an ACTIVE status. PENDING files are an internal transient state and are never exposed via the API.
 
 ### `POST /files/upload-url`
 
-Demande une presigned URL pour upload direct vers MinIO. Check le quota.
+Ask for a presigned URL to directly upload towards MinIO. Check the quota.
 
 Body :
 ```json
@@ -769,7 +736,7 @@ Response (200) :
 
 ### `POST /files/multipart/init`
 
-Demande **des** presigned URL pour upload par chunk vers MinIO, renvoie chaque URL associée a la partie
+Ask **multiple** presigned ULL to upload by chunk towards MinIO, return each URL associated to the chunk
 
 Body:
 ```json
@@ -802,7 +769,7 @@ Response (200):
 
 ### `POST /files/finalize`
 
-Apres l'upload MinIO reussi, stocke les metadonnees crypto en DB et retourne l'ID du fichier créé.
+After MinIO upload succeeded, store the crypto metadata in DB and return the ID of the created file.
 
 Body :
 ```json
@@ -826,7 +793,7 @@ Response (201) :
 
 ### `POST /files/multipart/finalize`
 
-Finalise un upload multipart : déclenche l'assemblage des parts côté MinIO, active le fichier en DB, et incrémente le quota (user ou organization selon `org_id`).
+Finalizes a multipart upload: triggers part assembly on the MinIO side, activates the file in the DB, and increments the quota (user or organization depending on `org_id`).
 
 Body:
 ```json
@@ -860,7 +827,7 @@ Response (201):
 
 ### `POST /files/multipart/abort`
 
-Annule un upload multipart en cours : libère les parts côté MinIO et supprime la ligne PENDING en DB. Seul l'uploader peut annuler son propre upload. Aucun effet sur le quota.
+Cancels an ongoing multipart upload: releases the parts on the MinIO side and deletes the PENDING row in the DB. Only the uploader can cancel their own upload. No effect on the quota.
 
 Body:
 ```json
@@ -876,7 +843,7 @@ Response : `204 No Content`
 
 ### `GET /files/{file_id}`
 
-Recupere les metadonnees d'un fichier sans declencher de download. Check RBAC. Ne retourne que les fichiers ACTIVE. (metadonnées a update si besoin)
+Retrieve the metadata of a file without launching a download. Check RBAC, Return only ACTIVE files.
 
 Response (200) :
 ```json
@@ -891,7 +858,7 @@ Response (200) :
 
 ### `GET /files/{file_id}/download`
 
-Check RBAC, genere une presigned URL GET MinIO.
+Check RBAC, generate a presigned URL GET MinIO.
 
 Response (200) :
 ```json
@@ -907,7 +874,7 @@ Response (200) :
 
 ### `PATCH /files/{file_id}`
 
-Deplacer un fichier.
+Move a file.
 
 Body :
 ```json
@@ -925,7 +892,7 @@ Response (200) :
 
 ### `DELETE /files/{file_id}`
 
-Supprime les metadonnees en DB + l'objet sur MinIO. Met a jour used_space.
+Delete the metadata in DB + MinIO object. Update used_space.
 
 Response : `204 No Content`
 
@@ -935,20 +902,19 @@ Response : `204 No Content`
 ## Misc
 
 ### `GET /metrics`
+> This route is specific to the `storage` microservice. It is used internally by Prometheus to scrape alert metrics.
 
-> Cette route est spécifique au micro-service `storage`. Elle sert intérieurement Prometheus pour récupérer les métriques d'alertes.
-
-Pas de réponse JSON ni de status code - retourne les métriques au format texte Prometheus.
+No JSON response or status code — returns metrics in the Prometheus text format.
 
 ---
 
 ### `GET /health`
 
-> Exposée par le micro-service `health-aggregator` (`:8084`). Ce service poll `GET /health` sur `auth` (`:8081`), `orga` (`:8082`) et `storage` (`:8083`) et agrège les résultats. Les routes `/health` internes à chaque micro-service ne sont pas exposées publiquement.
+> Exposed by the `health-aggregator` microservice (`:8084`). This service polls `GET /health` on `auth` (`:8081`), `orga` (`:8082`), and `storage` (`:8083`), then aggregates the results. The internal `/health` routes of each microservice are not publicly exposed.
 
-Récupère le statut des services utilisés par les micro-services du backend.
+Retrieves the status of the services used by the backend microservices. 
 
-Réponse : `200 OK`
+Response : `200 OK`
 ```json
 {
     "services": {
