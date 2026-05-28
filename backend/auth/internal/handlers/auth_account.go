@@ -61,26 +61,18 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		}
 
 		for _, orgIDStr := range orgIDs {
-			var otherAdminsCount int64
-			if err := tx.Table("org_members").
-				Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
-				Count(&otherAdminsCount).Error; err != nil {
-				return err
-			}
-
 			var transferTargetID string
-			if otherAdminsCount > 0 {
-				var otherAdminID uuid.UUID
-				errQueryAdmin := tx.Table("org_members").
-					Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
-					Select("user_id").
-					Limit(1).
-					Take(&otherAdminID).Error
-				if errQueryAdmin == nil {
-					transferTargetID = otherAdminID.String()
-					transfers[orgIDStr] = transferTargetID
-				}
-			} else {
+			var otherAdminID uuid.UUID
+			errQueryAdmin := tx.Table("org_members").
+				Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
+				Select("user_id").
+				Limit(1).
+				Take(&otherAdminID).Error
+
+			if errQueryAdmin == nil {
+				transferTargetID = otherAdminID.String()
+				transfers[orgIDStr] = transferTargetID
+			} else if errors.Is(errQueryAdmin, gorm.ErrRecordNotFound) {
 				type MemberInfo struct {
 					UserID   uuid.UUID `gorm:"column:user_id"`
 					JoinedAt time.Time `gorm:"column:joined_at"`
@@ -110,6 +102,8 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 				} else {
 					return errQuery
 				}
+			} else {
+				return errQueryAdmin
 			}
 
 			if transferTargetID != "" {
