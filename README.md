@@ -62,15 +62,35 @@ make minio-reset	# delete every minio objects
 make fclean			# deletes every container/images/volumes
 ```
 
-Usage of Makefile that calls docker-compose, 2 differents mode, prod/dev. dev mode has few more things such as adminer and less constraints in the infrastructure setup/rules, its more lax
-prerequisites are make/docker/ a .env (can be created via Makefile for random credentials), secrets as well except for few secrets (cloudflare/discord_webhook for example cannot be randomly generated)
-
-- Contain relevant information about compilation, installation, and/or execution
-- Should include prerequisites (software, tools, versions, configuration like .env/secrets) + step-by-step instructions to run the project
-  - Include secrets handling + schema of what the folder structure should look like
 # Resources
 
-- Listing classic references related to the topic (documentation, articles, tutorials, etc), as well as a descripion of AI usage (specifying which tasks and which parts of the project)
+### Documentation references
+
+- [Go](https://go.dev/doc/)
+- [Fiber v3](https://docs.gofiber.io/)
+- [MinIO](https://docs.min.io/aistor/)
+- [Redis](https://redis.io/docs/latest/develop/clients/go/)
+- [Postgres 18](https://www.postgresql.org/docs/18/index.html)
+- [GORM](https://gorm.io/docs/index.html)
+- ...
+
+### Inspiration
+
+- [Google Drive](https://drive.google.com/drive/home)
+- [Mega](https://mega.io/)
+- [Proton](https://proton.me/fr) - zero-knowledge encrypted storage (closest reference for our security model)
+
+### AI usage
+
+AI tools were used as assistants for review, debugging, and design exploration. Core architecture and implementation decisions were made by the team.
+
+- Use of Github Copilot on our Pull Requests to have a deeper review and/or problems identifications
+- [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
+- Claude / Perplexity / Gemini / ChatGPT for:
+  - debugging and identifying bugs or performance improvement (e.g. quota race conditions (and avoid TOCTOU), RBAC edge cases)
+  - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus);
+  - ...
+- ...
 
 # Additional sections
 
