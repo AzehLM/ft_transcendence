@@ -205,6 +205,15 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Avatar Upload** - vicperri - stored directly in PostgreSQL as `BYTEA` (no MinIO dependency for avatars)
 - **Rate-limited login** - pnaessen - Fiber limiter **(mettre values)**
 
+### Two-Factor Authentication (fully done by vicperri)
+
+- **TOTP setup with QR code** - pquerna/otp-generated secrets (Go library), displayed as QR code on the frontend (qrcode.react), with a 5-minute setup window.
+- **TOTP-secret encryption** - the secret is encrypted with a key derived from client salt and the user id before being stored.
+- **Recovery codes** - bcrypt-hashed, single-use, base64-encoded JSON in DB. The user sees them once at 2FA activation.
+- **Lockout policy** - 3 wrong attempts -> 5-minute lockout. Window resets after 5 minutes of inactivity.
+- **Temp-token 2FA challenge** - between password verification and TOTP/recovery-code submission, a scoped 5-minute JWT (scope: "2fa") gates the second step.
+- **2FA disable flow** - requires password re-verification.
+
 - Complet list of implemented features
 - Which team member(s) worked on each features
 - Brief descritioon of each feature's functionality
