@@ -6,7 +6,7 @@ export
 ENV_FILE			:= .env
 ENV_EXAMPLE			:= .env.example
 
-DOMAIN_NAME := $(shell hostname)
+DOMAIN_NAME ?= $(shell hostname)
 
 export DOMAIN_NAME
 
@@ -18,8 +18,8 @@ COMPOSE_DEV_CMD		:= docker compose -f $(COMPOSE_DEV_FILE) --env-file $(ENV_FILE)
 SECRETS_PATH		:= secrets/
 GRAFANA_PATH		:= $(SECRETS_PATH)grafana/
 
+SSL_PATH		:= $(SECRETS_PATH)ssl/
 HOSTNAME_FILE	:= $(SSL_PATH).hostname
-SSL_PATH		:= $(SECRETS_PATH)/ssl/
 CERT_PATH		:= $(SSL_PATH)cert.pem
 KEY_PATH		:= $(SSL_PATH)key.pem
 
