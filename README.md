@@ -193,6 +193,18 @@ prérequis sujet:
 
 # Features List
 
+The following is a complete inventory of implemented features, grouped by domain. Each feature lists the members who worked for its implementation
+
+### Authentification system & Account
+
+- **Zero-knowledge registration** - vicperri & pnaessen - RSA keypair generated on client-side with private key encryption **A REVOIR CA JE SAIS PAS TROP QUOI METTRE ICI**. The server only sees the public key and ciphertext.
+- **Login with Argon2id verfication** - pnaessen + vicperri ? - the client-derived auth hash is re-hashed with Argon2id server-side before comparison. The encrypted private key is then returned to the client.
+- **Client salt retrieval with user-enumeration protection** - pnaessen - the `/api/auth/salt` returns a fake salt for non-existent users so attackers cannot probe for valid emails.
+- **Refresh-token rotation** - **PIERRICK + QUI ?** - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
+- **Account management** - **LIRE LA SUITE POUR METTRE NOM** - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
+- **Avatar Upload** - vicperri - stored directly in PostgreSQL as `BYTEA` (no MinIO dependency for avatars)
+- **Rate-limited login** - pnaessen - Fiber limiter **(mettre values)**
+
 - Complet list of implemented features
 - Which team member(s) worked on each features
 - Brief descritioon of each feature's functionality
