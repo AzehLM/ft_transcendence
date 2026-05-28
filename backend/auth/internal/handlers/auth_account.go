@@ -50,6 +50,8 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	var orgIDs []string
 	var orgsToDelete []uuid.UUID
+	transfers := make(map[string]string)
+	var filesToCleanup []string
 
 	errTx := h.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; err != nil {
@@ -64,41 +66,86 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 				return err
 			}
 
+			var transferTargetID string
 			if otherAdminsCount > 0 {
-				continue
-			}
-
-			type MemberInfo struct {
-				UserID   uuid.UUID `gorm:"column:user_id"`
-				JoinedAt time.Time `gorm:"column:joined_at"`
-			}
-
-			var oldestMember MemberInfo
-			errQuery := tx.Table("org_members").
-				Select("user_id, joined_at").
-				Where("org_id = ? AND user_id != ?", orgIDStr, userID).
-				Order("joined_at ASC").
-				Limit(1).
-				Take(&oldestMember).Error
-
-			if errQuery == nil {
-				if err := tx.Table("org_members").
-					Where("org_id = ? AND user_id = ?", orgIDStr, oldestMember.UserID).
-					Update("role", "admin").Error; err != nil {
-					return err
-				}
-			} else if errors.Is(errQuery, gorm.ErrRecordNotFound) {
-				if err := tx.Table("organizations").Where("id = ?", orgIDStr).Delete(nil).Error; err != nil {
-					return err
-				}
-				orgUUID, errParse := uuid.Parse(orgIDStr)
-				if errParse == nil {
-					orgsToDelete = append(orgsToDelete, orgUUID)
+				var otherAdminID uuid.UUID
+				errQueryAdmin := tx.Table("org_members").
+					Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
+					Select("user_id").
+					Limit(1).
+					Take(&otherAdminID).Error
+				if errQueryAdmin == nil {
+					transferTargetID = otherAdminID.String()
+					transfers[orgIDStr] = transferTargetID
 				}
 			} else {
-				return errQuery
+				type MemberInfo struct {
+					UserID   uuid.UUID `gorm:"column:user_id"`
+					JoinedAt time.Time `gorm:"column:joined_at"`
+				}
+
+				var oldestMember MemberInfo
+				errQuery := tx.Table("org_members").
+					Select("user_id, joined_at").
+					Where("org_id = ? AND user_id != ?", orgIDStr, userID).
+					Order("joined_at ASC").
+					Limit(1).
+					Take(&oldestMember).Error
+
+				if errQuery == nil {
+					if err := tx.Table("org_members").
+						Where("org_id = ? AND user_id = ?", orgIDStr, oldestMember.UserID).
+						Update("role", "admin").Error; err != nil {
+						return err
+					}
+					transferTargetID = oldestMember.UserID.String()
+					transfers[orgIDStr] = transferTargetID
+				} else if errors.Is(errQuery, gorm.ErrRecordNotFound) {
+					orgUUID, errParse := uuid.Parse(orgIDStr)
+					if errParse == nil {
+						orgsToDelete = append(orgsToDelete, orgUUID)
+					}
+				} else {
+					return errQuery
+				}
+			}
+
+			if transferTargetID != "" {
+				if err := tx.Table("files").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
+				if err := tx.Table("folders").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
 			}
 		}
+
+
+		if len(orgsToDelete) > 0 {
+			var orgKeys []string
+			if err := tx.Table("files").
+				Where("org_id IN ?", orgsToDelete).
+				Pluck("minio_object_key", &orgKeys).Error; err != nil {
+				return err
+			}
+			filesToCleanup = append(filesToCleanup, orgKeys...)
+
+			if err := tx.Table("organizations").Where("id IN ?", orgsToDelete).Delete(nil).Error; err != nil {
+				return err
+			}
+		}
+
+		var personalKeys []string
+		if err := tx.Table("files").
+			Where("owner_user_id = ? AND org_id IS NULL", userID).
+			Pluck("minio_object_key", &personalKeys).Error; err != nil {
+			return err
+		}
+		filesToCleanup = append(filesToCleanup, personalKeys...)
 
 		if err := tx.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
 			return err
@@ -112,15 +159,9 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
-	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
+	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID, transfers, filesToCleanup); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 	}
-
-	// for _, orgUUID := range orgsToDelete {
-	// 	if err := h.Publisher.PublishOrgDeleted(context.TODO(), orgUUID); err != nil {
-	// 		log.Printf("[ERROR] Failed to publish org_deleted event for org %s: %v", orgUUID, err)
-	// 	}
-	// }
 
 	var remainingOrgIDs []string
 	for _, orgIDStr := range orgIDs {
