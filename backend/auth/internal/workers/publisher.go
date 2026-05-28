@@ -18,12 +18,16 @@ func NewEventPublisher(redis *redis.Client) *EventPublisher {
 	return &EventPublisher{redis: redis}
 }
 
-func (p *EventPublisher) PublishUserDeleted(ctx context.Context, userID uuid.UUID) error {
+func (p *EventPublisher) PublishUserDeleted(ctx context.Context, userID uuid.UUID, transfers map[string]string, filesToCleanup []string) error {
+	transfersJSON, _ := json.Marshal(transfers)
+	filesJSON, _ := json.Marshal(filesToCleanup)
 	return p.redis.XAdd(ctx, &redis.XAddArgs{
 		Stream:	"events:domain:user_deleted",
 		ID:		"*",
 		Values: map[string]interface{}{
 			"user_id":			userID.String(),
+			"transfers":		string(transfersJSON),
+			"files_to_cleanup":	string(filesJSON),
 			"deleted_at":		time.Now(),
 		},
 	}).Err()
@@ -99,15 +103,4 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 	}
 
 	return nil
-}
-
-func (p *EventPublisher) PublishOrgDeleted(ctx context.Context, orgID uuid.UUID) error {
-	return p.redis.XAdd(ctx, &redis.XAddArgs{
-		Stream:	"events:domain:org_deleted",
-		ID:		"*",
-		Values: map[string]interface{}{
-			"org_id":			orgID.String(),
-			"deleted_at":		time.Now(),
-		},
-	}).Err()
 }
