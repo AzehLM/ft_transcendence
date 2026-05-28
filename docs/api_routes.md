@@ -162,7 +162,7 @@ Response (200) :
 
 ### `PATCH /auth/family-name`
 
-Chnage the family name of an user.
+Change the family name of an user.
 
 Body :
 ```json
@@ -362,7 +362,8 @@ Response (200) :
 
 ### `DELETE /auth/me`
 
-Delete the account (with personal files on Minio, BD entries - cascade, refresh token, close ws). (what happened if part of the organization ?)
+Delete the account (with personal files on Minio, BD entries - cascade, refresh token, close ws). 
+If user is last admin of an organization, and there are no other members. The organization is deleted. If there are other members, the oldest added member becomes admin and get the ownership of its files and folders. If there are other admin, the oldest admin get the ownership of its files and folders.
 
 Response (200) :
 ```json
@@ -485,7 +486,7 @@ Response `200 OK` :
 ## Org Members
 
 ### `POST /orgs/{org_id}/members`
-Add a member to an organization. The admin encrypt the organization private key of the new member with the new member's public key.
+Add a member to an organization. The admin encrypts the organization private key of the new member with the new member's public key.
 
 Body :
 ```json
@@ -512,11 +513,13 @@ Retrieve all the members of an organization.
 
 Response : `200 OK`
 ```json
-{
+[
+  {
   "user_id": "id",
   "user_email": "student@42lyon.fr",
   "role": "admin"
-}
+  }
+]
 ```
 
 ---
@@ -736,14 +739,14 @@ Response (200) :
 
 ### `POST /files/multipart/init`
 
-Ask **multiple** presigned ULL to upload by chunk towards MinIO, return each URL associated to the chunk
+Ask **multiple** presigned URL to upload by chunk towards MinIO, return each URL associated to the chunk
 
 Body:
 ```json
 {
   "file_size": 2147483648,
   "folder_id": "<uuid_optional>",
-  "org_id": "<uuid_optional>"
+  "org_id": "<uuid_optional>",
   "part_count": "<number between 1 - 100>"
 }
 ```
@@ -955,7 +958,7 @@ Response : `200 OK`
 
 ## WebSocket
 
-### Connexion : `wss://api.../ws`
+### Connection : `wss://api.../ws`
 
 Auth via Access JWT (query param ou header).
 
