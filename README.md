@@ -214,6 +214,17 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Temp-token 2FA challenge** - between password verification and TOTP/recovery-code submission, a scoped 5-minute JWT (scope: "2fa") gates the second step.
 - **2FA disable flow** - requires password re-verification.
 
+### Storage & File Management
+
+- **Client-side file encryption** - **METTRE NOMS** - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
+- **Single-PUT upload** - gueberso - files under 96MB are encrypted in a single chunk and PUT directly to MinIO via a presigned URL
+- **Multipart upload** - gueberso - files above 96MB are split into 32MB plaintext chunks (up to 100 parts, hard cap at 2GB), with parallel PUT (concurrency by 4 chunks) and a deterministic per-chunk IV derived from the base IV + chunk number. Initialisation / finalization and abortion endpoints handle the MinIO multipart lifecycle.
+- **Encrypted download** - **pierrick ou victoire pour les hooks du front ? & gueberso (backend)** - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
+- **Folder hierarchy** - gueberso - create, rename, move, delete folders. Cyclic detection to prevent moving folder into one of its descendants
+- **File operations** - gueberso **& lbuisson ?**- move between folders, delete (with cascade to MinIO via Redis stream events).
+- **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
+- **MIME-type validation** - pnaessen (frontend) & gueberso (backend) - magic-number detection via file type before encryption, extension check and rejection of unrecognized types
+
 - Complet list of implemented features
 - Which team member(s) worked on each features
 - Brief descritioon of each feature's functionality
