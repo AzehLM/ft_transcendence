@@ -482,6 +482,7 @@ func (h *OrgaHandler) GetOrgaInfo(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"user_id": userID,
 		"id":   orga.ID,
 		"name": orga.Name,
 		"used_space" : orga.UsedSpace,
