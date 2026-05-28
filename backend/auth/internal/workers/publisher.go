@@ -101,4 +101,13 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 	return nil
 }
 
-
+func (p *EventPublisher) PublishOrgDeleted(ctx context.Context, orgID uuid.UUID) error {
+	return p.redis.XAdd(ctx, &redis.XAddArgs{
+		Stream:	"events:domain:org_deleted",
+		ID:		"*",
+		Values: map[string]interface{}{
+			"org_id":			orgID.String(),
+			"deleted_at":		time.Now(),
+		},
+	}).Err()
+}
