@@ -175,7 +175,6 @@ export default function ProfilePage() {
                 <div className={fieldStyles.container}>
                   <p className={fieldStyles.label}>Email</p>
                   <p className={fieldStyles.readonlyValue}>{email}</p>
-                  <p className={fieldStyles.readonlyHint}>Email cannot be changed</p>
                 </div>
               </div>
             </div>
