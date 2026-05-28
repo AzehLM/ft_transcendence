@@ -36,6 +36,7 @@ secrets
 # Editor/IDE
 .idea/
 .vscode/
+.mcp.json
 
 # logs file
 *.log
