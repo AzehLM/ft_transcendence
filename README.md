@@ -225,6 +225,16 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
 - **MIME-type validation** - pnaessen (frontend) & gueberso (backend) - magic-number detection via file type before encryption, extension check and rejection of unrecognized types
 
+### Organization (fully done by lbuisson)
+
+- **Org creation with shared cryptography** - each org has its own RSA keypair. The org's private key is wrapped with a per-member AES key, itself RSA-encrypted with each member's public key. New members get their own wrapped copy.
+- **Roles (admin / member)** - admins manage members, settings, and quota. Members read and contribute. Enforced by a middleware.
+- **Member management** - invite/add, change role, remove member, leave organization, set personal description in the org.
+- **Org-scoped storage** - lbuisson for orga & gueberso for storage integration - files and folders can belong to an organization; the RBAC checker resolves permissions based on membership.
+- **Org settings** - rename, delete, retrieve public key for member onboarding.
+
+
+
 - Complet list of implemented features
 - Which team member(s) worked on each features
 - Brief descritioon of each feature's functionality
