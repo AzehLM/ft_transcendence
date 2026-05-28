@@ -23,17 +23,19 @@ profile.cov
 # vendor/
 
 # Go workspace file
-go.work
-go.work.sum
+# go.work
+# go.work.sum
 
 # env and secret file
 .env
 .secret*
 secret/*
 
+secrets
+
 # Editor/IDE
 .idea/
-.vscode
+.vscode/
 
 # logs file
 *.log
@@ -42,3 +44,14 @@ secret/*
 # build
 .build/
 .obj/
+
+# Frontend (Node.js)
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+#postman
+postman
+.postman
+.hostname

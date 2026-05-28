@@ -14,11 +14,11 @@ Its defining principle is that the server never sees plaintext. All files are en
 
 ## Prerequisites
 
-The entire stack runs in Docker containers — no local Go, Node, or database toolchain is required.
-
 - **Docker engine** >= 24.0
 - **Docker compose** v2
 - **GNU Make**
+
+The entire stack runs in Docker containers — no local Go, Node, or database toolchain is required.
 
 ## Configuration
 
@@ -51,8 +51,16 @@ Two available modes:
 
 | Mode | Command | Notes |
 |:----:|:----:|:----|
-| Development | `make dev`| Includes Adminer (DB UI), relaxed infrastructure constraints, served at http://localhost:<PORT> |
+| Development | `make dev`| Includes Adminer (DB UI), relaxed infrastructure constraints, served at http://localhost:{PORT} |
 | Production | `make prod`| Hardened setup, adminer, minio, prometheus services not accessible unless locally |
+
+To stop and/or cleanup
+```sh
+make down			# down every containers
+make db-reset		# reset postgres database
+make minio-reset	# delete every minio objects
+make fclean			# deletes every container/images/volumes
+```
 
 Usage of Makefile that calls docker-compose, 2 differents mode, prod/dev. dev mode has few more things such as adminer and less constraints in the infrastructure setup/rules, its more lax
 prerequisites are make/docker/ a .env (can be created via Makefile for random credentials), secrets as well except for few secrets (cloudflare/discord_webhook for example cannot be randomly generated)
