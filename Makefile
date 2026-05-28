@@ -6,9 +6,7 @@ export
 ENV_FILE			:= .env
 ENV_EXAMPLE			:= .env.example
 
-DOMAIN_NAME ?= $(shell hostname)
-
-export DOMAIN_NAME
+DOMAIN_NAME := $(shell hostname)
 
 COMPOSE_FILE		:= infra/docker-compose.yml
 COMPOSE_DEV_FILE	:= infra/docker-compose.dev.yml
