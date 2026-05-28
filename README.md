@@ -18,7 +18,7 @@ Its defining principle is that the server never sees plaintext. All files are en
 - **Docker compose** v2
 - **GNU Make**
 
-The entire stack runs in Docker containers — no local Go, Node, or database toolchain is required.
+The entire stack runs in Docker containers - no local Go, Node, or database toolchain is required.
 
 ## Configuration
 
@@ -126,7 +126,7 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 
 ### gueberso (Guillaume) - Technical Lead / Architect: Overseeing technivcal decisions and architecture + Developer
 
-Responsible for overseeing technical decisions and the overall architecture. Researched and selected the technologies and tools needed to complete the team's chosen stack (e.g. MinIO was selected once Go was settled as the backend language). All architectural decisions — whether made individually, collectively, or per-task — are documented in the [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md) file
+Responsible for overseeing technical decisions and the overall architecture. Researched and selected the technologies and tools needed to complete the team's chosen stack (e.g. MinIO was selected once Go was settled as the backend language). All architectural decisions - whether made individually, collectively, or per-task - are documented in the [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md) file
 
 As a developer, owns the storage microservice (client-side encrypted file storage, multipart uploads, quota management), the DevOps/infrastructure (Docker Compose, Caddy, Cloudflare Tunnel, observability stack), and the CI/CD pipeline (Postman E2E/RBAC test collections and backend linting via GitHub Actions).
 
@@ -154,25 +154,38 @@ For each member we need:
 
 | Layer | Technology | Role |
 |-------|-----------|------|
-| **Frontend** | React 18 + TypeScript 5.x | UI, client-side encryption, file management |
-| **Styling** | Custom CSS styling + Tailwind CSS | Utility-first CSS framework |
-| **Backend** | Go + Fiber | REST API, WebSocket broker, business logic |
+| **Frontend** | React + TypeScript 5.x | UI, client-side encryption, file management |
+| **Styling** | Custom CSS styling + Tailwind CSS v4 | Styling Utility-first + scoped component styles |
+| **Backend** | Go + Fiber v3 | REST API, WebSocket broker, business logic |
 | **ORM** | GORM | Type-safe database access |
 | **Database** | PostgreSQL | Metadata, users, file hierarchy |
 | **Object Storage** | MinIO (S3-compatible) | Encrypted file blob storage |
-| **Monitoring** | Prometheus + Grafana | Metrics collection, dashboards, alerting |
-| **2FA** | TOTP (pquerna/otp) | Two-factor authentication via Google Authenticator |
+| **Cache / Messaging** | Redis | Caching, pub/sub |
+| **Reverse Proxy** | Caddy | TLS termination, routing |
+| **Networking** | Cloudflare Tunnel | Public acces without a VPS |
+| **Authenticating** | JWT (cookie-bases) | Session authentification |
+| **2FA** | TOTP | Two-factor authentication |
+| **Monitoring** | Prometheus + Grafana + Alertmanager| Metrics, dashboards, alerting |
 | **Containerization** | Docker + Docker Compose | Single-command deployment |
 
-For more details on technical choices, again refer to [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md).
+**Go + Fiber** - Go was chosen for its strong concurrency model and performance, well suited to a microservice architecture (auth, storage, orga). Fiber v3 provides a lightweight, Express-like routing layer on top.
 
-- Frontend techno and frameworks used
-- Backend techno and frameworks used
-- Database system and why it was chosen
-- Any other significan technologies or libraries
-- Justitication for major technical choices
+**PostgreSQL** - chosen over alternatives for its reliability, strong support for relational data (user/file/organization hierarchies, RBAC relationships), and transactional guarantees.
+
+**MinIO** - provides S3-compatible object storage that can be self-hosted, avoiding any third-party cloud provider. It stores only client-side encrypted blobs and issues presigned URLs so file data never transits through the API server.
+
+**Cloudflare Tunnel + Caddy** - allows exposing the platform publicly without a VPS or open inbound ports; the tunnel always routes to Caddy on a single local port, which keeps dev and prod networking identical.
+
+**Client-side encryption** (Web Crypto API) - AES-GCM 256-bit with PBKDF2 key derivation, performed entirely in the browser, enforcing the zero-knowledge guarantee that the server never sees plaintext.
+
+For the full per-decision tradeoffs, see [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md).
 
 # Database Schema
+
+> je vous laisse faire ca
+
+
+prérequis sujet:
 
 - Visual representation or description of the DB structure
 - Tables/collections and their relationships
@@ -185,8 +198,6 @@ For more details on technical choices, again refer to [tech-lead.md](https://git
 - Brief descritioon of each feature's functionality
 
 # Modules
-
-## Modules
 
 ### Points Summary
 
