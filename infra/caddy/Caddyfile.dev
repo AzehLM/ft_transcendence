@@ -22,9 +22,6 @@
     servers {
         metrics
     }
-
-    # for local development, there might be a cleaner way to have an automatic https server
-	local_certs
 }
 
 # Shared configuration snippet — all routes and headers live here once.
@@ -171,8 +168,8 @@
 
 # Listen on :443 (HTTPS only), accessible externally via host:${PORT} proxy
 # Local development — self-signed cert
-localhost:443 {
-    tls internal
+:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
     import app
 }
 
