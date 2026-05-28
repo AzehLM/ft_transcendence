@@ -2,6 +2,8 @@ import { useRef } from "react";
 import { UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
 import { getAcceptAttribute } from "../../services/fileValidation.service";
+import { ConfirmationModal } from "../ConfirmationModal";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface ActionButtonsProps {
   onUploadFile?: (file: File) => void;
@@ -10,8 +12,15 @@ interface ActionButtonsProps {
 
 export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, isResetting, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
 
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
+    }
     fileInputRef.current?.click();
   };
 
@@ -27,6 +36,18 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   };
 
   return (
+    <>
+        <ConfirmationModal
+          isOpen={keyMissing}
+          fileName={""}
+          onConfirm={handleResetKeys}
+          onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
+          isKeyMissing={true}
+          inputValue={password}
+          onInputChange={setPassword}
+          errorMessage={keyModalError ?? undefined}
+          isLoading={isResetting}
+        />
     <div className={styles.container}>
 
       {/* Upload button */}
@@ -50,9 +71,6 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
           Create folder
         </span>
       </button>
-
-      {/*
-      */}
       <input
         type="file"
         multiple
@@ -62,5 +80,6 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
         style={{ display: "none" }}
       />
     </div>
+    </>
   );
 }

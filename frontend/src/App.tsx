@@ -23,15 +23,18 @@ import ScrollToTop from './components/ScrollToTop'
 import AboutPage from './pages/About/About'
 import { StaticLayout } from './StaticLayout'
 import NotFoundPage from './pages/NotFound'
+import { PublicRoute } from './components/PublicRoute'
 
 function App() {
     return (
         <BrowserRouter>
             <ScrollToTop />
             <Routes>
-                <Route element={<AuthLayout />}>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
+                <Route element={<PublicRoute />}>
+                    <Route element={<AuthLayout />}>
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                    </Route>
                 </Route>
                 <Route element={<ProtectedRoute />}>
                     <Route element={<MainLayout sidebar={<MenuSidebar />} />}>
