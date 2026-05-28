@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -238,27 +239,37 @@ func (c *EventConsumer) handleUserDeleted(ctx context.Context, rdb *redis.Client
 		rdb.XAck(ctx, stream, group, msg.ID)
 		return nil
 	}
+	var filesToCleanup []string
+	if filesToCleanupJSONStr, ok := msg.Values["files_to_cleanup"].(string); ok && filesToCleanupJSONStr != "" {
+		if err := json.Unmarshal([]byte(filesToCleanupJSONStr), &filesToCleanup); err != nil {
+			log.Printf("[WARN] user_deleted: failed to unmarshal files_to_cleanup JSON: %v", err)
+		}
+	}
+
+	for _, keyStr := range filesToCleanup {
+		if err := c.minioClient.RemoveObject(ctx, "ostrom", keyStr, minio.RemoveObjectOptions{}); err != nil {
+			log.Printf("[WARN] user_deleted: MinIO removal failed for %s: %v", keyStr, err)
+		}
+	}
 
 	files, err := c.repo.FindFilesByUserID(userID)
-	if err != nil {
-		return fmt.Errorf("FindFilesByUserID %s: %w", userID, err)
+	if err == nil {
+		for _, file := range files {
+			if err := c.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+				log.Printf("[WARN] user_deleted: MinIO fallback removal failed for %s: %v", file.MinioObjectKey, err)
+			}
+		}
 	}
 
 	if err := c.repo.DeleteUserData(userID); err != nil {
 		return fmt.Errorf("DeleteUserData %s: %w", userID, err)
 	}
 
-	for _, file := range files {
-		if err := c.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
-			log.Printf("[WARN] user_deleted: MinIO removal failed for %s: %v", file.MinioObjectKey, err)
-		}
-	}
-
 	if err := rdb.XAck(ctx, stream, group, msg.ID).Err(); err != nil {
 		log.Printf("[WARN] user_deleted: XACK failed for %s: %v", msg.ID, err)
 	}
 
-	log.Printf("[INFO] user_deleted: cleaned up user files %s (%d files)", userID, len(files))
+	log.Printf("[INFO] user_deleted: cleaned up user files %s (%d files + %d cascade-deleted files)", userID, len(files), len(filesToCleanup))
 	return nil
 }
 
