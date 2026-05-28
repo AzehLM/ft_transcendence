@@ -16,35 +16,41 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
+    let createdUrl: string | null = null;
 
-    fetchWithRefresh("/api/auth/me")
+    fetchWithRefresh("/api/auth/me", { signal })
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch user");
         return res.json();
       })
       .then(data => {
-        if (!cancelled && data) {
+        if (data) {
           setFirstName(data.first_name);
           setFamilyName(data.family_name);
           setEmail(data.email);
         }
       })
-      .catch(err => {
-        if (!cancelled) console.error("Failed to fetch user:", err);
-      });
+      .catch(err => { if (err?.name !== "AbortError") console.error("Failed to fetch user:", err); });
 
-    fetchWithRefresh("/api/user/me/avatar")
+    fetchWithRefresh("/api/user/me/avatar", { signal })
       .then(res => {
         if (!res.ok) return null;
         return res.blob();
       })
       .then(blob => {
-        if (!cancelled && blob) setAvatarBlobUrl(URL.createObjectURL(blob));
+        if (blob) {
+          createdUrl = URL.createObjectURL(blob);
+          setAvatarBlobUrl(createdUrl);
+        }
       })
       .catch(() => {});
 
-    return () => { cancelled = true; };
+    return () => {
+      controller.abort();
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
   }, []);
 
   const handleChangeFirstName = async (newFirstName: string) => {
