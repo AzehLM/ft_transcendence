@@ -32,7 +32,6 @@ export function VerifyTOTP({
             setLoading(true);
             setError("");
             const data = await verifyTOTPLogin(code, tempToken);
-            localStorage.setItem("token", data.access_token);
             onSuccess(data.access_token);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Invalid code");
@@ -52,7 +51,6 @@ export function VerifyTOTP({
             setLoading(true);
             setError("");
             const data = await verifyRecoveryCode(code, tempToken);
-            localStorage.setItem("token", data.access_token);
             setRemainingCodes(data.remaining);
 
             // Show warning and complete

@@ -36,6 +36,7 @@ secrets
 # Editor/IDE
 .idea/
 .vscode/
+.mcp.json
 
 # logs file
 *.log
@@ -54,3 +55,6 @@ dist/
 #postman
 postman
 .postman
+
+#claude
+.claude
