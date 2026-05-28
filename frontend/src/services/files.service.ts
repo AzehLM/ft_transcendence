@@ -9,6 +9,7 @@ export interface FileItem {
     file_size: number;
     created_at: string;
     folder_id?: string;
+    owner_user_id?: string;
 }
 
 export interface FolderItem {
@@ -16,6 +17,7 @@ export interface FolderItem {
     name: string;
     created_at: string;
     parent_id?: string;
+    owner_user_id?: string;
 }
 
 export interface FolderContents {
