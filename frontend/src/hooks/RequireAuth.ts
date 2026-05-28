@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchWithRefresh } from "../services/api.service";
 import { logout } from "../services/auth.service";
 import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../services/crypto.service";
+import { clearAllKeys } from "../services/idb.service";
 
 export function useRequireAuth() {
   const [isReady, setIsReady] = useState(false);
@@ -47,20 +48,34 @@ export function useRequireUnauth() {
       method: "POST",
       credentials: "include",
     })
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
-          return res.json().then((data) => {
-            localStorage.setItem("token", data.access_token);
-            navigate("/dashboard");
-          });
+          const data = await res.json();
+
+          const privateKey = await getPrivateKeyFromSession();
+          const publicKey = await getPublicKeyFromSession();
+
+          if (!privateKey || !publicKey) {
+            logout(() => {
+              setIsReady(true);
+            });
+            return;
+          }
+
+          localStorage.setItem("token", data.access_token);
+          navigate("/dashboard");
         } else {
+            localStorage.removeItem("token");
+          await clearAllKeys();
           setIsReady(true);
         }
       })
-      .catch(() => {
+      .catch(async () => {
+        localStorage.removeItem("token");
+        await clearAllKeys();
         setIsReady(true);
       });
-  }, []);
+  }, [navigate]);
 
   return { isReady };
 }
