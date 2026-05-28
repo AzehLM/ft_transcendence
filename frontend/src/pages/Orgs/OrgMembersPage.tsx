@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
@@ -48,10 +48,19 @@ export default function OrgMembersPage() {
   const [orgDesc, setOrgDesc] = useState<string>("");
 
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const avatarUrlsRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
-    return () => { Object.values(avatarUrls).forEach(URL.revokeObjectURL); };
-  }, [avatarUrls]);
+    return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
+  }, []);
+
+  const setAvatarUrl = (userId: string, newUrl: string) => {
+    if (avatarUrlsRef.current[userId]) {
+      URL.revokeObjectURL(avatarUrlsRef.current[userId]);
+    }
+    avatarUrlsRef.current[userId] = newUrl;
+    setAvatarUrls((prev: Record<string, string>) => ({ ...prev, [userId]: newUrl }));
+  };
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -92,7 +101,7 @@ export default function OrgMembersPage() {
             .then(blob => {
               if (blob) {
                 const url = URL.createObjectURL(blob);
-                setAvatarUrls(prev => ({ ...prev, [member.user_id]: url }));
+                setAvatarUrl(member.user_id, url);
               }
             })
             .catch(() => {});
