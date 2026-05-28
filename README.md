@@ -92,18 +92,39 @@ AI tools were used as assistants for review, debugging, and design exploration. 
   - ...
 - ...
 
-# Additional sections
-
 # Team information
 
-- For each member we need:
+### Chacun fais sa partie ici (j'ai repris l'ordre des roles du sujet)
+- Pierrick Product Owner (PO) + dev
+- Lou-Anne Project Manager (PM) / Scrum Master + dev
+- Victoire Project Manager (PM) / Scrum Master + dev
+- Guillaume Technical Lead / Architect + dev
+
+### gueberso (Guillaume) - Technical Lead / Architect: Overseeing technivcal decisions and architecture + Developer
+
+Responsible for overseeing technical decisions and the overall architecture. Researched and selected the technologies and tools needed to complete the team's chosen stack (e.g. MinIO was selected once Go was settled as the backend language). All architectural decisions — whether made individually, collectively, or per-task — are documented in the [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md) file
+
+As a developer, owns the storage microservice (client-side encrypted file storage, multipart uploads, quota management), the DevOps/infrastructure (Docker Compose, Caddy, Cloudflare Tunnel, observability stack), and the CI/CD pipeline (Postman E2E/RBAC test collections and backend linting via GitHub Actions).
+
+---
+
+# TEMP
+
+Before starting Ostrom, each member proposed project ideas and a preferred backend/frontend stack; the core stack was decided collectively from there. We worked through GitHub Pull Requests, so every member participated in reviewing code changes.
+
+---
+
+For each member we need:
   - Assigned roles + brief description of their responsibilities
 
 # Project Management
 
+
 - How the team organized the work (task distribution, meetings, etc)
 - Tools used for the project management (Github Issues, Github Project, Notion, Discord bots)
 - Communication channels (Discord)
+
+> Victoire / Lou-Anne, je vous laisserai faire cette partie
 
 # Technical Stack
 
