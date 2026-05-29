@@ -53,6 +53,7 @@ export default function OrganizationsPage() {
     registerListener("ORGA_RENAMED", handleOrgChange);
     registerListener("ORGA_DELETED", handleOrgChange);
     registerListener("USER_PROFILE_UPDATED", handleOrgChange);
+    registerListener("ROLE_UPDATED", handleOrgChange);
 
     return () => {
       unregisterListener("ADDED_TO_NEW_ORGA", handleOrgChange);
@@ -61,6 +62,7 @@ export default function OrganizationsPage() {
       unregisterListener("ORGA_RENAMED", handleOrgChange);
       unregisterListener("ORGA_DELETED", handleOrgChange);
       unregisterListener("USER_PROFILE_UPDATED", handleOrgChange);
+      unregisterListener("ROLE_UPDATED", handleOrgChange);
     };
   }, [registerListener, unregisterListener]);
 
@@ -135,7 +137,6 @@ export default function OrganizationsPage() {
   };
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
 
   const handleLeaveOrga = async () => {
     try {
@@ -144,7 +145,6 @@ export default function OrganizationsPage() {
         return;
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
-
 
       if (!response.ok) {
         const text = await response.text();
@@ -155,24 +155,18 @@ export default function OrganizationsPage() {
             message = data.error || data.message || message;
           }
         } catch {}
-        setShowLeaveConfirm(false);
-        setOrgErrors(prev => ({ ...prev, [selectedOrg.id]: message }));
+        setModalError(message);
         return;
       }
 
+      setModalError(null);
       setShowLeaveConfirm(false);
       setOrgs(prev => prev.filter(o => o.id !== selectedOrg.id));
       setSelectedOrg(null);
 
     } catch (err) {
       console.error("Network error:", err);
-      setShowLeaveConfirm(false);
-      if (selectedOrg) {
-        setOrgErrors(prev => ({
-          ...prev,
-          [selectedOrg.id]: "Network error, please try again."
-        }));
-      }
+      setModalError("Network error, please try again.");
     }
   };
 
@@ -291,15 +285,13 @@ export default function OrganizationsPage() {
                           e.stopPropagation();
                           setSelectedOrg(org);
                           setShowLeaveConfirm(true);
+                          setModalError(null);
                         }}
                         title="Leave Organization"
                       >
                         <UserMinus size={18} />
                       </button>
                   </div>
-                    {orgErrors[org.id] && (
-                      <p className={styles.errorState}>{orgErrors[org.id]}</p>
-                    )}
                 </div>
             ))}
             {selectedOrg && (
@@ -307,10 +299,11 @@ export default function OrganizationsPage() {
                 isOpen={showLeaveConfirm}
                 fileName={selectedOrg.name}
                 onConfirm={handleLeaveOrga}
-                onCancel={() => setShowLeaveConfirm(false)}
+                onCancel={() => { setShowLeaveConfirm(false); setModalError(null); }}
                 isAccount={false}
                 isLeaveOrga={true}
                 isMe={true}
+                errorMessage={modalError ?? undefined}
               />
             )}
 

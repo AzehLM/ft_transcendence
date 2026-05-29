@@ -70,6 +70,12 @@ export default function OrgFilesPage() {
             }
         };
 
+        const handleRoleUpdated = (data: any) => {
+            if (data && data.user_id === userID && data.role) {
+                setMyRole(data.role);
+            }
+        };
+
         registerListener("file_uploaded", handleFilesChange);
         registerListener("file_deleted", handleFilesChange);
         registerListener("file_moved", handleFilesChange);
@@ -78,6 +84,7 @@ export default function OrgFilesPage() {
         registerListener("folder_renamed", handleFilesChange);
         registerListener("folder_moved", handleFilesChange);
         registerListener("ORGA_RENAMED", handleOrgaRenamed);
+        registerListener("ROLE_UPDATED", handleRoleUpdated);
 
         return () => {
             unregisterListener("file_uploaded", handleFilesChange);
@@ -88,8 +95,9 @@ export default function OrgFilesPage() {
             unregisterListener("folder_renamed", handleFilesChange);
             unregisterListener("folder_moved", handleFilesChange);
             unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+            unregisterListener("ROLE_UPDATED", handleRoleUpdated);
         };
-    }, [registerListener, unregisterListener, loadFiles]);
+    }, [registerListener, unregisterListener, loadFiles, userID]);
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
         loadFiles();
@@ -152,19 +160,20 @@ export default function OrgFilesPage() {
         onInputChange={setFolderName}
         errorMessage={folderError ?? undefined}
         />
-
-        <ActionButtons onUploadFile={uploadFile}
-                        onCreateFolder={() => setIsFolderModalOpen(true)}
-          />
-
         <div className={styles.contentSection}>
-            <div className={styles.titleGroup}>
-                <h1>
-                    Organization space
-                </h1>
-                <h2 className={styles.subtitle}>
-                    All files and folders
-                </h2>
+            <div className={styles.headerRow}>
+                <div className={styles.titleGroup}>
+                    <h1>
+                        Organization space
+                    </h1>
+                    <h2 className={styles.subtitle}>
+                        All files and folders
+                    </h2>
+                </div>
+
+                <ActionButtons onUploadFile={uploadFile}
+                                onCreateFolder={() => setIsFolderModalOpen(true)}
+                  />
             </div>
 
             <div className={styles.uploadContainer}>

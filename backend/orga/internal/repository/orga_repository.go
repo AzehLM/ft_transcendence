@@ -2,8 +2,10 @@ package repository
 
 import (
 	"backend/orga/internal/models"
+	"errors"
+
+	"github.com/google/uuid"
 	"gorm.io/gorm"
-    "github.com/google/uuid"
 )
 
 type OrganizationRepository struct {
@@ -34,21 +36,17 @@ func (r *OrganizationRepository) GetAllOrgas() ([]models.Orga, error) {
 
 func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.OrgResponse, error) {
     var orgResponses []models.OrgResponse
-    
     result := r.DB.Table("organizations").
         Select("organizations.id, organizations.name, organizations.public_key, organizations.used_space, organizations.max_space, organizations.created_at, org_members.role, org_members.description").
         Joins("JOIN org_members ON org_members.org_id = organizations.id").
         Where("org_members.user_id = ?", userID).
         Scan(&orgResponses)
-    
     if result.Error != nil {
         return nil, result.Error
     }
-    
     if orgResponses == nil {
         orgResponses = []models.OrgResponse{}
     }
-    
     return orgResponses, nil
 }
 
@@ -114,11 +112,45 @@ func (r *OrganizationRepository) CountAdmin(orgID uuid.UUID) int64 {
 }
 
 func (r *OrganizationRepository) DeleteOrgaMember(orgID uuid.UUID, userID uuid.UUID) (bool, error) {
-    result := r.DB.Where("user_id = ? AND org_id = ?", userID, orgID).Delete(&models.OrgaMember{})
-    if result.Error != nil {
-        return false, result.Error
-    }
-    return result.RowsAffected > 0, nil
+	var deleted bool
+	err := r.DB.Transaction(func(tx *gorm.DB) error {
+		var oldestAdmin struct {
+			UserID uuid.UUID `gorm:"column:user_id"`
+		}
+		errQuery := tx.Table("org_members").
+			Where("org_id = ? AND role = ? AND user_id != ?", orgID, "admin", userID).
+			Order("joined_at ASC").
+			Select("user_id").
+			Limit(1).
+			Take(&oldestAdmin).Error
+
+		if errQuery == nil {
+			if err := tx.Table("files").
+				Where("owner_user_id = ? AND org_id = ?", userID, orgID).
+				Update("owner_user_id", oldestAdmin.UserID).Error; err != nil {
+				return err
+			}
+			if err := tx.Table("folders").
+				Where("owner_user_id = ? AND org_id = ?", userID, orgID).
+				Update("owner_user_id", oldestAdmin.UserID).Error; err != nil {
+				return err
+			}
+		} else if !errors.Is(errQuery, gorm.ErrRecordNotFound) {
+			return errQuery
+		}
+
+		result := tx.Where("user_id = ? AND org_id = ?", userID, orgID).Delete(&models.OrgaMember{})
+		if result.Error != nil {
+			return result.Error
+		}
+		deleted = result.RowsAffected > 0
+		return nil
+	})
+
+	if err != nil {
+		return false, err
+	}
+	return deleted, nil
 }
 
 func (r *OrganizationRepository) GetAllMembersFromOrga(orgID uuid.UUID) ([]models.OrgaMemberResponse, error) {
