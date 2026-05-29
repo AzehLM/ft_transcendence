@@ -72,7 +72,6 @@ export default function DashboardPage() {
         messages: downloadMessages, removeMessage: removeDownloadMessage,
     } = useE2EEDownload();
 
-    // Fusion des messages des deux sources
     const allMessages = [...fileMessages, ...downloadMessages];
     const handleRemoveMessage = (id: string) => {
         removeFileMessage(id);
@@ -87,7 +86,7 @@ export default function DashboardPage() {
         try {
             await FilesService.createFolder(folderName, folderId);
             await loadFiles();
-            addFileMessage("Folder created", "success");
+            addFileMessage(`Folder "${folderName}" created`, "success");
         } catch (err: any) {
             addFileMessage(err.message || "Failed to create folder.", "error");
         }
