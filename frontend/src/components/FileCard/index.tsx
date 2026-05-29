@@ -14,9 +14,9 @@ interface FileCardProps {
   owner_user_id?: string;
   role?: string;
   user_id?: string;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, name:string ) => void;
   onDownload?: (id: string) => void;
-  onMove?: (id: string, newParentId: string | null) => Promise<void>;
+  onMove?: (id: string, newParentId: string | null, name: string) => Promise<void>;
 }
 
 export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_id, onDelete, onDownload, onMove }: FileCardProps) {
@@ -129,7 +129,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
       <ConfirmationModal
         isOpen={showDeleteModal}
         fileName={displayName}
-        onConfirm={() => { onDelete?.(id); setShowDeleteModal(false); }}
+        onConfirm={() => { onDelete?.(id, displayName); setShowDeleteModal(false); }}
         onCancel={() => setShowDeleteModal(false)}
         isDeleteFile={true}
       />
@@ -140,7 +140,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
           fileName={displayName}
           orgId={orgId}
           onConfirm={async (newParentId) => {
-            await onMove?.(id, newParentId);
+            await onMove?.(id, newParentId, displayName);
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}

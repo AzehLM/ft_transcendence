@@ -38,11 +38,11 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
   }, [folderId, loadFiles, navigate]);
 
   // Handlers CRUD
-  const handleDeleteFile = async (id: string) => {
+  const handleDeleteFile = async (id: string, name: string) => {
     try {
       await FilesService.deleteFile(id);
       await loadFiles();
-      addMessage("File deleted", "success");
+      name ? addMessage(`File "${name}" deleted`, "success") : addMessage(`File deleted`, "success");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       console.error("Failed to delete file:", err);
@@ -50,11 +50,11 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
     }
   };
 
-  const handleDeleteFolder = async (id: string) => {
+  const handleDeleteFolder = async (id: string, name: string) => {
     try {
       await FilesService.deleteFolder(id);
       await loadFiles();
-      addMessage("Folder deleted", "success");
+      name ? addMessage(`Folder "${name}" deleted`, "success") : addMessage(`Folder deleted`, "success");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       console.error("Failed to delete folder:", err);
@@ -62,31 +62,31 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
     }
   };
 
-  const handleRenameFolder = async (id: string, newName: string) => {
+  const handleRenameFolder = async (id: string, newName: string, prevName: string) => {
     try {
       await FilesService.updateFolder(id, { name: newName });
       await loadFiles();
-      addMessage("Folder renamed", "success");
+      prevName ? addMessage(`Folder "${prevName}" renamed to "${newName}"`, "success") : addMessage(`Folder renamed`, "success");
     } catch (err: any) {
       addMessage(err.status === 404 ? "Folder not found." : err.message || "Failed to rename folder.", "error");
     }
   };
 
-  const handleMoveFolder = async (id: string, newParentId: string | null) => {
+  const handleMoveFolder = async (id: string, newParentId: string | null, name: string) => {
     try {
       await FilesService.updateFolder(id, { parent_id: newParentId });
       await loadFiles();
-      addMessage("Folder moved", "success");
+      name ? addMessage(`Folder "${name}" moved`, "success") : addMessage(`Folder moved`, "success");
     } catch (err: any) {
       addMessage(err.status === 404 ? "File or folder not found." : err.message || "Failed to move.", "error");
     }
   };
 
-  const handleMoveFile = async (id: string, newParentId: string | null) => {
+  const handleMoveFile = async (id: string, newParentId: string | null, name: string) => {
     try {
       await FilesService.moveFile(id, newParentId);
       await loadFiles();
-      addMessage("File moved", "success");
+      name ? addMessage(`File "${name}" moved`, "success") : addMessage(`File moved`, "success");
     } catch (err: any) {
       addMessage(err.status === 404 ? "File or folder not found." : err.message || "Failed to move.", "error");
     }
