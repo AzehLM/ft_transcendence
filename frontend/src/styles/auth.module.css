@@ -3,11 +3,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 100dvh;
     padding: var(--spacing-4xl) var(--spacing-lg);
+    box-sizing: border-box;
 }
 
 .login_page_container {
     width: 100%;
+}
+
+/* ===== PAGE TITLE ===== */
+.page_title {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--brand-dark);
+    margin-bottom: 12px;
+    margin-top: 0;
 }
 
 /* ===== LOGO SECTION ===== */
@@ -62,11 +73,9 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     padding: var(--spacing-3xl);
-    min-height: 500px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-
 }
 
 .login_form_inner {
@@ -263,5 +272,34 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px), (max-height: 700px) {
+    .login_page_wrapper {
+        padding: var(--spacing-lg) var(--spacing-md);
+        align-items: flex-start;
+    }
+
+    .page_title {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .logo_section {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .logo_container {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .login_form {
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-sm);
+    }
+
+    .back_home_container {
+        margin-top: var(--spacing-lg);
     }
 }

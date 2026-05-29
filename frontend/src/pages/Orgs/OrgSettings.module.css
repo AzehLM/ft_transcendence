@@ -1,7 +1,9 @@
 .container {
-    padding: 24px 40px;
+    padding: 72px 48px 80px;
     width: 100%;
-    margin: 0;
+    box-sizing: border-box;
+    min-height: 100%;
+    background-color: #fff8f6;
 }
 
 .headerSection {
@@ -9,39 +11,52 @@
 }
 
 .headerSection h1 {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 700;
-    color: #4a3731;
+    color: #241916;
     margin: 0 0 4px 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.5px;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .subtitle {
     font-size: 16px;
-    color: #8c7b75;
+    color: #524440;
     margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .settingsGrid {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    max-width: 50vw;
+    margin-left: 3%;
     width: 100%;
 }
 
 .sectionCard {
     background-color: white;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(215, 194, 189, 0.5);
     border-radius: 16px;
-    padding: 24px;
+    padding: 28px;
     width: 100%;
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.sectionCard:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
 }
 
 .sectionTitle {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    color: #4a3731;
+    color: #241916;
     margin: 0 0 20px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    letter-spacing: -0.2px;
 }
 
 .fieldGroup {
@@ -50,12 +65,45 @@
     gap: 20px;
 }
 
+@media (max-width: 1080px) {
+    .settingsGrid {
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .sectionCard {
+        padding: 24px 20px;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
-        padding: 20px;
+        padding: 40px 20px 60px;
+    }
+
+    .headerSection {
+        margin-bottom: 24px;
     }
 
     .headerSection h1 {
-        font-size: 32px;
+        font-size: 26px;
+    }
+
+    .sectionCard {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 24px 16px 40px;
+    }
+
+    .headerSection h1 {
+        font-size: 22px;
+    }
+
+    .sectionCard {
+        padding: 16px;
     }
 }

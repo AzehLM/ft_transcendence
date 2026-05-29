@@ -1,8 +1,8 @@
 /* ============================================================================
-   SETUP TOTP COMPONENT
+   2FA MODAL COMPONENT (Using VerifyTOTP styling for setup flows)
    ============================================================================ */
 
-.totp_setup__overlay {
+.totp_verify__overlay {
     position: fixed;
     inset: 0;
     background: var(--color-dark-overlay);
@@ -13,7 +13,7 @@
     z-index: 50;
 }
 
-.totp_setup__modal {
+.totp_verify__modal {
     background: var(--color-white);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
@@ -25,7 +25,7 @@
     overflow-y: auto;
 }
 
-.totp_setup__title {
+.totp_verify__title {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 24px;
     font-weight: 700;
@@ -34,7 +34,7 @@
     text-align: center;
 }
 
-.totp_setup__description {
+.totp_verify__description {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: var(--text-base);
     color: #6b7280;
@@ -42,7 +42,7 @@
     line-height: 1.5;
 }
 
-.totp_setup__qr_code_container {
+.totp_verify__qr_code_container {
     display: flex;
     justify-content: center;
     background: var(--color-white);
@@ -51,18 +51,18 @@
     margin-bottom: var(--spacing-3xl);
 }
 
-.totp_setup__qr_code_image {
+.totp_verify__qr_code_image {
     width: 256px;
     height: 256px;
 }
 
-.totp_setup__loading_spinner {
+.totp_verify__loading_spinner {
     display: flex;
     justify-content: center;
     padding: var(--spacing-3xl) 0;
 }
 
-.totp_setup__spinner {
+.totp_verify__spinner {
     width: 32px;
     height: 32px;
     border: 3px solid var(--brand-light);
@@ -77,7 +77,33 @@
     }
 }
 
-.totp_setup__warning_box {
+.totp_verify__secret_box {
+    background: #f3f4f6;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-3xl);
+    border-left: 4px solid var(--brand-primary);
+}
+
+.totp_verify__secret_label {
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: var(--spacing-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.totp_verify__secret_value {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    color: var(--brand-dark);
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.totp_verify__warning_message {
     margin-bottom: var(--spacing-md);
     padding: var(--spacing-md);
     background-color: #fef3c7;
@@ -87,30 +113,31 @@
     font-size: var(--text-base);
 }
 
-.totp_setup__warning_title {
+.totp_verify__warning_message strong {
+    display: block;
     font-weight: 700;
-    margin: 0 0 var(--spacing-sm) 0;
+    margin-bottom: var(--spacing-sm);
 }
 
-.totp_setup__warning_text {
+.totp_verify__warning_message p {
     margin: 0;
     line-height: 1.5;
 }
 
-.totp_setup__codes_container {
+.totp_verify__codes_container {
     background: #f3f4f6;
     border-radius: var(--radius-sm);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-3xl);
 }
 
-.totp_setup__codes_list {
+.totp_verify__codes_list {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--spacing-sm);
 }
 
-.totp_setup__code {
+.totp_verify__code {
     background: var(--color-white);
     border: 1px solid #e5e7eb;
     border-radius: var(--radius-sm);
@@ -122,11 +149,11 @@
     font-weight: 600;
 }
 
-.totp_setup__input_group {
+.totp_verify__input_group {
     margin-bottom: var(--spacing-3xl);
 }
 
-.totp_setup__label {
+.totp_verify__label {
     display: block;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: var(--text-base);
@@ -135,34 +162,46 @@
     margin-bottom: var(--spacing-sm);
 }
 
-.totp_setup__input {
+.totp_verify__input {
     width: 100%;
     border: 1px solid var(--brand-dark);
     border-radius: var(--radius-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 32px;
-    text-align: center;
-    letter-spacing: 0.2em;
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
+    font-size: var(--text-base);
+    font-family: 'IBM Plex Sans', sans-serif;
     color: var(--brand-dark);
     background-color: var(--color-white);
     box-sizing: border-box;
 }
 
-.totp_setup__input:focus {
+.totp_verify__input:focus {
     outline: none;
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.totp_setup__input:disabled {
+.totp_verify__input:disabled {
     opacity: 0.5;
     background-color: var(--brand-light);
     cursor: not-allowed;
 }
 
-.totp_setup__error_message {
+.totp_verify__input_code {
+    text-align: center;
+    font-size: 32px;
+    letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.totp_verify__hint {
+    margin-top: var(--spacing-sm);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.totp_verify__error_message {
     margin-bottom: var(--spacing-md);
     padding: var(--spacing-md);
     background-color: #fee2e2;
@@ -172,12 +211,12 @@
     font-size: var(--text-base);
 }
 
-.totp_setup__actions {
+.totp_verify__actions {
     display: flex;
     gap: var(--spacing-md);
 }
 
-.totp_setup__action_button {
+.totp_verify__action_button {
     flex: 1;
     width: 100%;
     padding: var(--spacing-md) var(--spacing-lg);
@@ -191,41 +230,41 @@
     box-sizing: border-box;
 }
 
-.totp_setup__action_button--primary {
+.totp_verify__action_button--primary {
     background-color: var(--brand-primary);
     color: var(--color-white);
 }
 
-.totp_setup__action_button--primary:hover:not(:disabled) {
+.totp_verify__action_button--primary:hover:not(:disabled) {
     background-color: #2563eb;
 }
 
-.totp_setup__action_button--primary:disabled {
+.totp_verify__action_button--primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.totp_setup__action_button--cancel {
+.totp_verify__action_button--cancel {
     background-color: var(--brand-light);
     color: var(--brand-dark);
 }
 
-.totp_setup__action_button--cancel:hover:not(:disabled) {
+.totp_verify__action_button--cancel:hover:not(:disabled) {
     opacity: 0.8;
 }
 
-.totp_setup__action_button--cancel:disabled {
+.totp_verify__action_button--cancel:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.totp_setup__button_group {
+.totp_verify__button_group {
     display: flex;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-3xl);
 }
 
-.totp_setup__secondary_button {
+.totp_verify__secondary_button {
     flex: 1;
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-sm);
@@ -239,59 +278,59 @@
     transition: all 0.2s ease;
 }
 
-.totp_setup__secondary_button--secondary:hover:not(:disabled) {
+.totp_verify__secondary_button:hover:not(:disabled) {
     background-color: var(--brand-light);
 }
 
-.totp_setup__secondary_button--secondary:disabled {
+.totp_verify__secondary_button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 @media (max-width: 480px), (max-height: 700px) {
-    .totp_setup__modal {
+    .totp_verify__modal {
         padding: var(--spacing-lg);
         border-radius: var(--radius-sm);
     }
 
-    .totp_setup__title {
+    .totp_verify__title {
         font-size: 18px;
         margin-bottom: var(--spacing-lg);
     }
 
-    .totp_setup__qr_code_container {
+    .totp_verify__codes_container {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__button_group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__input_group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .totp_verify__qr_code_container {
         margin-bottom: var(--spacing-lg);
         padding: var(--spacing-sm);
     }
 
-    .totp_setup__qr_code_image {
+    .totp_verify__qr_code_image {
         width: min(180px, 100%);
         height: auto;
     }
 
-    .totp_setup__codes_container {
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .totp_setup__button_group {
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .totp_setup__input_group {
-        margin-bottom: var(--spacing-lg);
-    }
-
-    .totp_setup__warning_box {
+    .totp_verify__warning_message {
         font-size: 13px;
         padding: var(--spacing-sm);
     }
 
-    .totp_setup__code {
+    .totp_verify__code {
         padding: var(--spacing-sm);
         font-size: 12px;
     }
 
-    .totp_setup__input {
+    .totp_verify__input_code {
         font-size: 24px;
     }
 }

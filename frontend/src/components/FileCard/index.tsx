@@ -4,6 +4,7 @@ import styles from "./FileCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 
 interface FileCardProps {
   id: string;
@@ -23,6 +24,18 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
   const [showMoveModal, setShowMoveModal] = useState(false);
   const { decryptedName, loading } = useDecryptFilename(name, orgId);
   const displayName = loading ? "..." : (decryptedName || name);
+
+  const { keyMissing, setKeyMissing, password, 
+    setPassword, keyModalError, isResetting, setKeyModalError, 
+    checkKeys, handleResetKeys } = useKeyCheck();
+
+  const handleDownloadClick = async () => {
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return;
+    }
+    onDownload?.(id)
+  }
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -59,7 +72,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
         <div className={styles.right}>
           <span className={styles.size}>{formatSize(fileSize)}</span>
           <div className={styles.actions}>
-            <button className={styles.actionBtn} onClick={() => onDownload?.(id)} title="Download">
+            <button className={styles.actionBtn} onClick={() => handleDownloadClick()} title="Download">
               <Download size={16} />
             </button>
             {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
@@ -83,7 +96,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
             </button>
             {showMenu && (
               <div className={styles.dropdown}>
-                <button onClick={() => { onDownload?.(id); setShowMenu(false); }}>
+                <button onClick={() => { handleDownloadClick(); setShowMenu(false); }}>
                   <Download size={14} /> Download
                 </button>
               {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
@@ -102,7 +115,17 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
 
         </div>
       </div>
-
+      <ConfirmationModal
+        isOpen={keyMissing}
+        fileName={""}
+        onConfirm={handleResetKeys}
+        onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
+        isKeyMissing={true}
+        inputValue={password}
+        onInputChange={setPassword}
+        errorMessage={keyModalError ?? undefined}
+        isLoading={isResetting}
+      />
       <ConfirmationModal
         isOpen={showDeleteModal}
         fileName={displayName}
