@@ -292,6 +292,93 @@ The following is a complete inventory of implemented features, grouped by domain
 | 14 | Client-Side Encryption (Zero-Knowledge) | Custom | Major | 2 |
 | | | | **Total** | **21** |
 
+---
+
+**Framework for both frontend and backend - *Major***
+
+- **Why**: the project scope (microservice, websockets, etc.) required production-grade frameworks rather than improvised HTTP routing.
+- **Implementation**: **Go + Fiber v3** for every backend microservices, native goroutine-based concurrency, low memory footprint. **React + Typescript** for the frontend for the typed componenets, declarative routing via `react-router-dom`
+- **Owners**: Every member of the group worked on both frontend/backend to their extend.
+
+**Real-time features (Websockets) - *Major***
+
+- **Why**: the plateform shows live notifications and online-presence indicators inside organizations  for a better user experience.
+- **Implementation**: a single `/ws/notification` endpoint. A `Hub`, subscribing to wanted events. Redis pub/sub channels and re-broadcast.
+- **Owners**: pnaessen and gueberso
+
+**ORM for the database - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Complete notification system - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Custom-made design system with reusable components - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**File upload and management system  - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Support for additional browsers - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Standard user management & authentication - *Major***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Organization system - *Major***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Complete 2FA - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Backend as Microservices  - *Major***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Monitoring (Prometheus + Grafana) - *Major***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Health check, status page, backups & disaster recovery - *Minor***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+**Client-Side Encryption (Zero-Knowledge) - *Major - custom***
+
+- **Why**:
+- **Implementation**:
+- **Owners**:
+
+
 - list of all chosen modules (major and minor)
 - Point calculation
 - **Justification for each module choice**
