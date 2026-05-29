@@ -292,92 +292,92 @@ The following is a complete inventory of implemented features, grouped by domain
 | 14 | Client-Side Encryption (Zero-Knowledge) | Custom | Major | 2 |
 | | | | **Total** | **21** |
 
----
 
-**Framework for both frontend and backend - *Major***
+### **Framework for both frontend and backend - *Major***
 
 - **Why**: the project scope (microservice, websockets, etc.) required production-grade frameworks rather than improvised HTTP routing.
 - **Implementation**: **Go + Fiber v3** for every backend microservices, native goroutine-based concurrency, low memory footprint. **React + Typescript** for the frontend for the typed componenets, declarative routing via `react-router-dom`
-- **Owners**: Every member of the group worked on both frontend/backend to their extend.
+- **Owner(s)**: Every member of the group worked on both frontend/backend to their extend.
 
 **Real-time features (Websockets) - *Major***
 
 - **Why**: the plateform shows live notifications and online-presence indicators inside organizations  for a better user experience.
 - **Implementation**: a single `/ws/notification` endpoint. A `Hub`, subscribing to wanted events. Redis pub/sub channels and re-broadcast.
-- **Owners**: pnaessen and gueberso
+- **Owner(s)**: pnaessen and gueberso
 
-**ORM for the database - *Minor***
+### **ORM for the database - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: Postgres is shared by our backend microservices. A typed ORM avoids hand-written SQL and aligns naturally with Go structs
+- **Implementation**: **GORM** with struct-tag schema, native associations, transactions for atomic operations, hooks for UUID generation. Schema in done via an SQL init script that can be found under `01_init_schema_up.sql`
+- **Owner(s)**: Setup done by lbuisson and pnaessen but every member of the group updated and used it throught the project construction
 
-**Complete notification system - *Minor***
+### **Complete notification system - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: Users need feedback on operations (uploads, org invites, role changes, etc.) and on activity from other members of their organizations
+- **Implementation**: Redis pub/sub for fire-and-forget UI events + Redis streams for guaranteed-delivery events. The frontend manages a websocket that exposes a dropdown notification system with unread counts and surfaces events via toasts.
+- **Owner(s)**: gueberso owns the Redis implementation, pnaessen the link to the websocket and frontend notification systems
 
-**Custom-made design system with reusable components - *Minor***
+### **Custom-made design system with reusable components - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: for consistent visuals accrois the app pages, reducing code duplication.
+- **Implementation**: 30+ react components under `frontend/src/components`, each with its own CSS module. Usage of `lucide-react` for Icons and a self-hosted IBM Plex Sans.
+- **Owner(s)**: vicperri and lbuisson
 
-**File upload and management system  - *Minor***
+### **File upload and management system  - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: it is the core feature of the plateform. Must handle large files, partial failures without exposing plaintext to the server.
+- **Implementation**: dual-mode upload (single-PUT or multipart depending on file size). Pre-encryption mime.types validation via magic-numbers. Per-chunk IV derivation for multipart, folder hierarchy with cyclic-move detection, quota enforcement + rollback/soft-delete + Redis-stream-driven MinIO cleanup.
+- **Owner(s)**: gueberso for the backend and business logic, pnaessen/vicperri for the upload/download - encryption/decryption implementation in the frontend
 
-**Support for additional browsers - *Minor***
+### **Support for additional browsers - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: the project aim for large scale so this was a logic choice.
+- **Implementation**: frontend relies only on standardized Web Crypto API primitives (PBKDF2, AES-GCM, RSA-OAEP, SHA-256) and standard `fetch` / Websocket APIs
+- **Owner(s)**: vicperri, lbuisson, pnaessen
 
-**Standard user management & authentication - *Major***
+### **Standard user management & authentication - *Major***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: required by the projects. The plateform handles sensitive data so authentification must be hardened
+- **Implementation**: register / login / logout/ refresh / delete, Argon2id server-side hashing of the client derived auth hash. JWT refresh tokens with 15min access, per login limit-rate, avatar upload
+- **Owner(s)**: pnaessen, vicperri, lbuisson
 
-**Organization system - *Major***
+### **Organization system - *Major***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: Ostrom collaborative dimension - users can share encrypted spaces with explicit role-based access
+- **Implementation**: each org has its how RSA keypair, each member receives a per-member-wrapped copy of the org's private key. Admin / member roles enforced via a `RequireRole` middleware and a share `rbac` package used by the storage service for defence-in-depth. Endpoint cover creation / rename / delete / invite / removal / change-role for members, leave-org, per-member description.
+- **Owner(s)**: lbuisson for the backend, business logic and frontend implementation, gueberso only for the RBAC implementation needed in the storage service
 
-**Complete 2FA - *Minor***
+### **Complete 2FA - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: the plateform stores sensitive data, offering TOTP-based 2FA is a security upgrade with minimal UX friction
+- **Implementation**: TOTP via `pquerna/otp` with QR-code provisioning. 5min setup window with in-memory pending-secret. TOTP secret encrypted at rest with a derived key from `client salt + user id`. 10 single-use recovery codes, lockout policy (3 attempts, 5min lockout), scoped temp-JWT. Enabling/disabling 2FA flow.
+- **Owner(s)**: vicperri
 
-**Backend as Microservices  - *Major***
+### **Backend as Microservices  - *Major***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: Clean ownership boundaries between team members. Each services deployable and testable in isolation. If a service is down the whole application can still be running and usable
+- **Implementation**: several Go microservices in a `go.work` workspace. A complete independent monitoring stack. Caddy, Redis, Postgres and Adminer in dev mode in their owns Docker containers
+- **Owner(s)**: gueberso
 
-**Monitoring (Prometheus + Grafana) - *Major***
+### **Monitoring (Prometheus + Grafana) - *Major***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: observability is needed both as a production tool but mainly done for development debugging purposes
+- **Implementation**: Prometheus scrapes services thats exposes endpoints or endpoints created depending on needs. Grafana serves these metrics throught provisioned datasources and dashboards. Alertmanager routes alerts to a Discord webhook.
+- **Owner(s)**: gueberso
 
-**Health check, status page, backups & disaster recovery - *Minor***
+### **Health check, status page, backups & disaster recovery - *Minor***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: Matches well the microservice architecture and allows the plateform to be transparent for users on services available. Ensures data can be recovered if Postgres or MinIO is wiped.
+- **Implementation**: Go microservices exposes a `/health` endpoint, a dedicated **health-aggregator** microservices returns an aggregated status to the front on a `/status` page, showing per-service indicators. Backups are run via a `backup` container with `supercronic`. `pg_dump` is runned every night with a weekly retention. `mc mirror` for the MinIO `ostrom` bucket is also run every week. For details and instruction see [backup.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/backup.md)
+- **Owner(s)**: gueberso
 
-**Client-Side Encryption (Zero-Knowledge) - *Major - custom***
+### **Client-Side Encryption (Zero-Knowledge) - *Major - custom***
 
-- **Why**:
-- **Implementation**:
-- **Owners**:
+- **Why**: this is Ostrom's defining principle and primary differenciator vs Google Drive or other shared cloud storage plateforms. Our server cannot read user data.
+- **Implementation**: **FAITES VOUS PLAISIR J'AI MAL AU CRANE**
+- **Owner(s)**:
 
+---
 
 - list of all chosen modules (major and minor)
 - Point calculation
