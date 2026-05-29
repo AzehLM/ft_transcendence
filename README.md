@@ -18,7 +18,8 @@ Its defining principle is that the server never sees plaintext. All files are en
 - **Docker compose** v2
 - **GNU Make**
 
-The entire stack runs in Docker containers - no local Go, Node, or database toolchain is required.
+> [!NOTE]
+> The entire stack runs in Docker containers - **no local Go, Node, or database toolchain is required.**
 
 ## Configuration
 
@@ -32,7 +33,8 @@ This will:
 - Create a `.env` from `.env.example` (if it doesn't already exist)
 - Generate the auto-generatable secrets (DB credentials, MinIO credentials, etc.) with random values
 
-> ⚠️ **All secrets must exists** even if empty. Docker compose references every secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
+> [!WARNING]
+> **All secrets must exists** even if empty. Docker compose references every secret at startup, so a missing file will cause the stack to fail - in **both dev and prod mode**.
 
 A few secrets cannot be generated, as they depend on external services. `make setup` creates them as empty files. Fill them manually if you need the following features:
 - `cloudflare_tunnel_token` - Cloudflare tunnel if you want the application deployed on your own domain name.
@@ -130,11 +132,6 @@ Responsible for overseeing technical decisions and the overall architecture. Res
 
 As a developer, owns the storage microservice (client-side encrypted file storage, multipart uploads, quota management), the DevOps/infrastructure (Docker Compose, Caddy, Cloudflare Tunnel, observability stack), and the CI/CD pipeline (Postman E2E/RBAC test collections and backend linting via GitHub Actions).
 
----
-
-# TEMP
-
-Before starting Ostrom, each member proposed project ideas and a preferred backend/frontend stack. The core stack was decided collectively from there. We worked through GitHub Pull Requests, so every member participated in reviewing code changes.
 
 ---
 
@@ -148,7 +145,8 @@ For each member we need:
 - Tools used for the project management (Github Issues, Github Project, Notion, Discord bots)
 - Communication channels (Discord)
 
-> Victoire / Lou-Anne, je vous laisserai faire cette partie
+> [!NOTE]
+> **Victoire / Lou-Anne, je vous laisserai faire cette partie**
 
 # Technical Stack
 
@@ -178,11 +176,13 @@ For each member we need:
 
 **Client-side encryption** (Web Crypto API) - AES-GCM 256-bit with PBKDF2 key derivation, performed entirely in the browser, enforcing the zero-knowledge guarantee that the server never sees plaintext.
 
-For the full per-decision tradeoffs, see [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md).
+> [!TIP]
+> For the full per-decision tradeoffs, see [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md).
 
 # Database Schema
 
-> je vous laisse faire ca
+> [!NOTE]
+> **je vous laisse faire ca**
 
 
 prérequis sujet:
@@ -263,9 +263,10 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Self-signed TLS cert generation** - Makefile generates a per-host SSL cert on first build for local development (whic is also used in prod).
 
 
+---
 
 
-- Complet list of implemented features
+- Complete list of implemented features
 - Which team member(s) worked on each features
 - Brief descritioon of each feature's functionality
 
