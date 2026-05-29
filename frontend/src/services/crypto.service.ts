@@ -408,51 +408,35 @@ export async function decryptDEKWithPrivateKey(
 }
 
 
-export async function encryptFilename(
+
+
+export async function encryptFilenameAsymmetric(
     filename: string,
-    dek: Uint8Array,
-    iv: Uint8Array
+    publicKey: CryptoKey
 ): Promise<string> {
     const filenameBuffer = new TextEncoder().encode(filename);
-
-    const cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        toArrayBuffer(dek),
-        "AES-GCM",
-        false,
-        ["encrypt"]
-    );
-
     const encryptedBuffer = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: toArrayBuffer(iv) },
-        cryptoKey,
+        {
+            name: "RSA-OAEP",
+        },
+        publicKey,
         filenameBuffer
     );
-
     return uint8ArrayToBase64(new Uint8Array(encryptedBuffer));
 }
 
-export async function decryptFilename(
+export async function decryptFilenameAsymmetric(
     encryptedFilenameBase64: string,
-    dek: Uint8Array,
-    iv: Uint8Array
+    privateKey: CryptoKey
 ): Promise<string> {
     const encryptedBuffer = base64ToUint8Array(encryptedFilenameBase64);
-
-    const cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        toArrayBuffer(dek),
-        "AES-GCM",
-        false,
-        ["decrypt"]
-    );
-
     const decryptedBuffer = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: toArrayBuffer(iv) },
-        cryptoKey,
+        {
+            name: "RSA-OAEP",
+        },
+        privateKey,
         toArrayBuffer(encryptedBuffer)
     );
-
     return new TextDecoder().decode(decryptedBuffer);
 }
 

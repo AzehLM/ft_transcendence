@@ -14,7 +14,6 @@ export async function logout(navigate: (path: string) => void) {
     localStorage.removeItem("token");
     await clearAllKeys();
 
-  sessionStorage.removeItem("passwordChanged");
     navigate("/login");
   }
 }
@@ -35,7 +34,7 @@ export async function resetKeys(
     const responseData = await response.json();
 
     if (!response.ok) {
-      return { success: false, error: responseData.message || "Error !" };
+      return { success: false, error: responseData.message || "Error, try again !" };
     }
 
     const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);

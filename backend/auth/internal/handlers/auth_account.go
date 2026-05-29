@@ -21,7 +21,7 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 
 	var user models.User
 
-	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "first_name", "family_name").
+	err := h.DB.Select("id", "email", "used_space", "max_space", "created_at", "first_name", "family_name", "two_factor_enabled").
 		Where("id = ?", userID).
 		First(&user).Error
 
@@ -30,13 +30,14 @@ func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id":          user.ID,
-		"email":       user.Email,
-		"used_space":  user.UsedSpace,
-		"max_space":   user.MaxSpace,
-		"created_at":  user.CreatedAt,
-		"first_name":  user.FirstName,
-		"family_name": user.FamilyName,
+		"id":                 user.ID,
+		"email":              user.Email,
+		"used_space":         user.UsedSpace,
+		"max_space":          user.MaxSpace,
+		"created_at":         user.CreatedAt,
+		"first_name":         user.FirstName,
+		"family_name":        user.FamilyName,
+		"two_factor_enabled": user.TwoFactorEnabled,
 	})
 }
 
@@ -49,14 +50,144 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
-	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID); err != nil {
-		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not publish user deleted event"})
+	var orgIDs []string
+	var orgsToDelete []uuid.UUID
+	transfers := make(map[string]string)
+	promotions := make(map[string]uuid.UUID)
+	var filesToCleanup []string
+
+	errTx := h.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; err != nil {
+			return err
+		}
+
+		for _, orgIDStr := range orgIDs {
+			var transferTargetID string
+			type AdminInfo struct {
+				UserID uuid.UUID `gorm:"column:user_id"`
+			}
+			var otherAdmin AdminInfo
+			errQueryAdmin := tx.Table("org_members").
+				Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
+				Select("user_id").
+				Limit(1).
+				Take(&otherAdmin).Error
+
+			if errQueryAdmin == nil {
+				transferTargetID = otherAdmin.UserID.String()
+				transfers[orgIDStr] = transferTargetID
+			} else if errors.Is(errQueryAdmin, gorm.ErrRecordNotFound) {
+				type MemberInfo struct {
+					UserID   uuid.UUID `gorm:"column:user_id"`
+					JoinedAt time.Time `gorm:"column:joined_at"`
+				}
+
+				var oldestMember MemberInfo
+				errQuery := tx.Table("org_members").
+					Select("user_id, joined_at").
+					Where("org_id = ? AND user_id != ?", orgIDStr, userID).
+					Order("joined_at ASC").
+					Limit(1).
+					Take(&oldestMember).Error
+
+				if errQuery == nil {
+					if err := tx.Table("org_members").
+						Where("org_id = ? AND user_id = ?", orgIDStr, oldestMember.UserID).
+						Update("role", "admin").Error; err != nil {
+						return err
+					}
+					transferTargetID = oldestMember.UserID.String()
+					transfers[orgIDStr] = transferTargetID
+					promotions[orgIDStr] = oldestMember.UserID
+				} else if errors.Is(errQuery, gorm.ErrRecordNotFound) {
+					orgUUID, errParse := uuid.Parse(orgIDStr)
+					if errParse == nil {
+						orgsToDelete = append(orgsToDelete, orgUUID)
+					}
+				} else {
+					return errQuery
+				}
+			} else {
+				return errQueryAdmin
+			}
+
+			if transferTargetID != "" {
+				if err := tx.Table("files").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
+				if err := tx.Table("folders").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+
+		if len(orgsToDelete) > 0 {
+			var orgKeys []string
+			if err := tx.Table("files").
+				Where("org_id IN ?", orgsToDelete).
+				Pluck("minio_object_key", &orgKeys).Error; err != nil {
+				return err
+			}
+			filesToCleanup = append(filesToCleanup, orgKeys...)
+
+			if err := tx.Exec("DELETE FROM organizations WHERE id IN ?", orgsToDelete).Error; err != nil {
+				return err
+			}
+		}
+
+		var personalKeys []string
+		if err := tx.Table("files").
+			Where("owner_user_id = ? AND org_id IS NULL", userID).
+			Pluck("minio_object_key", &personalKeys).Error; err != nil {
+			return err
+		}
+		filesToCleanup = append(filesToCleanup, personalKeys...)
+
+		if err := tx.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if errTx != nil {
+		log.Printf("[ERROR] Transaction failed for user deletion %s: %v", userIDStr, errTx)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
-	if err := h.DB.Where("id = ?", userIDStr).Delete(&models.User{}).Error; err != nil {
-		log.Printf("[ERROR] Failed to delete user %s: %v\n", userIDStr, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
+	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID, transfers, filesToCleanup); err != nil {
+		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
+	}
+
+	var remainingOrgIDs []string
+	for _, orgIDStr := range orgIDs {
+		isDeleted := false
+		for _, orgUUID := range orgsToDelete {
+			if orgUUID.String() == orgIDStr {
+				isDeleted = true
+				break
+			}
+		}
+		if !isDeleted {
+			remainingOrgIDs = append(remainingOrgIDs, orgIDStr)
+		}
+	}
+
+	if len(remainingOrgIDs) > 0 {
+		if err := h.Publisher.PublishMemberRemoved(context.TODO(), userID, remainingOrgIDs); err != nil {
+			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
+		}
+	}
+
+	for orgIDStr, promotedUserID := range promotions {
+		if err := h.Publisher.PublishRoleUpdated(context.TODO(), orgIDStr, promotedUserID, "admin"); err != nil {
+			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
+		}
 	}
 
 	clearRefreshTokenCookie(c)
@@ -296,6 +427,14 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 	}
 
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "first name updated",
 	})
@@ -342,6 +481,14 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	}
 	if result.RowsAffected == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	var user models.User
+	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
+		var orgIDs []string
+		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
+			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+		}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

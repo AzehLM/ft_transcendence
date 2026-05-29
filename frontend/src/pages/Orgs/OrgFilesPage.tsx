@@ -13,13 +13,19 @@ import { FolderCard } from "../../components/FolderCard";
 import { FileCard } from "../../components/FileCard"
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { ActionButtons } from "../../components/ActionButtons";
+import { useNotifications } from "../../contexts/NotificationContext";
+import { OrgKeyProvider } from "../../contexts/OrgKeyContext";
 import { useFileManager } from "../../hooks/useFileManager";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
   const { folderId } = useParams();
+  const { registerListener, unregisterListener } = useNotifications();
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
+  const [myRole, setMyRole] = useState<string>("");
+  const [userID, setUserID] = useState<string>("");
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,9 +35,10 @@ export default function OrgFilesPage() {
         if (!res.ok) throw new Error();
         return res.json();
       })
-      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); } })
+      .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); setMyRole(data.role); setUserID(data.user_id)} })
       .catch(() => setOrgName("Unknown"));
   }, [id]);
+
 
 
     const loadFn = useCallback(
@@ -45,10 +52,50 @@ export default function OrgFilesPage() {
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
-        } = useFileManager(
-            loadFn,
-            (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
+    } = useFileManager(
+        loadFn,
+        (folderId) => folderId ? `/orgs/${id}/folder/${folderId}` : `/orgs/${id}/files`
     );
+
+    useEffect(() => {
+        const handleFilesChange = () => {
+            loadFiles();
+        };
+
+        const handleOrgaRenamed = (data: any) => {
+            if (data && data.new_name) {
+                setOrgName(data.new_name);
+            }
+        };
+
+        const handleRoleUpdated = (data: any) => {
+            if (data && data.user_id === userID && data.role) {
+                setMyRole(data.role);
+            }
+        };
+
+        registerListener("file_uploaded", handleFilesChange);
+        registerListener("file_deleted", handleFilesChange);
+        registerListener("file_moved", handleFilesChange);
+        registerListener("folder_created", handleFilesChange);
+        registerListener("folder_deleted", handleFilesChange);
+        registerListener("folder_renamed", handleFilesChange);
+        registerListener("folder_moved", handleFilesChange);
+        registerListener("ORGA_RENAMED", handleOrgaRenamed);
+        registerListener("ROLE_UPDATED", handleRoleUpdated);
+
+        return () => {
+            unregisterListener("file_uploaded", handleFilesChange);
+            unregisterListener("file_deleted", handleFilesChange);
+            unregisterListener("file_moved", handleFilesChange);
+            unregisterListener("folder_created", handleFilesChange);
+            unregisterListener("folder_deleted", handleFilesChange);
+            unregisterListener("folder_renamed", handleFilesChange);
+            unregisterListener("folder_moved", handleFilesChange);
+            unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+            unregisterListener("ROLE_UPDATED", handleRoleUpdated);
+        };
+    }, [registerListener, unregisterListener, loadFiles, userID]);
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
         setSuccess("");
@@ -91,6 +138,7 @@ export default function OrgFilesPage() {
   return (
     <>
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
+      <OrgKeyProvider orgId={id}>
       <div className={styles.container}>
         <ConfirmationModal
         isOpen={isFolderModalOpen}
@@ -102,19 +150,20 @@ export default function OrgFilesPage() {
         onInputChange={setFolderName}
         errorMessage={folderError ?? undefined}
         />
-
-        <ActionButtons onUploadFile={uploadFile}
-                        onCreateFolder={() => setIsFolderModalOpen(true)}
-          />
-
         <div className={styles.contentSection}>
-            <div className={styles.titleGroup}>
-                <h1>
-                    Organization space
-                </h1>
-                <h2 className={styles.subtitle}>
-                    All files and folders
-                </h2>
+            <div className={styles.headerRow}>
+                <div className={styles.titleGroup}>
+                    <h1>
+                        Organization space
+                    </h1>
+                    <h2 className={styles.subtitle}>
+                        All files and folders
+                    </h2>
+                </div>
+
+                <ActionButtons onUploadFile={uploadFile}
+                                onCreateFolder={() => setIsFolderModalOpen(true)}
+                  />
             </div>
 
             <div className={styles.uploadContainer}>
@@ -151,6 +200,9 @@ export default function OrgFilesPage() {
                                         onRename={handleRenameFolder}
                                         onMove={handleMoveFolder}
                                         orgId={id}
+                                        role={myRole}
+                                        owner_user_id={folder.owner_user_id}
+                                        user_id={userID}
                                     />
                                     ))}
                                 </div>
@@ -172,6 +224,9 @@ export default function OrgFilesPage() {
                                         onDownload={handleDownload}
                                         onMove={handleMoveFile}
                                         orgId={id}
+                                        role={myRole}
+                                        owner_user_id={file.owner_user_id}
+                                        user_id={userID}
                                     />
                                     ))}
                                 </div>
@@ -182,6 +237,7 @@ export default function OrgFilesPage() {
             )}
           </div>
       </div>
+      </OrgKeyProvider>
     </OrgLayout>
     </>
   );

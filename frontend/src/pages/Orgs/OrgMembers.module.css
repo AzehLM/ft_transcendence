@@ -73,8 +73,9 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
+    border: 1px solid #d7c2bd;
     margin-right: 16px;
-    background-color: #fcebe8;
+    background-color: #f9e4de;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,10 +83,11 @@
     flex-shrink: 0;
 }
 
-.initialsAvatar {
-    font-size: 18px;
-    font-weight: 600;
-    color: #d54f2a;
+.avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .memberInfo {
@@ -161,6 +163,10 @@
 
 .statusDotActive {
     background-color: #4CAF50;
+}
+
+.statusDotInactive {
+    background-color: #b0bec5;
 }
 
 .buttonsGroup {

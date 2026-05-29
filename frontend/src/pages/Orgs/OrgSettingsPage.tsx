@@ -6,14 +6,17 @@ import { StorageBar } from "../../components/StorageBar";
 import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 export default function OrgSettingsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { registerListener, unregisterListener } = useNotifications();
 
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [userID, setUserID] = useState<string>("");
   const [usedSpace, setUsedSpace] = useState<number>(0);
   const [maxSpace, setMaxSpace] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -36,11 +39,34 @@ export default function OrgSettingsPage() {
           setUsedSpace(data.used_space);
           setMaxSpace(data.max_space);
           setOrgDesc(data.description);
+          setUserID(data.user_id);
         }
       })
       .catch(() => setOrgName("Unknown"))
       .finally(() => setLoading(false));
   }, [id, navigate]);
+
+  useEffect(() => {
+    const handleOrgaRenamed = (data: any) => {
+      if (data && data.new_name) {
+        setOrgName(data.new_name);
+      }
+    };
+
+    const handleRoleUpdated = (data: any) => {
+      if (data && data.user_id === userID && data.role) {
+        setMyRole(data.role);
+      }
+    };
+
+    registerListener("ORGA_RENAMED", handleOrgaRenamed);
+    registerListener("ROLE_UPDATED", handleRoleUpdated);
+
+    return () => {
+      unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+      unregisterListener("ROLE_UPDATED", handleRoleUpdated);
+    };
+  }, [registerListener, unregisterListener, id, userID]);
 
   const handleDeleteOrga = async () => {
     try {
