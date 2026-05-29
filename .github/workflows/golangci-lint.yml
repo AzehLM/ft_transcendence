@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [storage, auth, orga, shared]
+        service: [storage, auth, orga, shared, health-aggregator]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
