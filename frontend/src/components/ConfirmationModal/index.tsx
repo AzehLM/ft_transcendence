@@ -163,7 +163,7 @@ export function ConfirmationModal({
         setInternalLoading(true);
         try {
             await onConfirm();
-        } catch (error) {
+        } finally {
             setInternalLoading(false);
         }
     };
