@@ -50,16 +50,7 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
         />
     <div className={styles.container}>
 
-      <button
-        className={`${styles.button} ${styles["button--create-folder"]}`}
-        onClick={onCreateFolder}
-      >
-        <FolderPlus className={styles["button__icon"]} />
-        <span className={styles["button__text"]}>
-          Create folder
-        </span>
-      </button>
-
+      {/* Upload button */}
       <button
         className={`${styles.button} ${styles["button--upload"]}`}
         onClick={handleUploadClick}
@@ -70,6 +61,16 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
         </span>
       </button>
 
+      {/* Create folder button */}
+      <button
+        className={`${styles.button} ${styles["button--create-folder"]}`}
+        onClick={onCreateFolder}
+      >
+        <FolderPlus className={styles["button__icon"]} />
+        <span className={styles["button__text"]}>
+          Create folder
+        </span>
+      </button>
       <input
         type="file"
         multiple

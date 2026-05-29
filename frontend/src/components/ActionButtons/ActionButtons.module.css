@@ -1,78 +1,88 @@
 .container {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
-  width: 100%;
-  gap: 20px;
-  margin-bottom: 20px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
 }
 
 .button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 210px;
-    height: 80px;
-    padding: 0;
-    gap: 12px;
-    border: none;
-    border-radius: 17px;
+    padding: 0 24px;
+    height: 48px;
+    gap: 8px;
+    border-radius: 12px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--brand-dark);
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
+    transition: all 0.2s ease-in-out;
+    box-sizing: border-box;
 }
 
 .button:hover {
-    opacity: 0.8;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .button:active {
-    opacity: 0.7;
-}
-
-.button--create-files {
-    background-color: var(--brand-primary);
+    transform: translateY(0);
+    opacity: 0.9;
 }
 
 .button--create-folder {
-    background-color: #e37c60;
+    background-color: transparent;
+    border: 2px solid var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.button--create-folder:hover {
+    background-color: rgba(222, 115, 86, 0.06);
+}
+
+.button--create-folder .button__icon {
+    color: var(--brand-primary);
 }
 
 .button--upload {
-    background-color: #eeb9aa;
+    background-color: var(--brand-primary);
+    border: 2px solid var(--brand-primary);
+    color: var(--color-white);
+}
+
+.button--upload:hover {
+    background-color: var(--brand-primary-hover);
+    border-color: var(--brand-primary-hover);
+}
+
+.button--upload .button__icon {
+    color: var(--color-white);
 }
 
 .button__icon {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    color: var(--brand-dark);
+    width: 20px;
+    height: 20px;
 }
 
 .button__text {
-    line-height: 1.2;
-    letter-spacing: 0.5px;
+    line-height: 1;
+    letter-spacing: 0.3px;
 }
 
 @media (max-width: 768px) {
     .container {
-        display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: center;
+        align-items: stretch;
+        gap: 12px;
         width: 100%;
-        gap: 20px;
     }
     .button {
-        width: 180px;
-        height: 50px;
-        padding: 10px;
-        gap: 12px;
+        width: 100%;
+        height: 46px;
         font-size: 14px;
     }
 }

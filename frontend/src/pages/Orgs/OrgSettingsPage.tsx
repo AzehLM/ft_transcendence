@@ -16,6 +16,7 @@ export default function OrgSettingsPage() {
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [userID, setUserID] = useState<string>("");
   const [usedSpace, setUsedSpace] = useState<number>(0);
   const [maxSpace, setMaxSpace] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,7 @@ export default function OrgSettingsPage() {
           setUsedSpace(data.used_space);
           setMaxSpace(data.max_space);
           setOrgDesc(data.description);
+          setUserID(data.user_id);
         }
       })
       .catch(() => setOrgName("Unknown"))
@@ -51,12 +53,20 @@ export default function OrgSettingsPage() {
       }
     };
 
+    const handleRoleUpdated = (data: any) => {
+      if (data && data.user_id === userID && data.role) {
+        setMyRole(data.role);
+      }
+    };
+
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
+    registerListener("ROLE_UPDATED", handleRoleUpdated);
 
     return () => {
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+      unregisterListener("ROLE_UPDATED", handleRoleUpdated);
     };
-  }, [registerListener, unregisterListener, id]);
+  }, [registerListener, unregisterListener, id, userID]);
 
   const handleDeleteOrga = async () => {
     try {

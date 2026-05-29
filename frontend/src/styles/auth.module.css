@@ -185,34 +185,35 @@
 
 /* ===== DIVIDER ===== */
 .divider {
-    position: relative;
     margin-top: 30px;
     margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
 }
 
 .divider_line {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-}
-
-.divider_border {
     width: 100%;
-    border-top: 1px solid var(--brand-dark);
+    height: 1px;
+    background-color: var(--brand-dark);
     opacity: 0.2;
 }
 
+.divider_border {
+    display: none;
+}
+
 .divider_text_container {
-    position: relative;
     display: flex;
     justify-content: center;
     font-size: 14px;
+    order: -1;
 }
 
 .divider_text {
-    padding: 0 var(--spacing-lg);
-    background-color: var(--brand-light);
+    padding: 0;
+    background-color: transparent;
     color: var(--brand-dark);
     opacity: 0.6;
 }

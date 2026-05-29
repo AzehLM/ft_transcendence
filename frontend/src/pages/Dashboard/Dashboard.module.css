@@ -10,6 +10,17 @@
     gap: 10px; 
 }
 
+.headerRow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
 .uploadContainer {
     display: flex;
     flex-direction: column;

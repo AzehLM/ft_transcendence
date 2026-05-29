@@ -104,18 +104,20 @@ export default function DashboardPage() {
             errorMessage={folderError ?? undefined}
             />
 
-            <ActionButtons onUploadFile={uploadFile}
-                           onCreateFolder={() => setIsFolderModalOpen(true)}
-             />
-
             <div className={styles.contentSection}>
-                <div className={styles.titleGroup}>
-                    <h1>
-                        Personal space
-                    </h1>
-                    <h2 className={styles.subtitle}>
-                        All files and folders
-                    </h2>
+                <div className={styles.headerRow}>
+                    <div className={styles.titleGroup}>
+                        <h1>
+                            Personal space
+                        </h1>
+                        <h2 className={styles.subtitle}>
+                            All files and folders
+                        </h2>
+                    </div>
+
+                    <ActionButtons onUploadFile={uploadFile}
+                                   onCreateFolder={() => setIsFolderModalOpen(true)}
+                     />
                 </div>
 
                 <div className={styles.uploadContainer}>

@@ -25,6 +25,7 @@ export default function OrgMembersPage() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +114,10 @@ export default function OrgMembersPage() {
           })
           .then(me => {
             const myMember = data.find((m: Member) => m.email === me.email);
-            if (myMember) setMyRole(myMember.role);
+            if (myMember) {
+              setMyRole(myMember.role);
+              setMyUserId(myMember.user_id);
+            }
           })
           .catch(err => { if (err?.name !== "AbortError") setMyRole(null); });
       })
@@ -162,12 +166,26 @@ export default function OrgMembersPage() {
       }
     };
 
+    const handleRoleUpdated = (data: any) => {
+      if (data && data.user_id && data.role) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, role: data.role } : m
+          )
+        );
+        if (myUserId && data.user_id === myUserId) {
+          setMyRole(data.role);
+        }
+      }
+    };
+
     registerListener("MEMBER_ADDED", handleMemberChange);
     registerListener("MEMBER_REMOVED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
     registerListener("USER_ONLINE", handleUserOnline);
     registerListener("USER_OFFLINE", handleUserOffline);
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
+    registerListener("ROLE_UPDATED", handleRoleUpdated);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
@@ -176,8 +194,9 @@ export default function OrgMembersPage() {
       unregisterListener("USER_ONLINE", handleUserOnline);
       unregisterListener("USER_OFFLINE", handleUserOffline);
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+      unregisterListener("ROLE_UPDATED", handleRoleUpdated);
     };
-  }, [registerListener, unregisterListener, id]);
+  }, [registerListener, unregisterListener, id, myUserId]);
 
   const handleAddMember = async () => {
     if (!memberEmail.trim()) return;
