@@ -1,6 +1,7 @@
 import { FileItem, FolderItem, FilesService } from "../services/files.service";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMessages } from "./useFeedbackMessage";
 
 type LoadFn = () => Promise<{ files: FileItem[]; folders: FolderItem[] }>;
 
@@ -8,18 +9,14 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mainError, setMainError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<{ id: string | null; name: string }[]>([{ id: null, name: "Root" }]);
-  const [hideMessage, setHideMessage] = useState(false);
   const { folderId } = useParams();
   const navigate = useNavigate();
+  const { messages, addMessage, removeMessage } = useMessages();
 
   // Load files
   const loadFiles = useCallback(async () => {
-    setSuccess("");
-    setError(null);
     const response = await loadFn();
     setFiles(response.files || []);
     setFolders(response.folders || []);
@@ -40,85 +37,59 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
     load();
   }, [folderId, loadFiles, navigate]);
 
-  // Handlers CRUD 
+  // Handlers CRUD
   const handleDeleteFile = async (id: string) => {
-        setSuccess("");
-        setError(null);
-        try {
-            await FilesService.deleteFile(id);
-            await loadFiles();
-            setSuccess("File deleted");
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            console.error("Failed to delete file:", err);
-            setError(`Failed to delete file: ${errorMessage}`);
-        }
-    };
+    try {
+      await FilesService.deleteFile(id);
+      await loadFiles();
+      addMessage("File deleted", "success");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("Failed to delete file:", err);
+      addMessage(`Failed to delete file: ${errorMessage}`, "error");
+    }
+  };
 
   const handleDeleteFolder = async (id: string) => {
-    setSuccess("");
-    setError(null);
-        try {
-            await FilesService.deleteFolder(id);
-            await loadFiles();
-            setSuccess("Folder deleted");
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            console.error("Failed to delete folder:", err);
-            setError(`Failed to delete folder: ${errorMessage}`);
-        }
-    };
+    try {
+      await FilesService.deleteFolder(id);
+      await loadFiles();
+      addMessage("Folder deleted", "success");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("Failed to delete folder:", err);
+      addMessage(`Failed to delete folder: ${errorMessage}`, "error");
+    }
+  };
 
   const handleRenameFolder = async (id: string, newName: string) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.updateFolder(id, {
-              name: newName,
-          });
-          await loadFiles();
-          setSuccess("Folder renamed");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("Folder not found.");
-          } else {
-              setError(err.message || "Failed to rename folder.");
-          }
-      }
+    try {
+      await FilesService.updateFolder(id, { name: newName });
+      await loadFiles();
+      addMessage("Folder renamed", "success");
+    } catch (err: any) {
+      addMessage(err.status === 404 ? "Folder not found." : err.message || "Failed to rename folder.", "error");
+    }
   };
 
   const handleMoveFolder = async (id: string, newParentId: string | null) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.updateFolder(id, {
-              parent_id: newParentId,
-          });
-          await loadFiles();
-          setSuccess("Folder moved");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("File or folder not found.");
-          } else {
-              setError(err.message || "Failed to move.");
-          }
-      }
+    try {
+      await FilesService.updateFolder(id, { parent_id: newParentId });
+      await loadFiles();
+      addMessage("Folder moved", "success");
+    } catch (err: any) {
+      addMessage(err.status === 404 ? "File or folder not found." : err.message || "Failed to move.", "error");
+    }
   };
 
   const handleMoveFile = async (id: string, newParentId: string | null) => {
-      setSuccess("");
-      setError(null);
-      try {
-          await FilesService.moveFile(id, newParentId);
-          await loadFiles();
-          setSuccess("File moved");
-      } catch (err: any) {
-          if (err.status === 404) {
-              setError("File or folder not found.");
-          } else {
-              setError(err.message || "Failed to move.");
-          }
-      }
+    try {
+      await FilesService.moveFile(id, newParentId);
+      await loadFiles();
+      addMessage("File moved", "success");
+    } catch (err: any) {
+      addMessage(err.status === 404 ? "File or folder not found." : err.message || "Failed to move.", "error");
+    }
   };
 
   // Breadcrumbs
@@ -129,41 +100,24 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
 
   useEffect(() => {
     if (!folderId) {
-        setBreadcrumbs([{ id: null, name: "Root" }]);
-        return;
+      setBreadcrumbs([{ id: null, name: "Root" }]);
+      return;
     }
 
     FilesService.getFolderPath(folderId)
-        .then(data => {
+      .then(data => {
         setBreadcrumbs([
-            { id: null, name: "Root" },
-            ...data.map((f) => ({ id: f.id, name: f.name }))
+          { id: null, name: "Root" },
+          ...data.map((f) => ({ id: f.id, name: f.name }))
         ]);
-        })
-        .catch(() => setBreadcrumbs([{ id: null, name: "Root" }]));
+      })
+      .catch(() => setBreadcrumbs([{ id: null, name: "Root" }]));
   }, [folderId]);
 
-  // Auto-hide messages
-  useEffect(() => {
-    if (success || error) {
-        setHideMessage(false);
-
-        const timer = setTimeout(() => {
-            setHideMessage(true);
-
-            setTimeout(() => {
-                setSuccess('');
-                setError('');
-            }, 400);
-        }, 3000);
-
-        return () => clearTimeout(timer);
-    }
-  }, [success, error]);
-
   return {
-    files, folders, loading, error, mainError, success,
-    breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+    files, folders, loading, mainError,
+    breadcrumbs, loadFiles,
+    messages, addMessage, removeMessage,
     handleDeleteFile, handleDeleteFolder,
     handleRenameFolder, handleMoveFolder, handleMoveFile,
     handleBreadcrumbClick,
