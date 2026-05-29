@@ -104,3 +104,29 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 
 	return nil
 }
+
+func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, userID uuid.UUID, role string) error {
+	type WSEvent struct {
+		Event   string      `json:"event"`
+		OrgID   string      `json:"org_id,omitempty"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data,omitempty"`
+	}
+
+	event := WSEvent{
+		Event:   "ROLE_UPDATED",
+		OrgID:   orgID,
+		Message: "A member's role has been updated",
+		Data: map[string]interface{}{
+			"user_id": userID.String(),
+			"role":    role,
+		},
+	}
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	return p.redis.Publish(ctx, "org_events:"+orgID, payload).Err()
+}

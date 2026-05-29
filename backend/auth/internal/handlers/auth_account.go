@@ -53,6 +53,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	var orgIDs []string
 	var orgsToDelete []uuid.UUID
 	transfers := make(map[string]string)
+	promotions := make(map[string]uuid.UUID)
 	var filesToCleanup []string
 
 	errTx := h.DB.Transaction(func(tx *gorm.DB) error {
@@ -97,6 +98,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 					}
 					transferTargetID = oldestMember.UserID.String()
 					transfers[orgIDStr] = transferTargetID
+					promotions[orgIDStr] = oldestMember.UserID
 				} else if errors.Is(errQuery, gorm.ErrRecordNotFound) {
 					orgUUID, errParse := uuid.Parse(orgIDStr)
 					if errParse == nil {
@@ -179,6 +181,12 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	if len(remainingOrgIDs) > 0 {
 		if err := h.Publisher.PublishMemberRemoved(context.TODO(), userID, remainingOrgIDs); err != nil {
 			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
+		}
+	}
+
+	for orgIDStr, promotedUserID := range promotions {
+		if err := h.Publisher.PublishRoleUpdated(context.TODO(), orgIDStr, promotedUserID, "admin"); err != nil {
+			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
 		}
 	}
 
