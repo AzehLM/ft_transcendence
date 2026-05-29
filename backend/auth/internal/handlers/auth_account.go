@@ -351,7 +351,7 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no avatar"})
+			return c.Status(fiber.StatusNoContent).JSON(fiber.Map{"message": "no avatar"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
 	}
