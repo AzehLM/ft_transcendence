@@ -94,7 +94,14 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
                 org_id: orgId || null,
             })
         });
-        if (!initRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_SERVER_AUTH);
+
+        if (!initRes.ok) {
+            if (initRes.status === 413) {
+                throw new Error("Storage quota exceeded. Please free up space or upgrade your plan.");
+            }
+            const body = await initRes.json().catch(() => null);
+            throw new Error(body?.error || UPLOAD_MESSAGES.ERROR_SERVER_AUTH);
+        }
         const { presigned_url, object_id } = await initRes.json();
 
         updateUpload(id, { status: UPLOAD_MESSAGES.ENCRYPTING });
@@ -165,7 +172,14 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
                 part_count: numChunks,
             })
         });
-        if (!initRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_SERVER_AUTH);
+
+        if (!initRes.ok) {
+            if (initRes.status === 413) {
+                throw new Error("Storage quota exceeded. Please free up space or upgrade your plan.");
+            }
+            const body = await initRes.json().catch(() => null);
+            throw new Error(body?.error || UPLOAD_MESSAGES.ERROR_SERVER_AUTH);
+        }
         const { object_id, upload_id, parts } = await initRes.json() as {
             object_id: string;
             upload_id: string;
