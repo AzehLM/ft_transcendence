@@ -37,6 +37,18 @@ export function UserProfileButton({ isOpen = false, onClick }: UserProfileButton
         };
     }, []);
 
+    useEffect(() => {
+        const handleAvatarChanged = (event: Event) => {
+            const customEvent = event as CustomEvent<string>;
+            setAvatarUrl(customEvent.detail);
+        };
+
+        window.addEventListener("avatar-changed", handleAvatarChanged);
+        return () => {
+            window.removeEventListener("avatar-changed", handleAvatarChanged);
+        };
+    }, []);
+
     return (
         <div className={styles.profileButtonContainer}>
             <button
