@@ -56,7 +56,7 @@ export default function LoginPage() {
 
             if (!response.ok) {
                 if (response.status === 502 || response.status === 503) {
-                    setError("Server unavailable, please try again later.");
+                    setError("Network error, please try again later.");
                 } else {
                     const body = await response.json().catch(() => null);
                     setError(body?.message || body?.error || "Login failed!");

@@ -310,7 +310,7 @@ export async function generateLoginData(email: string, password: string) {
 
         if (!saltResponse.ok) {
             if (saltResponse.status === 502 || saltResponse.status === 503) {
-                throw new Error("Server unavailable, please try again later.");
+                throw new Error("Network error, please try again later.");
             }
             const errorData = await saltResponse.json();
             throw new Error(errorData.message || "Failed to retrieve salt");
