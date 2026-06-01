@@ -119,6 +119,7 @@ export default function OrganizationsPage() {
     } catch (err) {
       console.error("Error:", err);
       setModalError("An error occurred, please try again.");
+      return;
     }
     addMessage(`Organization "${orgName}" created`, "success");
   };
@@ -178,6 +179,7 @@ export default function OrganizationsPage() {
     } catch (err) {
       console.error("Network error:", err);
       setModalError("Network error, please try again.");
+      return;
     }
     selectedOrg ? addMessage(`You left ${selectedOrg.name}`, "success") : addMessage(`You left the organization`, "success");
   };
