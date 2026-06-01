@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownloadOrg } from "../../hooks/useE2EEDownloadOrg";
 import styles from "../Dashboard/Dashboard.module.css";
+import statusStyles from "../Organizations/Organizations.module.css"
 import { OrgLayout } from "./OrgLayout";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
@@ -16,6 +17,7 @@ import { ActionButtons } from "../../components/ActionButtons";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { OrgKeyProvider } from "../../contexts/OrgKeyContext";
 import { useFileManager } from "../../hooks/useFileManager";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
 
 export default function OrgFilesPage() {
   const { id } = useParams();
@@ -25,14 +27,17 @@ export default function OrgFilesPage() {
   const [orgDesc, setOrgDesc] = useState<string>("");
   const [myRole, setMyRole] = useState<string>("");
   const [userID, setUserID] = useState<string>("");
-  
+  const [orgError, setOrgError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) { navigate("/404"); return; }
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+            setOrgError("Failed to fetch Organization.")
+            throw new Error("Failed to fetch Organization.");
+        }
         return res.json();
       })
       .then(data => { if (data) { setOrgName(data.name); setOrgDesc(data.description); setMyRole(data.role); setUserID(data.user_id)} })
@@ -47,8 +52,9 @@ export default function OrgFilesPage() {
     );
 
     const {
-        files, folders, loading, error, success,
-        breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+        files, folders, loading, mainError,
+        breadcrumbs, loadFiles,
+        messages: fileMessages, addMessage: addFileMessage, removeMessage: removeFileMessage,
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
@@ -98,15 +104,22 @@ export default function OrgFilesPage() {
     }, [registerListener, unregisterListener, loadFiles, userID]);
 
     const { uploadFile, uploads } = useE2EEUpload(() => {
-        setSuccess("");
-        setError(null);
         loadFiles();
     }, id, folderId);
     
     const activeUploads = Object.values(uploads);
     const isUploading = activeUploads.some(u => u.isUploading);
 
-    const { downloadAndDecryptOrg, downloadStatus, isDownloading, hideDownloadMessage, downloadError } = useE2EEDownloadOrg();
+    const { 
+        downloadAndDecryptOrg, isDownloading,
+        messages: downloadMessages, removeMessage: removeDownloadMessage,
+    } = useE2EEDownloadOrg();
+
+    const allMessages = [...fileMessages, ...downloadMessages];
+    const handleRemoveMessage = (id: string) => {
+        removeFileMessage(id);
+        removeDownloadMessage(id);
+    };
 
     const handleDownload = (fileId: string) => {
         downloadAndDecryptOrg(fileId, id!);
@@ -117,27 +130,28 @@ export default function OrgFilesPage() {
     const [folderError, setFolderError] = useState<string | null>(null);
 
     const handleCreateFolderSubmit = async () => {
-            setSuccess("");
-            setError(null);
         if (!folderName.trim()) {
             setFolderError("Invalid Name")
             return;
         }
         try {
-        await FilesService.createFolder(folderName, folderId, id);
-        await loadFiles();
-        setSuccess("Folder created");
+            await FilesService.createFolder(folderName, folderId, id);
+            await loadFiles();
+            addFileMessage(`Folder "${folderName}" created`, "success");
+        
+        } catch (err: any) {
+            addFileMessage(err.message || "Failed to create folder.", "error");
+        }
+        setFolderError(null);
         setFolderName("");
         setIsFolderModalOpen(false);
-        setFolderError(null);
-        } catch (err: any) {
-        setFolderError(err.message || "Failed to create folder.");
-        }
     };
 
   return (
     <>
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
+      <FeedbackMessageContainer messages={allMessages} onRemove={handleRemoveMessage} />
+
       <OrgKeyProvider orgId={id}>
       <div className={styles.container}>
         <ConfirmationModal
@@ -170,18 +184,17 @@ export default function OrgFilesPage() {
                 <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbClick} />
                 <UploadStatus
                     uploads={activeUploads}
-                    downloadStatus={downloadStatus}
-                    hideDownloadMessage={hideDownloadMessage}
-                    error={error}
-                    success={success}
-                    hideMessage={hideMessage}
-                    downloadError={downloadError}
+                    mainError={mainError}
                 />
             </div>
 
             {loading ? (
                 <p>Loading files...</p>
-                ) : files.length === 0 && folders.length === 0 ? (
+                ) : orgError ? (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {orgError}
+                    </div>
+                ) : files.length === 0 && folders.length === 0 && !mainError ? (
                 <p className={styles.noFile}>No files yet.</p>
                 ) : (
                 <div className={styles.contentsGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
