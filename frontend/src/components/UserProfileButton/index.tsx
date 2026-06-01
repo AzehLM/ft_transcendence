@@ -40,7 +40,13 @@ export function UserProfileButton({ isOpen = false, onClick }: UserProfileButton
     useEffect(() => {
         const handleAvatarChanged = (event: Event) => {
             const customEvent = event as CustomEvent<string>;
-            setAvatarUrl(customEvent.detail);
+             const nextUrl = customEvent.detail;
+             setAvatarUrl(prev => {
+                 if (prev && prev.startsWith("blob:") && prev !== nextUrl) {
+                     URL.revokeObjectURL(prev);
+                 }
+                 return nextUrl;
+             });
         };
 
         window.addEventListener("avatar-changed", handleAvatarChanged);
