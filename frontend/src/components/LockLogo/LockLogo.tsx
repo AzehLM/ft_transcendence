@@ -19,13 +19,7 @@ export function LockLogo({ size = 36 }: LockLogoProps) {
             </defs>
 
             {/*
-              Shackle — a closed ring/tube shape.
-              Two sub-paths + fill-rule="evenodd":
-                outer D-shape (r=9): legs at x=9 and x=27
-                inner D-shape (r=5): legs at x=13 and x=23
-              The overlap between them is punched out, leaving a hollow 4px-thick arch.
-              The flat bottoms (y=22) are hidden by the body rect below.
-            */}
+              Shackle — a closed ring/tube shape. */}
             <path
                 d="M 9 22 L 9 13 A 9 9 0 0 0 27 13 L 27 22 Z  M 13 22 L 13 13 A 5 5 0 0 0 23 13 L 23 22 Z"
                 fill="#c24e2e"
