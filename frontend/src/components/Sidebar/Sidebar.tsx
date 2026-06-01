@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
 import styles from "./Sidebar.module.css";
-import { LockLogo } from "../LockLogo/LockLogo";
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
       <Link to="/dashboard" className={styles.sidebar__logo}>
-        <LockLogo size={36} />
+        <img src="/logo.png" alt="Ostrom logo" width={64} height={64} />
         <div className={styles.logoText}>
           <span className={styles.logoName}>Ostrom</span>
           <span className={styles.logoSubtitle}>Cloud Storage</span>
