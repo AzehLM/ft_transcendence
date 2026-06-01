@@ -10,6 +10,7 @@ import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
 import { useMessages } from "../../hooks/useFeedbackMessage";
+import statusStyles from "../Organizations/Organizations.module.css"
 
 interface Member {
   user_id: string;
@@ -29,7 +30,6 @@ export default function OrgMembersPage() {
   const [myRole, setMyRole] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
@@ -53,6 +53,7 @@ export default function OrgMembersPage() {
   const avatarUrlsRef = useRef<Record<string, string>>({});
   
   const [mainError, setMainError] = useState<string | null>(null);
+  const [orgError, setOrgError] = useState<string | null>(null);
   const { messages, addMessage, removeMessage } = useMessages();
   const allMessages = messages;
 
@@ -71,7 +72,10 @@ export default function OrgMembersPage() {
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch org name.");
+        if (!res.ok) {
+            setOrgError("Failed to fetch Organization.")
+            throw new Error("Failed to fetch Organization.");
+        }
         return res.json();
       })
       .then(data => {
@@ -134,7 +138,6 @@ export default function OrgMembersPage() {
       .catch(err => {
         if (err?.name === "AbortError") return;
         setMembers([]);
-        setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
   };
@@ -314,14 +317,21 @@ export default function OrgMembersPage() {
           )}
         </div>
 
-        {error && <div className={styles.errorState}>{error}</div>}
-
         {loading ? (
           <div className={styles.loadingState}>Loading members...</div>
-        ) : mainError ? (
-            <div className={`${styles.statusMessage} ${styles.error}`}>
-                {mainError}
-            </div>
+        ) : mainError || orgError ? (
+            <>
+                {orgError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {orgError}
+                    </div>
+                )}
+                {mainError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {mainError}
+                    </div>
+                )}
+            </>
         ) : members.length === 0 ? (
           <div className={styles.emptyState}>No members found.</div>
         ) : (
