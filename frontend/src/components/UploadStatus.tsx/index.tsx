@@ -33,8 +33,8 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
-          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
-            {!upload.status.toLowerCase().includes("error") && <span className={styles.statusDot}></span>}
+          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : upload.status.toLowerCase().includes("success") ? styles.success : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
+            {!upload.status.toLowerCase().includes("error") && !upload.status.toLowerCase().includes("success") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
@@ -72,7 +72,7 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
                   </div>
                 </div>
                 <div className={styles.metric}>
-                  <div className={styles.metricLabel}>Temps restant</div>
+                  <div className={styles.metricLabel}>Time remaining</div>
                   <div className={styles.metricValue}>{Math.round(upload.progress.remainingTime)}s</div>
                 </div>
               </div>
