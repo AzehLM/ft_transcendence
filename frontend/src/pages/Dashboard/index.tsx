@@ -90,7 +90,7 @@ export default function DashboardPage() {
         } catch (err: any) {
             addFileMessage(err.message || "Failed to create folder.", "error");
         }
-        setFolderError("");
+        setFolderError(null);
         setFolderName("");
         setIsFolderModalOpen(false);
     };
