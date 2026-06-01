@@ -1,104 +1,143 @@
 .page {
     flex: 1;
-    padding: 2rem;
     overflow-y: auto;
-    /* position: relative; */
     width: 100%;
-    background-color: #f5f5f5;
+    min-height: 100%;
+    background-color: #fff8f6;
     font-family: 'IBM Plex Sans', sans-serif;
-
 }
 
 .contentArea {
-    padding: 5%;
+    padding: 72px 48px 80px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .title {
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 700;
-    color: var(--brand-dark);
-    letter-spacing: 0px;
+    color: #241916;
+    letter-spacing: -0.5px;
+}
+
+.pageSubtitle {
+    margin-top: 0;
+    margin-bottom: 32px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    color: #524440;
+    line-height: 1.5;
 }
 
 .subtitle {
     margin-top: 0;
-    margin-bottom: 48px;
+    margin-bottom: 24px;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 28px;
-    font-weight: 500;
-    color: var(--brand-dark);
-    letter-spacing: 0px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #241916;
+    letter-spacing: -0.2px;
 }
 
 .mainBox {
-    margin : 20px 0;
-    padding : 20px;
-    background-color: var(--brand-light);
-    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
-    border-radius: 8px;
+    margin: 0 0 20px 3%;
+    padding: 32px 36px;
+    background-color: white;
+    border: 1px solid rgba(215, 194, 189, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    max-width: 50vw;
     width: 100%;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mainBox:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
 }
 
 .profileBox {
     display: flex;
-    gap: 15px;
+    gap: 36px;
+    align-items: center;
 }
 
 .profileAvatarCol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 5%;
-    width: 50%;
-    min-width: 200px;
-    max-width: 600px;
+    gap: 12px;
+    padding: 0;
+    flex-shrink: 0;
+    width: auto;
 }
 
 .profileAvatarCol img {
-    width: 90%;
-    padding-bottom: 10%;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 1px solid #d7c2bd;
+    object-fit: cover;
+}
+
+.avatarPlaceholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 1px solid #d7c2bd;
+    background-color: #f9e4de;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #865142;
 }
 
 .profileButton {
-    padding: 16px 16px;
-    width: 120px;
     min-width: fit-content;
-    min-height: 50px;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 18px;
-    color: var(--brand-dark);
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
-    transition: opacity 0.3s ease;
-    box-shadow: 0px 4px 4px 0px var(--color-dark-shadow);
-    max-width: 50%;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
     white-space: nowrap;
 }
 
 .buttonChange {
-    background-color: var(--brand-primary);
+    background-color: #865142;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(134, 81, 66, 0.25);
+}
+
+.buttonChange:hover {
+    background-color: #6a3a2c;
+    box-shadow: 0 6px 18px rgba(134, 81, 66, 0.35);
 }
 
 .buttonCancel {
-    background-color: #eeb9aa
+    background-color: transparent;
+    color: #865142;
+    border: 1.5px solid #865142;
 }
 
-.profileButton:hover {
-    opacity: 0.8;
-    cursor: pointer;
+.buttonCancel:hover {
+    background-color: rgba(134, 81, 66, 0.06);
 }
 
 .infoBox {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin: 10px;
+    margin: 0;
     width: 100%;
-    gap: 8%;
-    max-width: 600px;
+    gap: 16px;
     flex: 1;
 }
 
@@ -117,7 +156,7 @@
   width: 100%;
   box-sizing: border-box;
   background-color: white;
-  border: 2px solid var(--brand-primary);
+  border: 2px solid #865142;
   border-radius: 8px;
   padding: 8px 12px;
   outline: none;
@@ -171,16 +210,83 @@
   flex-shrink: 0;
 }
 
+.sectionTitle {
+    margin-top: 0;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #241916;
+    letter-spacing: -0.2px;
+}
+
+.sectionDescription {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #524440;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.statusRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statusEnabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    color: #16a34a;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.statusDisabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    color: #dc2626;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.statusText {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: #524440;
+}
+
 .handlePassword {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     justify-content: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
 .handlePassword button {
-  align-self: flex-start;
+    align-self: flex-start;
+}
+
+.settingsCard .handlePassword button {
+    align-self: flex-end;
+    margin-top: 8px;
 }
 
 .accountBoxes {
@@ -189,81 +295,155 @@
     gap: 20px;
 }
 
+.settingsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 50vw;
+    margin-left: 3%;
+    width: 100%;
+}
+
+.settingsCard {
+    background-color: white;
+    border: 1px solid rgba(215, 194, 189, 0.5);
+    border-radius: 16px;
+    padding: 28px 32px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.settingsCard:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
+}
+
+.settingsCard input[type="password"],
+.settingsCard input[type="text"] {
+    border: 1.5px solid rgba(215, 194, 189, 0.8);
+    border-radius: 10px;
+    padding: 11px 14px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    background-color: white;
+    margin-top: 8px;
+    color: #241916;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settingsCard input[type="password"]:focus,
+.settingsCard input[type="text"]:focus {
+    border-color: #865142;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.12);
+}
+
+.settingsCard input::placeholder {
+    color: #84736f;
+}
+
+.settingsCard .inputBox p {
+    font-size: 13px;
+    font-weight: 600;
+    color: #84736f;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
 .errorMessage {
-  color: #d32f2f;
-  margin-top: 8px;
-  font-size: 14px;
-  text-align: center;
-  font-weight: 500;
-  font-size: 18px;
+    color: #dc2626;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
-/* still need to be checked */
 @media (max-width: 1080px) {
+    .mainBox {
+        max-width: 100%;
+        margin-left: 0;
+        padding: 24px;
+    }
+
+    .settingsGrid {
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .settingsCard {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contentArea {
+        padding: 40px 20px 60px;
+    }
+
+    .title {
+        font-size: 26px;
+    }
+
+    .mainBox {
+        padding: 20px;
+    }
+
+    .settingsCard {
+        padding: 20px;
+    }
+
     .profileBox {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .profileAvatarCol {
         width: 100%;
-    }
-    
-    .infoBox {
-        width: 100%;
-    }
-    
-    .mainBox {
-        padding: 20px;
-    }
-    
-    .buttons {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .profileButton {
-        width: 100%;
-    }
-}
-
-
-@media (max-width: 1200px) {
-    .profileAvatarCol img {
-        width: 200px;
-    }
-}
-/* still need to be checked */
-@media (max-width: 1080px) {
-    .profileBox {
-        flex-direction: column;
         align-items: center;
     }
-    
-    .profileAvatarCol {
-        width: 100%;
-    }
-    
+
     .infoBox {
         width: 100%;
     }
-    
-    .mainBox {
-        padding: 20px;
-    }
-    
+
     .buttons {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .profileButton {
         width: 100%;
+        text-align: center;
+    }
+
+    .statusRow {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .statusRow .profileButton {
+        width: auto;
     }
 }
 
+@media (max-width: 480px) {
+    .contentArea {
+        padding: 24px 16px 40px;
+    }
 
-@media (max-width: 1200px) {
-    .profileAvatarCol img {
-        width: 200px;
+    .title {
+        font-size: 22px;
+    }
+
+    .settingsCard {
+        padding: 16px;
+    }
+
+    .mainBox {
+        padding: 16px;
     }
 }

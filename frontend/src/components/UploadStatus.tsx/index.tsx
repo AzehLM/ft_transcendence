@@ -19,36 +19,26 @@ interface Upload {
 
 interface UploadStatusProps {
   uploads: Upload[];
-  downloadStatus?: string | null;
-  hideDownloadMessage?: boolean;
-  error?: string | null;
-  success?: string | null;
-  hideMessage?: boolean;
-  downloadError?: boolean;
+  mainError?: string | null;
 }
 
-export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, error, success, hideMessage, downloadError = false }: UploadStatusProps) {
+export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
   return (
     <>
-      {error && (
-        <div className={`${styles.statusMessage} ${styles.error} ${hideMessage ? styles.hide : ""}`}>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className={`${styles.statusMessage} ${success.toLowerCase().includes("error") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
-            {success}
+      {mainError && (
+        <div className={`${styles.statusMessage} ${styles.error}`}>
+          {mainError}
         </div>
       )}
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
-        <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
+          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
             {!upload.status.toLowerCase().includes("error") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
-        <div className={`${styles.fileInfoCard} ${upload.hiding ? styles.hide : ""}`}>
+          <div className={`${styles.fileInfoCard} ${upload.hiding ? styles.hide : ""}`}>
             <div className={styles.fileName}>{upload.fileInfo.name}</div>
             <div className={styles.fileDetails}>
               <span><strong>Type:</strong> {upload.fileInfo.type}</span>
@@ -90,12 +80,6 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
           )}
         </div>
       ))}
-
-      {downloadStatus && (
-        <div className={`${styles.statusMessage} ${downloadError ? styles.error : styles.success} ${hideDownloadMessage ? styles.hide : ""}`}>
-          {downloadStatus}
-        </div>
-      )}
     </>
   );
 }

@@ -8,18 +8,18 @@ export const UPLOAD_CONFIG = {
 };
 
 export const UPLOAD_MESSAGES = {
-    INITIALIZING: (filename: string) => `Initialisation du chiffrement de "${filename}"...`,
-    REQUESTING_AUTH: 'Demande d\'autorisation de serveur...',
-    ENCRYPTING: 'Chiffrement et envoi des chunks...',
-    UPLOADING: 'Envoi du fichier chiffré...',
-    FINALIZING: 'Sauvegarde des métadonnées...',
-    SUCCESS: (filename: string) => `${filename} a été chiffré et uploadé avec succès.`,
+    INITIALIZING: (filename: string) => `Initializing encryption for "${filename}"...`,
+    REQUESTING_AUTH: 'Requesting server authorization...',
+    ENCRYPTING: 'Encrypting and uploading chunks...',
+    UPLOADING: 'Uploading encrypted file...',
+    FINALIZING: 'Saving metadata...',
+    SUCCESS: (filename: string) => `${filename} has been successfully encrypted and uploaded.`,
 
     ERROR_VALIDATION_SIZE: (max: string, current: string) =>
-        `Fichier trop volumineux. Taille max: ${max}, votre fichier: ${current}`,
-    ERROR_PUBLIC_KEY: 'Clé publique introuvable. Assurez-vous d\'être connecté.',
-    ERROR_SERVER_AUTH: 'Impossible de préparer l\'upload sur le serveur.',
-    ERROR_STORAGE_REJECTED: 'Le fichier chiffré a été rejeté par le stockage.',
-    ERROR_FINALIZE_FAILED: 'Le serveur n\'a pas pu finaliser l\'upload.',
-    ERROR_PART_FAILED: 'Une partie de l\'upload a échoué.',
+        `File too large. Max size: ${max}, your file: ${current}`,
+    ERROR_PUBLIC_KEY: 'Public key not found. Please ensure you are logged in.',
+    ERROR_SERVER_AUTH: 'Failed to prepare upload on the server.',
+    ERROR_STORAGE_REJECTED: 'The encrypted file was rejected by storage.',
+    ERROR_FINALIZE_FAILED: 'The server could not finalize the upload.',
+    ERROR_PART_FAILED: 'A part of the upload failed.',
 };

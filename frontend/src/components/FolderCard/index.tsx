@@ -11,12 +11,15 @@ interface FolderProps {
   name: string;
   createdAt: string;
   orgId?: string;
-  onDelete?: (id: string) => void;
-  onRename?: (id: string, newName: string) => Promise<void>;
-  onMove?: (id: string, newParentId: string | null) => Promise<void>;
+  owner_user_id?: string;
+  role?: string;
+  user_id?: string;
+  onDelete?: (id: string, name: string) => void;
+  onRename?: (id: string, newName: string, prevName: string) => Promise<void>;
+  onMove?: (id: string, newParentId: string | null, name: string) => Promise<void>;
 }
 
-export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onMove }: FolderProps) {
+export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, user_id, onDelete, onRename, onMove }: FolderProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
@@ -56,7 +59,7 @@ export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onM
 
     const handleConfirmDelete = () => {
         setShowDeleteModal(false);
-        onDelete?.(id);
+        onDelete?.(id, name);
     };
 
     const handleConfirmRename = async () => {
@@ -81,31 +84,44 @@ export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onM
   return (
     <>
         <div className={styles.row} onClick={handleEnterFolder}>
-        <Folder className={styles.icon} />
+        <div style={{
+            backgroundColor: "rgba(213, 79, 42, 0.08)",
+            color: "#d54f2a",
+            padding: "6px",
+            borderRadius: "6px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: "10px",
+            flexShrink: 0
+        }}>
+            <Folder size={18} fill="rgba(213, 79, 42, 0.2)" />
+        </div>
 
         <div className={styles.info}>
             <span className={styles.name}>{name}</span>
             <span className={styles.date}>{date}</span>
         </div>
-
-        <div className={styles.menuWrapper} ref={menuRef} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
-            <MoreVertical size={16} />
-            </button>
-            {showMenu && (
-            <div className={styles.dropdown}>
-                <button onClick={() => { setShowRenameModal(true); setShowMenu(false); }}>
-                <Pencil size={14} /> Rename
-                </button>
-                <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
-                <Move size={14} /> Move
-                </button>
-                <button className={styles.deleteBtn} onClick={() => { setShowDeleteModal(true); setShowMenu(false); }}>
-                <Trash2 size={14} /> Delete
-                </button>
-            </div>
-            )}
-        </div>
+        {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+          <div className={styles.menuWrapper} ref={menuRef} onClick={(e) => e.stopPropagation()}>
+              <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
+              <MoreVertical size={16} />
+              </button>
+              {showMenu && (
+              <div className={styles.dropdown}>
+                  <button onClick={() => { setShowRenameModal(true); setShowMenu(false); }}>
+                  <Pencil size={14} /> Rename
+                  </button>
+                  <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
+                  <Move size={14} /> Move
+                  </button>
+                  <button className={styles.deleteBtn} onClick={() => { setShowDeleteModal(true); setShowMenu(false); }}>
+                  <Trash2 size={14} /> Delete
+                  </button>
+              </div>
+              )}
+          </div>
+        )}
         </div>
 
       <ConfirmationModal
@@ -133,7 +149,7 @@ export function FolderCard({ id, name, createdAt, orgId, onDelete, onRename, onM
           fileName={name}
           orgId={orgId}
           onConfirm={(folderId) => {
-            onMove?.(id, folderId === "" ? null : folderId);
+            onMove?.(id, folderId === "" ? null : folderId, name);
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}

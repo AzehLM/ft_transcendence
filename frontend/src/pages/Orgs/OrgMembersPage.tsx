@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
 import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
-import { UserMinus, Shield, UserPlus } from "lucide-react";
+import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
-import { getPrivateKeyFromSession } from "../../services/crypto.service";
-import { resetKeys } from "../../services/auth.service";
 import { z } from "zod";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
+import statusStyles from "../Organizations/Organizations.module.css"
 
 interface Member {
   user_id: string;
@@ -27,8 +29,8 @@ export default function OrgMembersPage() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
@@ -41,17 +43,40 @@ export default function OrgMembersPage() {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
 
-  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
+
+  const { keyMissing, setKeyMissing, password,
+    setPassword, isResetting, keyModalError, setKeyModalError,
+    checkKeys, handleResetKeys } = useKeyCheck();
+
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
+  const avatarUrlsRef = useRef<Record<string, string>>({});
+
+  const [mainError, setMainError] = useState<string | null>(null);
+  const [orgError, setOrgError] = useState<string | null>(null);
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
+
+  useEffect(() => {
+    return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
+  }, []);
+
+  const setAvatarUrl = (userId: string, newUrl: string) => {
+    if (avatarUrlsRef.current[userId]) {
+      URL.revokeObjectURL(avatarUrlsRef.current[userId]);
+    }
+    avatarUrlsRef.current[userId] = newUrl;
+    setAvatarUrls((prev: Record<string, string>) => ({ ...prev, [userId]: newUrl }));
+  };
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch org name.");
+        if (!res.ok) {
+            setOrgError("Failed to fetch Organization.")
+            throw new Error("Failed to fetch Organization.");
+        }
         return res.json();
       })
       .then(data => {
@@ -64,41 +89,64 @@ export default function OrgMembersPage() {
 
   }, [id]);
 
-  const fetchMembers = () => {
-    fetchWithRefresh(`/api/orgs/${id}/members`)
+  const fetchMembers = (signal?: AbortSignal) => {
+    setMainError(null);
+    fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
           return null;
         }
-        if (!res.ok) throw new Error("Failed to fetch members.");
+        if (!res.ok) {
+          setMainError("Failed to fetch members.");
+          throw new Error("Failed to fetch members.");
+        }
         return res.json();
       })
       .then(data => {
         if (!data) return;
         setMembers(data);
 
-        fetchWithRefresh("/api/auth/me")
+        data.forEach((member: Member) => {
+          fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
+            .then(res => {
+              if (!res.ok) return null;
+              return res.blob();
+            })
+            .then(blob => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                setAvatarUrl(member.user_id, url);
+              }
+            })
+            .catch(err => { if (err?.name !== "AbortError") {} });
+        });
+
+        fetchWithRefresh("/api/auth/me", { signal })
           .then(res => {
             if (!res.ok) throw new Error("Failed to fetch user.");
             return res.json();
           })
           .then(me => {
-            setEmail(me.email);
             const myMember = data.find((m: Member) => m.email === me.email);
-            if (myMember) setMyRole(myMember.role);
+            if (myMember) {
+              setMyRole(myMember.role);
+              setMyUserId(myMember.user_id);
+            }
           })
-          .catch(() => setMyRole(null));
+          .catch(err => { if (err?.name !== "AbortError") setMyRole(null); });
       })
-      .catch(() => {
+      .catch(err => {
+        if (err?.name === "AbortError") return;
         setMembers([]);
-        setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchMembers();
+    const controller = new AbortController();
+    fetchMembers(controller.signal);
+    return () => controller.abort();
   }, [id, navigate, status]);
 
   useEffect(() => {
@@ -132,12 +180,26 @@ export default function OrgMembersPage() {
       }
     };
 
+    const handleRoleUpdated = (data: any) => {
+      if (data && data.user_id && data.role) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === data.user_id ? { ...m, role: data.role } : m
+          )
+        );
+        if (myUserId && data.user_id === myUserId) {
+          setMyRole(data.role);
+        }
+      }
+    };
+
     registerListener("MEMBER_ADDED", handleMemberChange);
     registerListener("MEMBER_REMOVED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
     registerListener("USER_ONLINE", handleUserOnline);
     registerListener("USER_OFFLINE", handleUserOffline);
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
+    registerListener("ROLE_UPDATED", handleRoleUpdated);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
@@ -146,8 +208,9 @@ export default function OrgMembersPage() {
       unregisterListener("USER_ONLINE", handleUserOnline);
       unregisterListener("USER_OFFLINE", handleUserOffline);
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
+      unregisterListener("ROLE_UPDATED", handleRoleUpdated);
     };
-  }, [registerListener, unregisterListener, id]);
+  }, [registerListener, unregisterListener, id, myUserId]);
 
   const handleAddMember = async () => {
     const result = z.email().safeParse(memberEmail);
@@ -157,10 +220,9 @@ export default function OrgMembersPage() {
     }
     setModalError(null);
 
-    const userPrivateKey = await getPrivateKeyFromSession();
-    if (!userPrivateKey) {
-      setPublicKeyMissing(true);
-      return;
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
     }
 
     const { success, error } = await addMemberToOrg(id!, memberEmail);
@@ -179,21 +241,7 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
-  };
-
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
-      return;
-    }
-
-    setPassword("");
-    setPublicKeyMissing(false);
-    setModalError(null);
+    addMessage(`${memberEmail} added to ${orgName}`, "success");
   };
 
   const handleChangeRole = async () => {
@@ -221,6 +269,7 @@ export default function OrgMembersPage() {
     ));
     setShowChangeRoleModal(false);
     setSelectedMember(null);
+    addMessage(`${selectedMember.email} successfully changed role`, "success");
   };
 
   const handleRemoveMember = async () => {
@@ -243,13 +292,7 @@ export default function OrgMembersPage() {
     setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
     setShowRemoveModal(false);
     setMemberToRemove(null);
-  };
-
-  const getInitials = (member: Member) => {
-    if (member.first_name && member.family_name) {
-      return `${member.first_name[0]}${member.family_name[0]}`.toUpperCase();
-    }
-    return member.email[0].toUpperCase();
+    addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
   };
 
   const getName = (member: Member) => {
@@ -262,6 +305,7 @@ export default function OrgMembersPage() {
   return (
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>Organization Members</h1>
@@ -278,10 +322,21 @@ export default function OrgMembersPage() {
           )}
         </div>
 
-        {error && <div className={styles.errorState}>{error}</div>}
-
         {loading ? (
           <div className={styles.loadingState}>Loading members...</div>
+        ) : mainError || orgError ? (
+            <>
+                {orgError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {orgError}
+                    </div>
+                )}
+                {mainError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {mainError}
+                    </div>
+                )}
+            </>
         ) : members.length === 0 ? (
           <div className={styles.emptyState}>No members found.</div>
         ) : (
@@ -289,9 +344,15 @@ export default function OrgMembersPage() {
             {members.map((member) => (
               <div key={member.user_id} className={styles.memberCard}>
                 <div className={styles.avatar}>
-                  <span className={styles.initialsAvatar}>
-                    {getInitials(member)}
-                  </span>
+                  {avatarUrls[member.user_id] ? (
+                    <img
+                      src={avatarUrls[member.user_id]}
+                      alt={getName(member)}
+                      className={styles.avatarImg}
+                    />
+                  ) : (
+                    <User size={22} strokeWidth={1.5} color="#865142" />
+                  )}
                 </div>
                 <div className={styles.memberInfo}>
                   <h3 className={styles.memberName}>{getName(member)}</h3>
@@ -357,14 +418,15 @@ export default function OrgMembersPage() {
       />
 
       <ConfirmationModal
-        isOpen={publicKeyMissing}
+        isOpen={keyMissing}
         fileName=""
         onConfirm={handleResetKeys}
-        onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+        onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
         isKeyMissing={true}
         inputValue={password}
         onInputChange={setPassword}
-        errorMessage={modalError ?? undefined}
+        errorMessage={keyModalError ?? undefined}
+        isLoading={isResetting}
       />
 
       <ConfirmationModal

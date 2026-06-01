@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "../../styles/profile.module.css";
 import { SettingsLayout } from "./SettingsLayout";
-import avatar from './assets/temp-avatar.png';
+import { User } from "lucide-react";
 import { EditableField } from "../../components/EditableField";
 import { fetchWithRefresh } from "../../services/api.service";
 import fieldStyles from "../../components/EditableField/EditableField.module.css"
@@ -11,28 +11,46 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState<string>("")
   const [familyName, setFamilyName] = useState<string>("")
   const [email, setEmail] = useState<string>("")
+  const [avatarBlobUrl, setAvatarBlobUrl] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string>("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
+    let createdUrl: string | null = null;
 
-    fetchWithRefresh("/api/auth/me")
+    fetchWithRefresh("/api/auth/me", { signal })
       .then(res => {
-        // navigate to 404 if not found ?
         if (!res.ok) throw new Error("Failed to fetch user");
         return res.json();
       })
       .then(data => {
-        if (!cancelled && data) {
+        if (data) {
           setFirstName(data.first_name);
           setFamilyName(data.family_name);
           setEmail(data.email);
         }
       })
-      .catch(err => {
-        if (!cancelled) console.error("Failed to fetch user:", err);
-      });
+      .catch(err => { if (err?.name !== "AbortError") console.error("Failed to fetch user:", err); });
 
-    return () => { cancelled = true; };
+    fetchWithRefresh("/api/user/me/avatar", { signal })
+      .then(res => {
+        if (!res.ok) return null;
+        return res.blob();
+      })
+      .then(blob => {
+        if (blob) {
+          createdUrl = URL.createObjectURL(blob);
+          setAvatarBlobUrl(createdUrl);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      controller.abort();
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
   }, []);
 
   const handleChangeFirstName = async (newFirstName: string) => {
@@ -62,6 +80,47 @@ export default function ProfilePage() {
     setFamilyName(newFamilyName)
   };
 
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    if (file.type !== "image/jpeg" && file.type !== "image/png") {
+      setAvatarError("Only JPEG and PNG images are supported.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setAvatarError("Image must be smaller than 4 MB.");
+      return;
+    }
+
+    setAvatarError("");
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await fetchWithRefresh("/api/user/avatar", {
+        method: "PATCH",
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setAvatarError(data.error || "Failed to upload avatar.");
+        return;
+      }
+      const newUrl = URL.createObjectURL(file);
+      setAvatarBlobUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev);
+        return newUrl;
+      });
+      window.dispatchEvent(new CustomEvent("avatar-changed", { detail: newUrl }));
+    } catch {
+      setAvatarError("Failed to upload avatar.");
+    }
+  };
+
   const handleResetFamilyName = async () => {
     const response = await fetchWithRefresh(`/api/auth/family-name`, {
       method: "PATCH",
@@ -78,8 +137,24 @@ export default function ProfilePage() {
             <h2 className={styles.subtitle}>Personal information</h2>
             <div className={styles.profileBox}>
               <div className={styles.profileAvatarCol}>
-                <img src={avatar} alt="Avatar" />
-                <button className={`${styles.buttonChange} ${styles.profileButton}`}>Change Avatar</button>
+                {avatarBlobUrl
+                  ? <img src={avatarBlobUrl} alt="Avatar" />
+                  : <div className={styles.avatarPlaceholder}><User size={44} strokeWidth={1.5} /></div>
+                }
+                <button
+                  className={`${styles.buttonChange} ${styles.profileButton}`}
+                  onClick={handleAvatarClick}
+                >
+                  Change Avatar
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarChange}
+                />
+                {avatarError && <p className={styles.errorMessage}>{avatarError}</p>}
               </div>
               <div className={styles.infoBox}>
                 <EditableField

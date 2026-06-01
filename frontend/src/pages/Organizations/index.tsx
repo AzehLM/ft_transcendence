@@ -6,11 +6,11 @@ import { generateOrganization, addMemberToOrg } from "../../services/organizatio
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { organizationSchema } from "../../schemas/organization.schema";
-import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
-import { resetKeys } from "../../services/auth.service";
 import { z } from "zod";
+import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
-
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
 
 interface Organization {
   id: string;
@@ -23,17 +23,25 @@ interface Organization {
 export default function OrganizationsPage() {
   const navigate = useNavigate();
   const { registerListener, unregisterListener, reconnect } = useNotifications();
-
-
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [publicKeyMissing, setPublicKeyMissing] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const { keyMissing, setKeyMissing, password,
+    setPassword, isResetting, keyModalError, setKeyModalError,
+    checkKeys, handleResetKeys } = useKeyCheck();
+  const [mainError, setMainError] = useState<string | null>(null);
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
 
   const fetchOrgs = () => {
+    setMainError(null);
     fetchWithRefresh("/api/orgs")
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch organizations.");
+        if (!res.ok) {
+          setMainError("Failed to fetch organizations.");
+          throw new Error("Failed to fetch organizations.");
+        }
         return res.json();
       })
       .then(data => setOrgs(data))
@@ -56,6 +64,7 @@ export default function OrganizationsPage() {
     registerListener("ORGA_RENAMED", handleOrgChange);
     registerListener("ORGA_DELETED", handleOrgChange);
     registerListener("USER_PROFILE_UPDATED", handleOrgChange);
+    registerListener("ROLE_UPDATED", handleOrgChange);
 
     return () => {
       unregisterListener("ADDED_TO_NEW_ORGA", handleOrgChange);
@@ -64,10 +73,9 @@ export default function OrganizationsPage() {
       unregisterListener("ORGA_RENAMED", handleOrgChange);
       unregisterListener("ORGA_DELETED", handleOrgChange);
       unregisterListener("USER_PROFILE_UPDATED", handleOrgChange);
+      unregisterListener("ROLE_UPDATED", handleOrgChange);
     };
   }, [registerListener, unregisterListener]);
-
-  const [modalError, setModalError] = useState<string | null>(null);
 
   // Create an orga
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -81,11 +89,9 @@ export default function OrganizationsPage() {
         return;
       }
 
-      // handle missing public key
-      const userPublicKey = await getPublicKeyFromSession();
-      if (!userPublicKey) {
-        setPublicKeyMissing(true)
-        return;
+      const hasKeys = await checkKeys();
+      if (!hasKeys) {
+        return
       }
 
       const data = await generateOrganization(result.data.name);
@@ -116,7 +122,9 @@ export default function OrganizationsPage() {
     } catch (err) {
       console.error("Error:", err);
       setModalError("An error occurred, please try again.");
+      return;
     }
+    addMessage(`Organization "${orgName}" created`, "success");
   };
 
   // Add a member
@@ -134,10 +142,9 @@ export default function OrganizationsPage() {
     if (!memberEmail.trim() || !selectedOrg) return;
     setAddMemberError(null);
 
-    const userPrivateKey = await getPrivateKeyFromSession();
-    if (!userPrivateKey) {
-      setPublicKeyMissing(true)
-      return;
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return
     }
 
     const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
@@ -148,10 +155,10 @@ export default function OrganizationsPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+    addMessage(`${memberEmail} added to ${selectedOrg.name}`, "success");
   };
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [orgErrors, setOrgErrors] = useState<Record<string, string>>({});
 
   const handleLeaveOrga = async () => {
     try {
@@ -160,7 +167,6 @@ export default function OrganizationsPage() {
         return;
       }
       const response = await fetchWithRefresh(`/api/orgs/${selectedOrg.id}/members/me`, { method: "DELETE" });
-
 
       if (!response.ok) {
         const text = await response.text();
@@ -171,57 +177,32 @@ export default function OrganizationsPage() {
             message = data.error || data.message || message;
           }
         } catch {}
-        setShowLeaveConfirm(false);
-        setOrgErrors(prev => ({ ...prev, [selectedOrg.id]: message }));
+        setModalError(message);
         return;
       }
 
+      setModalError(null);
       setShowLeaveConfirm(false);
       setOrgs(prev => prev.filter(o => o.id !== selectedOrg.id));
       setSelectedOrg(null);
 
     } catch (err) {
       console.error("Network error:", err);
-      setShowLeaveConfirm(false);
-      if (selectedOrg) {
-        setOrgErrors(prev => ({
-          ...prev,
-          [selectedOrg.id]: "Network error, please try again."
-        }));
-      }
-    }
-  };
-
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-
-    useEffect(() => {
-    fetchWithRefresh("/api/auth/me")
-        .then(res => res.json())
-        .then(data => setEmail(data.email));
-    }, []);
-
-  const handleResetKeys = async () => {
-    setModalError(null);
-    if (!password) return;
-
-    const { success, error } = await resetKeys(email, password);
-    if (!success) {
-      setModalError(error ?? "Error !");
+      setModalError("Network error, please try again.");
       return;
     }
-
-    setPassword("");
-    setPublicKeyMissing(false);
-    setModalError(null);
+    selectedOrg ? addMessage(`You left ${selectedOrg.name}`, "success") : addMessage(`You left the organization`, "success");
   };
 
   const getInitials = (name: string) => {
     return name.substring(0, 2).toUpperCase();
   };
 
+
   return (
     <div className={styles.container}>
+      <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
+
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>Organizations</h1>
@@ -262,19 +243,26 @@ export default function OrganizationsPage() {
           errorMessage={addMemberError ?? undefined}
         />
         <ConfirmationModal
-          isOpen={publicKeyMissing}
+          isOpen={keyMissing}
           fileName={orgName}
           onConfirm={handleResetKeys}
-          onCancel={() => { setPublicKeyMissing(false); setModalError(null); }}
+          onCancel={() => { setKeyMissing(false); setKeyModalError(null); }}
           isKeyMissing={true}
           inputValue={password}
           onInputChange={setPassword}
-          errorMessage={modalError ?? undefined}
+          errorMessage={keyModalError ?? undefined}
+          isLoading={isResetting}
         />
 
-        {loading ? (
-            <div className={styles.loadingState}>Loading organizations...</div>
-        ) : orgs.length === 0 ? (
+
+
+          {loading ? (
+              <div className={styles.loadingState}>Loading organizations...</div>
+          ) : mainError ? (
+              <div className={`${styles.statusMessage} ${styles.error}`}>
+                  {mainError}
+              </div>
+          ) : orgs.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>
                 <Building2 size={32} />
@@ -333,15 +321,13 @@ export default function OrganizationsPage() {
                           e.stopPropagation();
                           setSelectedOrg(org);
                           setShowLeaveConfirm(true);
+                          setModalError(null);
                         }}
                         title="Leave Organization"
                       >
                         <UserMinus size={18} />
                       </button>
                   </div>
-                    {orgErrors[org.id] && (
-                      <p className={styles.errorState}>{orgErrors[org.id]}</p>
-                    )}
                 </div>
             ))}
             {selectedOrg && (
@@ -349,10 +335,11 @@ export default function OrganizationsPage() {
                 isOpen={showLeaveConfirm}
                 fileName={selectedOrg.name}
                 onConfirm={handleLeaveOrga}
-                onCancel={() => setShowLeaveConfirm(false)}
+                onCancel={() => { setShowLeaveConfirm(false); setModalError(null); }}
                 isAccount={false}
                 isLeaveOrga={true}
                 isMe={true}
+                errorMessage={modalError ?? undefined}
               />
             )}
 

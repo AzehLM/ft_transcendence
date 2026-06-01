@@ -9,61 +9,31 @@ import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwr
 import { useEffect } from "react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { changePasswordSchema } from "../../schemas/auth.schema";
+import { TwoFAModal } from "../../components/TwoFAModal";
 
 
 export default function AccountPage() {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
-    const [isReset, setIsReset] = useState(false);
-
-    const [password, setPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [pwdError, setPwdError] = useState<string | null>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
-
     const [email, setEmail] = useState<string>("");
-
-    useEffect(() => {
-        fetchWithRefresh("/api/auth/me")
-            .then(res => res.json())
-            .then(data => setEmail(data.email));
-    }, []);
-
-    // Logout after password change (navigation guard)
-    useEffect(() => {
-        if (!isReset) return;
-        const handlePopState = () => {
-            sessionStorage.removeItem("passwordChanged");
-            logout(navigate);
-        };
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, [isReset]);
-
-    // Logout if coming back to this page after a password change
-    useEffect(() => {
-        if (sessionStorage.getItem("passwordChanged") === "true") {
-            sessionStorage.removeItem("passwordChanged");
-            logout(navigate);
-        }
-    }, []);
+    const [isTwoFAEnabled, setIsTwoFAEnabled] = useState<boolean>(false);
+    const [isTwoFAModalOpen, setIsTwoFAModalOpen] = useState(false);
 
     const handleDeleteAccount = async () => {
         try {
             const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
             if (!response.ok) {
-            const text = await response.text();
-            let message = "Failed to delete account, please try again.";
-            try {
-                if (text) {
-                const data = JSON.parse(text);
-                message = data.message || data.error || message;
-                }
-            } catch {}
-            setError(message);
-            return;
+                const text = await response.text();
+                let message = "Failed to delete account, please try again.";
+                try {
+                    if (text) {
+                        const data = JSON.parse(text);
+                        message = data.message || data.error || message;
+                    }
+                } catch { }
+                setError(message);
+                return;
             }
 
             await logout(navigate);
@@ -78,6 +48,21 @@ export default function AccountPage() {
             }
         }
     };
+
+    const [password, setPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [pwdError, setPwdError] = useState<string | null>(null);
+    const [isReset, setIsReset] = useState(false);
+
+    useEffect(() => {
+        fetchWithRefresh("/api/auth/me")
+            .then(res => res.json())
+            .then(data => {
+                setEmail(data.email);
+                setIsTwoFAEnabled(data.two_factor_enabled || false);
+            });
+    }, []);
 
     const handleChangePassword = async () => {
         setPwdError(null);
@@ -133,12 +118,12 @@ export default function AccountPage() {
                         const data = JSON.parse(text);
                         message = data.error || data.message || message;
                     }
-                } catch {}
-                    setPwdError(message);
-                    setPassword("");
-                    setNewPassword("");
-                    setConfirmPassword("");
-                    return;
+                } catch { }
+                setPwdError(message);
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                return;
             }
 
             setPassword("");
@@ -164,9 +149,9 @@ export default function AccountPage() {
 
     return (
         <SettingsLayout>
-            <div className={styles.accountBoxes}>
-                <div className={styles.mainBox}>
-                    <h2 className={styles.subtitle}>Security</h2>
+            <div className={styles.settingsGrid}>
+                <div className={styles.settingsCard}>
+                    <h2 className={styles.sectionTitle}>Security</h2>
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
@@ -209,6 +194,23 @@ export default function AccountPage() {
                         </button>
                     </div>
                 </div>
+                <div className={styles.settingsCard}>
+                    <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
+                    <p className={styles.sectionDescription}>
+                        Enable Two-Factor Authentication to add an extra layer of security to your account.
+                    </p>
+                    <div className={styles.statusRow}>
+                        <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
+                            {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
+                        </p>
+                        <button
+                            className={`${styles.buttonChange} ${styles.profileButton}`}
+                            onClick={() => setIsTwoFAModalOpen(true)}
+                        >
+                            {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
+                        </button>
+                    </div>
+                </div>
                 <ConfirmationModal
                     isOpen={isReset}
                     fileName=""
@@ -216,14 +218,24 @@ export default function AccountPage() {
                     onCancel={() => setIsReset(false)}
                     isPasswordChanged={true}
                 />
+                <TwoFAModal
+                    isOpen={isTwoFAModalOpen}
+                    isTwoFAEnabled={isTwoFAEnabled}
+                    email={email}
+                    onClose={() => setIsTwoFAModalOpen(false)}
+                    onSuccess={() => {
+                        setIsTwoFAEnabled(prev => !prev);
+                        setIsTwoFAModalOpen(false);
+                    }}
+                />
                 <DangerZone
-                label="If you want to delete your account, click on the button"
-                description="This action cannot be undone"
-                buttonText="Delete Account"
-                fileName="your account"
-                onConfirm={handleDeleteAccount}
-                isAccount={true}
-                error={error}
+                    label="If you want to delete your account, click on the button"
+                    description="This action cannot be undone"
+                    buttonText="Delete Account"
+                    fileName="your account"
+                    onConfirm={handleDeleteAccount}
+                    isAccount={true}
+                    error={error}
                 />
             </div>
         </SettingsLayout>
