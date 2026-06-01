@@ -6,9 +6,9 @@ import {
 } from '../services/crypto.service';
 import { decryptOrgPrivateKey } from '../services/organizations.service';
 import { fetchWithRefresh } from '../services/api.service';
+import { UPLOAD_CONFIG } from '../config/uploadConfig';
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5 Mo
-const CIPHER_CHUNK_SIZE = CHUNK_SIZE + 16;
+const CIPHER_CHUNK_SIZE = UPLOAD_CONFIG.CHUNK_SIZE + 16;
 
 interface DownloadMetadata {
     presigned_url: string;
