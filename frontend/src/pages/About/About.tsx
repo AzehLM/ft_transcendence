@@ -1,30 +1,13 @@
-import { Shield, Cpu, Lock, GraduationCap, Package, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Shield, Cpu, Lock, GraduationCap, Package } from "lucide-react";
 import styles from "../../styles/legal.module.css";
+import BackToHomeLink from "../../components/BackToHomeLink";
 
 function AboutPage() {
     return (
         <div className={styles.wrapper}>
             <main className={styles.container} style={{ paddingBottom: "80px" }}>
-                <div style={{ marginBottom: "30px" }}>
-                    <Link
-                        to="/"
-                        style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            color: "#865142",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            transition: "opacity 0.2s"
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                    >
-                        <ArrowLeft size={16} /> Back to Home
-                    </Link>
-                </div>
+                <BackToHomeLink />
+
 
                 <div style={{
                     display: "flex",

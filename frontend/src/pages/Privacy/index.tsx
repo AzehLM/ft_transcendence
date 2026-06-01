@@ -1,30 +1,12 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import styles from "../../styles/legal.module.css";
+import BackToHomeLink from "../../components/BackToHomeLink";
 
 function PrivacyPage() {
     return (
         <div className={styles.wrapper}>
             <main className={styles.container}>
-                <div style={{ marginBottom: "30px" }}>
-                    <Link 
-                        to="/" 
-                        style={{ 
-                            display: "inline-flex", 
-                            alignItems: "center", 
-                            gap: "8px", 
-                            color: "#865142", 
-                            textDecoration: "none", 
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            transition: "opacity 0.2s"
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                    >
-                        <ArrowLeft size={16} /> Back to Home
-                    </Link>
-                </div>
+                <BackToHomeLink />
+
                 <h1 className={styles.title}>Privacy Policy</h1>
                 <p className={styles.lastUpdated}>Last updated: Mai 2026</p>
 
