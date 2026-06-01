@@ -80,7 +80,6 @@
   cursor: pointer;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 4px 14px rgba(186, 26, 26, 0.25);
-  margin-left: 10px;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: 'IBM Plex Sans', sans-serif;
