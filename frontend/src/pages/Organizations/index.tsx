@@ -7,6 +7,8 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
 
 interface Organization {
   id: string;
@@ -26,11 +28,17 @@ export default function OrganizationsPage() {
   const { keyMissing, setKeyMissing, password, 
     setPassword, isResetting, keyModalError, setKeyModalError, 
     checkKeys, handleResetKeys } = useKeyCheck();
+  const [mainError, setMainError] = useState<string | null>(null);
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
 
   const fetchOrgs = () => {
     fetchWithRefresh("/api/orgs")
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch organizations.");
+        if (!res.ok) {
+          setMainError("Failed to fetch organizations.");
+          throw new Error("Failed to fetch organizations.");
+        }
         return res.json();
       })
       .then(data => setOrgs(data))
@@ -111,6 +119,7 @@ export default function OrganizationsPage() {
       console.error("Error:", err);
       setModalError("An error occurred, please try again.");
     }
+    addMessage(`Organization "${orgName}" created`, "success");
   };
 
   // Add a member
@@ -134,6 +143,7 @@ export default function OrganizationsPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+    addMessage(`${memberEmail} added to ${selectedOrg.name}`, "success");
   };
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -168,14 +178,18 @@ export default function OrganizationsPage() {
       console.error("Network error:", err);
       setModalError("Network error, please try again.");
     }
+    selectedOrg ? addMessage(`You left ${selectedOrg.name}`, "success") : addMessage(`You left the organization`, "success");
   };
 
   const getInitials = (name: string) => {
     return name.substring(0, 2).toUpperCase();
   };
 
+
   return (
     <div className={styles.container}>
+      <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
+
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>Organizations</h1>
@@ -224,9 +238,15 @@ export default function OrganizationsPage() {
           isLoading={isResetting}
         />
 
-        {loading ? (
-            <div className={styles.loadingState}>Loading organizations...</div>
-        ) : orgs.length === 0 ? (
+
+
+          {loading ? (
+              <div className={styles.loadingState}>Loading organizations...</div>
+          ) : mainError ? (
+              <div className={`${styles.statusMessage} ${styles.error}`}>
+                  {mainError}
+              </div>
+          ) : orgs.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>
                 <Building2 size={32} />
