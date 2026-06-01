@@ -1,4 +1,4 @@
-import { Shield, Cpu, Lock, GraduationCap, Package, ArrowLeft, BarChart2 } from "lucide-react";
+import { Shield, Cpu, Lock, GraduationCap, Package, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import styles from "../../styles/legal.module.css";
 
