@@ -107,11 +107,12 @@ export default function OrgSettingsPage() {
 
       setModalError(null);
       setShowLeaveConfirm(false);
+      navigate("/organizations")
     } catch (err) {
       console.error("Network error:", err);
       setModalError("Network error, please try again.");
+      return;
     }
-    navigate("/organizations")
   };
 
   const handleRenameOrg = async (newName: string) => {
