@@ -54,6 +54,7 @@ export default function AccountPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [pwdError, setPwdError] = useState<string | null>(null);
     const [isReset, setIsReset] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         fetchWithRefresh("/api/auth/me")
