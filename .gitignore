@@ -55,6 +55,7 @@ dist/
 #postman
 postman
 .postman
+.hostname
 
 #claude
 .claude

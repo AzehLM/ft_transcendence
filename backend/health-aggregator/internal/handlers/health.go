@@ -77,7 +77,7 @@ func (h *HealthHandler) checkService(url string) *serviceStatus {
 		}
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var status serviceStatus
 
