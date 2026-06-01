@@ -223,7 +223,7 @@ Response `200 OK`:
 
 User logged in can retrieve (in bytes) its avatar as well as the `Content-Type` of its avatar
 
-Response `200 OK`
+Response `200 OK | 204 No Content | 304 Not Modified`
 - The response body contains the binary stream of the image.
 - Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
 - Response Body: Binary Data (The actual image file)
@@ -234,7 +234,7 @@ Response `200 OK`
 
 Any user can retrieve the avatar of a specific user as well as the `Content-Type` of its avatar
 
-Response `200 OK`
+Response `200 OK  | 204 No Content | 304 Not Modified`
 - The response body contains the binary stream of the image.
 - Response Headers: Content-Type: image/png (or image/jpeg, depending on the avatar format)
 - Response Body: Binary Data (The actual image file)
