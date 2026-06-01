@@ -23,7 +23,13 @@ func checkNotModified(c fiber.Ctx, lastModified time.Time) bool {
 	}
 
 	t, err := time.Parse(http.TimeFormat, ifModSince)
-	return err == nil && !lastModified.After(t)
+ 	if err != nil {
+ 		return false
+ 	}
+ 	if t.After(time.Now().UTC()) {
+ 		return false
+ 	}
+ 	return !lastModified.After(t)
 }
 
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
