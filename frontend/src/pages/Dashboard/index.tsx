@@ -136,7 +136,7 @@ export default function DashboardPage() {
 
                 {loading ? (
                     <p>Loading files...</p>
-                ) : files.length === 0 && folders.length === 0 ? (
+                ) : files.length === 0 && folders.length === 0 && !mainError ? (
                     <p className={styles.noFile}>No files yet.</p>
                 ) : (
                     <div className={styles.contentsGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
