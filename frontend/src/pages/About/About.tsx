@@ -58,7 +58,7 @@ function AboutPage() {
                         <GraduationCap size={22} style={{ color: "#865142" }} /> Who We Are & The Project
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Ostrom is not a commercial product. We are a team of four student developers at school 42, and this application is our final graduation capstone project.We set out to build a fully functional, production-ready, and end-to-end encrypted (E2EE) file storage system.
+                        Ostrom is not a commercial product. We are a team of four student developers at school 42, and this application is our final graduation capstone. We set out to build a fully functional, production-ready, and end-to-end encrypted (E2EE) file storage system.
                     </p>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
                         Inspired by Elinor Ostrom's Nobel-prize-winning work on how communities successfully govern shared resources (the "commons") without centralized state or private control, we wanted to build a cloud storage service where users hold absolute sovereignty over their own data.
@@ -141,7 +141,7 @@ function AboutPage() {
                         When you select a file, it is divided into 5MB chunks and encrypted locally in your browser. The Data Encryption Key (DEK) generated for each file is wrapped using your RSA public key.
                     </p>
                     <p className={styles.paragraph}>
-                        To prevent keys from being vulnerable to theft (such as through XSS injections in the browser), we leverage the browser's native Web Cryptography API to import and store keys as non-extractable  objects within IndexedDB. The raw private key bytes never touch the Javascript memory space after import and can never be exported or stolen by raw scripts.
+                        To prevent keys from being vulnerable to theft (such as through XSS injections in the browser), we leverage the browser's native Web Cryptography API to import and store keys as non-extractable objects within IndexedDB. The raw private key bytes never touch the Javascript memory space after import and can never be exported or stolen by raw scripts.
                     </p>
                 </section>
 
