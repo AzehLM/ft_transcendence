@@ -112,7 +112,6 @@ export default function OrgSettingsPage() {
       setModalError("Network error, please try again.");
     }
     navigate("/organizations")
-    // addMessage(`You left ${orgName}`, "success");
   };
 
   const handleRenameOrg = async (newName: string) => {
