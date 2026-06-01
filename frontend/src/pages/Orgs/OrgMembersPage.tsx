@@ -261,7 +261,7 @@ export default function OrgMembersPage() {
     ));
     setShowChangeRoleModal(false);
     setSelectedMember(null);
-    addMessage(`${selectedMember.email} succesfully changed role`, "success");
+    addMessage(`${selectedMember.email} successfully changed role`, "success");
   };
 
   const handleRemoveMember = async () => {
