@@ -153,7 +153,7 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className={styles.logo_section}>
                     <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
-                        <img src="/logo.png" alt="Ostrom logo" width={80} height={80} />
+                        <img src="/app-icon.png" alt="Ostrom logo" width={44} height={44} />
                         <span className={styles.logo_title}>
                             ostrom
                         </span>

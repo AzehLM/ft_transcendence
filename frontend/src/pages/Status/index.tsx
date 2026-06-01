@@ -54,7 +54,7 @@ export default function StatusPage() {
 				{/* Logo */}
 				<div className={authStyles.logo_section}>
 					<Link to="/" className={authStyles.logo_container} style={{ textDecoration: "none" }}>
-						<img src="/logo.png" alt="Ostrom logo" width={80} height={80} />
+						<img src="/app-icon.png" alt="Ostrom logo" width={44} height={44} />
 						<span className={authStyles.logo_title}>ostrom</span>
 					</Link>
 					<h1 className={styles.h1}>System Status</h1>

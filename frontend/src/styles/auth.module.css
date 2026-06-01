@@ -30,7 +30,7 @@
 .logo_container {
     display: inline-flex;
     align-items: center;
-    gap: 0;
+    gap: 8px;
     margin-bottom: 20px;
     cursor: pointer;
     transition: opacity 0.3s ease;
@@ -44,7 +44,6 @@
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--brand-primary);
-    margin-left: -10px;
 }
 
 .logo_description {
