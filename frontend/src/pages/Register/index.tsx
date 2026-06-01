@@ -60,8 +60,12 @@ export default function RegisterPage() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || "Registration failed!");
+                if (response.status === 502 || response.status === 503) {
+                    setError("Server unavailable, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Registration failed!");
+                }
                 setIsLoading(false);
                 return;
             }
