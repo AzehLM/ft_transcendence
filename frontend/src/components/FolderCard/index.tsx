@@ -80,7 +80,19 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
   return (
     <>
         <div className={styles.row} onClick={handleEnterFolder}>
-        <Folder className={styles.icon} />
+        <div style={{ 
+            backgroundColor: "rgba(213, 79, 42, 0.08)", 
+            color: "#d54f2a", 
+            padding: "6px", 
+            borderRadius: "6px", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            marginRight: "10px",
+            flexShrink: 0
+        }}>
+            <Folder size={18} fill="rgba(213, 79, 42, 0.2)" />
+        </div>
 
         <div className={styles.info}>
             <span className={styles.name}>{name}</span>
