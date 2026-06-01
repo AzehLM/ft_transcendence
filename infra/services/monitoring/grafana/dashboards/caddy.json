@@ -47,7 +47,8 @@
   "description": "HTTP traffic, latency, payload size and error tracking for the Caddy edge gateway.",
   "tags": [
     "caddy",
-    "ft_transcendence"
+    "reverse-proxy",
+    "api gateway"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
@@ -194,7 +195,7 @@
           "expr": "sum(caddy_http_requests_total)",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -266,7 +267,7 @@
           "expr": "sum(rate(caddy_http_requests_total[5m]))",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -338,7 +339,7 @@
           "expr": "histogram_quantile(0.95, sum by(le) (rate(caddy_http_request_duration_seconds_bucket[5m])))",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -406,7 +407,7 @@
           "expr": "sum(rate(caddy_http_request_duration_seconds_count{code=~\"5..\"}[5m]))",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -478,7 +479,7 @@
           "expr": "sum(rate(caddy_http_request_duration_seconds_count{code=~\"4..\"}[5m]))",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -550,7 +551,7 @@
           "expr": "sum(caddy_http_requests_in_flight)",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -631,7 +632,7 @@
           "expr": "caddy_config_last_reload_successful",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
@@ -692,10 +693,10 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "caddy_config_last_reload_success_timestamp_seconds",
+          "expr": "caddy_config_last_reload_success_timestamp_seconds * 1000",
           "instant": false,
           "range": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ]
