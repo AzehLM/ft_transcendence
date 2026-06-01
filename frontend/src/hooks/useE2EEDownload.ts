@@ -22,10 +22,10 @@ export function useE2EEDownload() {
     const [isDownloading, setIsDownloading] = useState(false);
     const { messages, addMessage, removeMessage } = useMessages();
 
-    let statusMessageId: string | null = null;
-
+    
     const downloadAndDecrypt = async (fileId: string) => {
         setIsDownloading(true);
+        let statusMessageId: string | null = null;
 
         statusMessageId = addMessage("1/4 : Fetching secure metadata...", "info", 60000);
 
