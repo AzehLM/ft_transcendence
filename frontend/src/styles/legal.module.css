@@ -81,3 +81,26 @@
 .link:hover {
     color: var(--brand-primary-hover);
 }
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #865142;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: opacity 0.2s ease, outline 0.2s ease;
+    border-radius: 4px;
+}
+
+.backLink:hover {
+    opacity: 0.8;
+}
+
+.backLink:focus-visible {
+    outline: 2px solid #865142;
+    outline-offset: 4px;
+    opacity: 0.8;
+}
+

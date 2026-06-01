@@ -1,9 +1,12 @@
 import styles from "../../styles/legal.module.css";
+import BackToHomeLink from "../../components/BackToHomeLink";
 
 function TermsPage() {
     return (
         <div className={styles.wrapper}>
             <main className={styles.container}>
+                <BackToHomeLink />
+
                 <h1 className={styles.title}>Terms of Service</h1>
                 <p className={styles.lastUpdated}>Last updated: Mai 2026</p>
 

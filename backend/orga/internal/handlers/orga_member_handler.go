@@ -312,7 +312,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 
 	userEvent := ws.WSEvent{
 		Event:   "REMOVED_FROM_ORGA",
-		Message: "You have been removed from the organization",
+		Message: "You left the organization",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
 	_ = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)

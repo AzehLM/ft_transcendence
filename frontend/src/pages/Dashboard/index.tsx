@@ -12,6 +12,7 @@ import { UploadStatus } from "../../components/UploadStatus.tsx";
 import { FolderCard } from "../../components/FolderCard";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useFileManager } from "../../hooks/useFileManager";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
 
 export default function DashboardPage() {
     const { folderId } = useParams();
@@ -26,8 +27,9 @@ export default function DashboardPage() {
     );
 
     const {
-        files, folders, loading, error, success,
-        breadcrumbs, hideMessage, setError, setSuccess, loadFiles,
+        files, folders, loading, mainError,
+        breadcrumbs, loadFiles,
+        messages: fileMessages, addMessage: addFileMessage, removeMessage: removeFileMessage,
         handleDeleteFile, handleDeleteFolder,
         handleRenameFolder, handleMoveFolder, handleMoveFile,
         handleBreadcrumbClick,
@@ -37,9 +39,7 @@ export default function DashboardPage() {
     );
 
     useEffect(() => {
-        const handleFilesChange = () => {
-            loadFiles();
-        };
+        const handleFilesChange = () => loadFiles();
 
         registerListener("file_uploaded", handleFilesChange);
         registerListener("file_deleted", handleFilesChange);
@@ -59,49 +59,55 @@ export default function DashboardPage() {
             unregisterListener("folder_moved", handleFilesChange);
         };
     }, [registerListener, unregisterListener, loadFiles]);
+
     const { uploadFile, uploads } = useE2EEUpload(() => {
-        setSuccess("");
-        setError(null);
         loadFiles();
     }, undefined, folderId);
 
     const activeUploads = Object.values(uploads);
     const isUploading = activeUploads.some(u => u.isUploading);
 
-    const { downloadAndDecrypt, downloadStatus, isDownloading, hideDownloadMessage, downloadError } = useE2EEDownload();
+    const {
+        downloadAndDecrypt, isDownloading,
+        messages: downloadMessages, removeMessage: removeDownloadMessage,
+    } = useE2EEDownload();
+
+    const allMessages = [...fileMessages, ...downloadMessages];
+    const handleRemoveMessage = (id: string) => {
+        removeFileMessage(id);
+        removeDownloadMessage(id);
+    };
 
     const handleCreateFolderSubmit = async () => {
-        setSuccess("");
-        setError(null);
         if (!folderName.trim()) {
-            setFolderError("Invalid Name")
+            setFolderError("Invalid Name");
             return;
         }
         try {
             await FilesService.createFolder(folderName, folderId);
             await loadFiles();
-            setSuccess("Folder created");
+            addFileMessage(`Folder "${folderName}" created`, "success");
         } catch (err: any) {
-            setError(err.message || "Failed to create folder.");
-            setFolderName("");
-            setIsFolderModalOpen(false);
+            addFileMessage(err.message || "Failed to create folder.", "error");
         }
-        setFolderError("")
+        setFolderError(null);
         setFolderName("");
         setIsFolderModalOpen(false);
     };
 
     return (
         <div className={styles.container}>
+            <FeedbackMessageContainer messages={allMessages} onRemove={handleRemoveMessage} />
+
             <ConfirmationModal
-            isOpen={isFolderModalOpen}
-            fileName={folderName}
-            onConfirm={handleCreateFolderSubmit}
-            onCancel={() => { setIsFolderModalOpen(false); setFolderError(null); }}
-            isCreateFolder={true}
-            inputValue={folderName}
-            onInputChange={setFolderName}
-            errorMessage={folderError ?? undefined}
+                isOpen={isFolderModalOpen}
+                fileName={folderName}
+                onConfirm={handleCreateFolderSubmit}
+                onCancel={() => { setIsFolderModalOpen(false); setFolderError(null); }}
+                isCreateFolder={true}
+                inputValue={folderName}
+                onInputChange={setFolderName}
+                errorMessage={folderError ?? undefined}
             />
 
             <div className={styles.contentSection}>
@@ -124,27 +130,21 @@ export default function DashboardPage() {
                     <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbClick} />
                     <UploadStatus
                         uploads={activeUploads}
-                        downloadStatus={downloadStatus}
-                        hideDownloadMessage={hideDownloadMessage}
-                        error={error}
-                        success={success}
-                        hideMessage={hideMessage}
-                        downloadError={downloadError}
+                        mainError={mainError}
                     />
                 </div>
 
                 {loading ? (
                     <p>Loading files...</p>
-                    ) : files.length === 0 && folders.length === 0 ? (
+                ) : files.length === 0 && folders.length === 0 && !mainError ? (
                     <p className={styles.noFile}>No files yet.</p>
-                    ) : (
+                ) : (
                     <div className={styles.contentsGrid} style={{ opacity: isDownloading || isUploading ? 0.5 : 1 }}>
-                        {
-                            folders.length > 0 && (
-                                <div className={styles.itemsGrid}>
-                                    <p className={styles.itemsTitle}>FOLDERS</p>
-                                    <div className={styles.foldersGrid}>
-                                        {folders.map(folder => (
+                        {folders.length > 0 && (
+                            <div className={styles.itemsGrid}>
+                                <p className={styles.itemsTitle}>FOLDERS</p>
+                                <div className={styles.foldersGrid}>
+                                    {folders.map(folder => (
                                         <FolderCard
                                             key={folder.id}
                                             id={folder.id}
@@ -154,17 +154,15 @@ export default function DashboardPage() {
                                             onRename={handleRenameFolder}
                                             onMove={handleMoveFolder}
                                         />
-                                        ))}
-                                    </div>
+                                    ))}
                                 </div>
-                            )
-                        }
-                        {
-                            files.length > 0 && (
-                                <div className={styles.itemsGrid}>
-                                    <p className={styles.itemsTitle}>FILES</p>
-                                    <div className={styles.filesList}>
-                                        {files.map(file => (
+                            </div>
+                        )}
+                        {files.length > 0 && (
+                            <div className={styles.itemsGrid}>
+                                <p className={styles.itemsTitle}>FILES</p>
+                                <div className={styles.filesList}>
+                                    {files.map(file => (
                                         <FileCard
                                             key={file.id}
                                             id={file.id}
@@ -174,11 +172,10 @@ export default function DashboardPage() {
                                             onDownload={downloadAndDecrypt}
                                             onMove={handleMoveFile}
                                         />
-                                        ))}
-                                    </div>
+                                    ))}
                                 </div>
-                            )
-                        }
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

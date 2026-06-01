@@ -115,6 +115,7 @@ export default function ProfilePage() {
         if (prev) URL.revokeObjectURL(prev);
         return newUrl;
       });
+      window.dispatchEvent(new CustomEvent("avatar-changed", { detail: newUrl }));
     } catch {
       setAvatarError("Failed to upload avatar.");
     }
