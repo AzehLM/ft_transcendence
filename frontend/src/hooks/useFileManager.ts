@@ -24,7 +24,7 @@ export function useFileManager(loadFn: LoadFn, navigateOnFolder: (id: string | n
 
   useEffect(() => {
     const load = async () => {
-      setMainError("");
+      setMainError(null);
       try {
         setLoading(true);
         await loadFiles();

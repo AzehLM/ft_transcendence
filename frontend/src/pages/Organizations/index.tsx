@@ -33,6 +33,7 @@ export default function OrganizationsPage() {
   const allMessages = messages;
 
   const fetchOrgs = () => {
+    setMainError(null);
     fetchWithRefresh("/api/orgs")
       .then(res => {
         if (!res.ok) {
