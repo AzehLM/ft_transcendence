@@ -8,6 +8,8 @@ import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
 
 interface Member {
   user_id: string;
@@ -49,6 +51,10 @@ export default function OrgMembersPage() {
     
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const avatarUrlsRef = useRef<Record<string, string>>({});
+  
+  const [mainError, setMainError] = useState<string | null>(null);
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
 
   useEffect(() => {
     return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
@@ -85,7 +91,10 @@ export default function OrgMembersPage() {
           navigate("/404");
           return null;
         }
-        if (!res.ok) throw new Error("Failed to fetch members.");
+        if (!res.ok) {
+          setMainError("Failed to fetch members.");
+          throw new Error("Failed to fetch members.");
+        }
         return res.json();
       })
       .then(data => {
@@ -223,6 +232,7 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+    addMessage(`${memberEmail} added to ${orgName}`, "success");
   };
 
   const handleChangeRole = async () => {
@@ -250,6 +260,7 @@ export default function OrgMembersPage() {
     ));
     setShowChangeRoleModal(false);
     setSelectedMember(null);
+    addMessage(`${selectedMember.email} succesfully changed role`, "success");
   };
 
   const handleRemoveMember = async () => {
@@ -272,6 +283,7 @@ export default function OrgMembersPage() {
     setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
     setShowRemoveModal(false);
     setMemberToRemove(null);
+    addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
   };
 
   const getName = (member: Member) => {
@@ -284,6 +296,7 @@ export default function OrgMembersPage() {
   return (
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>Organization Members</h1>
@@ -304,6 +317,10 @@ export default function OrgMembersPage() {
 
         {loading ? (
           <div className={styles.loadingState}>Loading members...</div>
+        ) : mainError ? (
+            <div className={`${styles.statusMessage} ${styles.error}`}>
+                {mainError}
+            </div>
         ) : members.length === 0 ? (
           <div className={styles.emptyState}>No members found.</div>
         ) : (
