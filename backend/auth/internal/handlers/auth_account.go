@@ -16,6 +16,22 @@ import (
 	"github.com/google/uuid"
 )
 
+func checkNotModified(c fiber.Ctx, lastModified time.Time) bool {
+	ifModSince := c.Get("If-Modified-Since")
+	if ifModSince == "" {
+		return false
+	}
+
+	t, err := time.Parse(http.TimeFormat, ifModSince)
+ 	if err != nil {
+ 		return false
+ 	}
+ 	if t.After(time.Now().UTC()) {
+ 		return false
+ 	}
+ 	return !lastModified.After(t)
+}
+
 func (h *AuthHandler) GetInfo(c fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 
@@ -124,7 +140,6 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 				}
 			}
 		}
-
 
 		if len(orgsToDelete) > 0 {
 			var orgKeys []string
@@ -356,11 +371,16 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
 	}
 
+	lastModified := avatar.UpdatedAt.UTC().Truncate(time.Second)
+	c.Set("Cache-Control", "no-cache, must-revalidate")
+	c.Set("Last-Modified", lastModified.Format(http.TimeFormat))
+
+	if checkNotModified(c, lastModified) {
+		return c.SendStatus(fiber.StatusNotModified)
+	}
+
 	// Content-type so the frontend can sanitize again the output of the API call
-	// Last-Modified and Cache-Control for cache purposes
 	c.Set("Content-Type", avatar.ContentType)
-	c.Set("Cache-Control", "public, max-age=3600")
-	c.Set("Last-Modified", avatar.UpdatedAt.UTC().Format(http.TimeFormat))
 	return c.Status(fiber.StatusOK).Send(avatar.Data)
 }
 
