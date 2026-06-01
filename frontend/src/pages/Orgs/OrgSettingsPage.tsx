@@ -7,6 +7,8 @@ import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { Minus } from "lucide-react";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
 
 export default function OrgSettingsPage() {
   const { id } = useParams();
@@ -83,6 +85,36 @@ export default function OrgSettingsPage() {
     }
   };
 
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleLeaveOrga = async () => {
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = "Failed to leave organization.";
+        try {
+          if (text) {
+            const data = JSON.parse(text);
+            message = data.error || data.message || message;
+          }
+        } catch {}
+        setModalError(message);
+        return;
+      }
+
+      setModalError(null);
+      setShowLeaveConfirm(false);
+    } catch (err) {
+      console.error("Network error:", err);
+      setModalError("Network error, please try again.");
+    }
+    navigate("/organizations")
+    // addMessage(`You left ${orgName}`, "success");
+  };
+
   const handleRenameOrg = async (newName: string) => {
     const response = await fetchWithRefresh(`/api/orgs/${id}`, {
       method: "PATCH",
@@ -125,6 +157,16 @@ export default function OrgSettingsPage() {
   return (
       <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <ConfirmationModal
+          isOpen={showLeaveConfirm}
+          fileName={orgName}
+          onConfirm={handleLeaveOrga}
+          onCancel={() => { setShowLeaveConfirm(false); setModalError(null); }}
+          isAccount={false}
+          isLeaveOrga={true}
+          isMe={true}
+          errorMessage={modalError ?? undefined}
+        />
         <div className={styles.headerSection}>
           <h1>Organization Settings</h1>
           <p className={styles.subtitle}>Manage your organization details and storage</p>
@@ -151,6 +193,17 @@ export default function OrgSettingsPage() {
                 handleReset={handleResetDescription}
                 isOrgaDesc={true}
               />
+              <div className={styles.leaveOrga}>
+                <p className={styles.label}>Leave Organization</p>
+                <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                <button
+                  className={styles.leaveButton}
+                  onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}
+                >
+                  <Minus size={20} />
+                  Leave Organization
+                </button>
+              </div>
             </div>
           </div>
 

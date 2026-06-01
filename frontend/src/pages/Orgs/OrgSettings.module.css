@@ -65,6 +65,53 @@
     gap: 20px;
 }
 
+.leaveButton {
+  display: flex;
+  flex-direction: row;
+  background-color: #ba1a1a;
+  color: white;
+  border: none;
+  align-self: flex-start;
+  padding: 10px 20px;
+  min-width: 150px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(186, 26, 26, 0.25);
+  margin-left: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  margin-left: 20px;
+  gap: 10px;
+}
+
+.leaveButton:hover {
+  background-color: #93000a;
+  box-shadow: 0 6px 18px rgba(186, 26, 26, 0.35);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #84736f;
+  letter-spacing: 0.3px;
+}
+
+.labelDetail {
+  font-size: 13px;
+  font-weight: 300;
+  color: #84736f;
+}
+
+.leaveOrga {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 @media (max-width: 1080px) {
     .settingsGrid {
         max-width: 100%;
