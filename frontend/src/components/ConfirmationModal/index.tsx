@@ -55,6 +55,11 @@ export function ConfirmationModal({
     isMove = false,
     isLoading: externalIsLoading = false,
 }: ConfirmationModalProps) {
+
+    const [internalLoading, setInternalLoading] = useState(false);
+    
+    const isLoading = externalIsLoading || internalLoading;
+    
     if (!isOpen) return null;
 
     let title: string;
@@ -150,11 +155,6 @@ export function ConfirmationModal({
     ? "Rename Folder"
     : "Move to Trash";
 
-    
-    
-    const [internalLoading, setInternalLoading] = useState(false);
-    
-    const isLoading = externalIsLoading || internalLoading;
     const buttonText = isLoading ? "Loading..." : baseButtonText;   
 
     const handleConfirm = async () => {
