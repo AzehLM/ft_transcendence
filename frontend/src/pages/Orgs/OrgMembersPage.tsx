@@ -85,6 +85,7 @@ export default function OrgMembersPage() {
   }, [id]);
 
   const fetchMembers = (signal?: AbortSignal) => {
+    setMainError(null);
     fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
