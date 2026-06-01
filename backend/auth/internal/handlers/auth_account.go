@@ -366,15 +366,15 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	}
 
 	lastModified := avatar.UpdatedAt.UTC().Truncate(time.Second)
+	c.Set("Cache-Control", "no-cache, must-revalidate")
+	c.Set("Last-Modified", lastModified.Format(http.TimeFormat))
+
 	if checkNotModified(c, lastModified) {
 		return c.SendStatus(fiber.StatusNotModified)
 	}
 
 	// Content-type so the frontend can sanitize again the output of the API call
-	// Last-Modified and Cache-Control for cache purposes
 	c.Set("Content-Type", avatar.ContentType)
-	c.Set("Cache-Control", "no-cache, must-revalidate")
-	c.Set("Last-Modified", lastModified.Format(http.TimeFormat))
 	return c.Status(fiber.StatusOK).Send(avatar.Data)
 }
 
