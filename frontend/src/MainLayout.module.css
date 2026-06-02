@@ -24,9 +24,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 40px;
-    background-color: #ffffff;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 16px 40px;
+    background-color: #fff8f6;
     transition: padding 0.2s ease;
     gap: 20px;
 }
@@ -46,7 +45,7 @@
 
 @media (max-width: 768px) {
     .header {
-        padding: 16px 24px;
+        padding: 10px 24px;
         gap: 16px;
     }
 
@@ -61,7 +60,7 @@
 
 @media (max-width: 540px) {
     .header {
-        padding: 12px 16px;
+        padding: 12px 20px;
         gap: 12px;
     }
 
@@ -90,30 +89,28 @@
 }
 
 
-.sidebarWrapper [class*="sidebar"] {
+.sidebarWrapper > [class*="sidebar"] {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 @media (max-width: 768px) {
-    .sidebarWrapper [class*="sidebar"] {
+    .sidebarWrapper > [class*="sidebar"] {
         transform: translateX(-100%);
         z-index: 1001 !important;
         box-shadow: 4px 0 24px rgba(43, 16, 8, 0.15) !important;
     }
 
-    .sidebarActive [class*="sidebar"] {
+    .sidebarActive > [class*="sidebar"] {
         transform: translateX(0) !important;
     }
 }
 
 .sidebarBackdrop {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-color: rgba(43, 16, 8, 0.4);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 1000;
     animation: fadeInOverlay 0.2s ease-out;
 }
