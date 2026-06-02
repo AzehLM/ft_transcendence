@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
-import { X, Download, AlertTriangle, Loader2, FileText, FileImage, FileCode, File } from "lucide-react";
+import {
+    X,
+    Download,
+    AlertTriangle,
+    Loader2,
+    FileText,
+    FileImage,
+    FileCode,
+    File,
+    FileVideo,
+    FileSpreadsheet,
+    FileArchive
+} from "lucide-react";
 import { useE2EEPreview } from "../../hooks/useE2EEPreview";
 import styles from "./FilePreviewModal.module.css";
 
@@ -18,11 +30,23 @@ const getFileIconAndColor = (fileName: string) => {
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
         return { Icon: FileImage, color: "#ec4899" };
     }
+    if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'mpeg'].includes(ext)) {
+        return { Icon: FileVideo, color: "#8b5cf6" };
+    }
     if (['pdf'].includes(ext)) {
         return { Icon: FileText, color: "#ef4444" };
     }
-    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml', 'txt', 'md'].includes(ext)) {
-        return { Icon: FileCode, color: "#3b82f6" };
+    if (['xls', 'xlsx', 'csv', 'ods'].includes(ext)) {
+        return { Icon: FileSpreadsheet, color: "#10b981" };
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+        return { Icon: FileArchive, color: "#f59e0b" };
+    }
+    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml'].includes(ext)) {
+        return { Icon: FileCode, color: "#06b6d4" };
+    }
+    if (['txt', 'md', 'rtf'].includes(ext)) {
+        return { Icon: FileText, color: "#3b82f6" };
     }
     return { Icon: File, color: "#865142" };
 };
@@ -53,10 +77,11 @@ export function FilePreviewModal({
         }
 
         let isMounted = true;
+        const controller = new AbortController();
 
         const loadPreview = async () => {
             try {
-                const result = await decryptForPreview(fileId, orgId);
+                const result = await decryptForPreview(fileId, orgId, controller.signal);
                 if (result && isMounted) {
                     setBlob(result.blob);
                     const url = URL.createObjectURL(result.blob);
@@ -65,14 +90,24 @@ export function FilePreviewModal({
                     const type = result.blob.type;
                     if (type.startsWith("text/") || type === "application/json") {
                         setIsTextLoading(true);
-                        const text = await result.blob.text();
-                        if (isMounted) {
-                            setTextContent(text);
-                            setIsTextLoading(false);
+                        try {
+                            const text = await result.blob.text();
+                            if (isMounted) {
+                                setTextContent(text);
+                            }
+                        } catch (textErr) {
+                            console.error("Error reading decrypted text content:", textErr);
+                        } finally {
+                            if (isMounted) {
+                                setIsTextLoading(false);
+                            }
                         }
                     }
                 }
             } catch (err) {
+                if ((err as any)?.name === 'AbortError') {
+                    return;
+                }
                 console.error("Error setting up preview:", err);
             }
         };
@@ -81,6 +116,7 @@ export function FilePreviewModal({
 
         return () => {
             isMounted = false;
+            controller.abort();
         };
     }, [isOpen, fileId, orgId]);
 
@@ -191,9 +227,9 @@ export function FilePreviewModal({
                             {isText && (
                                 <div className={styles.textWrapper}>
                                     {isTextLoading ? (
-                                        <div className={styles.loadingContainer}>
-                                            <Loader2 className={styles.spinner} size={24} />
-                                            <p className={styles.statusText}>Reading text content...</p>
+                                        <div className={styles.textLoadingContainer}>
+                                            <Loader2 className={styles.textSpinner} size={24} />
+                                            <p className={styles.textStatus}>Reading text content...</p>
                                         </div>
                                     ) : (
                                         <pre className={styles.textPre}>
