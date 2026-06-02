@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -365,7 +366,7 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNoContent).JSON(fiber.Map{"message": "no avatar"})
+			return c.SendStatus(fiber.StatusNoContent)
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
 	}
@@ -420,11 +421,11 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		})
 	}
 
-	// if body.FirstName == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "first name required",
-	// 	})
-	// }
+	if strings.TrimSpace(body.FirstName) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "first name required",
+		})
+	}
 
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {

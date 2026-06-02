@@ -42,7 +42,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 	}
 
 	hostname := c.Hostname()
-	presignedURL, objectID, err := h.svc.RequestUploadURL(c.Context() ,userID, body.FileSize, body.FolderID, body.OrgID, hostname)
+	presignedURL, objectID, err := h.svc.RequestUploadURL(c.Context(), userID, body.FileSize, body.FolderID, body.OrgID, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -86,6 +86,12 @@ func (h *StorageHandler) RequestMultipartUpload(c fiber.Ctx) error {
 	if err := c.Bind().Body(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
+		})
+	}
+
+	if body.FileSize <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "file_size and part_count must be positive",
 		})
 	}
 
