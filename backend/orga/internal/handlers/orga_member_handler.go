@@ -127,14 +127,18 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
+	//added
+	org, _ := repo.GetOrgaByID(orgID)
+
 	event := ws.WSEvent{
 		Event:   "MEMBER_ADDED",
 		OrgID:   orgID.String(),
-		Message: "New member added to the org",
+		Message: "New member [" + body.Email + "] added to the organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"email":   body.Email,
 			"role":    "member",
 			"user_id": user.ID.String(),
+			"org_name":  org.Name,
 		},
 	}
 
@@ -145,7 +149,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 	userEvent := ws.WSEvent{
 		Event:   "ADDED_TO_NEW_ORGA",
-		Message: "You have been added to a new organization",
+		Message: "You have been added to a new organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"org_id": orgID.String(),
 		},
@@ -236,18 +240,39 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
+	var targetUser models.User
+	_ = repo.GetUserByID(userID, &targetUser)
+
+	org, _ := repo.GetOrgaByID(orgID)
+
 	event := ws.WSEvent{
 		Event:   "ROLE_UPDATED",
 		OrgID:   orgID.String(),
-		Message: "A member's role has been updated",
+		Message: "A member's role [" + targetUser.Email + "] has been updated to " + body.Role + " in organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"user_id": userID.String(),
 			"role":    body.Role,
 		},
 	}
+
 	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
 		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), userID.String(), err)
 	}
+
+	userEvent := ws.WSEvent{
+		Event:   "ADDED_TO_NEW_ORGA",
+		Message: "You role has changed to " + body.Role + " in organization [" + org.Name + "]",
+		Data: fiber.Map{
+			"org_id": orgID.String(),
+		},
+	}
+
+
+	err = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+	if err != nil {
+		log.Printf("[WS] Non-blocking error during Redis notification: %v", err)
+	}
+
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "role updated",
@@ -302,17 +327,22 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
+	var targetUser models.User
+	_ = repo.GetUserByID(userID, &targetUser)
+
+	org, _ := repo.GetOrgaByID(orgID)
+
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
-		Message: "A member has left the organization",
+		Message: "A member [" + targetUser.Email + "] has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
 	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
 		Event:   "REMOVED_FROM_ORGA",
-		Message: "You left the organization",
+		Message: "You left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
 	_ = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
@@ -369,17 +399,22 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
 	}
 
+	var targetUser models.User
+	_ = repo.GetUserByID(userID, &targetUser)
+
+	org, _ := repo.GetOrgaByID(orgID)
+
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
-		Message: "A member has left the organization",
+		Message: "A member [" + targetUser.Email + "] has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
 	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
 		Event:   "REMOVED_FROM_ORGA",
-		Message: "You have been removed from the organization",
+		Message: "You have been removed from the organization [" + org.Name + "]",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
 	_ = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
@@ -463,6 +498,5 @@ func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 		"enc_org_priv_key": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
 		"enc_aes_key":      base64.StdEncoding.EncodeToString(member.EncAesKey),
 		"iv":               base64.StdEncoding.EncodeToString(member.Iv),
-		// "enc_org_priv_key_brut": string(member.EncOrgPrivKey),
 	})
 }
