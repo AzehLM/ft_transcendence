@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { UserPlus, Building2, Trash2, Edit3, User, X, Bell, File, Folder, FolderPlus, FolderMinus } from "lucide-react";
-import { useNotifications, ToastItem } from "../contexts/NotificationContext";
+import { useNotifications, ToastItem } from "../../contexts/NotificationContext";
+import styles from "./ToastContainer.module.css"
+
 
 // Map event types to icons and styling
 const getEventMeta = (event: string) => {
@@ -117,79 +119,27 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
 
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 50, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "14px",
-        width: "360px",
-        backgroundColor: "rgba(255, 255, 255, 0.85)",
-        backdropFilter: "blur(12px)",
-        border: `1px solid ${borderColor}`,
-        borderRadius: "var(--radius-md)",
-        padding: "16px",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-        pointerEvents: "auto",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <motion.div className={styles.toast}>
       {/*   bar */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: "4px",
-          backgroundColor: borderColor,
-        }}
-      />
+      <div className={styles.toastBar} style={{ backgroundColor: borderColor }} />
 
       {/* Icon */}
-      <div
+      <div 
+        className={styles.toastIcon}
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "36px",
-          height: "36px",
-          borderRadius: "50%",
           backgroundColor: bgColor,
           color: iconColor,
-          flexShrink: 0,
-          marginLeft: "4px",
         }}
       >
         <Icon size={18} />
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0, paddingTop: "2px" }}>
-        <h4
-          style={{
-            margin: 0,
-            fontSize: "15px",
-            fontWeight: "var(--font-weight-semibold)",
-            color: "var(--brand-dark)",
-            lineHeight: 1.2,
-          }}
-        >
+      <div className={styles.toastContent}>
+        <h4 className={styles.toastTitle}>
           {title}
         </h4>
-        <p
-          style={{
-            margin: "4px 0 0 0",
-            fontSize: "13px",
-            color: "#555",
-            lineHeight: 1.4,
-            wordBreak: "break-word",
-          }}
-        >
+        <p className={styles.toastMessage}>
           {toast.message}
         </p>
       </div>
@@ -197,18 +147,7 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
       {/* Close  */}
       <button
         onClick={onClose}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "#999",
-          padding: "4px",
-          borderRadius: "4px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "var(--transition-base)",
-        }}
+        className={styles.toastClose}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.05)")}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
       >
@@ -216,18 +155,12 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
       </button>
 
       <motion.div
+        className={styles.toastProgress}
+        style={{ backgroundColor: borderColor }}
         initial={{ width: "100%" }}
         animate={{ width: "0%" }}
         transition={{ duration: 5, ease: "linear" }}
         onAnimationComplete={onClose}
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          height: "3px",
-          backgroundColor: borderColor,
-          opacity: 0.8,
-        }}
       />
     </motion.div>
   );
@@ -238,16 +171,7 @@ export function ToastContainer() {
 
   return (
     <div
-      style={{
-        position: "fixed",
-        bottom: "24px",
-        right: "24px",
-        zIndex: 9999,
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        pointerEvents: "none",
-      }}
+        className={styles.toastContainer}
     >
       <AnimatePresence>
         {toasts.map((toast) => (
