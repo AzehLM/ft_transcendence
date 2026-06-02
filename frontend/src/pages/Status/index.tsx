@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Banner } from "./Banner";
 import { ServiceRow } from "./ServiceRow";
@@ -55,9 +54,7 @@ export default function StatusPage() {
 				{/* Logo */}
 				<div className={authStyles.logo_section}>
 					<Link to="/" className={authStyles.logo_container} style={{ textDecoration: "none" }}>
-						<div className={authStyles.logo_box}>
-							<Package className="w-11 h-11 text-white" strokeWidth={2} />
-						</div>
+						<img src="/app-icon.png" alt="" aria-hidden="true" width={44} height={44} />
 						<span className={authStyles.logo_title}>ostrom</span>
 					</Link>
 					<h1 className={styles.h1}>System Status</h1>

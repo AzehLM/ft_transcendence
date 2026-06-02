@@ -107,6 +107,15 @@
   background-color: rgba(134, 81, 66, 0.08);
 }
 
+.readonlyValue {
+  font-size: 15px;
+  font-weight: 400;
+  color: #241916;
+  word-break: break-word;
+  padding: 2px 0 2px 13px;
+}
+
+
 .error {
   font-size: 13px;
   color: #d32f2f;

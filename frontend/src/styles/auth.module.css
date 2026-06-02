@@ -40,15 +40,6 @@
     opacity: 0.8;
 }
 
-.logo_box {
-    background-color: var(--brand-primary);
-    border-radius: var(--radius-sm);
-    padding: var(--spacing-xs);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .logo_title {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
