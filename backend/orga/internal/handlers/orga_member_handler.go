@@ -15,10 +15,10 @@ import (
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var body struct {
-		Email             string `json:"user_email" validate:"required"`
-		EncOrgaPrivateKey string `json:"enc_org_priv_key" validate:"required"`
-		EncAesKey         string `json:"enc_aes_key" validate:"required"`
-		Iv                string `json:"iv" validate:"required"`
+		Email             string `json:"user_email"`
+		EncOrgaPrivateKey string `json:"enc_org_priv_key"`
+		EncAesKey         string `json:"enc_aes_key"`
+		Iv                string `json:"iv"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -56,7 +56,6 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	// fmt.Println("mail: ", body.Email, "and key: ", body.EncOrgaPrivateKey)
 	orgIDParam := c.Params("org_id")
 	if orgIDParam == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "org_id is required in path"})
@@ -73,9 +72,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	var user models.User
 	repo := repository.NewOrganizationRepository(h.DB)
 	userErr := repo.GetUserByEmail(body.Email, &user)
-
 	if userErr != nil {
-		// fmt.Println("error is ", userErr)
 		if errors.Is(userErr, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
@@ -166,7 +163,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 
 func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	var body struct {
-		Role string `json:"role" validate:"required"`
+		Role string `json:"role"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -233,7 +230,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update member role"})
 	}
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
@@ -299,7 +296,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to delete org member"})
 	}
 	if !deleted {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
@@ -366,7 +363,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to delete org member"})
 	}
 	if !deleted {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "member not found"})
