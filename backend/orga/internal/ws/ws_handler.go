@@ -172,6 +172,19 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 				return
 			}
 
+			var raw map[string]interface{}
+			if err := json.Unmarshal([]byte(msg.Payload), &raw); err == nil {
+				eventType, _ := raw["event"].(string)
+				if eventType == "" {
+					eventType, _ = raw["type"].(string)
+				}
+				if eventType == "REMOVED_FROM_ORGA" || eventType == "ADDED_TO_NEW_ORGA" {
+					payloadBytes := h.enrichEventMessage([]byte(msg.Payload), orgNames)
+					_ = c.WriteMessage(websocket.TextMessage, payloadBytes)
+					return //(c.Close() en defer)
+				}
+			}
+
 			payloadBytes := h.enrichEventMessage([]byte(msg.Payload), orgNames)
 
 			err := c.WriteMessage(websocket.TextMessage, payloadBytes)
