@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
-	"context"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -175,7 +174,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
-	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID, transfers, filesToCleanup); err != nil {
+	if err := h.Publisher.PublishUserDeleted(c.Context(), userID, transfers, filesToCleanup); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 	}
 
@@ -194,13 +193,13 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	}
 
 	if len(remainingOrgIDs) > 0 {
-		if err := h.Publisher.PublishMemberRemoved(context.TODO(), userID, remainingOrgIDs); err != nil {
+		if err := h.Publisher.PublishMemberRemoved(c.Context(), userID, remainingOrgIDs); err != nil {
 			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
 		}
 	}
 
 	for orgIDStr, promotedUserID := range promotions {
-		if err := h.Publisher.PublishRoleUpdated(context.TODO(), orgIDStr, promotedUserID, "admin"); err != nil {
+		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "admin"); err != nil {
 			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
 		}
 	}

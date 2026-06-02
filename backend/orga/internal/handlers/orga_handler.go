@@ -4,7 +4,6 @@ import (
 	"backend/orga/internal/models"
 	"backend/orga/internal/repository"
 	"backend/orga/internal/workers"
-	"context"
 	"log"
 
 	"backend/orga/internal/ws"
@@ -174,7 +173,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	var orgName string
 	_ = h.DB.Table("organizations").Select("name").Where("id = ?", orgID).Row().Scan(&orgName)
 
-	if err := h.Publisher.PublishOrgDeleted(context.TODO(), orgID); err != nil {
+	if err := h.Publisher.PublishOrgDeleted(c.Context(), orgID); err != nil {
 		log.Printf("[EVENT] failed to publish org_deleted for org %s: %v", orgID.String(), err)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 			"error": "failed to enqueue organization cleanup",
