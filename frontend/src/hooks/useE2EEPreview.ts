@@ -144,6 +144,8 @@ export function useE2EEPreview() {
                 const chunkIv = new Uint8Array(12);
                 chunkIv.set(baseIv);
                 const view = new DataView(chunkIv.buffer);
+                // NOTE: Mutates only lower 4 bytes of IV. Silent 32-bit overflow wraps without carry propagation.
+                // Strictly identical to encryption side logic in useE2EEUpload.ts (deriveChunkIv).
                 view.setUint32(8, view.getUint32(8) + chunkIndex);
 
                 const decryptedBuffer = await window.crypto.subtle.decrypt(
