@@ -42,7 +42,7 @@ func (h *StorageHandler) RequestUploadURL(c fiber.Ctx) error {
 	}
 
 	hostname := c.Hostname()
-	presignedURL, objectID, err := h.svc.RequestUploadURL(userID, body.FileSize, body.FolderID, body.OrgID, hostname)
+	presignedURL, objectID, err := h.svc.RequestUploadURL(c.Context() ,userID, body.FileSize, body.FolderID, body.OrgID, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -90,7 +90,7 @@ func (h *StorageHandler) RequestMultipartUpload(c fiber.Ctx) error {
 	}
 
 	hostname := c.Hostname()
-	objectID, uploadID, urls, err := h.svc.RequestMultipartUpload(userID, body.FileSize, body.FolderID, body.OrgID, body.PartCount, hostname)
+	objectID, uploadID, urls, err := h.svc.RequestMultipartUpload(c.Context(), userID, body.FileSize, body.FolderID, body.OrgID, body.PartCount, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -192,7 +192,7 @@ func (h *StorageHandler) FinalizeMultipartUpload(c fiber.Ctx) error {
 
 	var fileID uuid.UUID
 
-	fileID, err = h.svc.FinalizeMultipartUpload(userID, body.ObjectID, body.UploadID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID, body.Parts)
+	fileID, err = h.svc.FinalizeMultipartUpload(c.Context(), userID, body.ObjectID, body.UploadID, body.EncryptedFilename, body.EncryptedDEK, body.IV, body.OrgID, body.Parts)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -230,7 +230,7 @@ func (h *StorageHandler) DownloadFile(c fiber.Ctx) error {
 	}
 
 	hostname := c.Hostname()
-	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(userID, fileID, hostname)
+	presignedURL, encryptedDEK, iv, fileName, err := h.svc.DownloadFile(c.Context(), userID, fileID, hostname)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
@@ -266,7 +266,7 @@ func (h *StorageHandler) DeleteFile(c fiber.Ctx) error {
 		})
 	}
 
-	if err := h.svc.DeleteFile(userID, fileID); err != nil {
+	if err := h.svc.DeleteFile(c.Context(), userID, fileID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
@@ -391,7 +391,7 @@ func (h *StorageHandler) AbortMultipartUpload(c fiber.Ctx) error {
 		})
 	}
 
-	if err := h.svc.AbortMultipartUpload(userID, body.ObjectID, body.UploadID); err != nil {
+	if err := h.svc.AbortMultipartUpload(c.Context(), userID, body.ObjectID, body.UploadID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
