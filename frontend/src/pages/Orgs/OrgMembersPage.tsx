@@ -271,22 +271,26 @@ export default function OrgMembersPage() {
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
-
-    if (!response.ok) {
-        if (response.status === 502 || response.status === 503) {
-            setModalError("Network error, please try again later.");
-        } else {
-            const body = await response.json().catch(() => null);
-            setModalError(body?.message || body?.error || "Failed to remove.");
-        }
-        return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to remove.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
+      setShowRemoveModal(false);
+      setMemberToRemove(null);
+      addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
-    setShowRemoveModal(false);
-    setMemberToRemove(null);
-    addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
   };
 
   const getName = (member: Member) => {
