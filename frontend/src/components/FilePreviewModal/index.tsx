@@ -1,0 +1,225 @@
+import { useEffect, useState } from "react";
+import { X, Download, AlertTriangle, Loader2, FileText, FileImage, FileCode, File } from "lucide-react";
+import { useE2EEPreview } from "../../hooks/useE2EEPreview";
+import styles from "./FilePreviewModal.module.css";
+
+interface FilePreviewModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    fileId: string;
+    fileName: string;
+    fileSize: number;
+    orgId?: string;
+}
+
+const getFileIconAndColor = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
+        return { Icon: FileImage, color: "#ec4899" };
+    }
+    if (['pdf'].includes(ext)) {
+        return { Icon: FileText, color: "#ef4444" };
+    }
+    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml', 'txt', 'md'].includes(ext)) {
+        return { Icon: FileCode, color: "#3b82f6" };
+    }
+    return { Icon: File, color: "#865142" };
+};
+
+export function FilePreviewModal({
+    isOpen,
+    onClose,
+    fileId,
+    fileName,
+    fileSize,
+    orgId
+}: FilePreviewModalProps) {
+    const { decryptForPreview, downloadStatus, isDownloading, downloadError } = useE2EEPreview();
+    const [blob, setBlob] = useState<Blob | null>(null);
+    const [objectUrl, setObjectUrl] = useState<string | null>(null);
+    const [textContent, setTextContent] = useState<string>("");
+    const [isTextLoading, setIsTextLoading] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                setObjectUrl(null);
+            }
+            setBlob(null);
+            setTextContent("");
+            return;
+        }
+
+        let isMounted = true;
+
+        const loadPreview = async () => {
+            try {
+                const result = await decryptForPreview(fileId, orgId);
+                if (result && isMounted) {
+                    setBlob(result.blob);
+                    const url = URL.createObjectURL(result.blob);
+                    setObjectUrl(url);
+
+                    const type = result.blob.type;
+                    if (type.startsWith("text/") || type === "application/json") {
+                        setIsTextLoading(true);
+                        const text = await result.blob.text();
+                        if (isMounted) {
+                            setTextContent(text);
+                            setIsTextLoading(false);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error setting up preview:", err);
+            }
+        };
+
+        loadPreview();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isOpen, fileId, orgId]);
+
+    useEffect(() => {
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [objectUrl]);
+
+    if (!isOpen) return null;
+
+    const formatSize = (bytes: number) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    };
+
+    const handleDownloadInstant = () => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const isImage = blob?.type.startsWith("image/");
+    const isPDF = blob?.type === "application/pdf";
+    const isText = blob?.type.startsWith("text/") || blob?.type === "application/json";
+
+    const { Icon, color } = getFileIconAndColor(fileName);
+
+    return (
+        <>
+            <div className={styles.overlay} onClick={onClose} />
+            <div className={styles.modal}>
+                {/* Header */}
+                <div className={styles.header}>
+                    <div className={styles.fileInfo}>
+                        <div className={styles.iconContainer} style={{ color }}>
+                            <Icon size={22} />
+                        </div>
+                        <div className={styles.meta}>
+                            <h3 className={styles.fileName} title={fileName}>{fileName}</h3>
+                            <span className={styles.fileSize}>{formatSize(fileSize)}</span>
+                        </div>
+                    </div>
+
+                    <div className={styles.actions}>
+                        {blob && (
+                            <button
+                                className={styles.actionButton}
+                                onClick={handleDownloadInstant}
+                                title="Download decrypted file"
+                            >
+                                <Download size={18} />
+                                <span className={styles.actionText}>Download</span>
+                            </button>
+                        )}
+                        <button className={styles.closeButton} onClick={onClose} title="Close Preview">
+                            <X size={20} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Viewport Content */}
+                <div className={styles.viewport}>
+                    {isDownloading && (
+                        <div className={styles.loadingContainer}>
+                            <Loader2 className={styles.spinner} size={40} />
+                            <p className={styles.statusText}>{downloadStatus || "Preparing decryption..."}</p>
+                            <p className={styles.subStatusText}>All decryption happens securely in your browser.</p>
+                        </div>
+                    )}
+
+                    {downloadError && (
+                        <div className={styles.errorContainer}>
+                            <AlertTriangle size={48} className={styles.errorIcon} />
+                            <h4 className={styles.errorTitle}>Preview Failed</h4>
+                            <p className={styles.errorMessage}>{downloadStatus || "We couldn't decrypt this file."}</p>
+                            <div className={styles.errorActions}>
+                                <button className={styles.retryButton} onClick={onClose}>Close</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isDownloading && !downloadError && blob && (
+                        <div className={styles.previewContainer}>
+                            {isImage && objectUrl && (
+                                <div className={styles.imageWrapper}>
+                                    <img src={objectUrl} alt={fileName} className={styles.previewImage} />
+                                </div>
+                            )}
+
+                            {isPDF && objectUrl && (
+                                <iframe
+                                    src={`${objectUrl}#toolbar=1`}
+                                    className={styles.pdfViewer}
+                                    title={fileName}
+                                />
+                            )}
+
+                            {isText && (
+                                <div className={styles.textWrapper}>
+                                    {isTextLoading ? (
+                                        <div className={styles.loadingContainer}>
+                                            <Loader2 className={styles.spinner} size={24} />
+                                            <p className={styles.statusText}>Reading text content...</p>
+                                        </div>
+                                    ) : (
+                                        <pre className={styles.textPre}>
+                                            <code>{textContent}</code>
+                                        </pre>
+                                    )}
+                                </div>
+                            )}
+
+                            {!isImage && !isPDF && !isText && (
+                                <div className={styles.fallbackContainer}>
+                                    <File size={64} className={styles.fallbackIcon} />
+                                    <h4 className={styles.fallbackTitle}>No Preview Available</h4>
+                                    <p className={styles.fallbackMessage}>
+                                        We don't support previewing {fileName.split('.').pop()?.toUpperCase() || 'this type of'} files directly.
+                                    </p>
+                                    <button className={styles.fallbackDownloadButton} onClick={handleDownloadInstant}>
+                                        <Download size={16} />
+                                        Download Decrypted File
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+}
