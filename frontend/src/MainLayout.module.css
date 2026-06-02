@@ -24,9 +24,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 40px;
-    background-color: #ffffff;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 16px 40px;
+    background-color: #fff8f6;
     transition: padding 0.2s ease;
     gap: 20px;
 }
@@ -46,7 +45,7 @@
 
 @media (max-width: 768px) {
     .header {
-        padding: 16px 24px;
+        padding: 10px 24px;
         gap: 16px;
     }
 
@@ -61,7 +60,7 @@
 
 @media (max-width: 540px) {
     .header {
-        padding: 12px 16px;
+        padding: 12px 20px;
         gap: 12px;
     }
 
