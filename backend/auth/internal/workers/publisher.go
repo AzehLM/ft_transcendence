@@ -72,7 +72,7 @@ func (p *EventPublisher) PublishUserProfileUpdated(ctx context.Context, userID u
 	return nil
 }
 
-func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.UUID, orgIDs []string) error {
+func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.UUID, orgIDs []string, userEmail string, orgNames map[string]string) error {
 	type WSEvent struct {
 		Event   string      `json:"event"`
 		OrgID   string      `json:"org_id,omitempty"`
@@ -81,10 +81,14 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 	}
 
 	for _, orgID := range orgIDs {
+		orgName := orgNames[orgID]
+        if orgName == "" {
+            orgName = "Unknown Organization"
+        }
 		event := WSEvent{
 			Event:   "MEMBER_REMOVED",
 			OrgID:   orgID,
-			Message: "A member has left the organization (account deleted)",
+			Message: "A member [" + userEmail + "] has left the organization [" + orgName + "] - (account deleted)",
 			Data: map[string]interface{}{
 				"user_id": userID.String(),
 			},
@@ -105,7 +109,7 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 	return nil
 }
 
-func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, userID uuid.UUID, role string) error {
+func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, userID uuid.UUID, role string, orgName string, promotedEmail string) error {
 	type WSEvent struct {
 		Event   string      `json:"event"`
 		OrgID   string      `json:"org_id,omitempty"`
@@ -116,7 +120,7 @@ func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, u
 	event := WSEvent{
 		Event:   "ROLE_UPDATED",
 		OrgID:   orgID,
-		Message: "A member's role has been updated",
+		Message: "A member's role [" + promotedEmail + "] has been updated to " + role + " in organization [" + orgName + "]",
 		Data: map[string]interface{}{
 			"user_id": userID.String(),
 			"role":    role,
@@ -129,4 +133,27 @@ func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, u
 	}
 
 	return p.redis.Publish(ctx, "org_events:"+orgID, payload).Err()
+}
+
+func (p *EventPublisher) PublishToUser(ctx context.Context, orgID string, userID string, orgName string) error {
+	type WSEvent struct {
+		Event   string      `json:"event"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data,omitempty"`
+	}
+
+	event := WSEvent{
+		Event:   "ADDED_TO_NEW_ORGA",
+		Message: "Your role has changed to admin in organization [" + orgName +"]",
+		Data: map[string]interface{}{
+			"org_id": orgID,
+			"role":   "admin",
+		},
+	}
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	return p.redis.Publish(ctx, "user_events:"+userID, payload).Err()
 }

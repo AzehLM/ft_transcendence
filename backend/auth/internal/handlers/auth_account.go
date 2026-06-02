@@ -65,11 +65,20 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
+	// Get User email before deleting
+	var userEmail string
+    if err := h.DB.Table("users").Where("id = ?", userID).Pluck("email", &userEmail).Error; err != nil {
+        log.Printf("[ERROR] Failed to fetch user email before deletion: %v", err)
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not fetch user info"})
+    }
+
 	var orgIDs []string
 	var orgsToDelete []uuid.UUID
 	transfers := make(map[string]string)
 	promotions := make(map[string]uuid.UUID)
 	var filesToCleanup []string
+
+	orgNamesMap := make(map[string]string)
 
 	errTx := h.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; err != nil {
@@ -77,6 +86,13 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		}
 
 		for _, orgIDStr := range orgIDs {
+			// Get org nam
+			var orgName string
+            if err := tx.Table("organizations").Where("id = ?", orgIDStr).Pluck("name", &orgName).Error; err != nil {
+                return err
+            }
+            orgNamesMap[orgIDStr] = orgName
+
 			var transferTargetID string
 			type AdminInfo struct {
 				UserID uuid.UUID `gorm:"column:user_id"`
@@ -193,14 +209,21 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	}
 
 	if len(remainingOrgIDs) > 0 {
-		if err := h.Publisher.PublishMemberRemoved(c.Context(), userID, remainingOrgIDs); err != nil {
+		if err := h.Publisher.PublishMemberRemoved(c.Context(), userID, remainingOrgIDs, userEmail, orgNamesMap); err != nil {
 			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
 		}
 	}
 
 	for orgIDStr, promotedUserID := range promotions {
-		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "admin"); err != nil {
+		var promotedUserEmail string
+		_ = h.DB.Table("users").Where("id = ?", promotedUserID).Pluck("email", &promotedUserEmail)
+		orgName := orgNamesMap[orgIDStr]
+		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "admin", orgName, promotedUserEmail); err != nil {
 			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
+		}
+
+		if err := h.Publisher.PublishToUser(c.Context(), orgIDStr, promotedUserID.String(), orgName); err != nil {
+			log.Printf("[WARN] Failed to publish direct notification to promoted user %s: %v", promotedUserID.String(), err)
 		}
 	}
 
