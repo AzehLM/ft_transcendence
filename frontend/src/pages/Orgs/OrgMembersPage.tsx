@@ -241,27 +241,32 @@ export default function OrgMembersPage() {
 
   const handleChangeRole = async () => {
     if (!selectedMember) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ role: newRole }),
-    });
 
-    if (!response.ok) {
-        if (response.status === 502 || response.status === 503) {
-            setModalError("Network error, please try again later.");
-        } else {
-            const body = await response.json().catch(() => null);
-            setModalError(body?.message || body?.error || "Failed to change role.");
-        }
-        return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role: newRole }),
+      });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to change role.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.map(m =>
+        m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
+      ));
+      setShowChangeRoleModal(false);
+      setSelectedMember(null);
+      addMessage(`${selectedMember.email} successfully changed role`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.map(m =>
-      m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
-    ));
-    setShowChangeRoleModal(false);
-    setSelectedMember(null);
-    addMessage(`${selectedMember.email} successfully changed role`, "success");
   };
 
   const handleRemoveMember = async () => {
