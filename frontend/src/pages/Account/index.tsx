@@ -28,7 +28,7 @@ export default function AccountPage() {
                     setError("Network error, please try again later.");
                 } else {
                     const body = await response.json().catch(() => null);
-                    setError(body?.message || body?.error || "Login failed!");
+                    setError(body?.message || body?.error || "Failed to delete account. Please try again.");
                 }
                 return;
             }
