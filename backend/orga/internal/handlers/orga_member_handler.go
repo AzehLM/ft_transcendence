@@ -359,7 +359,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	if member.Role == "admin" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "you can't delete the last admin",
+				"error": "you can't remove the last admin",
 			})
 		}
 	}

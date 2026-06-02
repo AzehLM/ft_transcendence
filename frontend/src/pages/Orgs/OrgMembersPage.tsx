@@ -247,16 +247,13 @@ export default function OrgMembersPage() {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to change role.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
+        if (response.status === 502 || response.status === 503) {
+            setModalError("Network error, please try again later.");
+        } else {
+            const body = await response.json().catch(() => null);
+            setModalError(body?.message || body?.error || "Failed to change role.");
         }
-      } catch {}
-      setModalError(message);
-      return;
+        return;
     }
 
     setMembers(prev => prev.map(m =>
@@ -272,16 +269,13 @@ export default function OrgMembersPage() {
     const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
 
     if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to remove member.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
+        if (response.status === 502 || response.status === 503) {
+            setModalError("Network error, please try again later.");
+        } else {
+            const body = await response.json().catch(() => null);
+            setModalError(body?.message || body?.error || "Failed to remove.");
         }
-      } catch {}
-      setModalError(message);
-      return;
+        return;
     }
 
     setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
