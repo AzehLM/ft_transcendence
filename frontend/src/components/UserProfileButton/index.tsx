@@ -77,7 +77,7 @@ export function UserProfileButton({ isOpen = false, onClick }: UserProfileButton
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.03)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
-                <Settings size={20} strokeWidth={1.5} />
+                <Settings size={20} strokeWidth={2} />
             </button>
 
             <button
