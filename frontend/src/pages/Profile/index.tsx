@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [avatarBlobUrl, setAvatarBlobUrl] = useState<string | null>(null)
   const [avatarError, setAvatarError] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -22,7 +23,10 @@ export default function ProfilePage() {
 
     fetchWithRefresh("/api/auth/me", { signal })
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch user");
+        if (!res.ok) {
+          setError("Failed to fetch user information.")
+          throw new Error("Failed to fetch user");
+        }
         return res.json();
       })
       .then(data => {
@@ -36,7 +40,7 @@ export default function ProfilePage() {
 
     fetchWithRefresh("/api/user/me/avatar", { signal })
       .then(res => {
-        if (!res.ok) return null;
+        if (res.status === 204 || !res.ok) return null;
         return res.blob();
       })
       .then(blob => {
@@ -135,6 +139,11 @@ export default function ProfilePage() {
         <SettingsLayout>
           <div className={styles.mainBox}>
             <h2 className={styles.subtitle}>Personal information</h2>
+            { error ? (
+              <div className={`${styles.statusMessage} ${styles.error}`}>
+                  {error}
+              </div>
+            ) : (
             <div className={styles.profileBox}>
               <div className={styles.profileAvatarCol}>
                 {avatarBlobUrl
@@ -179,6 +188,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </SettingsLayout>
     );

@@ -1714,7 +1714,11 @@
   "preload": false,
   "refresh": "5s",
   "schemaVersion": 41,
-  "tags": ["minio", "storage"],
+  "tags": [
+    "minio",
+    "storage",
+    "S3-compatible"
+  ],
   "templating": {
     "list": []
   },

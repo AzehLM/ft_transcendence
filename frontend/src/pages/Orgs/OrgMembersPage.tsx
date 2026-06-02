@@ -45,10 +45,10 @@ export default function OrgMembersPage() {
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
 
-  const { keyMissing, setKeyMissing, password, 
-    setPassword, isResetting, keyModalError, setKeyModalError, 
+  const { keyMissing, setKeyMissing, password,
+    setPassword, isResetting, keyModalError, setKeyModalError,
     checkKeys, handleResetKeys } = useKeyCheck();
-    
+
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const avatarUrlsRef = useRef<Record<string, string>>({});
   
@@ -109,7 +109,7 @@ export default function OrgMembersPage() {
         data.forEach((member: Member) => {
           fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
             .then(res => {
-              if (!res.ok) return null;
+              if (res.status === 204 || !res.ok) return null;
               return res.blob();
             })
             .then(blob => {
@@ -241,53 +241,56 @@ export default function OrgMembersPage() {
 
   const handleChangeRole = async () => {
     if (!selectedMember) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ role: newRole }),
-    });
 
-    if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to change role.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
-        }
-      } catch {}
-      setModalError(message);
-      return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role: newRole }),
+      });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to change role.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.map(m =>
+        m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
+      ));
+      setShowChangeRoleModal(false);
+      setSelectedMember(null);
+      addMessage(`${selectedMember.email} successfully changed role`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.map(m =>
-      m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
-    ));
-    setShowChangeRoleModal(false);
-    setSelectedMember(null);
-    addMessage(`${selectedMember.email} successfully changed role`, "success");
   };
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
-
-    if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to remove member.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
-        }
-      } catch {}
-      setModalError(message);
-      return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to remove.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
+      setShowRemoveModal(false);
+      setMemberToRemove(null);
+      addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
-    setShowRemoveModal(false);
-    setMemberToRemove(null);
-    addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
   };
 
   const getName = (member: Member) => {

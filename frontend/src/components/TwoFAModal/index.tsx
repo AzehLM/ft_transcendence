@@ -65,9 +65,12 @@ export function TwoFAModal({
             });
 
             if (!response.ok) {
-                const data = await response.json();
-                setError(data.error || "Failed to generate TOTP");
-                setLoading(false);
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Failed to generate TOTP!");
+                }
                 return;
             }
 
@@ -96,10 +99,14 @@ export function TwoFAModal({
                 body: JSON.stringify({ code: verificationCode }),
             });
 
+
             if (!response.ok) {
-                const data = await response.json();
-                setError(data.error || "Failed to verify code");
-                setLoading(false);
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Failed to verify code");
+                }
                 return;
             }
 
@@ -131,9 +138,12 @@ export function TwoFAModal({
             });
 
             if (!response.ok) {
-                const data = await response.json();
-                setError(data.error || "Failed to disable 2FA");
-                setLoading(false);
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Failed to disable 2FA");
+                }
                 return;
             }
 
