@@ -94,7 +94,7 @@ export function ConfirmationModal({
     } else if (isKeyMissing) {
     title = "Enter your password";
     } else {
-    title = "Move to Trash?";
+    title = "Confirmation";
     }
 
     const message: string | undefined = isAccount
@@ -120,11 +120,11 @@ export function ConfirmationModal({
     : isCreateOrga
     ? "Enter the name of the new organization"
     : isCreateFolder
-    ? "Enter the name of the Folder you want to create :"
+    ? "Enter the name of the folder you want to create:"
     : isRenameFolder
-    ? `Enter a new name for the folder "${fileName}" :`
+    ? `Enter a new name for the folder "${fileName}":`
     : isMove
-    ? `Enter the id of the new target folder for "${fileName}" :`
+    ? `Enter the id of the new target folder for "${fileName}":`
     : undefined
 
     const baseButtonText = isAccount
@@ -153,7 +153,7 @@ export function ConfirmationModal({
     ? "Move item"
     : isRenameFolder
     ? "Rename Folder"
-    : "Move to Trash";
+    : "Confirm";
 
     const buttonText = isLoading ? "Loading..." : baseButtonText;   
 
