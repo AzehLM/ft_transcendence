@@ -1,7 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type';
-import { UPLOAD_CONFIG } from '../config/uploadConfig';
 import MIME_TYPES_RAW from '../config/mime.types?raw';
-
+import { fileSchema } from '../schemas/file.schema';
 
 const parseMimeTypes = (raw: string): Record<string, string[]> => {
     const types: Record<string, string[]> = {};
@@ -28,11 +27,13 @@ export interface ValidationResult {
 }
 
 
-export const validateFile = async (file: File): Promise<ValidationResult> => {
-    if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
+export async function validateFile(file: File): Promise<{ isValid: boolean; error?: string }> {
+
+    const result = fileSchema.safeParse({ file });
+    if (!result.success) {
         return {
             isValid: false,
-            error:`ERROR_VALIDATION_SIZE`
+            error: result.error.issues[0].message
         };
     }
 

@@ -8,6 +8,7 @@ const FILE_NAME_REGEX = /^[^/\\<>:"|?*\x00-\x1F]+$/;
 export const fileSchema = z.object({
 	file: z
 		.instanceof(File)
+		.refine((file) => file.size > 0, "File cannot be empty")
 		.refine((file) => file.size <= MAX_FILE_SIZE, "File cannot exceed 2 GB")
 		.refine((file) => file.name.length >= 1, "File name cannot be empty")
 		.refine((file) => file.name.length <= 100, "File name must be less than 100 characters")
