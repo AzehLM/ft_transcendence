@@ -40,7 +40,6 @@ export function useE2EEPreview() {
             case 'js':
             case 'ts':
             case 'tsx':
-            case 'py':
             case 'go':
             case 'sh':
             case 'yaml':
@@ -51,7 +50,11 @@ export function useE2EEPreview() {
         }
     };
 
-    const decryptForPreview = async (fileId: string, orgId?: string): Promise<{ blob: Blob; filename: string } | null> => {
+    const decryptForPreview = async (
+        fileId: string,
+        orgId?: string,
+        signal?: AbortSignal
+    ): Promise<{ blob: Blob; filename: string } | null> => {
         setIsDownloading(true);
         setDownloadStatus(null);
         setDownloadError(false);
@@ -60,13 +63,15 @@ export function useE2EEPreview() {
             let activePrivateKey: CryptoKey;
 
             if (orgId) {
+                if (signal?.aborted) return null;
                 setDownloadStatus("Fetching organization keys...");
-                const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`);
+                const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`, { signal });
                 if (!keysRes.ok) {
                     throw new Error("Unable to fetch organization keys.");
                 }
                 const { enc_org_priv_key, enc_aes_key, iv: orgIv } = await keysRes.json();
 
+                if (signal?.aborted) return null;
                 setDownloadStatus("Decrypting organization key...");
                 const orgPrivKeyB64 = await decryptOrgPrivateKey(enc_org_priv_key, enc_aes_key, orgIv);
                 const orgPrivKeyBuffer = base64ToUint8Array(orgPrivKeyB64);
@@ -79,6 +84,7 @@ export function useE2EEPreview() {
                     ["decrypt"]
                 );
             } else {
+                if (signal?.aborted) return null;
                 setDownloadStatus("Fetching session key...");
                 const tempPrivateKey = await getPrivateKeyFromSession();
                 if (!tempPrivateKey) {
@@ -87,14 +93,16 @@ export function useE2EEPreview() {
                 activePrivateKey = tempPrivateKey;
             }
 
+            if (signal?.aborted) return null;
             setDownloadStatus("Fetching secure metadata...");
-            const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`);
+            const metaRes = await fetchWithRefresh(`/api/files/${fileId}/download`, { signal });
 
             if (!metaRes.ok) {
                 throw new Error(metaRes.status === 404 ? "File not found on server." : `Unable to fetch metadata (${metaRes.status}).`);
             }
             const metadata: DownloadMetadata = await metaRes.json();
 
+            if (signal?.aborted) return null;
             setDownloadStatus("Decrypting session key...");
             const encryptedDekBytes = base64ToUint8Array(metadata.encrypted_dek);
             const dek = await decryptDEKWithPrivateKey(encryptedDekBytes, activePrivateKey);
@@ -116,8 +124,9 @@ export function useE2EEPreview() {
                 filename = "preview_file";
             }
 
+            if (signal?.aborted) return null;
             setDownloadStatus("Decrypting data...");
-            const response = await fetch(metadata.presigned_url);
+            const response = await fetch(metadata.presigned_url, { signal });
             if (!response.ok || !response.body) {
                 throw new Error("Error accessing remote storage.");
             }
@@ -148,6 +157,10 @@ export function useE2EEPreview() {
             };
 
             while (true) {
+                if (signal?.aborted) {
+                    reader.cancel();
+                    return null;
+                }
                 const { done, value } = await reader.read();
 
                 if (value) {
@@ -156,6 +169,10 @@ export function useE2EEPreview() {
                 }
 
                 while (bufferedBytes >= cipherChunkSize) {
+                    if (signal?.aborted) {
+                        reader.cancel();
+                        return null;
+                    }
                     const dataToDecrypt = new Uint8Array(cipherChunkSize);
                     let offset = 0;
                     let remaining = cipherChunkSize;
@@ -181,6 +198,7 @@ export function useE2EEPreview() {
 
                 if (done) {
                     if (bufferedBytes > 0) {
+                        if (signal?.aborted) return null;
                         const dataToDecrypt = new Uint8Array(bufferedBytes);
                         let offset = 0;
                         while (chunks.length > 0) {
@@ -194,20 +212,29 @@ export function useE2EEPreview() {
                 }
             }
 
+            if (signal?.aborted) return null;
             const mimeType = getMimeTypeByExtension(filename);
             const blob = new Blob(decryptedChunks, { type: mimeType });
 
             return { blob, filename };
-        } catch (err) {
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                return null;
+            }
             console.error("Preview decryption failed:", err);
-            setDownloadError(true);
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            setDownloadStatus(`Error: ${errorMessage}`);
+            if (!signal?.aborted) {
+                setDownloadError(true);
+                const errorMessage = err instanceof Error ? err.message : "Unknown error";
+                setDownloadStatus(`Error: ${errorMessage}`);
+            }
             return null;
         } finally {
-            setIsDownloading(false);
+            if (!signal?.aborted) {
+                setIsDownloading(false);
+            }
         }
     };
 
     return { decryptForPreview, downloadStatus, isDownloading, downloadError };
 }
+
