@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import styles from "./EditableField.module.css";
 
@@ -19,6 +19,8 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleSave = async () => {
     if (!inputValue.trim() || inputValue === value) {
@@ -61,14 +63,32 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancel();
               }}
+              onBlur={(e) => {
+                const target = e.relatedTarget as Node | null;
+                if (saveButtonRef.current?.contains(target) || cancelButtonRef.current?.contains(target)) return;
+                handleSave();
+              }}
               autoFocus
             />
-            <button className={styles.iconButton} onClick={handleSave} disabled={loading}>
+            <button
+              ref={saveButtonRef}
+              type="button"
+              className={styles.iconButton}
+              onClick={handleSave}
+              disabled={loading}
+            >
               <Check size={18} />
             </button>
-            { handleReset && ( <button className={styles.iconButton} onClick={handleCancel}>
-              <X size={18} />
-            </button> )}
+            { handleReset && (
+              <button
+                ref={cancelButtonRef}
+                type="button"
+                className={styles.iconButton}
+                onClick={handleCancel}
+              >
+                <X size={18} />
+              </button>
+            )}
           </>
         ) : (
           <div className={styles.fieldWrapper} onClick={() => { setInputValue(value); setEditing(true); }}>

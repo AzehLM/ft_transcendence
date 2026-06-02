@@ -5,7 +5,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
       <Link to="/dashboard" className={styles.sidebar__logo}>
-        <div className={styles.logoSquare}>O</div>
+        <img src="/app-icon.png" alt="" aria-hidden="true" width={34} height={34} />
         <div className={styles.logoText}>
           <span className={styles.logoName}>Ostrom</span>
           <span className={styles.logoSubtitle}>Cloud Storage</span>
