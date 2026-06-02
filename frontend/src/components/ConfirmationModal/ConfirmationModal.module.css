@@ -75,12 +75,12 @@
     background: #e0e0e0;
 }
 
-.modal__button--delete {
+.modal__button--confirm {
     background: var(--brand-primary);
     color: var(--color-white);
 }
 
-.modal__button--delete:hover {
+.modal__button--confirm:hover {
     background: var(--brand-primary-hover);
 }
 

@@ -132,7 +132,7 @@ export function MoveModal({ isOpen, fileName, onConfirm, onCancel, orgId }: Move
           </button>
           <button
             onClick={() => onConfirm(selectedFolder ?? currentFolderId)}
-            className={`${styles.modal__button} ${styles["modal__button--delete"]}`}
+            className={`${styles.modal__button} ${styles["modal__button--confirm"]}`}
           >
             Move here
           </button>
