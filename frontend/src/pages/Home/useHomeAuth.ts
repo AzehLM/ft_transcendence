@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchWithRefresh } from "../../services/api.service";
 import { logout as authLogout } from "../../services/auth.service";
 
 interface HomeUser {
@@ -19,23 +18,63 @@ export function useHomeAuth(): { user: HomeUser | null; logout: () => void } {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+        let cancelled = false;
 
-        fetchWithRefresh("/api/auth/me")
-            .then((res) => {
-                if (!res.ok) return null;
-                return res.json();
-            })
-            .then((data) => {
-                if (data?.email) {
-                    setUser({
-                        name: data.display_name ?? data.email,
-                        email: data.email,
-                    });
+        const checkAuth = async () => {
+            let token = localStorage.getItem("token");
+            if (!token) return;
+
+            let res = await fetch("/api/auth/me", {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            if (res.status === 401) {
+                const refreshRes = await fetch("/api/auth/refresh", {
+                    method: "POST",
+                    credentials: "include",
+                });
+
+                if (!refreshRes.ok) {
+                    if (!cancelled) setUser(null);
+                    return;
                 }
-            })
-            .catch(() => setUser(null));
+
+                const data = await refreshRes.json();
+                token = data.access_token as string;
+                localStorage.setItem("token", token);
+
+                res = await fetch("/api/auth/me", {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                });
+            }
+
+            if (!res.ok) {
+                if (!cancelled) setUser(null);
+                return;
+            }
+
+            const data = await res.json();
+            if (!cancelled && data?.email) {
+                setUser({
+                    name: data.display_name ?? data.email,
+                    email: data.email,
+                });
+            }
+        };
+
+        checkAuth().catch(() => {
+            if (!cancelled) setUser(null);
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const logout = () => {

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
-	"context"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -175,7 +174,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not delete user"})
 	}
 
-	if err := h.Publisher.PublishUserDeleted(context.TODO(), userID, transfers, filesToCleanup); err != nil {
+	if err := h.Publisher.PublishUserDeleted(c.Context(), userID, transfers, filesToCleanup); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 	}
 
@@ -194,13 +193,13 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	}
 
 	if len(remainingOrgIDs) > 0 {
-		if err := h.Publisher.PublishMemberRemoved(context.TODO(), userID, remainingOrgIDs); err != nil {
+		if err := h.Publisher.PublishMemberRemoved(c.Context(), userID, remainingOrgIDs); err != nil {
 			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
 		}
 	}
 
 	for orgIDStr, promotedUserID := range promotions {
-		if err := h.Publisher.PublishRoleUpdated(context.TODO(), orgIDStr, promotedUserID, "admin"); err != nil {
+		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "admin"); err != nil {
 			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
 		}
 	}
@@ -366,7 +365,7 @@ func serveAvatar(c fiber.Ctx, db *gorm.DB, userIDStr string) error {
 	err := db.Where("user_id = ?", userIDStr).First(&avatar).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "no avatar"})
+			return c.SendStatus(fiber.StatusNoContent)
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error yo 2"})
 	}
@@ -406,7 +405,7 @@ func (h *AuthHandler) GetUserPublicKey(c fiber.Ctx) error {
 
 func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	var body struct {
-		FirstName string `json:"first_name" validate:"required"`
+		FirstName string `json:"first_name"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -421,12 +420,6 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		})
 	}
 
-	// if body.FirstName == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "first name required",
-	// 	})
-	// }
-
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
@@ -440,7 +433,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("first_name", body.FirstName)
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
+			"error": "failed to update user profile",
 		})
 	}
 	if result.RowsAffected == 0 {
@@ -462,7 +455,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 
 func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	var body struct {
-		FamilyName string `json:"family_name" validate:"required"`
+		FamilyName string `json:"family_name"`
 	}
 
 	if len(c.Body()) == 0 {
@@ -477,12 +470,6 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 		})
 	}
 
-	// if body.FamilyName == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "family name required",
-	// 	})
-	// }
-
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
@@ -496,7 +483,7 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("family_name", body.FamilyName)
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
+			"error": "failed to update user profile",
 		})
 	}
 	if result.RowsAffected == 0 {

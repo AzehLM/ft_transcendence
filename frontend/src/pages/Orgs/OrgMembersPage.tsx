@@ -110,7 +110,7 @@ export default function OrgMembersPage() {
         data.forEach((member: Member) => {
           fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
             .then(res => {
-              if (!res.ok) return null;
+              if (res.status === 204 || !res.ok) return null;
               return res.blob();
             })
             .then(blob => {

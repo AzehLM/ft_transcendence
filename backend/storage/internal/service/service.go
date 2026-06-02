@@ -47,17 +47,17 @@ const maxParts = 100
 // business logic contract
 type StorageService interface {
 	// File part
-	RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error)
+	RequestUploadURL(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error)
 	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
-	DownloadFile(userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
-	DeleteFile(userID uuid.UUID, fileID uuid.UUID) error
+	DownloadFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
+	DeleteFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID) error
 	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
 	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
 
 	// Multipart
-	RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
-	FinalizeMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error)
-	AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error
+	RequestMultipartUpload(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
+	FinalizeMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error)
+	AbortMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string) error
 
 	// Folder part
 	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
@@ -93,7 +93,7 @@ func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client
 // RequestUploadURL requests a presignedURL to the minio client and returns it.
 // File requested for upload are in a PENDING state until it has been fully uploaded to the minio storage service, where it then updates this status to ACTIVE via FinalizeUpload
 // The quota check is done via GetUserSpace so between a RequestUploadURL call and a FinalizeUpload call, it is possible that users have no storage space left
-func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error) {
+func (s *storageService) RequestUploadURL(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error) {
 
 	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
 		if errors.Is(err, rbac.ErrForbidden) {
@@ -105,7 +105,6 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	ctx := context.TODO()
 	objectID = uuid.New()
 
 	var used, maxSpace int64
@@ -135,7 +134,6 @@ func (s *storageService) RequestUploadURL(userID uuid.UUID, fileSize int64, fold
 		return "", uuid.Nil, err
 	}
 
-	// default ctx for now, ostrom as the root repository, will be be modified depending on users path ?
 	rawURL, err := s.minioClient.PresignedPutObject(ctx, "ostrom", objectID.String(), 15*time.Minute)
 	if err != nil {
 		return "", uuid.Nil, err
@@ -198,14 +196,12 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	}
 
 	// _ because we ignore the return value of this call (fire-and-forget event)
-	_ = s.publisher.PublishFileUploaded(context.TODO(), file)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file)
 
 	return file.ID, nil
 }
 
-func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
-
-	ctx := context.TODO()
+func (s *storageService) DownloadFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
@@ -235,9 +231,7 @@ func (s *storageService) DownloadFile(userID uuid.UUID, fileID uuid.UUID, hostna
 	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
 }
 
-func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
-
-	ctx := context.TODO()
+func (s *storageService) DeleteFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID) error {
 
 	// gets the file in DB
 	file, err := s.repo.FindByID(fileID)
@@ -272,7 +266,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	_ = s.publisher.PublishFileDeleted(context.TODO(), file)
+	_ = s.publisher.PublishFileDeleted(context.Background(), file)
 
 	return nil
 }
@@ -312,7 +306,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrNotFound
 	}
 
-	_ = s.publisher.PublishFileMoved(context.TODO(), file, folderID)
+	_ = s.publisher.PublishFileMoved(context.Background(), file, folderID)
 
 	return nil
 }
@@ -366,7 +360,7 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFolderCreated(context.TODO(), &folder)
+	_ = s.publisher.PublishFolderCreated(context.Background(), &folder)
 	return folder.ID, nil
 }
 
@@ -400,7 +394,7 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 		return err
 	}
 
-	_ = s.publisher.PublishFolderDeleted(context.TODO(), folder)
+	_ = s.publisher.PublishFolderDeleted(context.Background(), folder)
 	return nil
 }
 
@@ -489,12 +483,12 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 	}
 
 	if newName != nil && *newName != oldName {
-		_ = s.publisher.PublishFolderRenamed(context.TODO(), folder)
+		_ = s.publisher.PublishFolderRenamed(context.Background(), folder)
 	}
 
 	if newParentID != nil {
 		if !uuidPtrEqual(oldParentID, *newParentID) {
-			_ = s.publisher.PublishFolderMoved(context.TODO(), folder, oldParentID, *newParentID)
+			_ = s.publisher.PublishFolderMoved(context.Background(), folder, oldParentID, *newParentID)
 		}
 	}
 
@@ -638,7 +632,7 @@ func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delt
 
 // multipart
 // https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
-func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
+func (s *storageService) RequestMultipartUpload(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
 
 	// S3 multipart upload limits to 10000 but I think 100 (maxParts) is enough as we are giving users/organizations a 5go limit of available space.
 	if partCount <= 0 || partCount > maxParts {
@@ -667,7 +661,6 @@ func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64
 	}
 
 	// parameters needed by minio
-	ctx := context.TODO()
 	objectKey := uuid.New()
 	core := minio.Core{Client: s.minioClient}
 
@@ -715,9 +708,7 @@ func (s *storageService) RequestMultipartUpload(userID uuid.UUID, fileSize int64
 	return objectKey, uploadIDStr, urls, nil
 }
 
-func (s *storageService) FinalizeMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string, encryptedFilename string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error) {
-
-	ctx := context.TODO()
+func (s *storageService) FinalizeMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string, encryptedFilename string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error) {
 
 	file, err := s.repo.FindByObjectID(objectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -808,7 +799,7 @@ func (s *storageService) FinalizeMultipartUpload(userID uuid.UUID, objectID uuid
 	return file.ID, nil
 }
 
-func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UUID, uploadID string) error {
+func (s *storageService) AbortMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string) error {
 
 	file, err := s.repo.FindByObjectID(objectID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -829,7 +820,7 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 
 	// aborting on MinIO side, if MinIO fails we only log it and return, leaving the sweeper do the job
 	core := minio.Core{Client: s.minioClient}
-	if err := core.AbortMultipartUpload(context.TODO(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
+	if err := core.AbortMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
 		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
 		return err
 	}
