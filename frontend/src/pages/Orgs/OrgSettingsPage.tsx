@@ -80,10 +80,15 @@ export default function OrgSettingsPage() {
       const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || "Failed to delete organization, please try again.");
-        return;
+          if (response.status === 502 || response.status === 503) {
+              setError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setError(body?.message || body?.error || "Failed to delete organization.");
+          }
+          return;
       }
+
       navigate("/organizations");
     } catch (err) {
       setError("Network error, please try again.");
@@ -98,16 +103,13 @@ export default function OrgSettingsPage() {
       const response = await fetchWithRefresh(`/api/orgs/${id}/members/me`, { method: "DELETE" });
 
       if (!response.ok) {
-        const text = await response.text();
-        let message = "Failed to leave organization.";
-        try {
-          if (text) {
-            const data = JSON.parse(text);
-            message = data.error || data.message || message;
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to leave organization.");
           }
-        } catch {}
-        setModalError(message);
-        return;
+          return;
       }
 
       setModalError(null);

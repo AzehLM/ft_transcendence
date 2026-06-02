@@ -18,34 +18,27 @@ export default function AccountPage() {
     const [email, setEmail] = useState<string>("");
     const [isTwoFAEnabled, setIsTwoFAEnabled] = useState<boolean>(false);
     const [isTwoFAModalOpen, setIsTwoFAModalOpen] = useState(false);
+    const [mainError, setMainError] = useState<string | null>(null);
 
     const handleDeleteAccount = async () => {
         try {
             const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
 
             if (!response.ok) {
-                const text = await response.text();
-                let message = "Failed to delete account, please try again.";
-                try {
-                    if (text) {
-                        const data = JSON.parse(text);
-                        message = data.message || data.error || message;
-                    }
-                } catch { }
-                setError(message);
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Failed to delete account. Please try again.");
+                }
                 return;
             }
 
             await logout(navigate);
         } catch (err) {
             console.error("Failed to delete account:", err);
-            if (err instanceof TypeError) {
-                setError("Network error, please try again.");
-            } else if (err instanceof SyntaxError) {
-                setError("Received an invalid server response. Please try again.");
-            } else {
-                setError("Failed to delete account. Please try again.");
-            }
+            setError("Failed to delete account. Please try again.");
+
         }
     };
 
@@ -58,10 +51,19 @@ export default function AccountPage() {
 
     useEffect(() => {
         fetchWithRefresh("/api/auth/me")
-            .then(res => res.json())
+            .then(res => {
+            if (!res.ok) {
+                setMainError("Failed to fetch user information.")
+                throw new Error("Failed to fetch user");
+            }
+            return res.json();
+            })
             .then(data => {
                 setEmail(data.email);
                 setIsTwoFAEnabled(data.two_factor_enabled || false);
+            })
+            .catch(() => {
+                setMainError("Failed to fetch user information.");
             });
     }, []);
 
@@ -88,11 +90,19 @@ export default function AccountPage() {
                 body: JSON.stringify(loginData),
             });
 
-            const responseData = await response.json();
             if (!response.ok) {
-                setPwdError(responseData.message || "Current password is incorrect." /* previously "Error."*/);
+                if (response.status === 502 || response.status === 503) {
+                    setPwdError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setPwdError(body?.message || body?.error || "Failed to change password. Please try again.");
+                }
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
                 return;
             }
+            const responseData = await response.json();
 
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
@@ -112,15 +122,12 @@ export default function AccountPage() {
             });
 
             if (!responsePut.ok) {
-                const text = await responsePut.text();
-                let message = "Failed to change password.";
-                try {
-                    if (text) {
-                        const data = JSON.parse(text);
-                        message = data.error || data.message || message;
-                    }
-                } catch { }
-                setPwdError(message);
+                if (responsePut.status === 502 || responsePut.status === 503) {
+                    setPwdError("Network error, please try again later.");
+                } else {
+                    const body = await responsePut.json().catch(() => null);
+                    setPwdError(body?.message || body?.error || "Failed to change password. Please try again.");
+                }
                 setPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
@@ -134,17 +141,9 @@ export default function AccountPage() {
             sessionStorage.setItem("passwordChanged", "true");
             setIsReset(true);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to change password:", err);
-            if (err instanceof TypeError) {
-                setPwdError("Network error, please try again.");
-            } else if (err instanceof SyntaxError) {
-                setPwdError("Received an invalid server response. Please try again.");
-            } else {
-                setPwdError("Failed to change password. Please try again.");
-            }
-        } finally {
-            setIsUpdating(false);
+            setPwdError(err.message || "An error occurred, the password has not been changed !");
         }
     };
 
@@ -153,6 +152,11 @@ export default function AccountPage() {
             <div className={styles.settingsGrid}>
                 <div className={styles.settingsCard}>
                     <h2 className={styles.sectionTitle}>Security</h2>
+                    { mainError ? (
+                    <div className={`${styles.statusMessage} ${styles.error}`}>
+                        {mainError}
+                    </div>
+                    ) : (
                     <div className={styles.handlePassword}>
                         <div className={styles.inputBox}>
                             <p>Current Password</p>
@@ -194,24 +198,38 @@ export default function AccountPage() {
                             {isUpdating ? "Updating..." : "Update Password"}
                         </button>
                     </div>
+                    )}
                 </div>
-                <div className={styles.settingsCard}>
-                    <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
-                    <p className={styles.sectionDescription}>
-                        Enable Two-Factor Authentication to add an extra layer of security to your account.
-                    </p>
-                    <div className={styles.statusRow}>
-                        <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
-                            {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
-                        </p>
-                        <button
-                            className={`${styles.buttonChange} ${styles.profileButton}`}
-                            onClick={() => setIsTwoFAModalOpen(true)}
-                        >
-                            {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
-                        </button>
-                    </div>
-                </div>
+                { !mainError && (
+                    <>
+                        <div className={styles.settingsCard}>
+                            <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
+                            <p className={styles.sectionDescription}>
+                                Enable Two-Factor Authentication to add an extra layer of security to your account.
+                            </p>
+                            <div className={styles.statusRow}>
+                                <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
+                                    {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
+                                </p>
+                                <button
+                                    className={`${styles.buttonChange} ${styles.profileButton}`}
+                                    onClick={() => setIsTwoFAModalOpen(true)}
+                                >
+                                    {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
+                                </button>
+                            </div>
+                        </div>
+                        <DangerZone
+                            label="If you want to delete your account, click on the button"
+                            description="This action cannot be undone"
+                            buttonText="Delete Account"
+                            fileName="your account"
+                            onConfirm={handleDeleteAccount}
+                            isAccount={true}
+                            error={error}
+                        />
+                    </>
+                )}
                 <ConfirmationModal
                     isOpen={isReset}
                     fileName=""
@@ -228,15 +246,6 @@ export default function AccountPage() {
                         setIsTwoFAEnabled(prev => !prev);
                         setIsTwoFAModalOpen(false);
                     }}
-                />
-                <DangerZone
-                    label="If you want to delete your account, click on the button"
-                    description="This action cannot be undone"
-                    buttonText="Delete Account"
-                    fileName="your account"
-                    onConfirm={handleDeleteAccount}
-                    isAccount={true}
-                    error={error}
                 />
             </div>
         </SettingsLayout>
