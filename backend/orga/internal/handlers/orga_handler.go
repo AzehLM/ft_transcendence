@@ -184,7 +184,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	deleted, err := repo.DeleteOrganization(orgID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to delete organization"})
 	}
 	if !deleted {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
@@ -244,7 +244,7 @@ func (h *OrgaHandler) ChangeOrgaName(c fiber.Ctx) error {
 
 	updated, err := repo.UpdateOrgaName(orgID, body.Name)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update organization"})
 	}
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})
@@ -396,7 +396,7 @@ func (h *OrgaHandler) ChangeDescription(c fiber.Ctx) error {
 	repo := repository.NewOrganizationRepository(h.DB)
 	updated, errRepo := repo.UpdateDescription(orgID, userID, body.Description)
 	if errRepo != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": errRepo.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update organization description"})
 	}
 	if !updated {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "organization not found"})

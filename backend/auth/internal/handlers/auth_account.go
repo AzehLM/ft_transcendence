@@ -440,7 +440,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("first_name", body.FirstName)
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
+			"error": "failed to update user profile",
 		})
 	}
 	if result.RowsAffected == 0 {
@@ -496,7 +496,7 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	result := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("family_name", body.FamilyName)
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": result.Error.Error(),
+			"error": "failed to update user profile",
 		})
 	}
 	if result.RowsAffected == 0 {
