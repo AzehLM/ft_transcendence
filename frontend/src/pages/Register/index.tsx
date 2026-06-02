@@ -60,8 +60,11 @@ export default function RegisterPage() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || "Registration failed!");
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    setError("Registration failed!");
+                }
                 setIsLoading(false);
                 return;
             }

@@ -33,8 +33,8 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
-          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
-            {!upload.status.toLowerCase().includes("error") && <span className={styles.statusDot}></span>}
+          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : upload.status.toLowerCase().includes("success") ? styles.success : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
+            {!upload.status.toLowerCase().includes("error") && !upload.status.toLowerCase().includes("success") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
@@ -42,7 +42,7 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
             <div className={styles.fileName}>{upload.fileInfo.name}</div>
             <div className={styles.fileDetails}>
               <span><strong>Type:</strong> {upload.fileInfo.type}</span>
-              <span><strong>Taille:</strong> {upload.fileInfo.size}</span>
+              <span><strong>Size:</strong> {upload.fileInfo.size}</span>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
             <div className={`${styles.progressContainer} ${upload.hiding ? styles.hide : ""}`}>
               <div className={styles.progressHeader}>
                 <div className={styles.progressTitleContainer}>
-                  <div className={styles.progressTitle}>Chiffrement & Upload</div>
+                  <div className={styles.progressTitle}>Encryption & Upload</div>
                   <div className={styles.progressSubtitle}>{upload.fileInfo.name}</div>
                 </div>
                 <div className={styles.progressPercentage}>{upload.progress.percentage}%</div>
@@ -62,7 +62,7 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
               </div>
               <div className={styles.progressMetrics}>
                 <div className={styles.metric}>
-                  <div className={styles.metricLabel}>Vitesse</div>
+                  <div className={styles.metricLabel}>Speed</div>
                   <div className={styles.metricValue}>{(upload.progress.speed / (1024 * 1024)).toFixed(2)} MB/s</div>
                 </div>
                 <div className={styles.metric}>
@@ -72,7 +72,7 @@ export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
                   </div>
                 </div>
                 <div className={styles.metric}>
-                  <div className={styles.metricLabel}>Temps restant</div>
+                  <div className={styles.metricLabel}>Time remaining</div>
                   <div className={styles.metricValue}>{Math.round(upload.progress.remainingTime)}s</div>
                 </div>
               </div>
