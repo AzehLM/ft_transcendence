@@ -1,5 +1,6 @@
 import { Shield, X } from "lucide-react";
 import styles from "./TwoFAPrompt.module.css";
+import buttonStyles from "../ConfirmationModal/ConfirmationModal.module.css"
 
 interface TwoFAPromptProps {
     onEnable: () => void;
@@ -48,13 +49,13 @@ export function TwoFAPrompt({ onEnable, onSkip }: TwoFAPromptProps) {
                 <div className={styles.prompt_actions}>
                     <button
                         onClick={onSkip}
-                        className={`${styles.prompt_button} ${styles["prompt_button--secondary"]}`}
+                        className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                     >
                         Skip for Now
                     </button>
                     <button
                         onClick={onEnable}
-                        className={`${styles.prompt_button} ${styles["prompt_button--primary"]}`}
+                        className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                     >
                         Enable 2FA
                     </button>

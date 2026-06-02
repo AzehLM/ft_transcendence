@@ -248,6 +248,12 @@
     cursor: not-allowed;
 }
 
+.centered_button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 @media (max-width: 480px), (max-height: 700px) {
     .totp_setup__modal {
         padding: var(--spacing-lg);

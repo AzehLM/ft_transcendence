@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { generateTOTPSecret, verifyTOTPSetup } from "../../services/totp.service";
 import { QRCodeSVG } from "qrcode.react";
 import styles from "./SetupTOTP.module.css";
+import buttonStyles from "../ConfirmationModal/ConfirmationModal.module.css"
 
 interface SetupTOTPProps {
     onSuccess?: () => void;
@@ -134,14 +135,14 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                             {onCancel && (
                                 <button
                                     onClick={onCancel}
-                                    className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                                 >
                                     Cancel
                                 </button>
                             )}
                             <button
                                 onClick={() => setStep("verify")}
-                                className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                                className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                             >
                                 Next
                             </button>
@@ -182,14 +183,14 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                         <div className={styles.totp_setup__actions}>
                             <button
                                 onClick={() => setStep("qr")}
-                                className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--cancel"]}`}
+                                className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                             >
                                 Back
                             </button>
                             <button
                                 onClick={handleVerifyCode}
                                 disabled={verificationCode.length !== 6 || loading}
-                                className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                                className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                             >
                                 {loading ? "Verifying..." : "Verify"}
                             </button>
@@ -243,7 +244,7 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
 
                         <button
                             onClick={handleComplete}
-                            className={`${styles.totp_setup__action_button} ${styles["totp_setup__action_button--primary"]}`}
+                            className={`${styles.centered_button} ${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                         >
                             Complete Setup
                         </button>
