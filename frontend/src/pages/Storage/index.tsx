@@ -24,7 +24,10 @@ export default function StoragePage() {
             setUsedSpace(data.used_space);
             setMaxSpace(data.max_space);
             }
-      })
+        })
+        .catch(() => {
+            setError("Failed to fetch storage information.")
+        });
     }, []);
 
 
