@@ -94,7 +94,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #865142;
+    color: var(--brand-primary);
 }
 
 .profileButton {
