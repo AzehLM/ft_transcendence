@@ -90,18 +90,18 @@
 }
 
 
-.sidebarWrapper [class*="sidebar"] {
+.sidebarWrapper > [class*="sidebar"] {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 @media (max-width: 768px) {
-    .sidebarWrapper [class*="sidebar"] {
+    .sidebarWrapper > [class*="sidebar"] {
         transform: translateX(-100%);
         z-index: 1001 !important;
         box-shadow: 4px 0 24px rgba(43, 16, 8, 0.15) !important;
     }
 
-    .sidebarActive [class*="sidebar"] {
+    .sidebarActive > [class*="sidebar"] {
         transform: translateX(0) !important;
     }
 }

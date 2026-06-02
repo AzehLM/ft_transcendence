@@ -62,13 +62,17 @@
     margin: 2px 12px;
     border-radius: 12px;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.sidebar__button:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+@media (hover: hover) {
+    .sidebar__button:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
 }
 
-.sidebar__button--active {
+.sidebar__button--active,
+.sidebar__button--active:hover {
     background-color: #fedfd7;
     color: #4a3731;
 }
