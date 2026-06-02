@@ -59,7 +59,7 @@ export default function LoginPage() {
                     setError("Network error, please try again later.");
                 } else {
                     const body = await response.json().catch(() => null);
-                    setError(body?.message || body?.error || "Login failed!");
+                    setError("Login failed: " + (body?.message || body?.error) || "Login failed!");
                 }
                 setIsLoading(false);
                 return;
