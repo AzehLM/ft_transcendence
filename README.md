@@ -126,6 +126,13 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 - Victoire Project Manager (PM) / Scrum Master + dev
 - Guillaume Technical Lead / Architect + dev
 
+### vicperri (Victoire) - Project Manager  / Scrum Master :  Facilitates team coordination and removes obstacles + Developer
+
+Alongside lbuisson, was responsible for project management and Scrum Master duties, which included organizing team meetings and planning sessions, tracking progress and deadlines, ensuring smooth team communication, and managing risks and blockers throughout the project.
+
+As a developer, implemented two-factor authentication (2FA), the encryption functions for the registration and login process, designed the mockups of the website, built the core structure of the frontend, added profile picture support for users on both the backend and frontend, and ensured overall UI/UX quality throughout the project.
+
+
 ### gueberso (Guillaume) - Technical Lead / Architect: Overseeing technivcal decisions and architecture + Developer
 
 Responsible for overseeing technical decisions and the overall architecture. Researched and selected the technologies and tools needed to complete the team's chosen stack (e.g. MinIO was selected once Go was settled as the backend language). All architectural decisions - whether made individually, collectively, or per-task - are documented in the [tech-lead.md](https://github.com/AzehLM/ft_transcendence/blob/main/docs/tech-lead.md) file
@@ -141,12 +148,9 @@ For each member we need:
 # Project Management
 
 
-- How the team organized the work (task distribution, meetings, etc)
-- Tools used for the project management (Github Issues, Github Project, Notion, Discord bots)
-- Communication channels (Discord)
+The team followed an agile-inspired workflow managed by the two Scrum Masters (lbuisson and vicperri). At the start of the project, tasks were distributed among members based on each person's assigned role and area of ownership. From there, the team held weekly meetings to review progress, discuss blockers, and plan the upcoming week. Notes from each meeting were recorded in a shared Notion file, which also served as the central to-do tracker, updated every week to reflect what had been done, what was in progress, and what remained.
 
-> [!NOTE]
-> **Victoire / Lou-Anne, je vous laisserai faire cette partie**
+Task tracking and development workflow were handled through GitHub Issues and GitHub Projects, allowing the team to link work directly to the codebase and keep a clear history of decisions. Notion complemented this by serving as a space for meeting notes. Discord was the team's main communication channel, used for day-to-day exchanges, quick syncs, and automated notifications via bots (build alerts, PR activity, etc.).
 
 # Technical Stack
 
@@ -197,7 +201,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Authentification system & Account
 
-- **Zero-knowledge registration** - vicperri & pnaessen - RSA keypair generated on client-side with private key encryption **A REVOIR CA JE SAIS PAS TROP QUOI METTRE ICI**. The server only sees the public key and ciphertext.
+- **Zero-knowledge registration** - vicperri & pnaessen - An RSA keypair is generated entirely on the client side. The private key is encrypted using a key derived from the user's password and a client-generated salt, and an authentication hash is separately derived from the password for server-side verification. The server receives and stores only the public key, the encrypted private key, and the Argon2id-rehashed auth hash. The plaintext password and plaintext private key never leave the client.
 - **Login with Argon2id verfication** - pnaessen + vicperri ? - the client-derived auth hash is re-hashed with Argon2id server-side before comparison. The encrypted private key is then returned to the client.
 - **Client salt retrieval with user-enumeration protection** - pnaessen - the `/api/auth/salt` returns a fake salt for non-existent users so attackers cannot probe for valid emails.
 - **Refresh-token rotation** - **PIERRICK + QUI ?** - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.

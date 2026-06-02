@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Read(//home/vicperri/.nvm/versions/node/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(npm list *)",
+      "Bash(npx playwright *)",
+      "Bash(pip show *)",
+      "Bash(python3 -c \"import playwright; print\\('ok'\\)\")",
+      "Bash(python3 -m playwright --version)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=1280,900 --screenshot=/tmp/home-screenshot.png --virtual-time-budget=3000 http://localhost:5173/)",
+      "Read(//tmp/**)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=700,260 --screenshot=/tmp/lock-preview2.png file:///tmp/lock-preview2.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=760,280 --screenshot=/tmp/lock-ring-test.png file:///tmp/lock-ring-test.html)",
+      "Bash(rm -rf /home/vicperri/Documents/WORKFLOW/MILESTONE_6/ft_transcendence/frontend/src/components/LockLogo)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,200 --screenshot=/tmp/sidebar-logo-test.png file:///tmp/sidebar-logo-test.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,500 --screenshot=/tmp/sidebar-v2.png file:///tmp/sidebar-v2.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,500 --screenshot=/tmp/sidebar-v3.png file:///tmp/sidebar-v3.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,500 --screenshot=/tmp/sidebar-v4.png file:///tmp/sidebar-v4.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,400 --screenshot=/tmp/sidebar-v5.png file:///tmp/sidebar-v5.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,380 --screenshot=/tmp/sidebar-v6.png file:///tmp/sidebar-v6.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=400,380 --screenshot=/tmp/sidebar-v7.png file:///tmp/sidebar-v7.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=500,300 --screenshot=/tmp/auth-logo-test.png file:///tmp/auth-logo-test.html)",
+      "Bash(identify /home/vicperri/Documents/WORKFLOW/MILESTONE_6/ft_transcendence/frontend/public/favicon.ico)",
+      "Bash(convert /home/vicperri/Documents/WORKFLOW/MILESTONE_6/ft_transcendence/frontend/public/favicon.ico /tmp/favicon-preview.png)",
+      "Bash(python3 -c ' *)",
+      "Bash(cp /tmp/favicon-big-preview.png /home/vicperri/Documents/WORKFLOW/MILESTONE_6/ft_transcendence/frontend/public/app-icon.png *)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=700,320 --screenshot=/tmp/final-logo-preview.png file:///tmp/final-logo-preview.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=700,320 --screenshot=/tmp/final-logo-preview2.png --allow-file-access-from-files file:///tmp/final-logo-preview2.html)",
+      "Bash(google-chrome --headless --no-sandbox --disable-gpu --window-size=390,844 --screenshot=/tmp/mobile-sidebar-test.png --allow-file-access-from-files file:///tmp/mobile-sidebar-test.html)"
+    ],
+    "additionalDirectories": [
+      "/home/vicperri/Documents/WORKFLOW/MILESTONE_6/ft_transcendence/frontend/src/components/LockLogo",
+      "/tmp"
+    ]
+  }
+}
