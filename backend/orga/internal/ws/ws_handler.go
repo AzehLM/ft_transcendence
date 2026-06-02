@@ -181,7 +181,7 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 				if eventType == "REMOVED_FROM_ORGA" || eventType == "ADDED_TO_NEW_ORGA" {
 					payloadBytes := h.enrichEventMessage([]byte(msg.Payload), orgNames)
 					_ = c.WriteMessage(websocket.TextMessage, payloadBytes)
-					return //(c.Close() en defer)
+					return //connection is closed via defer
 				}
 			}
 
