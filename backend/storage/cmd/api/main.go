@@ -103,12 +103,15 @@ func main() {
 	healthHandler := handlers.NewHealthHandler(database, redisClient, minioClient)
 	app.Get("/health", healthHandler.Checker)
 
-	consumer := workers.NewEventConsumer(repo, minioClient)
-	go consumer.ConsumeOrgDeleted(context.TODO(), redisClient)
-	go consumer.ConsumeUserDeleted(context.TODO(), redisClient)
-	go consumer.ConsumeFileOrphaned(context.TODO(), redisClient)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	go consumer.PeriodicSweep(context.TODO(), 15*time.Minute)
+	consumer := workers.NewEventConsumer(repo, minioClient)
+	go consumer.ConsumeOrgDeleted(ctx, redisClient)
+	go consumer.ConsumeUserDeleted(ctx, redisClient)
+	go consumer.ConsumeFileOrphaned(ctx, redisClient)
+
+	go consumer.PeriodicSweep(ctx, 15*time.Minute)
 
 	api := app.Group("/api")
 	api.Use(middleware.ProtectedRoute(env.JwtSecret))
