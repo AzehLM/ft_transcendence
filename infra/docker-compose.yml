@@ -13,10 +13,12 @@ services:
       - tunnel
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${PORT}:443"
+      - "${PORT}:443"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - ../secrets/ssl/cert.pem:/etc/caddy/certs/cert.pem:ro
+      - ../secrets/ssl/key.pem:/etc/caddy/certs/key.pem:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:2019/metrics"]
       interval: 10s
