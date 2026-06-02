@@ -201,7 +201,7 @@ export function ConfirmationModal({
                         }} disabled={isLoading}>
                         Cancel
                     </button>)}
-                    <button className={`${styles.modal__button} ${styles["modal__button--delete"]}`} onClick={handleConfirm} disabled={isLoading}>
+                    <button className={`${styles.modal__button} ${styles["modal__button--confirm"]}`} onClick={handleConfirm} disabled={isLoading}>
                         {buttonText}
                     </button>
                 </div>
