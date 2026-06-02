@@ -47,7 +47,7 @@ func (h *OrgaHandler) GetOrgas(c fiber.Ctx) error {
 	orgResponses, resErr := repo.GetMemberOrga(userID)
 	if resErr != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": resErr.Error(),
+			"error": "failed to retrieve organizations",
 		})
 	}
 
