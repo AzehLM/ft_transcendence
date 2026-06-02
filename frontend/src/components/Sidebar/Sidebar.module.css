@@ -5,6 +5,7 @@
 .sidebar {
     position: fixed;
     height: 100%;
+    height: 100dvh;
     left: 0;
     top: 0;
     width: 230px;
@@ -14,6 +15,7 @@
     flex-shrink: 0;
     z-index: 100;
     overflow-y: auto;
+    overscroll-behavior: none;
     border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
