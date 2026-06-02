@@ -69,7 +69,7 @@ export function NavBar() {
         <header className={styles.navbar}>
             <nav className={styles.navbar__inner}>
                 <Link to="/" className={styles.navbar__logo}>
-                    <img src="/app-icon.png" alt="Ostrom logo" style={{ width: "28px", height: "28px", objectFit: "contain" }} />
+                <img src="/app-icon.png" alt="" aria-hidden="true" style={{ width: "28px", height: "28px", objectFit: "contain" }} />
                     Ostrom
                 </Link>
 
