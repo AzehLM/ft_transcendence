@@ -32,7 +32,7 @@ func initConsumerGroups(client *redis.Client) {
 		"events:domain:org_deleted":   "storage-org-deleted",
 	}
 	for stream, group := range streams {
-		err := client.XGroupCreateMkStream(context.TODO(), stream, group, "0").Err()
+		err := client.XGroupCreateMkStream(context.Background(), stream, group, "0").Err()
 		if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
 			log.Fatalf("[FATAL] Cannot create consumer group for %s: %v", stream, err)
 		}

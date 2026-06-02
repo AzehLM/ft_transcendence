@@ -198,7 +198,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	}
 
 	// _ because we ignore the return value of this call (fire-and-forget event)
-	_ = s.publisher.PublishFileUploaded(context.TODO(), file)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file)
 
 	return file.ID, nil
 }
@@ -272,7 +272,7 @@ func (s *storageService) DeleteFile(userID uuid.UUID, fileID uuid.UUID) error {
 		return err
 	}
 
-	_ = s.publisher.PublishFileDeleted(context.TODO(), file)
+	_ = s.publisher.PublishFileDeleted(context.Background(), file)
 
 	return nil
 }
@@ -312,7 +312,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrNotFound
 	}
 
-	_ = s.publisher.PublishFileMoved(context.TODO(), file, folderID)
+	_ = s.publisher.PublishFileMoved(context.Background(), file, folderID)
 
 	return nil
 }
@@ -366,7 +366,7 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFolderCreated(context.TODO(), &folder)
+	_ = s.publisher.PublishFolderCreated(context.Background(), &folder)
 	return folder.ID, nil
 }
 
@@ -400,7 +400,7 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 		return err
 	}
 
-	_ = s.publisher.PublishFolderDeleted(context.TODO(), folder)
+	_ = s.publisher.PublishFolderDeleted(context.Background(), folder)
 	return nil
 }
 
@@ -489,12 +489,12 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 	}
 
 	if newName != nil && *newName != oldName {
-		_ = s.publisher.PublishFolderRenamed(context.TODO(), folder)
+		_ = s.publisher.PublishFolderRenamed(context.Background(), folder)
 	}
 
 	if newParentID != nil {
 		if !uuidPtrEqual(oldParentID, *newParentID) {
-			_ = s.publisher.PublishFolderMoved(context.TODO(), folder, oldParentID, *newParentID)
+			_ = s.publisher.PublishFolderMoved(context.Background(), folder, oldParentID, *newParentID)
 		}
 	}
 
@@ -829,7 +829,7 @@ func (s *storageService) AbortMultipartUpload(userID uuid.UUID, objectID uuid.UU
 
 	// aborting on MinIO side, if MinIO fails we only log it and return, leaving the sweeper do the job
 	core := minio.Core{Client: s.minioClient}
-	if err := core.AbortMultipartUpload(context.TODO(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
+	if err := core.AbortMultipartUpload(context.Background(), "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
 		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
 		return err
 	}
