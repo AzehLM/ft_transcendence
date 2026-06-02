@@ -42,24 +42,3 @@
 }
 
 
-.settingsIconButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.settingsIconButton:hover {
-    transform: scale(1.1);
-}
-
-.settingsIconOnly {
-    width: 30px;
-    height: 30px;
-    color: var(--brand-primary);
-    stroke-width: 1.5px;
-}

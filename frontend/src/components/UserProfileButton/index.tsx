@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { User, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { fetchWithRefresh } from "../../services/api.service";
 import styles from "./UserProfileButton.module.css";
 
@@ -11,6 +11,8 @@ interface UserProfileButtonProps {
 
 export function UserProfileButton({ isOpen = false, onClick }: UserProfileButtonProps) {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isSettingsActive = location.pathname.startsWith("/account");
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     useEffect(() => {
@@ -59,10 +61,23 @@ export function UserProfileButton({ isOpen = false, onClick }: UserProfileButton
         <div className={styles.profileButtonContainer}>
             <button
                 onClick={() => navigate("/account")}
-                className={styles.settingsIconButton}
                 aria-label="Account settings"
+                style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: isSettingsActive ? "var(--brand-primary)" : "#666",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "4px",
+                    borderRadius: "50%",
+                    transition: "var(--transition-base)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.03)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
-                <Settings className={styles.settingsIconOnly} strokeWidth={2.5} />
+                <Settings size={20} strokeWidth={1.5} />
             </button>
 
             <button
