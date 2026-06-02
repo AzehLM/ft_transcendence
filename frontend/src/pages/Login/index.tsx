@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { generateLoginData, unwrapPrivateKey, base64ToUint8Array, storePrivateKey, storePublicKey } from "../../services/crypto.service";
-import { Package, Lock, Mail, ArrowRight, Shield } from "lucide-react";
+import { Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
@@ -148,9 +148,7 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className={styles.logo_section}>
                     <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
-                        <div className={styles.logo_box}>
-                            <Package className="w-11 h-11 text-white" strokeWidth={2} />
-                        </div>
+                        <img src="/app-icon.png" alt="" aria-hidden="true" width={44} height={44} />
                         <span className={styles.logo_title}>
                             ostrom
                         </span>

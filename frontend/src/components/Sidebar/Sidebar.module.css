@@ -5,6 +5,7 @@
 .sidebar {
     position: fixed;
     height: 100%;
+    height: 100dvh;
     left: 0;
     top: 0;
     width: 230px;
@@ -14,41 +15,29 @@
     flex-shrink: 0;
     z-index: 100;
     overflow-y: auto;
+    overscroll-behavior: none;
     border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .sidebar__logo {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     text-decoration: none;
-    padding: 32px 20px;
-    margin-bottom: 20px;
-}
-
-.logoSquare {
-    width: 36px;
-    height: 36px;
-    background-color: #63473f;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 18px;
-    flex-shrink: 0;
+    padding: 28px 20px 20px;
 }
 
 .logoText {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
 }
 
 .logoName {
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 20px;
     color: #4a3731;
     line-height: 1.2;
 }
@@ -56,7 +45,7 @@
 .logoSubtitle {
     font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 400;
-    font-size: 11px;
+    font-size: 12px;
     color: #8c7b75;
 }
 
@@ -73,13 +62,17 @@
     margin: 2px 12px;
     border-radius: 12px;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.sidebar__button:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+@media (hover: hover) {
+    .sidebar__button:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
 }
 
-.sidebar__button--active {
+.sidebar__button--active,
+.sidebar__button--active:hover {
     background-color: #fedfd7;
     color: #4a3731;
 }
@@ -123,103 +116,70 @@
 }
 
 
-/* Tablets  */
+/* Tablet — sidebar stays visible but narrower */
 @media (max-width: 1024px) {
     .sidebar {
         width: 180px;
     }
 
     .sidebar__logo {
-        padding: 16px 12px;
+        padding: 20px 14px 16px;
+        gap: 6px;
+    }
+
+    .logoSubtitle {
+        display: none;
+    }
+
+    .logoName {
+        font-size: 17px;
+    }
+
+    .sidebar__links {
+        gap: 2px;
+        padding: 0 4px;
+    }
+
+    .sidebar__button {
+        padding: 10px 10px;
+        margin: 2px 4px;
+    }
+
+    .sidebar__button__label {
+        font-size: 14px;
+    }
+}
+
+/* Mobile — sidebar becomes an overlay (slide-in via hamburger in MainLayout) */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 230px;
+    }
+
+    .sidebar__logo {
+        padding: 28px 20px 20px;
+        gap: 8px;
+    }
+
+    .logoSubtitle {
+        display: flex;
+    }
+
+    .logoName {
         font-size: 20px;
     }
 
     .sidebar__links {
-        gap: 12px;
-        padding: 6px 12px;
-    }
-
-    .sidebar__button__label {
-        font-size: 16px;
-    }
-
-    .sidebar__button__icon {
-        width: 20px;
-        height: 20px;
-    }
-}
-
-/* Mobiles */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 140px;
-    }
-
-    .sidebar__logo {
-        padding: 12px 8px;
-        font-size: 18px;
-    }
-
-    .sidebar__links {
-        gap: 8px;
-        padding: 4px 8px;
+        gap: 2px;
+        padding: 0 8px;
     }
 
     .sidebar__button {
-        padding: 6px 4px;
-        gap: 6px;
+        padding: 10px 12px;
+        margin: 2px 4px;
     }
 
     .sidebar__button__label {
-        font-size: 13px;
-    }
-
-    .sidebar__button__icon {
-        width: 18px;
-        height: 18px;
-    }
-
-    .sidebar__chevron {
-        width: 16px;
-        height: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .sidebar {
-        width: 80px;
-    }
-
-    .sidebar__logo {
-        padding: 10px 6px;
-        font-size: 14px;
-        gap: 0;
-        justify-content: center;
-    }
-
-    .sidebar__links {
-        gap: 8px;
-        padding: 4px 4px;
-    }
-
-    .sidebar__button {
-        padding: 6px 4px;
-        gap: 0;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .sidebar__button__label {
-        display: none;
-    }
-
-    .sidebar__button__icon {
-        width: 18px;
-        height: 18px;
-    }
-
-    .sidebar__chevron {
-        display: none;
+        font-size: 15px;
     }
 }
