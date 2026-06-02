@@ -40,10 +40,15 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
         const buffer = await file.slice(0, 4100).arrayBuffer();
         const typeInfo = await fileTypeFromBuffer(new Uint8Array(buffer));
 
+        const extension = file.name.split('.').pop()?.toLowerCase() || '';
         let detectedMime = typeInfo?.mime || file.type;
 
-        if (!typeInfo && file.name.endsWith('.txt')) {
-            detectedMime = 'text/plain';
+        if (!typeInfo) {
+            if (['txt', 'md', 'rtf', 'go', 'css', 'tsx', 'ts', 'js', 'html', 'py', 'sh', 'yaml', 'yml', 'cpp', 'c', 'h', 'hpp', 'java'].includes(extension)) {
+                detectedMime = 'text/plain';
+            } else if (extension === 'json') {
+                detectedMime = 'application/json';
+            }
         }
 
         if (!detectedMime || !Object.keys(ALLOWED_MIME_TYPES).includes(detectedMime)) {
@@ -53,7 +58,6 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
             };
         }
 
-        const extension = file.name.split('.').pop()?.toLowerCase();
         const validExtensions = ALLOWED_MIME_TYPES[detectedMime] || [];
 
         if (extension && !validExtensions.includes(extension)) {
