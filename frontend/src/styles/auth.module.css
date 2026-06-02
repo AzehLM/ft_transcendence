@@ -30,7 +30,7 @@
 .logo_container {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-lg);
     margin-bottom: 20px;
     cursor: pointer;
     transition: opacity 0.3s ease;
