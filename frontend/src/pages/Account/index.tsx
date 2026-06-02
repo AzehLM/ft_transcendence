@@ -164,7 +164,7 @@ export default function AccountPage() {
 
         } catch (err: any) {
             console.error("Failed to change password:", err);
-            setPwdError(err.message || "An error occurred, the password has not neem changed !");
+            setPwdError(err.message || "An error occurred, the password has not been changed !");
         }
     };
 
