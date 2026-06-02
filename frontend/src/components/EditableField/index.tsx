@@ -19,7 +19,8 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
   const [inputValue, setInputValue] = useState(value);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ignoreBlurRef = useRef(false);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleSave = async () => {
     if (!inputValue.trim() || inputValue === value) {
@@ -62,15 +63,17 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancel();
               }}
-              onBlur={() => {
-                if (ignoreBlurRef.current) { ignoreBlurRef.current = false; return; }
+              onBlur={(e) => {
+                const target = e.relatedTarget as Node | null;
+                if (saveButtonRef.current?.contains(target) || cancelButtonRef.current?.contains(target)) return;
                 handleSave();
               }}
               autoFocus
             />
             <button
+              ref={saveButtonRef}
+              type="button"
               className={styles.iconButton}
-              onMouseDown={() => { ignoreBlurRef.current = true; }}
               onClick={handleSave}
               disabled={loading}
             >
@@ -78,8 +81,9 @@ export function EditableField({ label, value, role, maxCharac, isOrgaName = fals
             </button>
             { handleReset && (
               <button
+                ref={cancelButtonRef}
+                type="button"
                 className={styles.iconButton}
-                onMouseDown={() => { ignoreBlurRef.current = true; }}
                 onClick={handleCancel}
               >
                 <X size={18} />
