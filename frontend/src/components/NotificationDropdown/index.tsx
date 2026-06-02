@@ -1,5 +1,5 @@
 import { UserPlus, Building2, Trash2, Edit3, User, Bell, Check, Trash, CheckSquare, File, Folder, FolderPlus, FolderMinus } from "lucide-react";
-import { useNotifications } from "../contexts/NotificationContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import styles from "./NotificationDropdown.module.css";
 
 const getEventMeta = (event: string) => {
