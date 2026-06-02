@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
     X,
     Download,
@@ -64,13 +64,15 @@ export function FilePreviewModal({
     const [objectUrl, setObjectUrl] = useState<string | null>(null);
     const [textContent, setTextContent] = useState<string>("");
     const [isTextLoading, setIsTextLoading] = useState(false);
+    const objectUrlRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!isOpen) {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-                setObjectUrl(null);
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
             }
+            setObjectUrl(null);
             setBlob(null);
             setTextContent("");
             return;
@@ -85,6 +87,7 @@ export function FilePreviewModal({
                 if (result && isMounted) {
                     setBlob(result.blob);
                     const url = URL.createObjectURL(result.blob);
+                    objectUrlRef.current = url;
                     setObjectUrl(url);
 
                     const type = result.blob.type;
@@ -117,16 +120,12 @@ export function FilePreviewModal({
         return () => {
             isMounted = false;
             controller.abort();
-        };
-    }, [isOpen, fileId, orgId]);
-
-    useEffect(() => {
-        return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
             }
         };
-    }, [objectUrl]);
+    }, [isOpen, fileId, orgId]);
 
     useEffect(() => {
         if (!isOpen) return;
