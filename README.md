@@ -201,12 +201,18 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Authentification system & Account
 
-- **Zero-knowledge registration** - vicperri & pnaessen - An RSA keypair is generated entirely on the client side. The private key is encrypted using a key derived from the user's password and a client-generated salt, and an authentication hash is separately derived from the password for server-side verification. The server receives and stores only the public key, the encrypted private key, and the Argon2id-rehashed auth hash. The plaintext password and plaintext private key never leave the client.
-- **Login with Argon2id verfication** - pnaessen + vicperri ? - the client-derived auth hash is re-hashed with Argon2id server-side before comparison. The encrypted private key is then returned to the client.
+- **Zero-knowledge registration** - vicperri & pnaessen - At registration, an RSA keypair is generated in the browser, the private key is encrypted with a key derived from the user's password and a client-generated salt, and a separate auth hash is derived for server-side verification. The server stores only the public key, the encrypted private key, and the Argon2id-rehashed auth hash.
+
+- **Login with Argon2id verfication** - pnaessen &  vicperri - the client-derived auth hash is re-hashed with Argon2id server-side before comparison. The encrypted private key is then returned to the client.
+
 - **Client salt retrieval with user-enumeration protection** - pnaessen - the `/api/auth/salt` returns a fake salt for non-existent users so attackers cannot probe for valid emails.
+
 - **Refresh-token rotation** - **PIERRICK + QUI ?** - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
+
 - **Account management** - **LIRE LA SUITE POUR METTRE NOM** - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
+
 - **Avatar Upload** - vicperri - stored directly in PostgreSQL as `BYTEA` (no MinIO dependency for avatars)
+
 - **Rate-limited login** - pnaessen - Fiber limiter **(mettre values)**
 
 ### Two-Factor Authentication (fully done by vicperri)
@@ -378,7 +384,7 @@ The following is a complete inventory of implemented features, grouped by domain
 ### **Client-Side Encryption (Zero-Knowledge) - *Major - custom***
 
 - **Why**: this is Ostrom's defining principle and primary differenciator vs Google Drive or other shared cloud storage plateforms. Our server cannot read user data.
-- **Implementation**: **FAITES VOUS PLAISIR J'AI MAL AU CRANE**
+- **Implementation**: 
 - **Owner(s)**:
 
 ---
