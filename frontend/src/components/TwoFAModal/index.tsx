@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { generateLoginData } from "../../services/crypto.service";
 import { QRCodeSVG } from "qrcode.react";
+import buttonStyles from "../ConfirmationModal/ConfirmationModal.module.css"
 
 interface TwoFAModalProps {
     isOpen: boolean;
@@ -208,14 +209,14 @@ export function TwoFAModal({
             <div className={styles.totp_verify__actions}>
                 <button
                     onClick={handleClose}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                 >
                     Cancel
                 </button>
                 {isTwoFAEnabled ? (
                     <button
                         onClick={() => setStep("disable-password")}
-                        className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                        className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                     >
                         Disable 2FA
                     </button>
@@ -223,7 +224,7 @@ export function TwoFAModal({
                     <button
                         onClick={handleGenerateTOTP}
                         disabled={loading}
-                        className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                        className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                     >
                         {loading ? "Generating..." : "Enable 2FA"}
                     </button>
@@ -270,13 +271,13 @@ export function TwoFAModal({
                 <button
                     onClick={() => setStep("choice")}
                     disabled={loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={() => setStep("enable-verify")}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                 >
                     Next
                 </button>
@@ -320,14 +321,14 @@ export function TwoFAModal({
                 <button
                     onClick={() => setStep("enable-qr")}
                     disabled={loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={handleVerifyTOTP}
                     disabled={verificationCode.length !== 6 || loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                 >
                     {loading ? "Verifying..." : "Verify"}
                 </button>
@@ -378,7 +379,7 @@ export function TwoFAModal({
                     resetModal();
                     onSuccess();
                 }}
-                className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                className={`${styles.centered_button} ${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
             >
                 Complete Setup
             </button>
@@ -419,14 +420,14 @@ export function TwoFAModal({
                 <button
                     onClick={() => setStep("choice")}
                     disabled={loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={() => setStep("disable-confirm")}
                     disabled={loading || !password}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                 >
                     Continue
                 </button>
@@ -457,14 +458,14 @@ export function TwoFAModal({
                 <button
                     onClick={() => setStep("disable-password")}
                     disabled={loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                 >
                     Back
                 </button>
                 <button
                     onClick={handleDisable2FA}
                     disabled={loading}
-                    className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                    className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                 >
                     {loading ? "Disabling..." : "Disable 2FA"}
                 </button>

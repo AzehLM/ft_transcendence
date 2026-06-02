@@ -4,6 +4,7 @@ import {
     verifyRecoveryCode,
 } from "../../services/totp.service";
 import styles from "./VerifyTOTP.module.css";
+import buttonStyles from "../ConfirmationModal/ConfirmationModal.module.css"
 
 interface VerifyTOTPProps {
     tempToken: string;
@@ -170,7 +171,7 @@ export function VerifyTOTP({
                         <button
                             onClick={onCancel}
                             disabled={loading}
-                            className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--cancel"]}`}
+                            className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--cancel"]}`}
                         >
                             Cancel
                         </button>
@@ -182,7 +183,7 @@ export function VerifyTOTP({
                             (method === "recovery" && !code) ||
                             loading
                         }
-                        className={`${styles.totp_verify__action_button} ${styles["totp_verify__action_button--primary"]}`}
+                        className={`${buttonStyles.modal__button} ${buttonStyles["modal__button--confirm"]}`}
                     >
                         {loading ? "Verifying..." : "Verify"}
                     </button>
