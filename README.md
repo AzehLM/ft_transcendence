@@ -384,8 +384,8 @@ The following is a complete inventory of implemented features, grouped by domain
 ### **Client-Side Encryption (Zero-Knowledge) - *Major - custom***
 
 - **Why**: this is Ostrom's defining principle and primary differenciator vs Google Drive or other shared cloud storage plateforms. Our server cannot read user data.
-- **Implementation**: 
-- **Owner(s)**:
+- **Implementation**: Web Crypto API exclusively — no third-party crypto library. PBKDF2 (100 000 iterations, SHA-256) derives a Master Key client-side; an RSA-OAEP 4096-bit key pair is generated at registration, the private key wrapped with AES-GCM 256-bit using the Master Key and stored in IndexedDB. An HMAC-SHA256 auth hash is sent to the server instead of the password. Files are encrypted with a per-file AES-GCM DEK split into 32 MB chunks with per-chunk IV derivation; the DEK and filename are RSA-OAEP encrypted with the owner's public key. Org keys use a double-wrapping scheme: the org private key is AES-GCM wrapped, and that AES key is RSA-OAEP encrypted per member individually.
+- **Owner(s)**: vicperri, pnaessen, lbuisson for the registration/login crypto and the frontend upload/download encryption hooks, gueberso for the storage backend and presigned-URL integration
 
 ---
 
