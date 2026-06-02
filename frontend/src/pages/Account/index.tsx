@@ -59,6 +59,9 @@ export default function AccountPage() {
             .then(data => {
                 setEmail(data.email);
                 setIsTwoFAEnabled(data.two_factor_enabled || false);
+            })
+            .catch(() => {
+                setMainError("Failed to fetch user information.");
             });
     }, []);
 
