@@ -19,40 +19,30 @@ interface Upload {
 
 interface UploadStatusProps {
   uploads: Upload[];
-  downloadStatus?: string | null;
-  hideDownloadMessage?: boolean;
-  error?: string | null;
-  success?: string | null;
-  hideMessage?: boolean;
-  downloadError?: boolean;
+  mainError?: string | null;
 }
 
-export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, error, success, hideMessage, downloadError = false }: UploadStatusProps) {
+export function UploadStatus({ uploads, mainError }: UploadStatusProps) {
   return (
     <>
-      {error && (
-        <div className={`${styles.statusMessage} ${styles.error} ${hideMessage ? styles.hide : ""}`}>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className={`${styles.statusMessage} ${success.toLowerCase().includes("error") ? styles.error : styles.success} ${hideMessage ? styles.hide : ""}`}>
-            {success}
+      {mainError && (
+        <div className={`${styles.statusMessage} ${styles.error}`}>
+          {mainError}
         </div>
       )}
 
       {uploads.map(upload => (
         <div key={upload.id} style={{ marginBottom: "20px" }} className={`${styles.uploadWrapper} ${upload.hiding ? styles.hide : ""}`}>
-        <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
-            {!upload.status.toLowerCase().includes("error") && <span className={styles.statusDot}></span>}
+          <div className={`${styles.statusMessage} ${upload.status.toLowerCase().includes("error") ? styles.error : upload.status.toLowerCase().includes("success") ? styles.success : styles.loading} ${upload.hiding ? styles.hide : ""}`}>
+            {!upload.status.toLowerCase().includes("error") && !upload.status.toLowerCase().includes("success") && <span className={styles.statusDot}></span>}
             {upload.status}
           </div>
 
-        <div className={`${styles.fileInfoCard} ${upload.hiding ? styles.hide : ""}`}>
+          <div className={`${styles.fileInfoCard} ${upload.hiding ? styles.hide : ""}`}>
             <div className={styles.fileName}>{upload.fileInfo.name}</div>
             <div className={styles.fileDetails}>
               <span><strong>Type:</strong> {upload.fileInfo.type}</span>
-              <span><strong>Taille:</strong> {upload.fileInfo.size}</span>
+              <span><strong>Size:</strong> {upload.fileInfo.size}</span>
             </div>
           </div>
 
@@ -60,7 +50,7 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
             <div className={`${styles.progressContainer} ${upload.hiding ? styles.hide : ""}`}>
               <div className={styles.progressHeader}>
                 <div className={styles.progressTitleContainer}>
-                  <div className={styles.progressTitle}>Chiffrement & Upload</div>
+                  <div className={styles.progressTitle}>Encryption & Upload</div>
                   <div className={styles.progressSubtitle}>{upload.fileInfo.name}</div>
                 </div>
                 <div className={styles.progressPercentage}>{upload.progress.percentage}%</div>
@@ -72,7 +62,7 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
               </div>
               <div className={styles.progressMetrics}>
                 <div className={styles.metric}>
-                  <div className={styles.metricLabel}>Vitesse</div>
+                  <div className={styles.metricLabel}>Speed</div>
                   <div className={styles.metricValue}>{(upload.progress.speed / (1024 * 1024)).toFixed(2)} MB/s</div>
                 </div>
                 <div className={styles.metric}>
@@ -82,7 +72,7 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
                   </div>
                 </div>
                 <div className={styles.metric}>
-                  <div className={styles.metricLabel}>Temps restant</div>
+                  <div className={styles.metricLabel}>Time remaining</div>
                   <div className={styles.metricValue}>{Math.round(upload.progress.remainingTime)}s</div>
                 </div>
               </div>
@@ -90,12 +80,6 @@ export function UploadStatus({ uploads, downloadStatus, hideDownloadMessage, err
           )}
         </div>
       ))}
-
-      {downloadStatus && (
-        <div className={`${styles.statusMessage} ${downloadError ? styles.error : styles.success} ${hideDownloadMessage ? styles.hide : ""}`}>
-          {downloadStatus}
-        </div>
-      )}
     </>
   );
 }

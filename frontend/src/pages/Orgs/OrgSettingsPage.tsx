@@ -7,6 +7,9 @@ import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { Minus } from "lucide-react";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
+import statusStyles from "../Organizations/Organizations.module.css"
 
 export default function OrgSettingsPage() {
   const { id } = useParams();
@@ -21,6 +24,7 @@ export default function OrgSettingsPage() {
   const [maxSpace, setMaxSpace] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orgError, setOrgError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
@@ -29,7 +33,10 @@ export default function OrgSettingsPage() {
           navigate("/404");
           return;
         }
-        if (!res.ok) throw new Error("Failed to fetch org.");
+        if (!res.ok) {
+            setOrgError("Failed to fetch Organization.")
+            throw new Error("Failed to fetch Organization.");
+        }
         return res.json();
       })
       .then(data => {
@@ -73,13 +80,45 @@ export default function OrgSettingsPage() {
       const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || "Failed to delete organization, please try again.");
-        return;
+          if (response.status === 502 || response.status === 503) {
+              setError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setError(body?.message || body?.error || "Failed to delete organization.");
+          }
+          return;
       }
+
       navigate("/organizations");
     } catch (err) {
       setError("Network error, please try again.");
+    }
+  };
+
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleLeaveOrga = async () => {
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/me`, { method: "DELETE" });
+
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to leave organization.");
+          }
+          return;
+      }
+
+      setModalError(null);
+      setShowLeaveConfirm(false);
+      navigate("/organizations")
+    } catch (err) {
+      console.error("Network error:", err);
+      setModalError("Network error, please try again.");
+      return;
     }
   };
 
@@ -125,52 +164,82 @@ export default function OrgSettingsPage() {
   return (
       <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <ConfirmationModal
+          isOpen={showLeaveConfirm}
+          fileName={orgName}
+          onConfirm={handleLeaveOrga}
+          onCancel={() => { setShowLeaveConfirm(false); setModalError(null); }}
+          isAccount={false}
+          isLeaveOrga={true}
+          isMe={true}
+          errorMessage={modalError ?? undefined}
+        />
         <div className={styles.headerSection}>
-          <h1>Organization Settings</h1>
-          <p className={styles.subtitle}>Manage your organization details and storage</p>
+          <div className={styles.titleGroup}>
+            <h1>Organization Settings</h1>
+            <p className={styles.subtitle}>Manage your organization details and storage</p>
+          </div>
         </div>
+        { orgError ? (
+          <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+              {orgError}
+          </div>
+        ) : (
+          <>
+            <div className={styles.settingsGrid}>
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>General Information</h2>
+                <div className={styles.fieldGroup}>
+                  <EditableField
+                    label="Organization name"
+                    value={orgName}
+                    role={myRole}
+                    maxCharac={100}
+                    onSave={handleRenameOrg}
+                    isOrgaName={true}
+                  />
+                  <EditableField
+                    label="Organization description"
+                    value={orgDesc}
+                    role={myRole}
+                    maxCharac={250}
+                    onSave={handleChangeDescription}
+                    handleReset={handleResetDescription}
+                    isOrgaDesc={true}
+                  />
+                  <div className={styles.leaveOrga}>
+                    <p className={styles.label}>Leave Organization</p>
+                    <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                    <button
+                      className={styles.leaveButton}
+                      onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}
+                    >
+                      <Minus size={20} />
+                      Leave Organization
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-        <div className={styles.settingsGrid}>
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>General Information</h2>
-            <div className={styles.fieldGroup}>
-              <EditableField
-                label="Organization name"
-                value={orgName}
-                role={myRole}
-                maxCharac={100}
-                onSave={handleRenameOrg}
-                isOrgaName={true}
-              />
-              <EditableField
-                label="Organization description"
-                value={orgDesc}
-                role={myRole}
-                maxCharac={250}
-                onSave={handleChangeDescription}
-                handleReset={handleResetDescription}
-                isOrgaDesc={true}
-              />
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>Storage Usage</h2>
+                <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} />
+              </div>
+
+              {myRole === "admin" && (
+                <DangerZone
+                  label="Delete this organization"
+                  description="This action cannot be undone and will remove all members, files, and folders associated with this organization."
+                  buttonText="Delete Organization"
+                  fileName={orgName}
+                  onConfirm={handleDeleteOrga}
+                  error={error ?? undefined}
+                  isDeleteOrga={true}
+                />
+              )}
             </div>
-          </div>
-
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>Storage Usage</h2>
-            <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} />
-          </div>
-
-          {myRole === "admin" && (
-            <DangerZone
-              label="Delete this organization"
-              description="This action cannot be undone and will remove all members, files, and folders associated with this organization."
-              buttonText="Delete Organization"
-              fileName={orgName}
-              onConfirm={handleDeleteOrga}
-              error={error ?? undefined}
-              isDeleteOrga={true}
-            />
-          )}
-        </div>
+          </>
+        )}
       </div>
     </OrgLayout>
   );

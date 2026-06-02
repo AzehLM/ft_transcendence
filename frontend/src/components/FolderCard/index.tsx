@@ -13,9 +13,9 @@ interface FolderProps {
   owner_user_id?: string;
   role?: string;
   user_id?: string;
-  onDelete?: (id: string) => void;
-  onRename?: (id: string, newName: string) => Promise<void>;
-  onMove?: (id: string, newParentId: string | null) => Promise<void>;
+  onDelete?: (id: string, name: string) => void;
+  onRename?: (id: string, newName: string, prevName: string) => Promise<void>;
+  onMove?: (id: string, newParentId: string | null, name: string) => Promise<void>;
 }
 
 export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, user_id, onDelete, onRename, onMove }: FolderProps) {
@@ -58,7 +58,7 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
 
     const handleConfirmDelete = () => {
         setShowDeleteModal(false);
-        onDelete?.(id);
+        onDelete?.(id, name);
     };
 
     const handleConfirmRename = async () => {
@@ -68,7 +68,7 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
         return;
         }
 
-        await onRename?.(id, renameValue);
+        await onRename?.(id, renameValue, name);
 
         setShowRenameModal(false);
         setRenameError(null);
@@ -145,7 +145,7 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
           fileName={name}
           orgId={orgId}
           onConfirm={(folderId) => {
-            onMove?.(id, folderId === "" ? null : folderId);
+            onMove?.(id, folderId === "" ? null : folderId, name);
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}

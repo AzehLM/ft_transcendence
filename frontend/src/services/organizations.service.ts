@@ -153,7 +153,12 @@ export async function addMemberToOrg(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const keysRes = await fetchWithRefresh(`/api/orgs/${orgId}/members/keys`);
-    if (!keysRes.ok) throw new Error("Failed to get org keys");
+    if (!keysRes.ok) {
+      if (keysRes.status === 502 || keysRes.status === 503) {
+        return { success: false, error: "Network error, please try again later." };
+      }
+      throw new Error("Failed to get org keys");
+    }
     const { enc_org_priv_key, enc_aes_key, iv } = await keysRes.json();
 
     const pubKeyRes = await fetchWithRefresh(`/api/auth/public-key?email=${encodeURIComponent(memberEmail)}`);
@@ -163,6 +168,9 @@ export async function addMemberToOrg(
     }
 
     if (!pubKeyRes.ok) {
+      if (pubKeyRes.status === 502 || pubKeyRes.status === 503) {
+        return { success: false, error: "Network error, please try again later." };
+      }
       return { success: false, error: "Failed to retrieve user public key." };
     }
 
@@ -181,9 +189,13 @@ export async function addMemberToOrg(
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      return { success: false, error: err.error || err.message || "Failed to add member." };
-    }
+      if (response.status === 502 || response.status === 503) {
+          return { success: false, error: "Network error, please try again later." };
+      } else {
+          const body = await response.json().catch(() => null);
+          return { success: false, error: body?.error || body?.message || "Failed to add member." };
+      }
+  }
 
     return { success: true };
   } catch (err) {

@@ -8,6 +8,9 @@ import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
+import statusStyles from "../Organizations/Organizations.module.css"
 
 interface Member {
   user_id: string;
@@ -27,7 +30,6 @@ export default function OrgMembersPage() {
   const [myRole, setMyRole] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
@@ -43,12 +45,17 @@ export default function OrgMembersPage() {
   const [orgName, setOrgName] = useState<string>("");
   const [orgDesc, setOrgDesc] = useState<string>("");
 
-  const { keyMissing, setKeyMissing, password, 
-    setPassword, isResetting, keyModalError, setKeyModalError, 
+  const { keyMissing, setKeyMissing, password,
+    setPassword, isResetting, keyModalError, setKeyModalError,
     checkKeys, handleResetKeys } = useKeyCheck();
-    
+
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const avatarUrlsRef = useRef<Record<string, string>>({});
+  
+  const [mainError, setMainError] = useState<string | null>(null);
+  const [orgError, setOrgError] = useState<string | null>(null);
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
 
   useEffect(() => {
     return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
@@ -65,7 +72,10 @@ export default function OrgMembersPage() {
   useEffect(() => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch org name.");
+        if (!res.ok) {
+            setOrgError("Failed to fetch Organization.")
+            throw new Error("Failed to fetch Organization.");
+        }
         return res.json();
       })
       .then(data => {
@@ -79,13 +89,17 @@ export default function OrgMembersPage() {
   }, [id]);
 
   const fetchMembers = (signal?: AbortSignal) => {
+    setMainError(null);
     fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
           navigate("/404");
           return null;
         }
-        if (!res.ok) throw new Error("Failed to fetch members.");
+        if (!res.ok) {
+          setMainError("Failed to fetch members.");
+          throw new Error("Failed to fetch members.");
+        }
         return res.json();
       })
       .then(data => {
@@ -95,7 +109,7 @@ export default function OrgMembersPage() {
         data.forEach((member: Member) => {
           fetchWithRefresh(`/api/user/${member.user_id}/avatar`, { signal })
             .then(res => {
-              if (!res.ok) return null;
+              if (res.status === 204 || !res.ok) return null;
               return res.blob();
             })
             .then(blob => {
@@ -124,7 +138,6 @@ export default function OrgMembersPage() {
       .catch(err => {
         if (err?.name === "AbortError") return;
         setMembers([]);
-        setError("Failed to load members.");
       })
       .finally(() => setLoading(false));
   };
@@ -223,55 +236,61 @@ export default function OrgMembersPage() {
 
     setMemberEmail("");
     setShowAddMemberModal(false);
+    addMessage(`${memberEmail} added to ${orgName}`, "success");
   };
 
   const handleChangeRole = async () => {
     if (!selectedMember) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ role: newRole }),
-    });
 
-    if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to change role.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
-        }
-      } catch {}
-      setModalError(message);
-      return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${selectedMember.user_id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role: newRole }),
+      });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to change role.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.map(m =>
+        m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
+      ));
+      setShowChangeRoleModal(false);
+      setSelectedMember(null);
+      addMessage(`${selectedMember.email} successfully changed role`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.map(m =>
-      m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
-    ));
-    setShowChangeRoleModal(false);
-    setSelectedMember(null);
   };
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
-    const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
-
-    if (!response.ok) {
-      const text = await response.text();
-      let message = "Failed to remove member.";
-      try {
-        if (text) {
-          const data = JSON.parse(text);
-          message = data.error || data.message || message;
-        }
-      } catch {}
-      setModalError(message);
-      return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
+  
+      if (!response.ok) {
+          if (response.status === 502 || response.status === 503) {
+              setModalError("Network error, please try again later.");
+          } else {
+              const body = await response.json().catch(() => null);
+              setModalError(body?.message || body?.error || "Failed to remove.");
+          }
+          return;
+      }
+  
+      setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
+      setShowRemoveModal(false);
+      setMemberToRemove(null);
+      addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
+    } catch {
+      setModalError("Network error, please try again later.");
     }
-
-    setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
-    setShowRemoveModal(false);
-    setMemberToRemove(null);
   };
 
   const getName = (member: Member) => {
@@ -284,6 +303,7 @@ export default function OrgMembersPage() {
   return (
     <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
             <h1>Organization Members</h1>
@@ -300,10 +320,21 @@ export default function OrgMembersPage() {
           )}
         </div>
 
-        {error && <div className={styles.errorState}>{error}</div>}
-
         {loading ? (
           <div className={styles.loadingState}>Loading members...</div>
+        ) : mainError || orgError ? (
+            <>
+                {orgError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {orgError}
+                    </div>
+                )}
+                {mainError && (
+                    <div className={`${statusStyles.statusMessage} ${statusStyles.error}`}>
+                        {mainError}
+                    </div>
+                )}
+            </>
         ) : members.length === 0 ? (
           <div className={styles.emptyState}>No members found.</div>
         ) : (

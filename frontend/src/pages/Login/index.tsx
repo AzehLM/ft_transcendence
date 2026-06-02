@@ -54,13 +54,18 @@ export default function LoginPage() {
                 body: JSON.stringify(loginData),
             });
 
-            const responseData = await response.json();
-
             if (!response.ok) {
-                setError(responseData.message || "Login failed!");
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    const msg = body?.message || body?.error;
+                    setError(msg ? `Login failed: ${msg}` : "Login failed!");
+                }
                 setIsLoading(false);
                 return;
             }
+            const responseData = await response.json();
 
             // Check if 2FA is required
             if (responseData.require_2fa) {

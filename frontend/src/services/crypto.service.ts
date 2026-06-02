@@ -309,8 +309,11 @@ export async function generateLoginData(email: string, password: string) {
         });
 
         if (!saltResponse.ok) {
-            const errorData = await saltResponse.json();
-            throw new Error(errorData.message || "Failed to retrieve salt");
+            if (saltResponse.status === 502 || saltResponse.status === 503) {
+                throw new Error("Network error, please try again later.");
+            }
+             const errorData = await saltResponse.json().catch(() => null);
+             throw new Error(errorData?.message || "Failed to retrieve salt");
         }
     } catch (err: any) {
         console.error("Error when fetching the salt:", err);
