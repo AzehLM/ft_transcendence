@@ -44,8 +44,10 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
         let detectedMime = typeInfo?.mime || file.type;
 
         if (!typeInfo) {
-            if (['txt', 'md', 'rtf', 'go', 'css', 'tsx', 'ts', 'js', 'html', 'py', 'sh', 'yaml', 'yml', 'cpp', 'c', 'h', 'hpp', 'java'].includes(extension)) {
+            if (['txt', 'md', 'go', 'css', 'tsx', 'ts', 'js', 'html', 'sh', 'yaml', 'yml', 'cpp', 'c', 'h'].includes(extension)) {
                 detectedMime = 'text/plain';
+            } else if (extension === 'rtf') {
+                detectedMime = 'application/rtf';
             } else if (extension === 'json') {
                 detectedMime = 'application/json';
             }
@@ -99,6 +101,7 @@ export const getFileTypeLabel = (mimeType: string): string => {
         'video/quicktime': 'Vidéo QuickTime',
         'video/x-msvideo': 'Vidéo AVI',
         'application/pdf': 'Document PDF',
+        'application/rtf': 'Document RTF',
         'text/plain': 'Fichier texte',
         'text/csv': 'Fichier CSV',
         'application/msword': 'Document Word',

@@ -7,7 +7,7 @@ types {
     application/vnd.openxmlformats-officedocument.spreadsheetml.sheet xlsx;
     application/vnd.ms-powerpoint         ppt;
     application/vnd.openxmlformats-officedocument.presentationml.presentation pptx;
-    text/plain                            txt md go css tsx ts js html sh yaml yml cpp c;
+    text/plain                            txt md go css tsx ts js html sh yaml yml cpp c h;
     application/json                      json;
     application/rtf                       rtf;
 
