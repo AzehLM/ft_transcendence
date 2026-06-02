@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -421,12 +420,6 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 		})
 	}
 
-	if strings.TrimSpace(body.FirstName) == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "first name required",
-		})
-	}
-
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
@@ -476,12 +469,6 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
-	// if body.FamilyName == "" {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "family name required",
-	// 	})
-	// }
 
 	userIDLocals, err := c.Locals("user_id").(string)
 	if !err {
