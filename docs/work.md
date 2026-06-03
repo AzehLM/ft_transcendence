@@ -411,6 +411,65 @@ Note : la PubKey RSA change pas, les OrgKeys changent pas. Seul le wrapping de l
 
 ---
 
+Voici la documentation résumée pour ton fichier `work.md` basée sur la logique de ton handler Go (`DeleteUser`).
+
+Le workflow de suppression d'un compte est particulièrement intéressant ici car il gère la cascade complexe de la gouvernance des données (ce qu'on fait des fichiers et des droits d'une organisation quand un membre s'en va).
+
+---
+
+### 15. User Deletion
+
+```
+[DELETE /api/auth/account] 
+  └── 1. DB Transaction (PostgreSQL)
+        ├── Determine Org Ownership & Cascade Strategy
+        │     ├── Case A: Another Admin exists ──> Transfer ownership
+        │     ├── Case B: Only members exist   ──> Promote oldest member & Transfer
+        │     └── Case C: No one left          ──> Mark Org for deletion & Queue files
+        ├── Queue personal files for cleanup
+        └── Hard-delete user profile
+  └── 2. Event Broadcasting (Redis Pub/Sub)
+        ├── Publish `user_deleted` (Triggers MinIO object deletion asynchronously)
+        ├── Publish `member_removed` (Syncs remaining active organization views)
+        └── Publish `role_updated` + User notification (For newly promoted admins)
+  └── 3. Session Termination (Clear Auth Cookies)
+
+```
+
+#### 1. Identity Validation & Context Gathering
+
+* **Extraction:** The system extracts the `user_id` from the Fiber context locals and parses it into a valid UUID.
+* **Pre-fetch:** Retrieves the user's email address prior to executing the deletion payload (required for downstream notification events).
+
+#### 2. Atomic Database Transaction (PostgreSQL Cascade Logic)
+
+The entire cleanup operates inside an isolated database transaction to avoid leaving stranded files or locked organizations if a query fails:
+
+* **Organization-by-Organization Audit:** The handler loops through every organization the user belongs to:
+* **Case A (Existing Admins):** If another user already holds an **Admin** role in the organization, ownership of the deleting user's files and folders inside that organization is transferred directly to them.
+* **Case B (Member Promotion):** If the deleting user was the *sole admin* but other members exist, the system identifies the **oldest member** (ordered by `joined_at ASC`). This member is automatically promoted to **Admin**, and all file/folder records are transferred to them.
+* **Case C (Orphaned Organization):** If the deleting user was the *last remaining person*, the entire organization is marked for deletion. All associated files are queried and queued inside a `filesToCleanup` array.
+
+
+* **Personal Storage Cleanup:** The transaction queries all personal files belonging to the user (`org_id IS NULL`) and appends their `minio_object_key` to the cleanup queue.
+* **Final Record Purge:** The user record is hard-deleted from the `users` table.
+
+#### 3. Asynchronous Event Broadcasting (Redis Pub/Sub)
+
+Once the database transaction commits successfully, the system publishes targeted real-time events to handle side effects out-of-band:
+
+* **`PublishUserDeleted`:** Dispatches the `filesToCleanup` queue and ownership `transfers` mapping. A background worker intercepts this to physically purge the objects from the **MinIO S3** bucket.
+* **`PublishMemberRemoved`:** Notifies surviving organizations that the user has left, allowing real-time UI updates across active client sessions via WebSockets.
+* **`PublishRoleUpdated` & Direct Message:** If a member was promoted to Admin during *Case B*, the system resolves their email, fires a role update state event, and sends a direct interface notification to inform them of their new ownership.
+
+#### 4. Session Termination
+
+* The client's security context is destroyed by explicitly clearing the JWT `refresh_token` HTTP-only cookie.
+* Returns a `200 OK` structure confirming account termination.
+---
+
+
+
 ## Workflows manquants (a detailler plus tard)
 
 - **Creer un dossier** : `POST /api/folders` avec name + parent_id + org_id optionnel
@@ -419,4 +478,3 @@ Note : la PubKey RSA change pas, les OrgKeys changent pas. Seul le wrapping de l
 - **Quitter une orga** : `DELETE /api/orgs/{org_id}/members/me` (interdit si dernier admin)
 - **Supprimer une orga** : `DELETE /api/orgs/{org_id}` (admin only, supprime tous les fichiers MinIO de l'orga)
 - **Deplacer un fichier/dossier** : `PATCH` pour changer le `folder_id` ou `parent_id`
-- **DELETE ACCOUNT**
