@@ -127,7 +127,6 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	//added
 	org, _ := repo.GetOrgaByID(orgID)
 
 	event := ws.WSEvent{
@@ -260,7 +259,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	userEvent := ws.WSEvent{
-		Event:   "ADDED_TO_NEW_ORGA",
+		Event:   "ROLE_UPDATED",
 		Message: "You role has changed to " + body.Role + " in organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"org_id": orgID.String(),
