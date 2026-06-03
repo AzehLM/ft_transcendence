@@ -72,7 +72,7 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
     }
 
     try {
-        await onRename?.(id, result.data.name);
+        await onRename?.(id, result.data.name, name);
 
         setShowRenameModal(false);
         setRenameError(null);
