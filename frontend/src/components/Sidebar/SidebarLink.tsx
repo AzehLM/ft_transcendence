@@ -6,11 +6,12 @@ interface SidebarLinkProps {
   icon: React.ReactNode;
   label: string;
   className?: string;
+  matchStart?: boolean;
 }
 
-export function SidebarLink({ to, icon, label, className }: SidebarLinkProps) {
+export function SidebarLink({ to, icon, label, className, matchStart }: SidebarLinkProps) {
   const location = useLocation();
-  const isActive = location.pathname === to;
+  const isActive = matchStart ? location.pathname.startsWith(to) : location.pathname === to;
 
   return (
     <Link

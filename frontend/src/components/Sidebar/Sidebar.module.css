@@ -35,18 +35,18 @@
 }
 
 .logoName {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 700;
     font-size: 20px;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
     line-height: 1.2;
 }
 
 .logoSubtitle {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 400;
     font-size: 12px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
 }
 
 .sidebar__button {
@@ -57,7 +57,7 @@
     border: none;
     cursor: pointer;
     text-decoration: none;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
     padding: 10px 12px;
     margin: 2px 12px;
     border-radius: 12px;
@@ -74,11 +74,11 @@
 .sidebar__button--active,
 .sidebar__button--active:hover {
     background-color: #fedfd7;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
 }
 
 .sidebar__button__label {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 15px;
     font-weight: 500;
     white-space: nowrap;

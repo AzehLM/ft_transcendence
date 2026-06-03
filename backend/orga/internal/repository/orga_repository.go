@@ -211,3 +211,7 @@ func (r *OrganizationRepository) UpdateDescription(orgID uuid.UUID, userID uuid.
     }
     return result.RowsAffected > 0, nil
 }
+
+func (r *OrganizationRepository) GetUserByID(userID uuid.UUID, user *models.User) error {
+    return r.DB.Where("id = ?", userID).Take(user).Error
+}

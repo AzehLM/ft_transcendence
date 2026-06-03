@@ -89,6 +89,7 @@ export default function OrgSettingsPage() {
           return;
       }
 
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
       navigate("/organizations");
     } catch (err) {
       setError("Network error, please try again.");
@@ -208,8 +209,10 @@ export default function OrgSettingsPage() {
                     isOrgaDesc={true}
                   />
                   <div className={styles.leaveOrga}>
-                    <p className={styles.label}>Leave Organization</p>
-                    <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                    <div>
+                      <p className={styles.label}>Leave Organization</p>
+                      <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                    </div>
                     <button
                       className={styles.leaveButton}
                       onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}

@@ -22,7 +22,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-family-primary);
   font-size: 14px;
   font-weight: 400;
   color: var(--brand-primary);
@@ -31,7 +31,7 @@
 }
 
 .btn:hover {
-  background-color: rgba(213, 79, 42, 0.08);
+  background-color: var(--color-hover-brand-subtle);
 }
 
 .active {
@@ -44,4 +44,4 @@
   background: none;
 }
 
-.separator { color: #999; }
+.separator { color: var(--color-text-secondary); }

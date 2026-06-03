@@ -94,7 +94,7 @@ export function ConfirmationModal({
     } else if (isKeyMissing) {
     title = "Enter your password";
     } else {
-    title = "Move to Trash?";
+    title = "Confirmation";
     }
 
     const message: string | undefined = isAccount
@@ -120,11 +120,11 @@ export function ConfirmationModal({
     : isCreateOrga
     ? "Enter the name of the new organization"
     : isCreateFolder
-    ? "Enter the name of the Folder you want to create :"
+    ? "Enter the name of the folder you want to create:"
     : isRenameFolder
-    ? `Enter a new name for the folder "${fileName}" :`
+    ? `Enter a new name for the folder "${fileName}":`
     : isMove
-    ? `Enter the id of the new target folder for "${fileName}" :`
+    ? `Enter the id of the new target folder for "${fileName}":`
     : undefined
 
     const baseButtonText = isAccount
@@ -153,7 +153,7 @@ export function ConfirmationModal({
     ? "Move item"
     : isRenameFolder
     ? "Rename Folder"
-    : "Move to Trash";
+    : "Confirm";
 
     const buttonText = isLoading ? "Loading..." : baseButtonText;   
 
@@ -176,7 +176,15 @@ export function ConfirmationModal({
                     onInputChange?.("");
                     onCancel();
                 }} />
-            <div className={styles.modal}>
+            <form 
+                className={styles.modal} 
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!isLoading) {
+                        handleConfirm();
+                    }
+                }}
+            >
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
                 {(isCreateOrga || isAddMember || isKeyMissing || isCreateFolder || isRenameFolder || isMove) && (
@@ -194,18 +202,28 @@ export function ConfirmationModal({
                 <p className={styles.modal__error}>{errorMessage}</p>
                 )}
                 <div className={styles.modal__actions}>
-                    { !isPasswordChanged && (<button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
-                          onClick={() => {
-                            onInputChange?.("");
-                            onCancel();
-                        }} disabled={isLoading}>
-                        Cancel
-                    </button>)}
-                    <button className={`${styles.modal__button} ${styles["modal__button--confirm"]}`} onClick={handleConfirm} disabled={isLoading}>
+                    { !isPasswordChanged && (
+                        <button 
+                            type="button"
+                            className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
+                            onClick={() => {
+                                onInputChange?.("");
+                                onCancel();
+                            }} 
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </button>
+                    )}
+                    <button 
+                        type="submit" 
+                        className={`${styles.modal__button} ${styles["modal__button--confirm"]}`} 
+                        disabled={isLoading}
+                    >
                         {buttonText}
                     </button>
                 </div>
-            </div>
+            </form>
         </>
     );
 }

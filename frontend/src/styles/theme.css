@@ -49,6 +49,20 @@
   /* Transitions */
   --transition-base: all 0.3s ease;
 
+  /* Extended UI Colors */
+  --color-text-secondary: #999;
+  --color-text-warm-muted: #8c7b75;
+  --color-text-warm-dark: #4a3731;
+  --color-text-neutral: #6b7280;
+  --color-error: #d32f2f;
+  --color-surface-light: #f5f5f5;
+  --color-grey-light: #f0f0f0;
+  --color-border-grey: #e0e0e0;
+  --color-hover-brand-subtle: rgba(213, 79, 42, 0.08);
+
+  /* Font Family */
+  --font-family-primary: 'IBM Plex Sans', sans-serif;
+
   /* Design System Colors */
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);

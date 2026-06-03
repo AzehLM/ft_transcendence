@@ -4,7 +4,7 @@
     width: 100%;
     min-height: 100%;
     background-color: #fff8f6;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
 }
 
 .contentArea {
@@ -16,7 +16,7 @@
 .title {
     margin-top: 0;
     margin-bottom: 4px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 32px;
     font-weight: 700;
     color: #241916;
@@ -26,7 +26,7 @@
 .pageSubtitle {
     margin-top: 0;
     margin-bottom: 32px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 16px;
     color: #524440;
     line-height: 1.5;
@@ -35,7 +35,7 @@
 .subtitle {
     margin-top: 0;
     margin-bottom: 24px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 20px;
     font-weight: 600;
     color: #241916;
@@ -102,7 +102,7 @@
     border: none;
     border-radius: 10px;
     padding: 8px 16px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 13px;
     cursor: pointer;
@@ -188,7 +188,7 @@
 }
 
 .usageTypeInfo:hover {
-  background-color: rgba(213, 79, 42, 0.08);
+  background-color: var(--color-hover-brand-subtle);
 }
 
 .storageBoxes {
@@ -213,7 +213,7 @@
 .sectionTitle {
     margin-top: 0;
     margin-bottom: 6px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 16px;
     font-weight: 600;
     color: #241916;
@@ -226,7 +226,7 @@
     font-size: 14px;
     line-height: 1.6;
     color: #524440;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
 }
 
 .statusRow {
@@ -243,7 +243,7 @@
     padding: 5px 12px;
     border-radius: 99px;
     font-size: 13px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     color: #16a34a;
     background-color: #f0fdf4;
@@ -258,7 +258,7 @@
     padding: 5px 12px;
     border-radius: 99px;
     font-size: 13px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     color: #dc2626;
     background-color: #fef2f2;
@@ -268,7 +268,7 @@
 .statusText {
     margin: 0;
     font-size: 0.95rem;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: #524440;
 }
 
@@ -327,7 +327,7 @@
     padding: 11px 14px;
     width: 100%;
     box-sizing: border-box;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 14px;
     outline: none;
     background-color: white;
@@ -360,7 +360,7 @@
     margin-top: 4px;
     font-size: 13px;
     font-weight: 500;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
 }
 
 .statusMessage {

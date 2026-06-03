@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"backend/orga/internal/handlers"
 	"backend/orga/internal/workers"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -58,6 +60,20 @@ func main() {
 		BodyLimit: 4 * 1024 * 1024,
 	})
 
+	wsLimiter := limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c fiber.Ctx) error {
+			log.Printf("[SECURITY] WebSocket Rate limit reached for IP: %s\n", c.IP())
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_connection_attempts",
+			})
+		},
+	})
+
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
 	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
@@ -95,6 +111,7 @@ func main() {
 	org.Get("/members/keys", member, orgaHandler.GetMemberKeys)
 
 	app.Get("/ws/notifications",
+		wsLimiter,
 		middleware.ProtectedRoute(env.JwtSecret),
 		func(c fiber.Ctx) error {
 			if websocket.IsWebSocketUpgrade(c) {
@@ -103,7 +120,7 @@ func main() {
 			return fiber.ErrUpgradeRequired
 		},
 		websocket.New(wsHub.GlobalWSHandler, websocket.Config{
-			Origins: []string{"*"}, //TODO: set les url who can create ws
+			Origins: []string{"*"},
 		}),
 	)
 	// Run
