@@ -14,14 +14,14 @@
 .titleGroup h1 {
     font-size: 40px;
     font-weight: 700;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
     margin: 0 0 4px 0;
     letter-spacing: -0.02em;
 }
 
 .subtitle {
     font-size: 16px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     margin: 0;
 }
 
@@ -98,7 +98,7 @@
 .memberName {
     font-size: 16px;
     font-weight: 600;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
     margin: 0 0 2px 0;
     white-space: nowrap;
     overflow: hidden;
@@ -107,7 +107,7 @@
 
 .memberEmail {
     font-size: 13px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -142,7 +142,7 @@
 }
 
 .roleViewer {
-    background-color: #f5f5f5;
+    background-color: var(--color-surface-light);
     color: #616161;
 }
 
@@ -151,7 +151,7 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     min-width: 80px;
 }
 
@@ -203,7 +203,7 @@
 
 .kickBtn:hover {
     background-color: #fff0f0;
-    color: #d32f2f;
+    color: var(--color-error);
 }
 
 @media (max-width: 768px) {
@@ -274,17 +274,17 @@
 .emptyState {
     text-align: center;
     padding: 60px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
 }
 
 .loadingState {
     text-align: center;
     padding: 60px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
 }
 
 .errorState {
-    color: #d32f2f;
+    color: var(--color-error);
     padding: 16px;
     background-color: #fff0f0;
     border-radius: 12px;

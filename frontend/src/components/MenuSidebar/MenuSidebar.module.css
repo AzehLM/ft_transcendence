@@ -5,7 +5,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #4a3731;
+  color: var(--color-text-warm-dark);
   padding: 10px 12px;
   margin: 2px 12px;
   border-radius: 12px;
@@ -35,7 +35,7 @@
 
 .toggleLabel {
   flex: 1;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-family-primary);
   font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
@@ -47,7 +47,7 @@
 .chevron {
   flex-shrink: 0;
   transition: transform 0.2s ease;
-  color: #8c7b75;
+  color: var(--color-text-warm-muted);
 }
 
 .chevronOpen {
@@ -62,9 +62,9 @@
 
 .emptyMsg {
   padding: 6px 12px 6px 44px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-family-primary);
   font-size: 13px;
-  color: #8c7b75;
+  color: var(--color-text-warm-muted);
 }
 
 .orgRow {
@@ -74,7 +74,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #4a3731;
+  color: var(--color-text-warm-dark);
   padding: 8px 12px 8px 28px;
   margin: 1px 12px;
   border-radius: 10px;
@@ -102,7 +102,7 @@
 
 .orgRowName {
   flex: 1;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-family-primary);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;

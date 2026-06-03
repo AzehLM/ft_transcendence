@@ -30,19 +30,19 @@
 .titleGroup h1 {
     font-size: 40px;
     font-weight: 700;
-    color: #4a3731;
+    color: var(--color-text-warm-dark);
     margin: 0 0 4px 0;
     letter-spacing: -0.02em;
 }
 
 .subtitle {
     font-size: 26px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     margin: 0;
 }
 
 .noFile {
-    color: #999;
+    color: var(--color-text-secondary);
     margin-top: 2rem;
 }
 
@@ -61,7 +61,7 @@
 
 .itemsTitle {
     font-size: 16px;
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     margin: 0;
     font-weight: 700;
 }
