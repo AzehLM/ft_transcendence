@@ -5,8 +5,8 @@ import { SidebarLink } from "../Sidebar/SidebarLink";
 export function MenuSidebar() {
   return (
     <Sidebar>
-      <SidebarLink to="/dashboard" icon={<Files />} label="All files" />
-      <SidebarLink to="/organizations" icon={<Network />} label="Organizations" />
+      <SidebarLink to="/dashboard" icon={<Files />} label="Personal Space" />
+      <SidebarLink to="/organizations" icon={<Network />} label="Organizations Space" />
     </Sidebar>
   );
 }
