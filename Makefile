@@ -57,17 +57,21 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 .PHONY: ssl
 ssl: $(CERT_PATH) $(KEY_PATH)
 
+.PHONY: setup
+setup:
+	@bash scripts/setup.sh
+
 # ---------------------------------- rules -------------------------------------
 
 # dev for now, will be switched for up later
 .DEFAULT_GOAL := dev
 
 .PHONY: up
-up: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
+up: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs setup
 	$(COMPOSE_CMD) up -d --build --remove-orphans
 
 .PHONY: dev
-dev: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
+dev: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs setup
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: stop
