@@ -195,7 +195,6 @@ export default function OrgSettingsPage() {
                     label="Organization name"
                     value={orgName}
                     role={myRole}
-                    maxCharac={100}
                     onSave={handleRenameOrg}
                     isOrgaName={true}
                   />
@@ -203,7 +202,6 @@ export default function OrgSettingsPage() {
                     label="Organization description"
                     value={orgDesc}
                     role={myRole}
-                    maxCharac={250}
                     onSave={handleChangeDescription}
                     handleReset={handleResetDescription}
                     isOrgaDesc={true}
