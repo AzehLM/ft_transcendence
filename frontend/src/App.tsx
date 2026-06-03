@@ -14,7 +14,6 @@ import StoragePage from './pages/Storage'
 import AccountPage from './pages/Account'
 import OrganizationsPage from './pages/Organizations'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { OrgSidebar } from './components/OrgSidebar'
 import OrgFilesPage from './pages/Orgs/OrgFilesPage'
 import OrgMembersPage from './pages/Orgs/OrgMembersPage'
 import OrgSettingsPage from './pages/Orgs/OrgSettingsPage'
@@ -41,18 +40,16 @@ function App() {
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/organizations" element={<OrganizationsPage />} />
                         <Route path="/dashboard/folder/:folderId" element={<DashboardPage />} />
+                        <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/folder/:folderId" element={<OrgFilesPage />} />
+                        <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
+                        <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>
 
                     <Route element={<MainLayout sidebar={<ProfileSidebar />} />}>
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/usage" element={<StoragePage />} />
                         <Route path="/account" element={<AccountPage />} />
-                    </Route>
-                    <Route element={<MainLayout sidebar={<OrgSidebar />} />}>
-                        <Route path="/orgs/:id/files" element={<OrgFilesPage />} />
-                        <Route path="/orgs/:id/folder/:folderId" element={<OrgFilesPage />} />
-                        <Route path="/orgs/:id/members" element={<OrgMembersPage />} />
-                        <Route path="/orgs/:id/settings" element={<OrgSettingsPage />} />
                     </Route>
                 </Route>
                 <Route element={<StaticLayout />}>
