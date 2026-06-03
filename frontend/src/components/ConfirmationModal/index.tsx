@@ -176,7 +176,15 @@ export function ConfirmationModal({
                     onInputChange?.("");
                     onCancel();
                 }} />
-            <div className={styles.modal}>
+            <form 
+                className={styles.modal} 
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!isLoading) {
+                        handleConfirm();
+                    }
+                }}
+            >
                 <h2 className={styles.modal__title}>{title}</h2>
                 {message && <p className={styles.modal__message}>{message}</p>}
                 {(isCreateOrga || isAddMember || isKeyMissing || isCreateFolder || isRenameFolder || isMove) && (
@@ -194,18 +202,28 @@ export function ConfirmationModal({
                 <p className={styles.modal__error}>{errorMessage}</p>
                 )}
                 <div className={styles.modal__actions}>
-                    { !isPasswordChanged && (<button className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
-                          onClick={() => {
-                            onInputChange?.("");
-                            onCancel();
-                        }} disabled={isLoading}>
-                        Cancel
-                    </button>)}
-                    <button className={`${styles.modal__button} ${styles["modal__button--confirm"]}`} onClick={handleConfirm} disabled={isLoading}>
+                    { !isPasswordChanged && (
+                        <button 
+                            type="button"
+                            className={`${styles.modal__button} ${styles["modal__button--cancel"]}`} 
+                            onClick={() => {
+                                onInputChange?.("");
+                                onCancel();
+                            }} 
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </button>
+                    )}
+                    <button 
+                        type="submit" 
+                        className={`${styles.modal__button} ${styles["modal__button--confirm"]}`} 
+                        disabled={isLoading}
+                    >
                         {buttonText}
                     </button>
                 </div>
-            </div>
+            </form>
         </>
     );
 }
