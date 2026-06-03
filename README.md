@@ -408,6 +408,26 @@ The following is a complete inventory of implemented features, grouped by domain
 - Specific features, modules, or componenets implemented by each person
 - Any challenges faced and how they were overcome
 
+## pnaessen (Pierrick) - Product Owner & Developer
+
+### Product Management
+As the Product Owner, lead the overall vision for Ostrom as a zero-knowledge encrypted cloud storage platform. Key responsibilities included:
+- **Platform Vision & Value Proposition** - Defined the zero-knowledge principle as the core differentiator and translated it into features
+- **Feature Prioritization** - Managed the feature backlog and prioritized development tasks
+
+### Backend Development
+- **Authentication System** - Implemented the complete login flow on the backend, including Argon2id verification of client-derived auth hashes, encrypted private key retrieval, and security hardening (rate limiting with Fiber, user enumeration protection)
+- **JWT & Refresh Token Rotation** - Designed and implemented the token refresh mechanism with HttpOnly cookies, 15 minute access token lifespan, and hashed token storage in PostgreSQL for secure session management
+- **WebSocket Hub for Real-Time Notifications** - Built the backend WebSocket multiplexing layer, handling per user subscriptions and integrating with Redis pub/sub for cross-service event broadcasting
+
+### Frontend Development
+- **Client-Side File Encryption & Decryption** - Implemented the end-to-end encryption flow for file downloads, handling AES-GCM decryption in the browser using per-file DEKs and IVs
+- **WebSocket Frontend Integration** - Built the React-side WebSocket connection management, including reconnection backoff logic, event listener registration, and notification state management
+- **UI/UX Refinement** - Worked on overall UX polish, component consistency, and user feedback mechanisms throughout the application
+
+
+---
+
 ## Other informations such as:
 
 - Known limitations, credits
