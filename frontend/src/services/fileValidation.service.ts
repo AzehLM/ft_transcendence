@@ -27,7 +27,7 @@ export interface ValidationResult {
 }
 
 
-export async function validateFile(file: File): Promise<{ isValid: boolean; error?: string }> {
+export async function validateFile(file: File): Promise<ValidationResult>  {
 
     const result = fileSchema.safeParse({ file });
     if (!result.success) {
