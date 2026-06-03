@@ -84,7 +84,6 @@ export default function OrganizationsPage() {
     try {
       const result = organizationSchema.safeParse({ name: orgName });
       if (!result.success) {
-        console.log(result.error.issues[0].message);
         setModalError(result.error.issues[0].message);
         return;
       }
