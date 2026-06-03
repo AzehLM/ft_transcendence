@@ -143,7 +143,7 @@ func (p *EventPublisher) PublishToUser(ctx context.Context, orgID string, userID
 	}
 
 	event := WSEvent{
-		Event:   "ADDED_TO_NEW_ORGA",
+		Event:   "ROLE UPDATED",
 		Message: "Your role has changed to admin in organization [" + orgName +"]",
 		Data: map[string]interface{}{
 			"org_id": orgID,
