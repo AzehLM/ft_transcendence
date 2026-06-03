@@ -48,6 +48,7 @@
         # the localhost:9000 connect-src is to test CORS (Cross-Origin Resource Sharing) setup from frontend to minio directly
         Content-Security-Policy "
             default-src 'self';
+            frame-src blob:;
             script-src 'self';
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
