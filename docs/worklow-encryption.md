@@ -87,30 +87,71 @@ Le navigateur a été fermé. La RAM est vide. Le client ne possède plus aucune
 
 ### Organisations
 
-1. Création de l'Organisation
+#### 1 Organization Creation Workflow
 
-Lorsqu'un utilisateur (l'Admin) crée une organisation depuis le frontend React :
 
-1. **Génération des clés orga** : React génère une paire de clés RSA dédiée à l'organisation (Org_Pub_Key + Org_Priv_Key)
-2. **Chiffrement de la clé privée orga** :
-   - Génération d'une clé AES-GCM 256 temporaire
-   - Chiffrement de Org_Priv_Key avec la clé AES → encrypted_org_private_key + iv
-   - Chiffrement de la clé AES avec la clé publique RSA du user → encrypted_aes_key
-3. **Envoi au backend** : nom de l'orga, Org_Pub_Key (en clair), encrypted_org_private_key, encrypted_aes_key, iv
-4. **Le serveur** stocke ces blobs opaques — il ne peut rien déchiffrer sans la clé privée du user
+```
 
-2. L'Invitation d'un Membre
+[React Client]
+├── 1. Generates Org RSA KeyPair & Temporary AES-256 Key
+├── 2. Encrypts Org_Priv_Key with AES Key (AES-GCM)
+├── 3. Encrypts AES Key with Admin Public Key (RSA-OAEP)
+└── 4. POST /api/orgs ──> [Go / Fiber Backend] ──> [PostgreSQL]
 
-    Le frontend d'Alice(admin) télécharge la Public_Key de Bob depuis l'API Go.
+```
 
-    Le frontend d'Alice déchiffre la Encrypted_Org_Priv_Key (qu'elle re-déchiffre via sa propre clé privée). L'Org_Priv_Key est maintenant en clair dans la RAM d'Alice.
+1. **Trigger & Primitives Generation:**
+   The user initiates the creation sequence. The React frontend uses the Web Crypto API to generate:
+   * **Organization Identity:** An asymmetric RSA key pair (`Org_Pub_Key` and `Org_Priv_Key`).
+   * **Transient Wrapping Key:** A temporary symmetric `AES-GCM 256` key.
 
-    Alice chiffre cette Org_Priv_Key avec la Public_Key de Bob.
+2. **Symmetric Layer (Private Key Protection):**
+   The client encrypts the organization's private key using the transient AES key:
+   $$\text{enc\_org\_priv\_key} = \text{Encrypt}_{\text{AES-GCM}}(\text{Org\_Priv\_Key}, \text{AES\_Key})$$
+   This outputs the `enc_org_priv_key` binary payload along with its unique Initialization Vector (`iv`).
 
-    Alice envoie ce nouveau blob au backend  Fiber l'insère dans la base de données. Bob possède désormais un accès mathématique à l'organisation. dechiffre grace a la private key de lui meme
+3. **Asymmetric Layer (Key Encapsulation):**
+   The client retrieves the Admin's personal public RSA key from the session. The transient AES key is exported to raw bytes and encrypted:
+   $$\text{enc\_aes\_key} = \text{Encrypt}_{\text{RSA-OAEP}}(\text{AES\_Key}_{\text{raw}}, \text{Admin\_Pub\_Key})$$
+
+4. **API ingestion & Persistence:**
+   All binary buffers are encoded to Base64 strings. The client performs a `POST /api/orgs` request.
+   The **Go / Fiber** backend opens a PostgreSQL transaction to:
+   * Create the organization row (assigning a standard `UUID`).
+   * Add the creator as an **Admin** in the `org_members` junction table.
+   * Store `enc_org_priv_key`, `enc_aes_key`, and `iv` directly in the admin's relation row.
+   * *Zero-Knowledge Architecture:* The server has no access to plaintext keys and only stores opaque blocks.
+
+5. **Real-Time Notification:** The backend publishes an `org_created` event to **Redis**, broadcasting a WebSocket notification to the user's other active devices to update the UI reactively.
+
+---
+
+#### 2 Member Invitation Flow
+
+**Scenario:** Alice (Admin) invites Bob (New Member) into the organization.
+
+
+
+1. **Public Key Retrieval:**
+   Alice's React client requests Bob's verified asymmetric `Bob_Pub_Key` from the Go API.
+
+2. **Decryption Phase (Admin Client-Side RAM):**
+   Alice's client downloads her own organization cryptographic assets. It decrypts `enc_aes_key` using Alice's hardware/browser-bound private RSA key, then uses the recovered AES key and `iv` to decrypt `enc_org_priv_key`.
+   *The `Org_Priv_Key` is now available as a plaintext primitive inside Alice's client volatile memory (RAM).*
+
+3. **Secure Re-Wrapping for the Invitee:**
+   To securely pass the key to Bob without the server intercepting it, Alice's client performs a new Key Encapsulation Mechanism (KEM):
+   * Generates a **brand new temporary symmetric key** (`Bob_Temp_AES_Key`) and a fresh `iv`.
+   * Encrypts the `Org_Priv_Key` with this new symmetric key.
+   * Encrypts ("wraps") this new symmetric key using **Bob's Public Key** (`Bob_Pub_Key`) via RSA-OAEP.
+
+4. **Payload Storage:**
+   Alice sends these new specific Base64 blobs to the backend via `POST /api/orgs/{id}/members`. The Fiber backend inserts this record into the `org_members` table for Bob. 
+   *Result:* Bob now has secure mathematical access to the organization. When he connects, his client will pull his specific blobs and decrypt them using his own private RSA key.
+
 ![Logo](images/organisations.webp)
 
-3. Upload et Download dans l'Organisation
+#### 3 Secure Upload & Download Flows
 
     Upload : Lorsqu'un membre upload un fichier dans l'espace de l'organisation, React génère la DEK du fichier, chiffre le fichier, puis chiffre la DEK avec la Org_Pub_Key.
 
