@@ -37,7 +37,7 @@ $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR):
 $(ENV_FILE):
 	@[ -f $(ENV_EXAMPLE) ] || (echo "Error: $(ENV_EXAMPLE) not found" && exit 1)
 	cp $(ENV_EXAMPLE) $(ENV_FILE)
-	@echo "$(ENV_FILE) created from $(ENV_EXAMPLE) — edit it before running."
+	@echo "[setup] $(ENV_FILE) created from $(ENV_EXAMPLE) - edit it before running."
 
 
 $(CERT_PATH) $(KEY_PATH): $(HOSTNAME_FILE)
@@ -58,7 +58,7 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 ssl: $(CERT_PATH) $(KEY_PATH)
 
 .PHONY: setup
-setup:
+setup: $(ENV_FILE)
 	@bash scripts/setup.sh
 
 # ---------------------------------- rules -------------------------------------
@@ -67,11 +67,11 @@ setup:
 .DEFAULT_GOAL := dev
 
 .PHONY: up
-up: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs setup
+up: setup $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_CMD) up -d --build --remove-orphans
 
 .PHONY: dev
-dev: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs setup
+dev: setup $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: stop

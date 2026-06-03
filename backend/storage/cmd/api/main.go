@@ -79,7 +79,7 @@ func main() {
 
 	eventPublisher := workers.NewEventPublisher(redisClient)
 
-	// internal Docker network — SSL not required
+	// internal Docker network, SSL not required
 	useSSL := false
 	minioEndpoint := fmt.Sprintf(("minio:%s"), env.MinioPort)
 
