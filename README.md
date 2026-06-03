@@ -111,7 +111,7 @@ make fclean			# deletes every container/images/volumes
 AI tools were used as assistants for review, debugging, and design exploration. Core architecture and implementation decisions were made by the team.
 
 - Use of Github Copilot on our Pull Requests to have a deeper review and/or problems identifications
-- [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
+- [Figma](https://www.figma.com/fr-fr/), [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
 - Claude / Perplexity / Gemini / ChatGPT for:
   - debugging and identifying bugs or performance improvement (e.g. quota race conditions (and avoid TOCTOU), RBAC edge cases)
   - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus)
@@ -405,7 +405,7 @@ The following is a complete inventory of implemented features, grouped by domain
 # Individual contribution
 
 - Detailed breakdown of what each team member contributed
-- Specific features, modules, or componenets implemented by each person
+- Specific features, modules, or components implemented by each person
 - Any challenges faced and how they were overcome
 
 ## pnaessen (Pierrick) - Product Owner & Developer
@@ -424,6 +424,26 @@ As the Product Owner, lead the overall vision for Ostrom as a zero-knowledge enc
 - **Client-Side File Encryption & Decryption** - Implemented the end-to-end encryption flow for file downloads, handling AES-GCM decryption in the browser using per-file DEKs and IVs
 - **WebSocket Frontend Integration** - Built the React-side WebSocket connection management, including reconnection backoff logic, event listener registration, and notification state management
 - **UI/UX Refinement** - Worked on overall UX polish, component consistency, and user feedback mechanisms throughout the application
+
+## gueberso (Guillaume) - Technical Lead / Architect & Developer
+
+### Technical Lead / Architect
+
+As the tech lead, generally made the research on differents possible stacks to use for specific use-cases, documentate these choices and looked at the majority of the Pull Requests to give feedbacks to other members.
+
+### Backend Development
+- **Storage microservice**: Implemented the complete storage microservice following Single-Responsibility Principle.
+- **Health-aggregator microservice**: Built an health-aggregator microservice that fetches other microservices states. Allowing us to have a `/status` page referencing features available to users.
+- **Microservice architecture**: Managed the complete infrastructure of the project for two distincts deployment (dev and prod).
+- **Monitoring stack**: A complete monitoring stack with Prometheus/Grafana/Alertmanager with custom Grafana dashboard and home-made metrics exposed from backend microservices.
+- **CI/CD Pipeline**: Github Actions for backend linters and a complete E2E postman collection to validate wanted behaviors are not broken throught implementation of new features.
+
+### Frontend Development
+- **Single Pages**: Made the homepage, Terms of Service, Privacy Policies and a status page
+
+### Challenges faced
+- **MinIO** implementation was a huge challenge. Worked correctly with simple use-cases at the beggining but it had to be maintained and updated throught the whole duration of the project. The multipart upload was implemented a week before the project was done for example.
+- **Backend file/folder structure**: Go has props for folders name and finding a global structure that everyone agrees to work with took few days. The first days learning Go were rough overall.
 
 
 ---
