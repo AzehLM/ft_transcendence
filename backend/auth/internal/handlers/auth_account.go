@@ -216,7 +216,9 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	for orgIDStr, promotedUserID := range promotions {
 		var promotedUserEmail string
-		_ = h.DB.Table("users").Where("id = ?", promotedUserID).Pluck("email", &promotedUserEmail)
+ 		if err := h.DB.Table("users").Where("id = ?", promotedUserID).Select("email").Scan(&promotedUserEmail).Error; err != nil {
+ 			log.Printf("[WARN] Failed to fetch promoted user email for %s: %v", promotedUserID, err)
+ 		}
 		orgName := orgNamesMap[orgIDStr]
 		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "admin", orgName, promotedUserEmail); err != nil {
 			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
