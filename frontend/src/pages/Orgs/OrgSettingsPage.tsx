@@ -89,6 +89,7 @@ export default function OrgSettingsPage() {
           return;
       }
 
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
       navigate("/organizations");
     } catch (err) {
       setError("Network error, please try again.");

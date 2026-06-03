@@ -18,11 +18,22 @@ export function MenuSidebar() {
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<Org[]>([]);
 
-  useEffect(() => {
+  const fetchOrgs = () => {
     fetchWithRefresh("/api/orgs")
       .then(res => res.ok ? res.json() : [])
       .then(data => setOrgs(Array.isArray(data) ? data : []))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchOrgs();
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("org-list-changed", fetchOrgs);
+    return () => {
+      window.removeEventListener("org-list-changed", fetchOrgs);
+    };
   }, []);
 
   useEffect(() => {
