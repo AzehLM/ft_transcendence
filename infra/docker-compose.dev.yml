@@ -197,6 +197,7 @@ services:
       - minio_admin_pwd
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
       - redis_pwd
     depends_on:
@@ -218,6 +219,7 @@ services:
       - redis_pwd
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
     env_file:
       - ../.env
@@ -244,6 +246,7 @@ services:
     secrets:
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
       - redis_pwd
     depends_on:
