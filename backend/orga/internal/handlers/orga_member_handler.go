@@ -127,7 +127,10 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	org, _ := repo.GetOrgaByID(orgID)
+	org, err := repo.GetOrgaByID(orgID)
+ 	if err != nil {
+ 		org.Name = "Unknown organization"
+ 	}
 
 	event := ws.WSEvent{
 		Event:   "MEMBER_ADDED",
@@ -240,9 +243,10 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 	var targetUser models.User
-	_ = repo.GetUserByID(userID, &targetUser)
+	if err := repo.GetUserByID(userID, &targetUser); err != nil { targetUser.Email = "unknown" }
 
-	org, _ := repo.GetOrgaByID(orgID)
+	org, err := repo.GetOrgaByID(orgID)
+ 	if err != nil { org.Name = "Unknown organization" }
 
 	event := ws.WSEvent{
 		Event:   "ROLE_UPDATED",
@@ -263,6 +267,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		Message: "You role has changed to " + body.Role + " in organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"org_id": orgID.String(),
+			"role":    body.Role,
 		},
 	}
 
@@ -327,9 +332,10 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	var targetUser models.User
-	_ = repo.GetUserByID(userID, &targetUser)
+	if err := repo.GetUserByID(userID, &targetUser); err != nil { targetUser.Email = "unknown" }
 
-	org, _ := repo.GetOrgaByID(orgID)
+	org, err := repo.GetOrgaByID(orgID)
+ 	if err != nil { org.Name = "Unknown organization" }
 
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
@@ -399,9 +405,10 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	}
 
 	var targetUser models.User
-	_ = repo.GetUserByID(userID, &targetUser)
+	if err := repo.GetUserByID(userID, &targetUser); err != nil { targetUser.Email = "unknown" }
 
-	org, _ := repo.GetOrgaByID(orgID)
+	org, err := repo.GetOrgaByID(orgID)
+ 	if err != nil { org.Name = "Unknown organization" }
 
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
