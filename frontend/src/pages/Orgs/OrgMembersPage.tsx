@@ -291,7 +291,6 @@ export default function OrgMembersPage() {
       }
   
       if (isRemovingMyself) {
-        addMessage("You have successfully left the organization", "success");
         setShowRemoveModal(false);
         setMemberToRemove(null);
         navigate("/organizations");
