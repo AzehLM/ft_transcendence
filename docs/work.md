@@ -1,31 +1,30 @@
 # ostrom - Architecture Zero-Knowledge
 
-Stack : React (front) / Go + GORM (back) / PostgreSQL / Redis / MinIO
+Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
-authash == "Argon2id Stocker en db"
-
-Les JWT sont generes uniquement au register et au login. Toutes les autres requetes envoient le Access JWT dans le header `Authorization: Bearer ...`. Quand il expire, le client fait `POST /api/auth/refresh` avec le Refresh JWT (cookie HttpOnly) pour en obtenir un nouveau. C'est tout.
+* **AuthHash Strategy:** Stored securely using the `Argon2id` password hashing algorithm.
+* **JWT Architecture:** Generated exclusively during register and login sequences. Sub-sequent HTTP requests transmit the Access JWT via the `Authorization: Bearer <token>` header. Upon expiration, the client reaches out to `POST /api/auth/refresh` using the HttpOnly `refresh_token` cookie to obtain a fresh pair.
 
 ---
 
-## 1. Register
+## 1. User Registration Flow
 
-1. User clique "Register"
-2. Coté client (Web Crypto) :
-   - Derive la KEK depuis le mdp (PBKDF2 + salt random)
-   - Genere une paire RSA (pub/priv)
-   - Chiffre la privkey avec la KEK (AES-GCM) -> EncryptedPrivKey + IV
-   - Calcule AuthHash = HMAC-SHA256(KEK, "ft_box_auth")
-3. `POST /api/auth/register` -> envoie email, salt, AuthHash, pubkey, EncryptedPrivKey, IV
-   - Le serveur voit jamais le mdp ni la KEK (zero-knowledge)
-4. Backend Go :
-   - Hash le AuthHash avec Argon2id
-   - Stocke tout en DB (transaction)
-   - Genere Access JWT (body JSON) + Refresh JWT (cookie HttpOnly)
-   - Repond 201 Created
-5. React redirige `/dashboard`
-6. Ouvre la websocket `wss://api.../ws` avec l'Access JWT
-7. Backend ajoute la connexion au pool + ecoute le broker Redis pour ce user
+1. **Trigger:** The user submits the validated registration form (Email, Password length $\ge$ 8, matching confirmations).
+2. **Client-Side Processing (Web Crypto API):**
+   * Cryptographic salts are generated randomly via `crypto.getRandomValues()`.
+   * Derives a symmetric Master Key (`KEK`) using **PBKDF2**.
+   * Generates an asymmetric RSA KeyPair (`Org_Pub_Key` / `Org_Priv_Key`).
+   * Encrypts ("wraps") the RSA private key using the Master Key via **AES-GCM**.
+   * Computes an `auth_hash` using **HMAC-SHA256** over the Master Key.
+3. **API Request:** `POST /api/auth/register` sends the `email`, `salt`, `auth_hash`, `public_key`, `encrypted_private_key`, and `iv` (all sanitized and mapped as Base64 strings).
+   * **Zero-Knowledge Guarantee:** The plain text password and the intermediate Master Key never leave the user's browser context.
+4. **Backend Processing (Go / Fiber & GORM):**
+   * The server runs the incoming `auth_hash` string through **Argon2id**.
+   * Commits the new user entity and cryptographic parameters securely inside a single PostgreSQL transaction.
+   * Issues an Access JWT (JSON response body) and sets an HttpOnly Refresh JWT cookie.
+5. **UI State Transition:** React captures the `access_token`, persists it locally in `localStorage`, and triggers the local 2FA setup wizard (`setShowTwoFAPrompt(true)`).
+6. **Real-time Gateway Integration:** Upon completing the initial session validation, the client bridges a WebSocket connection to `wss://api.../ws` backed by the Access JWT.
+7. **Broker Routing:** The Go backend authenticates the handshake, registers the stream into the active connection pool, and initiates an asynchronous event loop monitoring the Redis Pub/Sub broker for that explicit user pointer.
 
 ![Logo](images/project-register.webp)
 

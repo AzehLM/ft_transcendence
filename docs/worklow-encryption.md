@@ -2,25 +2,60 @@
 
 ## Phases
 
-### Phase 1 : L'Inscription
+### Phase 1: User Registration Cryptographic Pipeline
 
-    Génération de l'entropie : L'utilisateur tape son mot de passe. React utilise crypto.getRandomValues() pour créer un nouveau Salt_1 unique (ex: 16 ou 32 bytes).
 
-    Dérivation (KDF) : React passe le Mot de Passe et le Salt_1 dans PBKDF2.
+```
 
-        Résultat : La Master Key (ou KEK - Key Encryption Key).
+[React Client: Form Submission]
+├── 1. Generate Entropy (Salt) ──> crypto.getRandomValues()
+├── 2. Key Derivation Function ──> PBKDF2(Password, Salt) ──> Master Key (KEK)
+├── 3. Asymmetric Key Generation ──> RSA-OAEP 4096-bit KeyPair
+├── 4. Private Key Wrapping ──> AES-GCM-256(PrivKey, MasterKey)
+├── 5. Proof of Knowledge ──> HMAC-SHA256(MasterKey, "ft_box_auth") ──> AuthHash
+└── 6. Base64 Serialization & HTTP POST ──> [Go Backend]
 
-    Paires de Clés : React génère la paire asymétrique (Clé Publique / Clé Privée RSA-OAEP 4096-bit).
+```
 
-    Enveloppement (Key Wrapping) : React utilise la Master Key pour chiffrer la Clé Privée (via AES-GCM).
+#### 1. Entropy Generation & Input Validation
+The UI layer guarantees data sanitization (strict structural regex validation on emails, minimum password complexity constraint of 8 characters, and exact matching validation). Once verified, the execution lifecycle passes the inputs to `generateRegistrationData(email, password)`:
+* The client invokes `crypto.getRandomValues()` to seed a high-entropy, unique byte matrix: `Salt_1` (16 or 32 bytes).
 
-        Résultat : Encrypted_Private_Key.
+#### 2. Key Derivation Function (KDF)
+To anchor the cryptographic chain, the plain text password and `Salt_1` are passed through a client-side **PBKDF2** layer. This structural loop outputs a highly uniform, computationally difficult symmetric bitstream known as the **Master Key** (or *Key Encryption Key* - `KEK`).
 
-    Génération du AuthHash : Pour prouver au serveur qu'on connaît le mot de passe sans l'envoyer, React dérive la Master Key une seconde fois : AuthHash = HMAC-SHA256(Master_Key, "auth_string").
+#### 3. Asymmetric Key Pair Generation
+The Web Crypto engine provisions a brand new identity primitive for the user's local session:
+* An asymmetric **RSA-OAEP 4096-bit KeyPair** containing both a non-sensitive `public_key` and a critical `private_key`.
 
-    Sauvegarde Backend : React envoie à l'API Go (POST /register) : le Salt_1 (en clair), la Public_Key (en clair), la Encrypted_Private_Key, et le AuthHash.
+#### 4. Cryptographic Envelope Creation (Key Wrapping)
+To allow cross-device recovery without breaking the zero-knowledge pattern, the client performs symmetric envelope nesting:
+$$\text{encrypted\_private\_key} = \text{Encrypt}_{\text{AES-GCM}}(\text{keyPair.privateKey}, \text{masterKey})$$
+This outputs the wrapped binary block `encrypted_private_key` along with its secure Initialization Vector (`iv`).
 
-        Action côté Go : L'API hache le AuthHash (avec bcrypt ou Argon2id) et sauvegarde l'utilisateur dans PostgreSQL.
+#### 5. Zero-Knowledge Proof Generation (AuthHash)
+The server needs to verify the user's identity during future login sequences without ever seeing the password or the master encryption key. The client generates an independent proof by deriving the Master Key a second time:
+$$\text{AuthHash} = \text{HMAC-SHA256}(\text{masterKey}, \text{"ft\_box\_auth"})$$
+
+#### 6. Transport Serialization & Database Commit
+All generated structural binary primitives (`Uint8Array` / `ArrayBuffer`) are safely encoded into Base64 strings to guarantee network integrity across HTTP transport blocks. The client payload is mapped and dispatched:
+
+```json
+{
+  "email": "user@ftbox.io",
+  "salt": "<Base64_Salt_1>",
+  "auth_hash": "<Base64_AuthHash>",
+  "public_key": "<Base64_Public_Key>",
+  "encrypted_private_key": "<Base64_Encrypted_Private_Key>",
+  "iv": "<Base64_iv>"
+}
+
+```
+
+* **Backend Hashing Layer:** Upon receiving the payload via `POST /api/auth/register`, the Go/Fiber framework applies a heavy **Argon2id** password-hashing calculation to the incoming `auth_hash` string, creating a non-reversible signature before committing the rows to PostgreSQL.
+* **Session Initialization:** The user record is created, JWT artifacts are provisioned, and the frontend state engine contextually pauses at the 2FA onboarding screen (`showTwoFAPrompt: true`) before authorizing dashboard mount procedures.
+
+
 
 
 ![Logo](images/inscription.webp)
