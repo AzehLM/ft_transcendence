@@ -88,7 +88,7 @@ func (p *EventPublisher) PublishMemberRemoved(ctx context.Context, userID uuid.U
 		event := WSEvent{
 			Event:   "MEMBER_REMOVED",
 			OrgID:   orgID,
-			Message: "A member [" + userEmail + "] has left the organization [" + orgName + "] - (account deleted)",
+			Message: userEmail + " has left the organization [" + orgName + "] - (account deleted)",
 			Data: map[string]interface{}{
 				"user_id": userID.String(),
 			},
@@ -120,7 +120,7 @@ func (p *EventPublisher) PublishRoleUpdated(ctx context.Context, orgID string, u
 	event := WSEvent{
 		Event:   "ROLE_UPDATED",
 		OrgID:   orgID,
-		Message: "A member's role [" + promotedEmail + "] has been updated to " + role + " in organization [" + orgName + "]",
+		Message: promotedEmail + "'s role has been updated to " + role + " in organization [" + orgName + "]",
 		Data: map[string]interface{}{
 			"user_id": userID.String(),
 			"role":    role,

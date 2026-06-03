@@ -248,7 +248,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	event := ws.WSEvent{
 		Event:   "ROLE_UPDATED",
 		OrgID:   orgID.String(),
-		Message: "A member's role [" + targetUser.Email + "] has been updated to " + body.Role + " in organization [" + org.Name + "]",
+		Message: targetUser.Email + "'s role has been updated to " + body.Role + " in organization [" + org.Name + "]",
 		Data: fiber.Map{
 			"user_id": userID.String(),
 			"role":    body.Role,
@@ -335,7 +335,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
-		Message: "A member [" + targetUser.Email + "] has left the organization [" + org.Name + "]",
+		Message: targetUser.Email + " has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
 	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
@@ -407,7 +407,7 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	orgaEvent := ws.WSEvent{
 		Event:   "MEMBER_REMOVED",
 		OrgID:   orgID.String(),
-		Message: "A member [" + targetUser.Email + "] has left the organization [" + org.Name + "]",
+		Message: targetUser.Email + " has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
 	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
