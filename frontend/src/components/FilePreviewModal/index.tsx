@@ -42,7 +42,7 @@ const getFileIconAndColor = (fileName: string) => {
     if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
         return { Icon: FileArchive, color: "#f59e0b" };
     }
-    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml'].includes(ext)) {
+    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'sh', 'yaml', 'yml'].includes(ext)) {
         return { Icon: FileCode, color: "#06b6d4" };
     }
     if (['txt', 'md', 'rtf'].includes(ext)) {

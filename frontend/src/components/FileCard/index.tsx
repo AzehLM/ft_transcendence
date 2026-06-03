@@ -73,7 +73,7 @@ const getFileIconAndColor = (fileName: string) => {
             bg: "rgba(245, 158, 11, 0.1)"
         };
     }
-    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml'].includes(ext)) {
+    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'sh', 'yaml', 'yml'].includes(ext)) {
         return {
             Icon: FileCode,
             color: "#06b6d4",

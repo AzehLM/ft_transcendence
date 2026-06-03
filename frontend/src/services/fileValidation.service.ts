@@ -56,7 +56,7 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
         if (!detectedMime || !Object.keys(ALLOWED_MIME_TYPES).includes(detectedMime)) {
             return {
                 isValid: false,
-                error: `Type de fichier non autorisé ou corrompu : ${detectedMime || 'Inconnu'}`
+                error: `Unauthorized or corrupted file type: ${detectedMime || 'Unknown'}`
             };
         }
 
@@ -65,14 +65,14 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
         if (extension && !validExtensions.includes(extension)) {
              return {
                 isValid: false,
-                error: `L'extension .${extension} ne correspond pas au contenu du fichier (${detectedMime}).`
+                error: `The .${extension} extension does not match the file content (${detectedMime}).`
             };
         }
 
     } catch (err) {
         return {
             isValid: false,
-            error: "Erreur lors de l'analyse du contenu du fichier."
+            error: "Error while analyzing the file content."
         };
     }
 
@@ -89,34 +89,34 @@ export const formatFileSize = (bytes: number): string => {
 
 export const getFileTypeLabel = (mimeType: string): string => {
     const typeMap: Record<string, string> = {
-        'image/jpeg': 'Image JPEG',
-        'image/png': 'Image PNG',
-        'image/gif': 'Image GIF',
-        'image/webp': 'Image WebP',
-        'image/bmp': 'Image BMP',
-        'image/svg+xml': 'Image SVG',
-        'video/mp4': 'Vidéo MP4',
-        'video/webm': 'Vidéo WebM',
-        'video/mpeg': 'Vidéo MPEG',
-        'video/quicktime': 'Vidéo QuickTime',
-        'video/x-msvideo': 'Vidéo AVI',
-        'application/pdf': 'Document PDF',
-        'application/rtf': 'Document RTF',
-        'text/plain': 'Fichier texte',
-        'text/csv': 'Fichier CSV',
-        'application/msword': 'Document Word',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Document Word',
-        'application/vnd.ms-excel': 'Classeur Excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Classeur Excel',
-        'application/vnd.ms-powerpoint': 'Présentation PowerPoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'Présentation PowerPoint',
-        'application/zip': 'Archive ZIP',
-        'application/x-rar-compressed': 'Archive RAR',
-        'application/x-7z-compressed': 'Archive 7z',
-        'application/json': 'Fichier JSON',
+        'image/jpeg': ' JPEG Image',
+        'image/png': 'PNG Image',
+        'image/gif': 'GIF Image',
+        'image/webp': 'WebP Image',
+        'image/bmp': 'BMP Image',
+        'image/svg+xml': 'SVG Image',
+        'video/mp4': 'MP4 Video',
+        'video/webm': 'WebM Video',
+        'video/mpeg': 'MPEG Video',
+        'video/quicktime': 'QuickTime Video',
+        'video/x-msvideo': 'AVI Video',
+        'application/pdf': 'PDF Document',
+        'application/rtf': 'RTF Document',
+        'text/plain': 'Text File',
+        'text/csv': 'CSV File',
+        'application/msword': 'Word Document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+        'application/vnd.ms-excel': 'Excel Folder',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Folder',
+        'application/vnd.ms-powerpoint': 'PowerPoint Presentation',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint Presentation',
+        'application/zip': 'ZIP Archive',
+        'application/x-rar-compressed': 'RAR Archive',
+        'application/x-7z-compressed': '7z Archive',
+        'application/json': 'JSON File',
     };
 
-    return typeMap[mimeType] || mimeType || 'Fichier';
+    return typeMap[mimeType] || mimeType || 'File';
 };
 
 export const getAcceptAttribute = (): string => {
