@@ -9,22 +9,16 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
 ## 1. User Registration Flow
 
-1. **Trigger:** The user submits the validated registration form (Email, Password length $\ge$ 8, matching confirmations).
-2. **Client-Side Processing (Web Crypto API):**
-   * Cryptographic salts are generated randomly via `crypto.getRandomValues()`.
-   * Derives a symmetric Master Key (`KEK`) using **PBKDF2**.
-   * Generates an asymmetric RSA KeyPair (`Org_Pub_Key` / `Org_Priv_Key`).
-   * Encrypts ("wraps") the RSA private key using the Master Key via **AES-GCM**.
-   * Computes an `auth_hash` using **HMAC-SHA256** over the Master Key.
-3. **API Request:** `POST /api/auth/register` sends the `email`, `salt`, `auth_hash`, `public_key`, `encrypted_private_key`, and `iv` (all sanitized and mapped as Base64 strings).
-   * **Zero-Knowledge Guarantee:** The plain text password and the intermediate Master Key never leave the user's browser context.
-4. **Backend Processing (Go / Fiber & GORM):**
-   * The server runs the incoming `auth_hash` string through **Argon2id**.
-   * Commits the new user entity and cryptographic parameters securely inside a single PostgreSQL transaction.
-   * Issues an Access JWT (JSON response body) and sets an HttpOnly Refresh JWT cookie.
-5. **UI State Transition:** React captures the `access_token`, persists it locally in `localStorage`, and triggers the local 2FA setup wizard (`setShowTwoFAPrompt(true)`).
-6. **Real-time Gateway Integration:** Upon completing the initial session validation, the client bridges a WebSocket connection to `wss://api.../ws` backed by the Access JWT.
-7. **Broker Routing:** The Go backend authenticates the handshake, registers the stream into the active connection pool, and initiates an asynchronous event loop monitoring the Redis Pub/Sub broker for that explicit user pointer.
+1. **Trigger:** The user submits their verified email and password combo.
+2. **Client-Side Generation (`generateRegistrationData`):**
+   * Generates a random 16-byte cryptographically secure salt string via `crypto.getRandomValues()`.
+   * Derives a symmetric **AES-GCM 256-bit Master Key** via **PBKDF2** (100,000 iterations, SHA-256).
+   * Generates a secure asymmetric **RSA-OAEP 4096-bit identity KeyPair**.
+   * Exports and encrypts ("wraps") the user's private key via **AES-GCM** using the derived Master Key.
+   * Signs the hardcoded string `"auth_string"` with an **HMAC-SHA256** key built directly from the Master Key bytes to produce the `auth_hash`.
+3. **API Payload:** Sends a `POST /api/auth/register` containing: `email`, `salt`, `auth_hash`, `public_key`, `encrypted_private_key`, and `iv` (all Base64 encoded).
+4. **Backend Processing:** Go intercepts the request, hashes the `auth_hash` string via Argon2id, commits the transaction to Postgres, and sets the secure authentication cookies.
+5. **Onboarding UI State:** React intercepts the successful response, registers the `access_token` into `localStorage`, and updates the DOM to display the multi-factor authentication (2FA) prompt.
 
 ![Logo](images/project-register.webp)
 
@@ -32,40 +26,20 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
 ## 2. User Login Flow
 
-### Phase 1 - Salt Retrieval
-* **Trigger:** User enters their email and password.
-* **Request:** `GET /api/auth/salt?email=student@42lyon.fr`
-* **Response:** Backend returns the user's specific `salt` (Base64-encoded) if the account exists.
-
-### Phase 2 - Client-Side Computation
-* **Key Derivation:** The client derives the Master Key (`KEK`) using **PBKDF2** over the password and retrieved salt.
-* **Proof Generation:** Computes `AuthHash = HMAC-SHA256(KEK, "ft_box_auth")`.
-
-### Phase 3 - Authentication Request
-* **Request:** `POST /api/auth/login` with payload:
-  ```json
-  { 
-    "email": "student@42lyon.fr", 
-    "auth_hash": "<Base64_AuthHash>" 
-  }
-* **Backend Processing (Go / Fiber):**
-   * Fetches the user's registered **Argon2id** hash from PostgreSQL.
-   * Verifies the incoming `auth_hash` against the stored hash.
-   * If valid, generates the Access JWT (JSON response) and the Refresh JWT (HttpOnly cookie).
-   * Retrieves the user's `encrypted_private_key` and `iv` from the database.
-
-
-* **Response:** Returns `200 OK` containing the tokens, `encrypted_private_key`, and `iv`.
-
-### Phase 4 - Local Decryption & Session Init
-
-* **Decryption:** The client utilizes the volatile `KEK` and the received `iv` to decrypt the private RSA key via **AES-GCM**.
-* **Storage:** The decrypted RSA KeyPair is securely stored `IndexedDB` for runtime cryptographic operations. The JWT is stored in local storage and the refreah token in cookies.
-* **Memory Sanitization:** The `KEK` is instantly overwritten and cleared from the browser's RAM.
-* **Navigation:** The client opens the WebSocket stream and routes the session context to the `/dashboard`.
+1. **Phase 1 - Salt Query:** React pushes a `POST /api/auth/salt` containing the input email address. If the database profile exists, Go responds with the user's recorded Base64 `salt`.
+2. **Phase 2 - Local Remake:** The browser takes the user's input password and the server's returned `salt` to reconstruct the **Master Key** using **PBKDF2**.
+3. **Phase 3 - Challenge Dispatch:** React creates an authentication signature by signing the static `"auth_string"` string using an HMAC key built from the reconstructed Master Key. It issues a `POST /api/auth/login` carrying the `auth_hash`.
+4. **Phase 4 - Identity Extraction & Local Storage:**
+   * Go validates the matching signature block against the Argon2id store.
+   * On success, the API passes back the session tokens along with the user's `encrypted_private_key` and its original `iv`.
+   * React passes these parameters to `unwrapPrivateKey`, decrypting the underlying asymmetric asset via **AES-GCM**.
+   * The decrypted plaintext `privateKey` and `publicKey` objects are committed to localized state storage via **IndexedDB** (`storePrivateKey`).
+   * The core Master Key variable is contextually purged from active volatile RAM scopes to enforce runtime isolation.
 
 
 ![Logo](images/project-login.webp)
+
+
 ---
 
 ## 3. Organization Creation

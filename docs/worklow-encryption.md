@@ -2,105 +2,80 @@
 
 ## Phases
 
-### Phase 1: User Registration Cryptographic Pipeline
+### Phase 1: Registration Pipeline Cryptographic Blueprint
 
 
 ```
 
-[React Client: Form Submission]
-├── 1. Generate Entropy (Salt) ──> crypto.getRandomValues()
-├── 2. Key Derivation Function ──> PBKDF2(Password, Salt) ──> Master Key (KEK)
-├── 3. Asymmetric Key Generation ──> RSA-OAEP 4096-bit KeyPair
-├── 4. Private Key Wrapping ──> AES-GCM-256(PrivKey, MasterKey)
-├── 5. Proof of Knowledge ──> HMAC-SHA256(MasterKey, "ft_box_auth") ──> AuthHash
-└── 6. Base64 Serialization & HTTP POST ──> [Go Backend]
+[Form Submission]
+├── 1. crypto.getRandomValues() ──> 16-Byte Cryptographic Salt
+├── 2. PBKDF2 (100k Iterations, SHA-256) ──> Master Key (AES-GCM 256-bit)
+├── 3. crypto.subtle.generateKey() ──> Asymmetric RSA-OAEP 4096-bit KeyPair
+├── 4. crypto.subtle.encrypt(AES-GCM) ──> Wrapped User Private Key + 12-Byte IV
+├── 5. crypto.subtle.sign(HMAC-SHA256) over "auth_string" ──> AuthHash Proof
+└── 6. Base64 Encoding (Chunked 8KB Matrix) ──> POST /api/auth/register
 
 ```
 
-#### 1. Entropy Generation & Input Validation
-The UI layer guarantees data sanitization (strict structural regex validation on emails, minimum password complexity constraint of 8 characters, and exact matching validation). Once verified, the execution lifecycle passes the inputs to `generateRegistrationData(email, password)`:
-* The client invokes `crypto.getRandomValues()` to seed a high-entropy, unique byte matrix: `Salt_1` (16 or 32 bytes).
+#### 1. Low-Level Client Primitives Seeding
+Upon triggering `generateRegistrationData(email, password)`, the local browser environment isolates state variables to prevent plain text extraction:
+* **Salt Allocation:** A deterministic `Uint8Array` byte structure of 16 bytes (128 bits) is created and mutated via `crypto.getRandomValues(salt)`, filling the vector index placeholders with uniform entropy bytes ranging from 0 to 255.
+* **Key Derivation (KDF):** The plain text password is serialized to binary data via a `TextEncoder` abstraction. The engine runs a secure structural key derivation iteration:
+$$\text{Master\_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
+The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 256-bit** implementation layer.
 
-#### 2. Key Derivation Function (KDF)
-To anchor the cryptographic chain, the plain text password and `Salt_1` are passed through a client-side **PBKDF2** layer. This structural loop outputs a highly uniform, computationally difficult symmetric bitstream known as the **Master Key** (or *Key Encryption Key* - `KEK`).
+#### 2. KeyPair Allocation & Relational Wrapping
+* **Asymmetric Infrastructure:** React calls `generateRSAKeyPair()` to allocate an asymmetric **RSA-OAEP 4096-bit** relationship constraint using the standard public exponent parameters ($65537$, encoded as `[1, 0, 1]`).
+* **Symmetric Envelope Encapsulation:** To isolate the critical asymmetric asset before network transport, `wrapPrivateKey` is invoked:
+  1. The asymmetric asset is marshaled into raw binary representation using the standard export format `"pkcs8"`.
+  2. A random 12-byte (96 bits) hardware-seeded Initialization Vector (`iv`) is generated.
+  3. The raw private key byte-stream is encrypted symmetrically via **AES-GCM**:
+$$\text{encryptedPrivateKey} = \text{Encrypt}_{\text{AES-GCM}}(\text{PrivateKey}_{\text{pkcs8}}, \text{Master\_Key}, \text{iv})$$
 
-#### 3. Asymmetric Key Pair Generation
-The Web Crypto engine provisions a brand new identity primitive for the user's local session:
-* An asymmetric **RSA-OAEP 4096-bit KeyPair** containing both a non-sensitive `public_key` and a critical `private_key`.
+#### 3. Mathematical Proof Generation (The AuthHash)
+The client must provide structural verification of password authenticity without transferring raw key patterns over the TLS barrier. The client triggers `generateAuthHash(masterKey)`:
+1. The derived Master Key is exported to a native binary payload (`"raw"` specification).
+2. The browser mounts this raw buffer directly into a transient signing structure using **HMAC** linked with a **SHA-256** hash constraint.
+3. The structural cryptographic context signs a fixed validation constant message: `"auth_string"` via `crypto.subtle.sign`.
+$$\text{AuthHash} = \text{HMAC-SHA256}(\text{Master\_Key}_{\text{raw}}, \text{"auth\_string"})$$
 
-#### 4. Cryptographic Envelope Creation (Key Wrapping)
-To allow cross-device recovery without breaking the zero-knowledge pattern, the client performs symmetric envelope nesting:
-$$\text{encrypted\_private\_key} = \text{Encrypt}_{\text{AES-GCM}}(\text{keyPair.privateKey}, \text{masterKey})$$
-This outputs the wrapped binary block `encrypted_private_key` along with its secure Initialization Vector (`iv`).
+#### 4. Transport Mapping & Serialization
+To guarantee that high-entropy binary byte streams cross the application boundary without character-set corruption, all blocks are split into chunked arrays ($8\text{ KB}$ segments) and marshaled via `uint8ArrayToBase64` using browser-native `btoa` routines before firing the underlying JSON `POST /api/auth/register`.
 
-#### 5. Zero-Knowledge Proof Generation (AuthHash)
-The server needs to verify the user's identity during future login sequences without ever seeing the password or the master encryption key. The client generates an independent proof by deriving the Master Key a second time:
-$$\text{AuthHash} = \text{HMAC-SHA256}(\text{masterKey}, \text{"salt"})$$
 
-#### 6. Transport Serialization & Database Commit
-All generated structural binary primitives (`Uint8Array` / `ArrayBuffer`) are safely encoded into Base64 strings to guarantee network integrity across HTTP transport blocks. The client payload is mapped and dispatched:
-
-```json
-{
-  "email": "user@ftbox.io",
-  "salt": "<Base64_Salt_1>",
-  "auth_hash": "<Base64_AuthHash>",
-  "public_key": "<Base64_Public_Key>",
-  "encrypted_private_key": "<Base64_Encrypted_Private_Key>",
-  "iv": "<Base64_iv>"
-}
-
-```
-
-* **Backend Hashing Layer:** Upon receiving the payload via `POST /api/auth/register`, the Go/Fiber framework applies a heavy **Argon2id** password-hashing calculation to the incoming `auth_hash` string, creating a non-reversible signature before committing the rows to PostgreSQL.
-* **Session Initialization:** The user record is created, JWT artifacts are provisioned, and the frontend state engine contextually pauses at the 2FA onboarding screen (`showTwoFAPrompt: true`) before authorizing dashboard mount procedures.
 
 
 
 
 ![Logo](images/inscription.webp)
 
-        
-### Phase 2: User Login & Private Key Reconstruction
+---
 
-**Initial State:** The browser session has been closed. The client-side volatile memory (RAM) is completely empty. The client stores absolutely no cryptographic keys locally.
+### Phase 2: Login & Volatile Asset Invalidation
 
-```
-[React Client] ──> 1. Request Salt(email) ──> [Go Backend] ──> [PostgreSQL]
-[React Client] <── 2. Return Salt_1 (Base64) <── [Go Backend] <──┘
-  │
-  ├── 3. Re-calculate Master Key: PBKDF2(Password, Salt_1)
-  ├── 4. Re-calculate AuthHash: HMAC-SHA256(Master_Key, "ft_box_auth")
-  │
-[React Client] ──> 5. POST /api/auth/login (AuthHash) ──> [Go Backend]
-[React Client] <── 6. Return Access JWT + Refresh Cookie + Encrypted_User_Priv_Key + IV <── [Go Backend]
-  │
-  └── 7. Decrypt User Assets: AES-GCM(Encrypted_User_Priv_Key, Master_Key)
+**Prerequisite State Constraint:** The application window has been completely recycled. The operational volatile state engine (RAM) contains zero temporary variables. The client context holds no resident operational secret vectors.
 
-```
+#### 1. Asynchronous Salt Retrieval Handshake
+The user populates input text vectors inside the React DOM context interface.
+* The frontend initializes a network query containing the plain text email identifier payload: `POST /api/auth/salt`.
+* **Database Interception:** The Go API processes the input key index, queries PostgreSQL, and extracts the record's raw `salt` block. If the identity exists, it reflects the block to the user context as an opaque Base64 response parameter.
 
-#### 1. Identity Pre-flight & Salt Retrieval
+#### 2. Dynamic Symmetric Reconstruction
+React ingests the Base64 block string, processes it via `base64ToUint8Array`, and triggers the underlying client pipeline directly matching the registration sequence:
+1. Re-executes `deriveMasterKey` with the input password and the recovered server-side salt payload, generating an identical local instance of the **Master Key** structure.
+2. Re-runs `generateAuthHash(masterKey)`, signing the explicit static constant `"auth_string"` to output a fresh verification proof signature.
+3. Fires a `POST /api/auth/login` containing the `auth_hash` string block.
 
-* **Initiation:** The user inputs their authenticated email and plaintext password into the React login form.
-* **Salt Fetching:** Before executing any cryptographic loops, the frontend dispatches a handshake query to the Go/Fiber API: `"Give me the Salt_1 associated with this email address."`
-* **Database Selection:** The Go backend queries the PostgreSQL `users` table. If the email exists, it reads and returns the high-entropy `Salt_1` that was generated during the user's initial registration phase.
+#### 3. Zero-Knowledge Clearance & Asset Unwrapping
+The Go API validates the matching proof payload against the non-reversible database record signature processed under **Argon2id** constraints. Upon success, the session cookies are set, and the user's specific relational payload variables (`encrypted_private_key`, `iv`) are passed back inside the `200 OK` header block.
 
-#### 2. Local Master Key Reconstruction (Client-Side KDF)
-
-* **Re-Computation:** Locally within the browser context, the React application inputs the newly typed password and the retrieved `Salt_1` back into the **PBKDF2** Key Derivation Function.
-* **Mathematical Alignment:** Because both cryptographic inputs are strictly identical to the ones utilized during registration, the mathematical output yields the exact same symmetric **Master Key** (`KEK`).
-
-#### 3. Challenge Verification & Payload Release
-
-* **Proof Generation:** React recalculates the AuthHash based on the reconstructed Master Key a second time to recreate the authentication signature.
-* **API Validation:** The client transmits this token via a `POST /api/auth/login` request. The Go API validates the matching proof against the database **Argon2id** hash record.
-* **Asset Release:** Upon successful validation, the backend generates the **Access JWT** (sent in the JSON response), sets the **Refresh JWT** as an HTTP-only cookie, and releases the user's encrypted personal credentials: `Encrypted_User_Priv_Key` and its matching `iv`.
-
-#### 4. Local Asymmetric Decryption
-
-* **Envelope Decryption:** React leverages the freshly re-calculated Master Key and the server-provided `iv` to decrypt their personal private key locally via **AES-GCM**:
-
-$$\text{User\_Priv\_Key} = \text{Decrypt}_{\text{AES-GCM}}(\text{Encrypted\_User\_Priv\_Key}, \text{Master\_Key})$$
+The React engine captures the payload response and unrolls the envelope using `unwrapPrivateKey`:
+1. The network strings are downsampled to basic byte-stream matrices via `base64ToUint8Array`.
+2. The runtime invokes `crypto.subtle.decrypt` using **AES-GCM** backed by the freshly reconstructed local Master Key context to resolve the plain text `pkcs8` binary block:
+$$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivateKey}, \text{Master\_Key}, \text{iv})$$
+3. The resulting binary block is parsed and mounted into a native asymmetric asset primitive through `crypto.subtle.importKey` under **RSA-OAEP** rules.
+4. **Persistent Secure Seeding:** The fully unencrypted operational asset is passed to `storePrivateKey(privateKey)`, committing it directly to **IndexedDB** (`idb.service`) to handle runtime file key decryption operations asynchronously.
+5. **Memory Sanitization:** The transient Master Key structural parameters are discarded from the browser's active scope layer, rendering client state immune to memory scraping vectors.
 
 
 ![Logo](images/login.webp)
