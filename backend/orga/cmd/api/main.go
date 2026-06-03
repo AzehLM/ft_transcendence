@@ -120,7 +120,7 @@ func main() {
 			return fiber.ErrUpgradeRequired
 		},
 		websocket.New(wsHub.GlobalWSHandler, websocket.Config{
-			Origins: []string{"*"}, //TODO: set les url who can create ws ? maybe ex : "https://localhost:8080", "htpps://ostrom.cloud", "https://z1r3p2:8080" but need to change z1r3p2 if the host is dif
+			Origins: []string{"*"},
 		}),
 	)
 	// Run
