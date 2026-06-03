@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Files, Network, ChevronDown, Users, Settings, Building2 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
 import { fetchWithRefresh } from "../../services/api.service";
@@ -13,6 +13,7 @@ interface Org {
 
 export function MenuSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [orgsOpen, setOrgsOpen] = useState(false);
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<Org[]>([]);
@@ -42,7 +43,7 @@ export function MenuSidebar() {
       <button
         type="button"
         className={`${styles.orgsToggle} ${isOrgRouteActive ? styles.orgsToggleActive : ""}`}
-        onClick={() => setOrgsOpen(o => !o)}
+        onClick={() => { navigate("/organizations"); setOrgsOpen(true); }}
       >
         <span className={styles.toggleIcon}><Network size={20} /></span>
         <span className={styles.toggleLabel}>Organizations</span>

@@ -168,7 +168,7 @@ export default function OrgFilesPage() {
             <div className={styles.headerRow}>
                 <div className={styles.titleGroup}>
                     <h1>
-                        Organization space
+                        Organization Space
                     </h1>
                     <h2 className={styles.subtitle}>
                         All files and folders
