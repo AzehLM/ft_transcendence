@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import styles from "./Sidebar.module.css";
 
-export function Sidebar({ children }: { children: React.ReactNode }) {
+export function Sidebar({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   return (
     <div className={styles.sidebar}>
       <Link to="/dashboard" className={styles.sidebar__logo}>
@@ -14,6 +14,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       <div className={styles.sidebar__links}>
         {children}
       </div>
+      {footer && <div className={styles.sidebar__footer}>{footer}</div>}
     </div>
   );
 }

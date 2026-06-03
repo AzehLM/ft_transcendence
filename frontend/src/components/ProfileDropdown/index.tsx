@@ -8,6 +8,9 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
     <>
       <div className={styles.overlay} onClick={onClose} />
       <div className={styles.dropdown__menu}>
+        <div className={styles.dropdown__header}>
+          <p className={styles.dropdown__header__email}>Account</p>
+        </div>
         <Link to="/profile" onClick={onClose} className={styles.dropdown__item}>
           Profile
         </Link>

@@ -100,6 +100,25 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
+}
+
+.sidebar__footer {
+    padding: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sidebar__footer .sidebar__button {
+    padding: 8px 10px;
+    opacity: 0.6;
+}
+
+.sidebar__footer .sidebar__button:hover {
+    opacity: 1;
+}
+
+.sidebar__footer .sidebar__button__label {
+    font-size: 13px;
 }
 
 
