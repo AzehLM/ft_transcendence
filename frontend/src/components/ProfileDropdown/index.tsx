@@ -1,8 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { logout } from "../../services/auth.service";
 import styles from "./ProfileDropdown.module.css";
 
 export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handleLogout = async () => {
+    onClose();
+    await logout((path) => navigate(path));
+  };
 
   return (
     <>
@@ -20,6 +28,9 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
         <Link to="/account" onClick={onClose} className={styles.dropdown__item}>
           Account
         </Link>
+        <button onClick={handleLogout} className={`${styles.dropdown__item} ${styles["dropdown__item--danger"]}`}>
+          Log out
+        </button>
       </div>
     </>
   );
