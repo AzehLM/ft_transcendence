@@ -80,9 +80,9 @@ export function MenuSidebar() {
 
               {expandedOrgId === org.id && (
                 <div className={styles.orgSubLinks}>
-                  <SidebarLink to={`/orgs/${org.id}/files`} icon={<Files size={16} />} label="Files" />
-                  <SidebarLink to={`/orgs/${org.id}/members`} icon={<Users size={16} />} label="Members" />
-                  <SidebarLink to={`/orgs/${org.id}/settings`} icon={<Settings size={16} />} label="Settings" />
+                  <SidebarLink to={`/orgs/${org.id}/files`} icon={<Files size={16} />} label="Files" className={styles.subLink} />
+                  <SidebarLink to={`/orgs/${org.id}/members`} icon={<Users size={16} />} label="Members" className={styles.subLink} />
+                  <SidebarLink to={`/orgs/${org.id}/settings`} icon={<Settings size={16} />} label="Settings" className={styles.subLink} />
                 </div>
               )}
             </div>
