@@ -36,12 +36,8 @@ export function MenuSidebar() {
   const isOrgRouteActive =
     location.pathname.startsWith("/orgs/") || location.pathname === "/organizations";
 
-  const settingsFooter = (
-    <SidebarLink to="/account" icon={<Settings size={16} />} label="Settings" />
-  );
-
   return (
-    <Sidebar footer={settingsFooter}>
+    <Sidebar>
       <SidebarLink to="/dashboard" icon={<Files />} label="Personal Space" matchStart />
 
       <button
