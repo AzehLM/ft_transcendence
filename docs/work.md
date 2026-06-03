@@ -1,4 +1,4 @@
-# ft_box - Architecture Zero-Knowledge
+# ostrom - Architecture Zero-Knowledge
 
 Stack : React (front) / Go + GORM (back) / PostgreSQL / Redis / MinIO
 
@@ -89,9 +89,11 @@ Les JWT sont generes uniquement au register et au login. Toutes les autres reque
 
 Cas : l'admin invite Alice dans l'orga.
 
-1. Le client de l'admin demande la PubKey RSA d'Alice au serveur
-2. L'admin dechiffre l'OrgKey (avec sa propre privkey RSA)
-3. L'admin re-chiffre l'OrgKey avec la PubKey d'Alice
+1. Le client de l'admin recuper la clé privée de l'orga et l'AES encrypté
+2. L'admin demande la PubKey RSA d'Alice au serveur
+2. L'admin dechiffre l'OrgKey (decrypt AES avec private key et decrypt org private key avec AES et IV)
+3. L'admin generer une aes et un iv pour l'invité qui serviront a re-chiffre l'OrgKey avec.
+4. L'admin chiffre AES avec la public key du member
 4. `POST /api/v1/orgs/{id}/members` avec ce nouveau blob
 5. Le serveur stocke ce blob dans `enc_org_priv_key` dans la table org_members pour Alice
 6. Quand Alice se connecte, elle recup le blob et le dechiffre avec sa privkey RSA -> OrgKey en clair en RAM
