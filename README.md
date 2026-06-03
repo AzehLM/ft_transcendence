@@ -126,6 +126,13 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 - Victoire Project Manager (PM) / Scrum Master + dev
 - Guillaume Technical Lead / Architect + dev
 
+### pnaessen (Pierrick) - Product Owner (PO): Sets vision and priorities + Developer
+
+As Product Owner, defined the platform's vision and core value proposition (zero-knowledge encrypted cloud storage). Managed feature prioritization and coordinated the team's development roadmap through GitHub Projects and Issues, translating business requirements into actionable technical tasks.
+
+As a developer, owns the backend authentication system (login/register flow, Argon2id verification, JWT/refresh token rotation), WebSocket hub for real-time notifications (both backend and frontend integration), client-side file download and decryption (E2EE), UI/UX oversight and refinement, and static pages. Also implemented rate-limited login and client salt retrieval with user-enumeration protection.
+
+
 ### vicperri (Victoire) - Project Manager  / Scrum Master :  Facilitates team coordination and removes obstacles + Developer
 
 Alongside lbuisson, was responsible for project management and Scrum Master duties, which included organizing team meetings and planning sessions, tracking progress and deadlines, ensuring smooth team communication, and managing risks and blockers throughout the project.
@@ -207,7 +214,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Client salt retrieval with user-enumeration protection** - pnaessen - the `/api/auth/salt` returns a fake salt for non-existent users so attackers cannot probe for valid emails.
 
-- **Refresh-token rotation** - **PIERRICK + QUI ?** - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
+- **Refresh-token rotation** - pnaessen - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
 
 - **Account management** - **LIRE LA SUITE POUR METTRE NOM** - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
 
@@ -226,10 +233,10 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Storage & File Management
 
-- **Client-side file encryption** - **METTRE NOMS** - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
+- **Client-side file encryption** - pnaessen - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
 - **Single-PUT upload** - gueberso - files under 96MB are encrypted in a single chunk and PUT directly to MinIO via a presigned URL
 - **Multipart upload** - gueberso - files above 96MB are split into 32MB plaintext chunks (up to 100 parts, hard cap at 2GB), with parallel PUT (concurrency by 4 chunks) and a deterministic per-chunk IV derived from the base IV + chunk number. Initialisation / finalization and abortion endpoints handle the MinIO multipart lifecycle.
-- **Encrypted download** - **pierrick ou victoire pour les hooks du front ? & gueberso (backend)** - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
+- **Encrypted download** - pnaessen (frontend E2EE) & gueberso (backend) - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
 - **Folder hierarchy** - gueberso - create, rename, move, delete folders. Cyclic detection to prevent moving folder into one of its descendants
 - **File operations** - gueberso **& lbuisson ?**- move between folders, delete (with cascade to MinIO via Redis stream events).
 - **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
@@ -245,9 +252,9 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Real-time & Notifications
 
-- **WebSocket hub** - **pnaessen & ? QUI** - single /ws/notifications endpoint multiplexed per user. Per-user Redis pub/sub channels re-broadcast to connected clients.
-- **Online presence tracking** - **lbuisson ?** - Redis sets track active sessions. Org members see who's online in real time.
-- **Toast + dropdown notifications** - **QUI ? Je commence a avoir la flemme lol** - frontend `NotificationContext` manages connection lifecycle, reconnection backoff, listener registration, unread counts, and toast queue.
+- **WebSocket hub** - pnaessen (backend and frontend integration) & gueberso (Redis implementation) - single /ws/notifications endpoint multiplexed per user. Per-user Redis pub/sub channels re-broadcast to connected clients.
+- **Online presence tracking** - pnaessen - Redis sets track active sessions. Org members see who's online in real time.
+- **Toast + dropdown notifications** - pnaessen + lbuisson - frontend `NotificationContext` manages connection lifecycle, reconnection backoff, listener registration, unread counts, and toast queue.
 - **Cross-service event propagation** - gueberso - Redis Streams with consumer groups guarantee delivery of cleanup events between auth, orga, and storage.
 
 ### Design System & UI
@@ -313,7 +320,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Why**: the plateform shows live notifications and online-presence indicators inside organizations  for a better user experience.
 - **Implementation**: a single `/ws/notification` endpoint. A `Hub`, subscribing to wanted events. Redis pub/sub channels and re-broadcast.
-- **Owner(s)**: pnaessen and gueberso
+- **Owner(s)**: pnaessen (WebSocket backend and frontend integration) and gueberso (Redis infrastructure)
 
 ### **ORM for the database - *Minor***
 
