@@ -66,21 +66,6 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 ![Logo](images/project-login.webp)
 ---
 
-Voici une version traduite en anglais, enrichie avec des termes techniques plus précis, une meilleure structure et des corrections sur la logique cryptographique pour la rendre parfaitement professionnelle et claire (par exemple, la distinction et la cohérence entre `OrgKey`, `Org_Priv_Key` et les paires de clés asymétriques).
-
----
-
-D'accord, je vois beaucoup mieux ! Ton code montre que la logique est en réalité **plus simple et plus propre** que ce qui était décrit au début.
-
-Tu n'as pas trois types de clés (OrgKey, Org_Priv_Key, et une clé AES), tu en as deux :
-
-1. Une **paire de clés asymétriques pour l'organisation** (RSA).
-2. Une **clé AES-GCM temporaire** qui sert uniquement à chiffrer la clé privée de l'org, puis qui est elle-même "wrappée" (chiffrée) par la clé publique du user.
-
-Voici la documentation technique corrigée et parfaitement alignée avec ton implémentation TypeScript (Web Crypto API). J'ai aussi corrigé la section "Invitation" pour qu'elle suive exactement cette même logique.
-
----
-
 ## 3. Organization Creation
 
 1. **Trigger:** User clicks "Create Org" (e.g., `42_Projects`).
@@ -410,11 +395,6 @@ Note : la PubKey RSA change pas, les OrgKeys changent pas. Seul le wrapping de l
 
 ---
 
-Voici la documentation résumée pour ton fichier `work.md` basée sur la logique de ton handler Go (`DeleteUser`).
-
-Le workflow de suppression d'un compte est particulièrement intéressant ici car il gère la cascade complexe de la gouvernance des données (ce qu'on fait des fichiers et des droits d'une organisation quand un membre s'en va).
-
----
 
 ### 15. User Deletion
 
