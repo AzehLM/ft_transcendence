@@ -67,10 +67,10 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 
 	// Get User email before deleting
 	var userEmail string
-    if err := h.DB.Table("users").Where("id = ?", userID).Pluck("email", &userEmail).Error; err != nil {
-        log.Printf("[ERROR] Failed to fetch user email before deletion: %v", err)
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not fetch user info"})
-    }
+ 	if err := h.DB.Table("users").Where("id = ?", userID).Select("email").Scan(&userEmail).Error; err != nil {
+ 		log.Printf("[ERROR] Failed to fetch user email before deletion: %v", err)
+ 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not fetch user info"})
+ 	}
 
 	var orgIDs []string
 	var orgsToDelete []uuid.UUID
