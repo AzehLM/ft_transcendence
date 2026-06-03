@@ -1,3 +1,4 @@
+import { LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../../services/auth.service";
 import styles from "./ProfileDropdown.module.css";
@@ -29,6 +30,7 @@ export function ProfileDropdown({ isOpen, onClose }: { isOpen: boolean; onClose:
           Account
         </Link>
         <button onClick={handleLogout} className={`${styles.dropdown__item} ${styles["dropdown__item--danger"]}`}>
+          <LogOut className={styles.dropdown__item__icon} />
           Log out
         </button>
       </div>
