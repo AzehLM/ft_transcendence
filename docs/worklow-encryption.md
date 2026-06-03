@@ -35,7 +35,7 @@ This outputs the wrapped binary block `encrypted_private_key` along with its sec
 
 #### 5. Zero-Knowledge Proof Generation (AuthHash)
 The server needs to verify the user's identity during future login sequences without ever seeing the password or the master encryption key. The client generates an independent proof by deriving the Master Key a second time:
-$$\text{AuthHash} = \text{HMAC-SHA256}(\text{masterKey}, \text{"ft\_box\_auth"})$$
+$$\text{AuthHash} = \text{HMAC-SHA256}(\text{masterKey}, \text{"salt"})$$
 
 #### 6. Transport Serialization & Database Commit
 All generated structural binary primitives (`Uint8Array` / `ArrayBuffer`) are safely encoded into Base64 strings to guarantee network integrity across HTTP transport blocks. The client payload is mapped and dispatched:
@@ -61,28 +61,56 @@ All generated structural binary primitives (`Uint8Array` / `ArrayBuffer`) are sa
 ![Logo](images/inscription.webp)
 
         
+### Phase 2: User Login & Private Key Reconstruction
 
-### Phase 2 : Le Login
+**Initial State:** The browser session has been closed. The client-side volatile memory (RAM) is completely empty. The client stores absolutely no cryptographic keys locally.
 
-Le navigateur a été fermé. La RAM est vide. Le client ne possède plus aucune clé.
+```
+[React Client] ──> 1. Request Salt(email) ──> [Go Backend] ──> [PostgreSQL]
+[React Client] <── 2. Return Salt_1 (Base64) <── [Go Backend] <──┘
+  │
+  ├── 3. Re-calculate Master Key: PBKDF2(Password, Salt_1)
+  ├── 4. Re-calculate AuthHash: HMAC-SHA256(Master_Key, "ft_box_auth")
+  │
+[React Client] ──> 5. POST /api/auth/login (AuthHash) ──> [Go Backend]
+[React Client] <── 6. Return Access JWT + Refresh Cookie + Encrypted_User_Priv_Key + IV <── [Go Backend]
+  │
+  └── 7. Decrypt User Assets: AES-GCM(Encrypted_User_Priv_Key, Master_Key)
 
-    Initiation : L'utilisateur tape son email et son mot de passe.
+```
 
-    Fetch du Sel : Le frontend demande au backend Go : "Donne-moi le Salt_1 de cet email".
+#### 1. Identity Pre-flight & Salt Retrieval
 
-    Récupération : PostgreSQL renvoie le Salt_1 (qui a été généré lors de l'inscription).
+* **Initiation:** The user inputs their authenticated email and plaintext password into the React login form.
+* **Salt Fetching:** Before executing any cryptographic loops, the frontend dispatches a handshake query to the Go/Fiber API: `"Give me the Salt_1 associated with this email address."`
+* **Database Selection:** The Go backend queries the PostgreSQL `users` table. If the email exists, it reads and returns the high-entropy `Salt_1` that was generated during the user's initial registration phase.
 
-    Re-Calcul : En local, React repasse le mot de passe saisi et le Salt_1 récupéré dans la KDF. Puisque les deux entrées sont identiques à celles de l'inscription, le calcul mathématique retombe exactement sur la même Master Key.
+#### 2. Local Master Key Reconstruction (Client-Side KDF)
 
-    Authentification : React recalcule le AuthHash et l'envoie au backend (POST /login). L'API Go valide la correspondance et renvoie un JWT ainsi que la Encrypted_Private_Key.
+* **Re-Computation:** Locally within the browser context, the React application inputs the newly typed password and the retrieved `Salt_1` back into the **PBKDF2** Key Derivation Function.
+* **Mathematical Alignment:** Because both cryptographic inputs are strictly identical to the ones utilized during registration, the mathematical output yields the exact same symmetric **Master Key** (`KEK`).
 
-    Déchiffrement local : React utilise la Master Key fraîchement recalculée pour déchiffrer la Encrypted_Private_Key.
+#### 3. Challenge Verification & Payload Release
+
+* **Proof Generation:** React recalculates the AuthHash based on the reconstructed Master Key a second time to recreate the authentication signature.
+* **API Validation:** The client transmits this token via a `POST /api/auth/login` request. The Go API validates the matching proof against the database **Argon2id** hash record.
+* **Asset Release:** Upon successful validation, the backend generates the **Access JWT** (sent in the JSON response), sets the **Refresh JWT** as an HTTP-only cookie, and releases the user's encrypted personal credentials: `Encrypted_User_Priv_Key` and its matching `iv`.
+
+#### 4. Local Asymmetric Decryption
+
+* **Envelope Decryption:** React leverages the freshly re-calculated Master Key and the server-provided `iv` to decrypt their personal private key locally via **AES-GCM**:
+
+$$\text{User\_Priv\_Key} = \text{Decrypt}_{\text{AES-GCM}}(\text{Encrypted\_User\_Priv\_Key}, \text{Master\_Key})$$
+
 
 ![Logo](images/login.webp)
+
+---
 
 ### Phase 3 : L'Upload (Chiffrement Hybride par Fichier)
 
     Génération de la DEK : Dès que l'utilisateur sélectionne un fichier, la Web Crypto API génère une clé symétrique aléatoire, strictement unique à ce fichier : la DEK (Data Encryption Key, AES-GCM 256-bit).
+
 
     Génération de l'IV : Création d'un Vecteur d'Initialisation (Initialization Vector) aléatoire de 12 bytes.
 

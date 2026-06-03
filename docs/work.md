@@ -30,38 +30,40 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
 ---
 
-## 2. Login
+## 2. User Login Flow
 
-### Phase 1 - Recup du salt
+### Phase 1 - Salt Retrieval
+* **Trigger:** User enters their email and password.
+* **Request:** `GET /api/auth/salt?email=student@42lyon.fr`
+* **Response:** Backend returns the user's specific `salt` (Base64-encoded) if the account exists.
 
-- User tape email + mdp
-- `GET /api/auth/salt?email=student@42lyon.fr`
-- Le back renvoie le salt (base64) si le user existe
+### Phase 2 - Client-Side Computation
+* **Key Derivation:** The client derives the Master Key (`KEK`) using **PBKDF2** over the password and retrieved salt.
+* **Proof Generation:** Computes `AuthHash = HMAC-SHA256(KEK, "ft_box_auth")`.
 
-### Phase 2 - Calculs coté client
-
-- Derive la KEK via PBKDF2(mdp + salt)
-- Calcule AuthHash = HMAC-SHA256(KEK, "ft_box_auth")
-
-### Phase 3 - Requete de login
-
-- `POST /api/auth/login`
+### Phase 3 - Authentication Request
+* **Request:** `POST /api/auth/login` with payload:
   ```json
-  { "email": "student@42lyon.fr", "auth_hash": "<base64>" }
-  ```
-- Backend :
-  - Recup le hash Argon2id stocke pour cet email
-  - Compare avec l'AuthHash recu
-  - Si OK -> genere les JWT (access + refresh cookie)
-  - Recup EncryptedPrivKey + IV en DB
-- Repond 200 avec tokens + EncryptedPrivKey + IV
+  { 
+    "email": "student@42lyon.fr", 
+    "auth_hash": "<Base64_AuthHash>" 
+  }
+* **Backend Processing (Go / Fiber):**
+   * Fetches the user's registered **Argon2id** hash from PostgreSQL.
+   * Verifies the incoming `auth_hash` against the stored hash.
+   * If valid, generates the Access JWT (JSON response) and the Refresh JWT (HttpOnly cookie).
+   * Retrieves the user's `encrypted_private_key` and `iv` from the database.
 
-### Phase 4 - Dechiffrement local
 
-- Le client utilise la KEK (encore en RAM) + IV pour dechiffrer la privkey (AES-GCM)
-- Maintenant le client a sa PubKey et PrivKey RSA dans IndexedDB
-- On ecrase la KEK direct de la memoire
-- Ouverture websocket + redirect `/dashboard`
+* **Response:** Returns `200 OK` containing the tokens, `encrypted_private_key`, and `iv`.
+
+### Phase 4 - Local Decryption & Session Init
+
+* **Decryption:** The client utilizes the volatile `KEK` and the received `iv` to decrypt the private RSA key via **AES-GCM**.
+* **Storage:** The decrypted RSA KeyPair is securely stored `IndexedDB` for runtime cryptographic operations. The JWT is stored in local storage and the refreah token in cookies.
+* **Memory Sanitization:** The `KEK` is instantly overwritten and cleared from the browser's RAM.
+* **Navigation:** The client opens the WebSocket stream and routes the session context to the `/dashboard`.
+
 
 ![Logo](images/project-login.webp)
 ---
