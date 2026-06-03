@@ -94,8 +94,8 @@ export default function OrgMembersPage() {
       .then(res => {
         if (res.status === 404 || res.status === 400) {
             if (window.location.pathname.includes(`/orgs/${id}`)) {
-            navigate("/404");
-          }
+              navigate("/404");
+            }
           return null;
         }
         if (!res.ok) {
@@ -271,7 +271,7 @@ export default function OrgMembersPage() {
     }
   };
 
-const handleRemoveMember = async () => {
+  const handleRemoveMember = async () => {
     if (!memberToRemove) return;
 
     const isRemovingMyself = memberToRemove.user_id === myUserId;
