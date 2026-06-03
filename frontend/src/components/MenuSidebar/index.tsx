@@ -43,7 +43,7 @@ export function MenuSidebar() {
       <button
         type="button"
         className={`${styles.orgsToggle} ${isOrgRouteActive ? styles.orgsToggleActive : ""}`}
-        onClick={() => { navigate("/organizations"); setOrgsOpen(true); }}
+        onClick={() => { navigate("/organizations"); setOrgsOpen(o => !o); }}
       >
         <span className={styles.toggleIcon}><Network size={20} /></span>
         <span className={styles.toggleLabel}>Organizations</span>
