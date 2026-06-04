@@ -70,7 +70,7 @@ function AboutPage() {
                             {
                                 name: "Pierrick Naessen",
                                 description: "Product Owner",
-                                bio: "From Calais in northern France, Pierrick traded a cinema studies background for a keyboard at school 42, and quickly became one of its most valued contributors. Known for always having time to help fellow students, he's as dedicated to the community as he is to the code. When he's not coding, he's probably perfecting his skincare routine.",
+                                bio: "From Calais in northern France, Pierrick traded a cinema studies background for a keyboard at school 42, and quickly became one of its most valued contributors. Always helping fellow students, he's as dedicated to the community as he is to the code. When he's not at school, he's probably perfecting his skincare routine.",
                                 photo: "/members/pnaessen.jpeg"
                             },
                             {
