@@ -21,7 +21,7 @@
 Upon triggering `generateRegistrationData(email, password)`, the local browser environment isolates state variables to prevent plain text extraction:
 * **Salt Allocation:** A deterministic `Uint8Array` byte structure of 16 bytes (128 bits) is created and mutated via `crypto.getRandomValues(salt)`, filling the vector index placeholders with uniform entropy bytes ranging from 0 to 255.
 * **Key Derivation (KDF):** The plain text password is serialized to binary data via a `TextEncoder` abstraction. The engine runs a secure structural key derivation iteration:
-$$\text{Master\_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
+$$\mathtt{Master\_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
 The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 256-bit** implementation layer.
 
 #### 2. KeyPair Allocation & Relational Wrapping
@@ -30,14 +30,14 @@ The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 
   1. The asymmetric asset is marshaled into raw binary representation using the standard export format `"pkcs8"`.
   2. A random 12-byte (96 bits) hardware-seeded Initialization Vector (`iv`) is generated.
   3. The raw private key byte-stream is encrypted symmetrically via **AES-GCM**:
-$$\text{encryptedPrivateKey} = \text{Encrypt}_{\text{AES-GCM}}(\text{PrivateKey}_{\text{pkcs8}}, \text{Master\_Key}, \text{iv})$$
+$$\text{encryptedPrivateKey} = \text{Encrypt}_{\text{AES-GCM}}(\text{PrivateKey}_{\text{pkcs8}}, \mathtt{Master\_Key}, \text{iv})$$
 
 #### 3. Mathematical Proof Generation (The AuthHash)
 The client must provide structural verification of password authenticity without transferring raw key patterns over the TLS barrier. The client triggers `generateAuthHash(masterKey)`:
 1. The derived Master Key is exported to a native binary payload (`"raw"` specification).
 2. The browser mounts this raw buffer directly into a transient signing structure using **HMAC** linked with a **SHA-256** hash constraint.
 3. The structural cryptographic context signs a fixed validation constant message: `"auth_string"` via `crypto.subtle.sign`.
-$$\text{AuthHash} = \text{HMAC-SHA256}(\text{Master\_Key}_{\text{raw}}, \text{"auth\_string"})$$
+$$\text{AuthHash} = \text{HMAC-SHA256}(\mathtt{Master\_Key}_{\text{raw}}, \mathtt{"auth\_string"})$$
 
 #### 4. Transport Mapping & Serialization
 To guarantee that high-entropy binary byte streams cross the application boundary without character-set corruption, all blocks are split into chunked arrays ($8\text{ KB}$ segments) and marshaled via `uint8ArrayToBase64` using browser-native `btoa` routines before firing the underlying JSON `POST /api/auth/register`.
@@ -72,7 +72,7 @@ The Go API validates the matching proof payload against the non-reversible datab
 The React engine captures the payload response and unrolls the envelope using `unwrapPrivateKey`:
 1. The network strings are downsampled to basic byte-stream matrices via `base64ToUint8Array`.
 2. The runtime invokes `crypto.subtle.decrypt` using **AES-GCM** backed by the freshly reconstructed local Master Key context to resolve the plain text `pkcs8` binary block:
-$$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivateKey}, \text{Master\_Key}, \text{iv})$$
+$$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivateKey}, \mathtt{Master\_Key}, \text{iv})$$
 3. The resulting binary block is parsed and mounted into a native asymmetric asset primitive through `crypto.subtle.importKey` under **RSA-OAEP** rules.
 4. **Persistent Secure Seeding:** The fully unencrypted operational asset is passed to `storePrivateKey(privateKey)`, committing it directly to **IndexedDB** (`idb.service`) to handle runtime file key decryption operations asynchronously.
 5. **Memory Sanitization:** The transient Master Key structural parameters are discarded from the browser's active scope layer, rendering client state immune to memory scraping vectors.
@@ -113,12 +113,12 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 2. **Symmetric Layer (Private Key Protection):**
    The client encrypts the organization's private key using the transient AES key:
-   $$\text{enc\_org\_priv\_key} = \text{Encrypt}_{\text{AES-GCM}}(\text{Org\_Priv\_Key}, \text{AES\_Key})$$
+   $$\mathtt{enc\_org\_priv\_key} = \text{Encrypt}_{\text{AES-GCM}}(\mathtt{Org\_Priv\_Key}, \mathtt{AES\_Key})$$
    This outputs the `enc_org_priv_key` binary payload along with its unique Initialization Vector (`iv`).
 
 3. **Asymmetric Layer (Key Encapsulation):**
    The client retrieves the Admin's personal public RSA key from the session. The transient AES key is exported to raw bytes and encrypted:
-   $$\text{enc\_aes\_key} = \text{Encrypt}_{\text{RSA-OAEP}}(\text{AES\_Key}_{\text{raw}}, \text{Admin\_Pub\_Key})$$
+   $$\mathtt{enc\_aes\_key} = \text{Encrypt}_{\text{RSA-OAEP}}(\mathtt{AES\_Key}_{\text{raw}}, \mathtt{Admin\_Pub\_Key})$$
 
 4. **API ingestion & Persistence:**
    All binary buffers are encoded to Base64 strings. The client performs a `POST /api/orgs` request.
