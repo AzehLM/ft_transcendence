@@ -18,7 +18,7 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
    * Signs the hardcoded string `"auth_string"` with an **HMAC-SHA256** key built directly from the Master Key bytes to produce the `auth_hash`.
 3. **API Payload:** Sends a `POST /api/auth/register` containing: `email`, `salt`, `auth_hash`, `public_key`, `encrypted_private_key`, and `iv` (all Base64 encoded).
 4. **Backend Processing:** Go intercepts the request, hashes the `auth_hash` string via Argon2id, commits the transaction to Postgres, and sets the secure authentication cookies.
-5. **Onboarding UI State:** React intercepts the successful response, registers the `access_token` into `localStorage`, and updates the DOM to display the multi-factor authentication (2FA) prompt.
+5. **Onboarding UI State:** React intercepts the successful response, registers the `access_token` into `localStorage`, the `public_key` and `private_key` in `IndexedDB`, and updates the DOM to display the multi-factor authentication (2FA) prompt.
 
 ![Logo](images/project-register.webp)
 
