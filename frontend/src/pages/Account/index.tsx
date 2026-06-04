@@ -1,0 +1,254 @@
+import styles from "../../styles/profile.module.css";
+import { SettingsLayout } from "../Profile/SettingsLayout";
+import { useState } from "react";
+import { fetchWithRefresh } from "../../services/api.service";
+import { logout } from "../../services/auth.service";
+import { useNavigate } from "react-router-dom";
+import { DangerZone } from "../../components/DangerZone";
+import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
+import { useEffect } from "react";
+import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { changePasswordSchema } from "../../schemas/auth.schema";
+import { TwoFAModal } from "../../components/TwoFAModal";
+
+
+export default function AccountPage() {
+    const navigate = useNavigate();
+    const [error, setError] = useState<string | null>(null);
+    const [email, setEmail] = useState<string>("");
+    const [isTwoFAEnabled, setIsTwoFAEnabled] = useState<boolean>(false);
+    const [isTwoFAModalOpen, setIsTwoFAModalOpen] = useState(false);
+    const [mainError, setMainError] = useState<string | null>(null);
+
+    const handleDeleteAccount = async () => {
+        try {
+            const response = await fetchWithRefresh("/api/auth/me", { method: "DELETE" });
+
+            if (!response.ok) {
+                if (response.status === 502 || response.status === 503) {
+                    setError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setError(body?.message || body?.error || "Failed to delete account. Please try again.");
+                }
+                return;
+            }
+
+            await logout(navigate);
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+            setError("Failed to delete account. Please try again.");
+
+        }
+    };
+
+    const [password, setPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [pwdError, setPwdError] = useState<string | null>(null);
+    const [isReset, setIsReset] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    useEffect(() => {
+        fetchWithRefresh("/api/auth/me")
+            .then(res => {
+            if (!res.ok) {
+                setMainError("Failed to fetch user information.")
+                throw new Error("Failed to fetch user");
+            }
+            return res.json();
+            })
+            .then(data => {
+                setEmail(data.email);
+                setIsTwoFAEnabled(data.two_factor_enabled || false);
+            })
+            .catch(() => {
+                setMainError("Failed to fetch user information.");
+            });
+    }, []);
+
+    const handleChangePassword = async () => {
+        setPwdError(null);
+        setIsReset(false);
+
+        const result = changePasswordSchema.safeParse({
+            current: password,
+            newPassword,
+            confirmPassword,
+        });
+        if (!result.success) {
+            setPwdError(result.error.issues[0].message);
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const { masterKey, loginData } = await generateLoginData(email, result.data.current);
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(loginData),
+            });
+
+            if (!response.ok) {
+                if (response.status === 502 || response.status === 503) {
+                    setPwdError("Network error, please try again later.");
+                } else {
+                    const body = await response.json().catch(() => null);
+                    setPwdError(body?.message || body?.error || "Failed to change password. Please try again.");
+                }
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                return;
+            }
+            const responseData = await response.json();
+
+            const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
+            const iv = base64ToUint8Array(responseData.iv);
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv, true);
+
+            const data = await generateChangePasswordData(result.data.newPassword, privateKey);
+            const passwordData = {
+                old_auth_hash: loginData.auth_hash,
+                new_client_salt: data.new_client_salt,
+                new_auth_hash: data.new_auth_hash,
+                new_encrypted_private_key: data.new_encrypted_private_key,
+                new_iv: data.new_iv,
+            };
+            const responsePut = await fetchWithRefresh("/api/auth/password", {
+                method: "PUT",
+                body: JSON.stringify(passwordData),
+            });
+
+            if (!responsePut.ok) {
+                if (responsePut.status === 502 || responsePut.status === 503) {
+                    setPwdError("Network error, please try again later.");
+                } else {
+                    const body = await responsePut.json().catch(() => null);
+                    setPwdError(body?.message || body?.error || "Failed to change password. Please try again.");
+                }
+                setPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+                return;
+            }
+
+            setPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            setPwdError(null);
+            setIsReset(true);
+
+        } catch (err: any) {
+            console.error("Failed to change password:", err);
+            setPwdError(err.message || "An error occurred, the password has not been changed !");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    return (
+        <SettingsLayout>
+            <div className={styles.settingsGrid}>
+                <div className={styles.settingsCard}>
+                    <h2 className={styles.sectionTitle}>Security</h2>
+                    { mainError ? (
+                    <div className={`${styles.statusMessage} ${styles.error}`}>
+                        {mainError}
+                    </div>
+                    ) : (
+                    <div className={styles.handlePassword}>
+                        <div className={styles.inputBox}>
+                            <p>Current Password</p>
+                            <input type="password" style={{ display: "none" }} />
+                            <input
+                                type="password"
+                                autoComplete="current-password"
+                                value={password}
+                                placeholder="Enter current password"
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
+                        <div className={styles.inputBox}>
+                            <p>New Password</p>
+                            <input
+                                type="password"
+                                autoComplete="new-password"
+                                value={newPassword}
+                                placeholder="Enter new password"
+                                onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                        </div>
+                        <div className={styles.inputBox}>
+                            <p>Confirm your new password</p>
+                            <input
+                                type="password"
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                placeholder="Confirm new password"
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                        </div>
+                        {pwdError && <p className={styles.errorMessage}>{pwdError}</p>}
+                        <button
+                            className={`${styles.buttonChange} ${styles.profileButton}`}
+                            onClick={handleChangePassword}
+                            disabled={isUpdating}
+                        >
+                            {isUpdating ? "Updating..." : "Update Password"}
+                        </button>
+                    </div>
+                    )}
+                </div>
+                { !mainError && (
+                    <>
+                        <div className={styles.settingsCard}>
+                            <h2 className={styles.sectionTitle}>Two-Factor Authentication</h2>
+                            <p className={styles.sectionDescription}>
+                                Enable Two-Factor Authentication to add an extra layer of security to your account.
+                            </p>
+                            <div className={styles.statusRow}>
+                                <p className={isTwoFAEnabled ? styles.statusEnabled : styles.statusDisabled}>
+                                    {isTwoFAEnabled ? "✓ Enabled" : "✗ Disabled"}
+                                </p>
+                                <button
+                                    className={`${styles.buttonChange} ${styles.profileButton}`}
+                                    onClick={() => setIsTwoFAModalOpen(true)}
+                                >
+                                    {isTwoFAEnabled ? "Manage 2FA" : "Enable 2FA"}
+                                </button>
+                            </div>
+                        </div>
+                        <DangerZone
+                            label="If you want to delete your account, click on the button"
+                            description="This action cannot be undone"
+                            buttonText="Delete Account"
+                            fileName="your account"
+                            onConfirm={handleDeleteAccount}
+                            isAccount={true}
+                            error={error}
+                        />
+                    </>
+                )}
+                <ConfirmationModal
+                    isOpen={isReset}
+                    fileName=""
+                    onConfirm={() => setIsReset(false)}
+                    onCancel={() => setIsReset(false)}
+                    isPasswordChanged={true}
+                />
+                <TwoFAModal
+                    isOpen={isTwoFAModalOpen}
+                    isTwoFAEnabled={isTwoFAEnabled}
+                    email={email}
+                    onClose={() => setIsTwoFAModalOpen(false)}
+                    onSuccess={() => {
+                        setIsTwoFAEnabled(prev => !prev);
+                        setIsTwoFAModalOpen(false);
+                    }}
+                />
+            </div>
+        </SettingsLayout>
+    );
+}

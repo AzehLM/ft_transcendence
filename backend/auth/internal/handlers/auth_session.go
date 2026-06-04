@@ -1,0 +1,103 @@
+package handlers
+
+import (
+	"backend/auth/internal/models"
+	"log"
+	"time"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+func setRefreshTokenCookie(c fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HTTPOnly: true,
+		Secure:   true, // test avec caddy
+		SameSite: "Strict",
+		// SameSite: "None",
+		Path: "/",
+	})
+}
+
+func clearRefreshTokenCookie(c fiber.Ctx) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		MaxAge:   -1,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+		Path:     "/",
+	})
+}
+
+func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
+	cookieToken := c.Cookies("refresh_token")
+
+	if cookieToken == "" {
+		clearRefreshTokenCookie(c)
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "already logged out",
+		})
+	}
+
+	hashedCookieToken := hashToken(cookieToken)
+
+	err := h.DB.Model(&models.User{}).
+		Where("refresh_token = ?", hashedCookieToken).
+		Update("refresh_token", nil).Error
+
+	if err != nil {
+		log.Printf("[WARN] Logout: Could not clear token in DB: %v\n", err)
+	}
+
+	clearRefreshTokenCookie(c)
+	log.Printf("[INFO] User logged out - refresh token cookie cleared")
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "logged out successfully",
+	})
+}
+
+func (h *AuthHandler) RefreshToken(c fiber.Ctx) error {
+
+	cookieToken := c.Cookies("refresh_token")
+
+	if cookieToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "missing refresh token",
+		})
+	}
+
+	hashedCookieToken := hashToken(cookieToken)
+
+	var user models.User
+	if err := h.DB.Where("refresh_token = ?", hashedCookieToken).First(&user).Error; err != nil {
+
+		clearRefreshTokenCookie(c)
+
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "invalid refresh token",
+		})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID.String(),
+		"user_email": user.Email,
+		"exp":        time.Now().Add(15 * time.Minute).Unix(),
+	})
+
+	jwtSecret := []byte(h.Env.JwtSecret)
+	accessToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token generation failed"})
+	}
+
+	log.Printf("[INFO] Access token refreshed for %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token": accessToken,
+	})
+}

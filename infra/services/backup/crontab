@@ -1,0 +1,7 @@
+# Crontab for supercronic
+
+# Daily PostgreSQL backup — every day at 02:00 UTC
+0 0 2 * * * * /usr/local/bin/backup.sh postgres
+
+# Weekly MinIO mirror — every Sunday at 03:00 UTC
+0 0 3 * * * 0 /usr/local/bin/backup.sh minio

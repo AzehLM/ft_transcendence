@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - '/etc/prometheus/rules.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: caddy
+    static_configs:
+      - targets: ["caddy:2019"]
+
+    # Metrics about an entire MinIO cluster.
+  - job_name: minio-cluster
+    metrics_path: /minio/metrics/v3/cluster
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]
+
+    # Metrics about requests served by the current node.
+  - job_name: minio-api-system
+    metrics_path: /minio/metrics/v3/api
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]
+
+    # Metrics about the MinIO process and the node
+  - job_name: minio-system
+    metrics_path: /minio/metrics/v3/system
+    scheme: http
+    static_configs:
+      - targets: ["minio:9000"]
+
+    # storage metrics
+  - job_name: storage
+    static_configs:
+      - targets: ["storage:8083"]

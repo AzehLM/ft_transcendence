@@ -1,0 +1,90 @@
+
+.deleteBox {
+  margin: 20px 0;
+  padding: 3%;
+  background-color: rgba(186, 26, 26, 0.04);
+  border-radius: 12px;
+  border: 1.5px solid rgba(186, 26, 26, 0.3);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dangerTitle {
+  font-weight: 700;
+  font-size: 18px;
+  color: #ba1a1a;
+  margin-bottom: 16px;
+  font-family: var(--font-family-primary);
+}
+
+.dangerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dangerLabel {
+  font-weight: 600;
+  font-size: 16px;
+  color: #241916;
+  font-family: var(--font-family-primary);
+}
+
+.dangerDescription {
+  font-size: 13px;
+  color: #524440;
+  margin-top: 4px;
+  font-family: var(--font-family-primary);
+}
+
+.buttonDelete {
+  background-color: #ba1a1a;
+  color: white;
+  border: none;
+  align-self: flex-start;
+  padding: 10px 20px;
+  min-width: 120px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(186, 26, 26, 0.25);
+  margin-left: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--font-family-primary);
+}
+
+.buttonDelete:hover {
+  background-color: #93000a;
+  box-shadow: 0 6px 18px rgba(186, 26, 26, 0.35);
+}
+
+.errorMessage {
+  color: var(--color-error);
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .dangerRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .buttonDelete {
+    margin-left: 0;
+    font-size: 14px;
+    padding: 9px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .buttonDelete {
+    width: 100%;
+  }
+}
