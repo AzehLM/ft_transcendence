@@ -55,10 +55,30 @@ function AboutPage() {
                         marginTop: "32px"
                     }}>
                         {[
-                            { name: "Guillaume Ebersohl", description: "Technical Lead", photo: "/members/gueberso.jpeg" },
-                            { name: "Victoire Perrier", description: "Project Manager", photo: "/members/vicperri.jpeg" },
-                            { name: "Pierrick Naessen", description: "Product Owner", photo: "/members/pnaessen.jpeg" },
-                            { name: "Lou Anne Buisson", description: "Project Manager", photo: "/members/member4.jpg" },
+                            {
+                                name: "Guillaume Ebersohl",
+                                description: "Technical Lead",
+                                bio: "Placeholder bio for Guillaume. Describe your background, your areas of expertise, and your main contribution to the project.",
+                                photo: "/members/gueberso.jpeg"
+                            },
+                            {
+                                name: "Victoire Perrier",
+                                description: "Project Manager",
+                                bio: "Originally from a business school background in digital marketing, Victoire made a deliberate leap into tech, and never looked back. She brings a rare mix of product thinking and engineering to the team. When she's not coding, you'll find her with her dog and a bottle of sparkling water nearby.",
+                                photo: "/members/vicperri.jpeg"
+                            },
+                            {
+                                name: "Pierrick Naessen",
+                                description: "Product Owner",
+                                bio: "Placeholder bio for Pierrick. Describe your background, your areas of expertise, and your main contribution to the project.",
+                                photo: "/members/pnaessen.jpeg"
+                            },
+                            {
+                                name: "Lou Anne Buisson",
+                                description: "Project Manager",
+                                bio: "Placeholder bio for Lou Anne. Describe your background, your areas of expertise, and your main contribution to the project.",
+                                photo: "/members/member4.jpg"
+                            },
                         ].map((member) => (
                             <div key={member.name} style={{
                                 display: "flex",
@@ -66,15 +86,12 @@ function AboutPage() {
                                 alignItems: "center",
                                 gap: "14px",
                                 padding: "24px 16px",
-                                backgroundColor: "#fefdfc",
-                                border: "1px solid #ebdcd9",
                                 borderRadius: "16px",
                                 textAlign: "center",
-                                boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
                             }}>
                                 <div style={{
-                                    width: "100px",
-                                    height: "100px",
+                                    width: "180px",
+                                    height: "180px",
                                     borderRadius: "50%",
                                     overflow: "hidden",
                                     border: "3px solid #ebdcd9",
@@ -91,8 +108,12 @@ function AboutPage() {
                                     <p style={{ margin: "0 0 5px 0", fontWeight: 600, fontSize: "15px", color: "#2b1008", fontFamily: "IBM Plex Sans, sans-serif" }}>
                                         {member.name}
                                     </p>
-                                    <p style={{ margin: 0, fontSize: "13px", color: "#865142", lineHeight: "1.5", opacity: 0.85 }}>
+                                    <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#865142", lineHeight: "1.5", opacity: 0.85 }}>
                                         {member.description}
+                                    </p>
+                                    <hr style={{ border: "none", borderTop: "1px solid #ebdcd9", margin: "0 0 12px 0" }} />
+                                    <p style={{ margin: 0, fontSize: "13px", color: "#2b1008", lineHeight: "1.65", opacity: 0.6 }}>
+                                        {member.bio}
                                     </p>
                                 </div>
                             </div>
