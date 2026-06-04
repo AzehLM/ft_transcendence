@@ -29,7 +29,7 @@ export default function LoginPage() {
 
         const result = loginSchema.safeParse({ email, password });
         if (!result.success) {
-            setError("Incorrect email or password");
+            setError(result.error.issues[0].message);
             return;
         }
 
@@ -89,7 +89,6 @@ export default function LoginPage() {
             await storePublicKey(publicKey);
 
             navigate("/dashboard");
-            // navigate("/profile");
         } catch (err: any) {
             setError(err.message || "An error occurred during login!");
         } finally {

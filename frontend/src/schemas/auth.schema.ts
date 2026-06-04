@@ -29,7 +29,7 @@ export const registerSchema = z
 
 export const loginSchema = z.object({
 	email: z.email("Please enter a valid email"),
-	password: passwordSchema,
+	password: z.string().min(1, { message: "Password is required" }),
 });
 
 export const changePasswordSchema = z
