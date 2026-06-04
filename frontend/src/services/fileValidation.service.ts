@@ -1,6 +1,7 @@
 import { fileTypeFromBuffer } from 'file-type';
 import MIME_TYPES_RAW from '../config/mime.types?raw';
 import { fileSchema } from '../schemas/file.schema';
+import { UPLOAD_CONFIG } from '../config/uploadConfig';
 
 const parseMimeTypes = (raw: string): Record<string, string[]> => {
     const types: Record<string, string[]> = {};
@@ -87,6 +88,15 @@ export const formatFileSize = (bytes: number): string => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
+
+export const getDecryptedSize = (encryptedSize: number): number => {
+    if (encryptedSize <= 0) return 0;
+    const chunkSize = UPLOAD_CONFIG.CHUNK_SIZE;
+    const cipherChunkSize = chunkSize + 16;
+    const numChunks = Math.ceil(encryptedSize / cipherChunkSize);
+    return encryptedSize - numChunks * 16;
+};
+
 
 export const getFileTypeLabel = (mimeType: string): string => {
     const typeMap: Record<string, string> = {
