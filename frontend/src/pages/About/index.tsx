@@ -1,4 +1,4 @@
-import { Shield, Cpu, Lock, GraduationCap, Package } from "lucide-react";
+import { Shield, Cpu, Lock, GraduationCap, FolderLock, Package } from "lucide-react";
 import styles from "../../styles/legal.module.css";
 import BackToHomeLink from "../../components/BackToHomeLink";
 
@@ -41,13 +41,10 @@ function AboutPage() {
                         <GraduationCap size={22} style={{ color: "#865142" }} /> Who we are
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Ostrom is not a commercial product. We are a team of four student developers at school 42, and this application is our final graduation capstone. We set out to build a fully functional, production-ready, and end-to-end encrypted (E2EE) file storage system.
-                    </p>
-                    <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Inspired by Elinor Ostrom's Nobel-prize-winning work on how communities successfully govern shared resources (the "commons") without centralized state or private control, we wanted to build a cloud storage service where users hold absolute sovereignty over their own data.
+                        We are four students from school 42 who met during the common core and decided to build something we actually cared about for our final capstone. Different backgrounds, different specializations — but a shared belief that privacy in the cloud shouldn't be a premium feature.
                     </p>
 
-                    {/* Team member bubbles — photos go in frontend/public/members/ */}
+                    {/* Team member bubbles*/}
                     <div style={{
                         display: "grid",
                         gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
@@ -125,13 +122,13 @@ function AboutPage() {
                 {/* The project */}
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle} style={{ fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                        <GraduationCap size={22} style={{ color: "#865142" }} /> The Project
+                        <FolderLock size={22} style={{ color: "#865142" }} /> The Project
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Ostrom is a cloud storage platform built around a zero-knowledge architecture. Every file is fully encrypted before it leaves your device. The server never sees your data, only you hold the keys.
+                        Ostrom is not a commercial product. We are a team of four student developers at school 42, and this application is our final graduation capstone. We set out to build a fully functional, production-ready, and end-to-end encrypted (E2EE) file storage system.
                     </p>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Built on a distributed Go microservices backend, a self-hosted MinIO object store, a PostgreSQL database, and a Redis event layer for real-time updates — all containerized and routed through a Caddy reverse proxy.
+                        Inspired by Elinor Ostrom's Nobel-prize-winning work on how communities successfully govern shared resources (the "commons") without centralized state or private control, we wanted to build a cloud storage service where users hold absolute sovereignty over their own data.
                     </p>
                 </section>
 
