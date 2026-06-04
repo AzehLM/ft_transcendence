@@ -112,6 +112,7 @@ export default function OrganizationsPage() {
       setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
       setShowCreateModal(false);
       setOrgName("");
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
       reconnect();
     } catch (err) {
       console.error("Error:", err);
@@ -169,6 +170,7 @@ export default function OrganizationsPage() {
       setShowLeaveConfirm(false);
       setOrgs(prev => prev.filter(o => o.id !== selectedOrg.id));
       setSelectedOrg(null);
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
 
     } catch (err) {
       console.error("Network error:", err);

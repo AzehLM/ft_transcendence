@@ -26,7 +26,7 @@
 }
 
 .totp_setup__title {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 24px;
     font-weight: 700;
     color: var(--brand-dark);
@@ -35,9 +35,9 @@
 }
 
 .totp_setup__description {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
-    color: #6b7280;
+    color: var(--color-text-neutral);
     margin-bottom: var(--spacing-md);
     line-height: 1.5;
 }
@@ -83,7 +83,7 @@
     background-color: #fef3c7;
     color: #92400e;
     border-radius: var(--radius-sm);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
 }
 
@@ -128,7 +128,7 @@
 
 .totp_setup__label {
     display: block;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     color: var(--brand-dark);
@@ -168,7 +168,7 @@
     background-color: #fee2e2;
     color: #991b1b;
     border-radius: var(--radius-sm);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
 }
 
@@ -183,7 +183,7 @@
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-sm);
     border: none;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -230,7 +230,7 @@
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-sm);
     border: 1px solid var(--brand-dark);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     cursor: pointer;

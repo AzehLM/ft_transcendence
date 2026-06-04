@@ -27,7 +27,7 @@
     font-size: 24px;
     font-weight: 700;
     color: var(--brand-primary);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     letter-spacing: -0.5px;
     text-decoration: none;
 }
@@ -40,7 +40,7 @@
 }
 
 .navbar__link {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 15px;
     color: #555;
@@ -86,7 +86,7 @@
     padding: 9px 18px;
     font-size: 14px;
     font-weight: 600;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
@@ -96,7 +96,7 @@
 }
 
 .navbar__link--login {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 14px;
     color: var(--brand-primary);
@@ -105,7 +105,7 @@
 }
 
 .navbar__link--signup {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 14px;
     color: #fff;
@@ -168,7 +168,7 @@
 }
 
 .navbar__mobile_link {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 500;
     font-size: 16px;
     color: #555;
@@ -184,7 +184,7 @@
 }
 
 .navbar__mobile_link--cta {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 15px;
     color: #fff;
@@ -251,7 +251,7 @@
 .hero__title {
     font-size: clamp(40px, 6vw, 72px);
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: var(--brand-dark);
     line-height: 1.1;
     letter-spacing: -1px;
@@ -264,10 +264,10 @@
 
 .hero__description {
     font-size: clamp(16px, 2vw, 20px);
-    color: #6b7280;
+    color: var(--color-text-neutral);
     max-width: 560px;
     margin-bottom: 48px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     line-height: 1.65;
 }
 
@@ -282,7 +282,7 @@
     color: #fff;
     padding: 14px 32px;
     border-radius: 14px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     font-size: 16px;
     text-decoration: none;
@@ -357,7 +357,7 @@
 .socialProof__label {
     text-align: center;
     font-size: 11px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -377,7 +377,7 @@
 .socialProof__logo {
     font-size: 20px;
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: var(--brand-dark);
 }
 
@@ -403,7 +403,7 @@
 .features__title {
     font-size: clamp(28px, 4vw, 44px);
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: var(--brand-dark);
     margin-bottom: 16px;
     letter-spacing: -0.5px;
@@ -411,8 +411,8 @@
 
 .features__subtitle {
     font-size: 18px;
-    color: #6b7280;
-    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--color-text-neutral);
+    font-family: var(--font-family-primary);
     max-width: 520px;
 }
 
@@ -459,7 +459,7 @@
 .features__card__title {
     font-size: 26px;
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: var(--brand-dark);
     margin-bottom: 12px;
 }
@@ -467,15 +467,15 @@
 .features__card__title--light {
     font-size: 22px;
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: #fff;
     margin-bottom: 12px;
 }
 
 .features__card__description {
     font-size: 16px;
-    color: #6b7280;
-    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--color-text-neutral);
+    font-family: var(--font-family-primary);
     max-width: 480px;
     line-height: 1.6;
 }
@@ -483,7 +483,7 @@
 .features__card__description--light {
     font-size: 15px;
     color: rgba(255, 255, 255, 0.88);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     line-height: 1.55;
 }
 
@@ -531,7 +531,7 @@
 .cta__title {
     font-size: clamp(28px, 5vw, 52px);
     font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     color: #fff;
     margin-bottom: 24px;
     letter-spacing: -0.5px;
@@ -541,7 +541,7 @@
 .cta__description {
     font-size: 18px;
     color: rgba(255, 255, 255, 0.85);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     margin: 0 auto 48px;
     max-width: 520px;
     line-height: 1.6;
@@ -552,7 +552,7 @@
     color: var(--brand-primary);
     padding: 16px 48px;
     border-radius: 99px;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-weight: 700;
     font-size: 18px;
     text-decoration: none;
