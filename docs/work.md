@@ -76,77 +76,7 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
 ---
 
-## 5. Upload de fichier
-
-Probleme : un fichier de 2 Go ca tient pas en RAM dans un Uint8Array, le tab crash. Faut utiliser la Web Streams API + Web Crypto en streaming.
-
-### Phase 1 - Chiffrement local (React)
-
-1. Pour chaque fichier, le client genere une DEK (Data Encryption Key) aleatoire (AES-GCM 256) + un IV unique
-2. Le client lit le fichier par chunks, chiffre chaque chunk avec la DEK en AES-GCM -> produit un Blob chiffre
-3. Le nom du fichier est aussi une donnee sensible -> chiffre avec la DEK MAYBE
-
-### Phase 2 - Negociation de l'upload (Go)
-
-1. `POST /api/files/upload-url` -> "je veux upload un fichier de X octets dans le dossier Y"
-2. Backend verifie le JWT, check le quota dispo
-3. Genere une Presigned URL PUT via le SDK MinIO (valable ~15 min)
-4. Renvoie l'URL au client
-
-### Phase 3 - Transfert direct vers MinIO
-
-- Le client fait un `PUT` directement sur l'URL MinIO avec le Blob chiffre
-- Le backend Go n'est pas dans la boucle reseau -> zero overhead CPU/RAM
-
-### Phase 4 - Finalisation + key wrapping (React -> Go)
-
-1. Upload MinIO termine (200 OK), maintenant faut securiser la DEK
-2. Key wrapping :
-   - Fichier perso -> chiffre la DEK avec la PubKey RSA du user
-   - Fichier d'orga -> chiffre la DEK avec l'OrgKey (deja dechiffree en RAM)
-3. `POST /api/files/finalize`
-   ```json
-   {
-     "object_id": "<UUID_Minio>",
-     "filename": "<base64>",
-     "encrypted_dek": "<base64>",
-     "iv": "<base64>",
-     "org_id": "<uuid_optional>"
-   }
-   ```
-4. Backend stocke ces metadonnees en DB (BYTEA pour les champs crypto)
-5. Publie un event WS pour refresh l'UI des autres sessions
-
-
----
-
-## 6. Download de fichier
-
-Le miroir de l'upload : recup le fichier chiffre, recup la cle, dechiffre tout en local.
-
-### Phase 1 - Demande de telechargement (React -> Go)
-
-1. `GET /api/files/{file_id}/download`
-2. Backend verifie les droits
-3. Genere une Presigned URL GET (MinIO)
-4. Renvoie l'URL + encrypted_dek + IV + filename
-
-### Phase 2 - Dechiffrement de la cle (React)
-
-- Recup l'encrypted_dek
-- Dechiffre avec la PrivKey RSA (fichier perso) ou l'OrgKey (fichier partage) -> DEK en clair en RAM
-
-### Phase 3 - Download + dechiffrement (MinIO -> React)
-
-1. Telecharge le blob chiffre direct depuis MinIO via la Presigned URL
-2. Dechiffre le fichier a la volee avec la DEK + Web Streams API
-4. Cree un `URL.createObjectURL()` et declenche le download cote navigateur
-5. Nettoyage : ecrase la DEK (`Uint8Array.fill(0)`) et revoque l'ObjectURL
-
-
----
-
-## 7. User Logout Flow
+## 5. User Logout Flow
 
 1. **API Request:** Client issues a `POST /api/auth/logout`.
 2. **Backend Processing (Go / Fiber):** Wipes the user's active dynamic `refresh_token` from the database record and clears the secure HttpOnly cookie environment.
@@ -155,7 +85,7 @@ Le miroir de l'upload : recup le fichier chiffre, recup la cle, dechiffre tout e
 
 ---
 
-## 8. Password Update Flow (Zero-Knowledge Re-keying)
+## 6. Password Update Flow (Zero-Knowledge Re-keying)
 
 Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wrapping") the master asymmetric key set, as the server has no plaintext access to decrypt or re-encrypt user credentials.
 
@@ -185,7 +115,7 @@ Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wr
 ---
 
 
-### 9. User Deletion
+### 7. User Deletion
 
 ```
 [DELETE /api/auth/account] 

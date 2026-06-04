@@ -82,43 +82,11 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 ---
 
-### Phase 3 : L'Upload (Chiffrement Hybride par Fichier)
-
-    Génération de la DEK : Dès que l'utilisateur sélectionne un fichier, la Web Crypto API génère une clé symétrique aléatoire, strictement unique à ce fichier : la DEK (Data Encryption Key, AES-GCM 256-bit).
-
-
-    Génération de l'IV : Création d'un Vecteur d'Initialisation (Initialization Vector) aléatoire de 12 bytes.
-
-    Chiffrement du Fichier : Le contenu brut (plaintext) passe dans AES-GCM avec la DEK et l'IV.
-
-        Résultat : Le Ciphertext (blob illisible). Note d'implémentation : en Web Crypto, l'Auth Tag (MAC) n'est pas séparé, il est automatiquement concaténé à la fin du Ciphertext par l'API.
-
-    Protection de la DEK : Le frontend récupère la Clé Publique de l'utilisateur (depuis l'API ou le store local). Il l'utilise pour chiffrer la DEK via RSA-OAEP.
-
-        Résultat : Encrypted_DEK.
-
-    Routage des données :
-
-        Vers Go (PostgreSQL) : React envoie les métadonnées : nom du fichier, Encrypted_DEK et IV.
-
-        Vers MinIO : React envoie le Ciphertext (le blob) directement via la Presigned URL.
+### Phase 3 : Upload
 
 ![Logo](images/upload.webp)
 
-### Phase 4 : Le Download (Le Déchiffrement E2EE)
-
-    Requête de métadonnées : React fait un GET sur l'API Go. Le backend interroge PostgreSQL et renvoie : la Encrypted_DEK, l'IV et l'URL présignée MinIO.
-
-    Unwrapping de la DEK : Le frontend récupère la Clé Privée de l'utilisateur depuis Zustand. Il déchiffre la Encrypted_DEK.
-
-        Résultat : La DEK est de retour en clair dans la RAM du navigateur.
-
-    Téléchargement du Blob : React télécharge le Ciphertext depuis MinIO.
-
-    Déchiffrement Final : Le frontend injecte dans crypto.subtle.decrypt : la DEK, l'IV, et le Blob.
-
-        Intégrité : L'algorithme vérifie silencieusement l'Auth Tag inclus dans le blob. Si le hash correspond, il recrache le fichier original. Si un attaquant a modifié un bit sur MinIO, la fonction throw une erreur et refuse de déchiffrer.
-
+### Phase 4 : Download
 ![Logo](images/download.webp)
 
 ---
@@ -191,9 +159,6 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 #### 3 Secure Upload & Download Flows
 
-    Upload : Lorsqu'un membre upload un fichier dans l'espace de l'organisation, React génère la DEK du fichier, chiffre le fichier, puis chiffre la DEK avec la Org_Pub_Key.
-
-    Download : N'importe quel membre récupère la DEK chiffrée. Il déchiffre d'abord son accès à l'organisation (Encrypted_Org_Priv_Key locale -> Org_Priv_Key), puis utilise l'Org_Priv_Key pour déchiffrer la DEK du fichier.
 ![Logo](images/orga-upload.webp)
 ![Logo](images/orga-download.webp)
 
