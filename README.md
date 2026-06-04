@@ -224,6 +224,8 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Temp-token 2FA challenge** - between password verification and TOTP/recovery-code submission, a scoped 5-minute JWT (scope: "2fa") gates the second step.
 - **2FA disable flow** - requires password re-verification.
 
+> Full implementation details: [docs/2fa.md](docs/2fa.md)
+
 ### Storage & File Management
 
 - **Client-side file encryption** - **METTRE NOMS** - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
@@ -362,6 +364,8 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Why**: the plateform stores sensitive data, offering TOTP-based 2FA is a security upgrade with minimal UX friction
 - **Implementation**: TOTP via `pquerna/otp` with QR-code provisioning. 5min setup window with in-memory pending-secret. TOTP secret encrypted at rest with a derived key from `client salt + user id`. 10 single-use recovery codes, lockout policy (3 attempts, 5min lockout), scoped temp-JWT. Enabling/disabling 2FA flow.
 - **Owner(s)**: vicperri
+
+> Full implementation details: [docs/2fa.md](docs/2fa.md)
 
 ### **Backend as Microservices  - *Major***
 
