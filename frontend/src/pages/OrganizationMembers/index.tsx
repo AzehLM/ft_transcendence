@@ -5,7 +5,7 @@ import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
 import { UserMinus, Shield, UserPlus, User } from "lucide-react";
-import { OrgLayout } from "./OrgLayout";
+import { OrgLayout } from "../../components/OrgLayout";
 import { z } from "zod";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
