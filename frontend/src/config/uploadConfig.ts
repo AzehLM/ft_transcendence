@@ -1,4 +1,3 @@
-// Constantes pour l'upload E2EE
 export const UPLOAD_CONFIG = {
     CHUNK_SIZE: 32 * 1024 * 1024, // 32 MB plaintext per chunk (multipart)
     MAX_FILE_SIZE: 2 * 1024 * 1024 * 1024, // 2 GB

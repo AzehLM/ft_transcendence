@@ -240,11 +240,6 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 	// this create an ancestors temporary table used for the recursive.
 	// f is a shorcut for folder, a for ancestors
 
-	// things to test:
-	// root folder to different root folder -> false
-	// folder to its own id -> true
-	// child folder to direct parent -? true
-	// deep child folder to high ancestor (several folders aboves) -> true
 	err := r.db.Raw(`
 		WITH RECURSIVE ancestors AS (
 			SELECT id, parent_id FROM folders WHERE id = ?
