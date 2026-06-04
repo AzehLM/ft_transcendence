@@ -19,6 +19,7 @@ import { MoveModal } from "../MoveModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { FilePreviewModal } from "../FilePreviewModal";
+import { formatFileSize, getDecryptedSize } from "../../services/fileValidation.service";
 
 interface FileCardProps {
   id: string;
@@ -122,12 +123,6 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
     setShowPreviewModal(true);
   }
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  };
-
   const menuRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -168,7 +163,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
           <span className={styles.name}>{displayName}</span>
         </div>
         <div className={styles.right}>
-          <span className={styles.size}>{formatSize(fileSize)}</span>
+          <span className={styles.size}>{formatFileSize(getDecryptedSize(fileSize))}</span>
           <div className={styles.actions}>
             <button className={styles.actionBtn} onClick={() => handlePreviewClick()} title="Preview">
               <Eye size={16} />
