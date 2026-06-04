@@ -209,7 +209,7 @@ export async function generateRegistrationData(
     };
 
 
-    return registrationData;
+    return { masterKey, registrationData };
 }
 
 

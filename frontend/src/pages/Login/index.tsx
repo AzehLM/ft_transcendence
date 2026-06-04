@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { loginSchema } from "../../schemas/auth.schema";
 import { VerifyTOTP } from "../../components/VerifyTOTP/VerifyTOTP";
 
 
@@ -26,31 +27,19 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
-        if (!email || !password) {
-            setError("All fields are required!");
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email!");
-            return;
-        }
-
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters!");
+        const result = loginSchema.safeParse({ email, password });
+        if (!result.success) {
+            setError(result.error.issues[0].message);
             return;
         }
 
         setIsLoading(true);
         try {
-            const { masterKey: mk, loginData } = await generateLoginData(email, password);
+            const { masterKey: mk, loginData } = await generateLoginData(result.data.email, result.data.password);
 
             const response = await fetch("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(loginData),
             });
 
@@ -100,9 +89,9 @@ export default function LoginPage() {
             await storePublicKey(publicKey);
 
             navigate("/dashboard");
-
         } catch (err: any) {
             setError(err.message || "An error occurred during login!");
+        } finally {
             setIsLoading(false);
         }
     };

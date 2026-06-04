@@ -8,6 +8,7 @@ import { DangerZone } from "../../components/DangerZone";
 import { generateChangePasswordData, generateLoginData, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { useEffect } from "react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { changePasswordSchema } from "../../schemas/auth.schema";
 import { TwoFAModal } from "../../components/TwoFAModal";
 
 
@@ -46,6 +47,7 @@ export default function AccountPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [pwdError, setPwdError] = useState<string | null>(null);
     const [isReset, setIsReset] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         fetchWithRefresh("/api/auth/me")
@@ -68,45 +70,23 @@ export default function AccountPage() {
     const handleChangePassword = async () => {
         setPwdError(null);
         setIsReset(false);
-        if (!password || !newPassword || !confirmPassword) {
-            setPwdError("All fields are required!");
-            setPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setPwdError("The new passwords do not match.");
-            setPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
+
+        const result = changePasswordSchema.safeParse({
+            current: password,
+            newPassword,
+            confirmPassword,
+        });
+        if (!result.success) {
+            setPwdError(result.error.issues[0].message);
             return;
         }
 
-        if (newPassword.length < 8) {
-            setPwdError("Password must be at least 8 characters!");
-            setPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            return;
-        }
-
-        if (newPassword === password) {
-            setPwdError("New password cannot be the same as the previous one.");
-            setPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            return;
-        }
-
+        setIsUpdating(true);
         try {
-
-            const { masterKey, loginData } = await generateLoginData(email, password);
+            const { masterKey, loginData } = await generateLoginData(email, result.data.current);
             const response = await fetch("/api/auth/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(loginData),
             });
 
@@ -124,13 +104,11 @@ export default function AccountPage() {
             }
             const responseData = await response.json();
 
-
             const encryptedPrivateKey = base64ToUint8Array(responseData.encrypted_private_key);
             const iv = base64ToUint8Array(responseData.iv);
-
             const privateKey = await unwrapPrivateKey(encryptedPrivateKey, masterKey, iv, true);
 
-            const data = await generateChangePasswordData(newPassword, privateKey);
+            const data = await generateChangePasswordData(result.data.newPassword, privateKey);
             const passwordData = {
                 old_auth_hash: loginData.auth_hash,
                 new_client_salt: data.new_client_salt,
@@ -165,11 +143,12 @@ export default function AccountPage() {
         } catch (err: any) {
             console.error("Failed to change password:", err);
             setPwdError(err.message || "An error occurred, the password has not been changed !");
+        } finally {
+            setIsUpdating(false);
         }
     };
 
     return (
-
         <SettingsLayout>
             <div className={styles.settingsGrid}>
                 <div className={styles.settingsCard}>
@@ -212,9 +191,13 @@ export default function AccountPage() {
                             />
                         </div>
                         {pwdError && <p className={styles.errorMessage}>{pwdError}</p>}
-                        <button className={`${styles.buttonChange} ${styles.profileButton}`}
+                        <button
+                            className={`${styles.buttonChange} ${styles.profileButton}`}
                             onClick={handleChangePassword}
-                        >Update Password</button>
+                            disabled={isUpdating}
+                        >
+                            {isUpdating ? "Updating..." : "Update Password"}
+                        </button>
                     </div>
                     )}
                 </div>

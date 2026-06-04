@@ -5,6 +5,7 @@ import { Sidebar } from "../Sidebar/Sidebar";
 import { SidebarLink } from "../Sidebar/SidebarLink";
 import { fetchWithRefresh } from "../../services/api.service";
 import styles from "./MenuSidebar.module.css";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface Org {
   id: string;
@@ -17,6 +18,7 @@ export function MenuSidebar() {
   const [orgsOpen, setOrgsOpen] = useState(false);
   const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<Org[]>([]);
+  const { registerListener, unregisterListener } = useNotifications();
 
   const fetchOrgs = () => {
     fetchWithRefresh("/api/orgs")
@@ -28,6 +30,22 @@ export function MenuSidebar() {
   useEffect(() => {
     fetchOrgs();
   }, []);
+
+    useEffect(() => {
+      const events = [
+        "ADDED_TO_NEW_ORGA",
+        "MEMBER_REMOVED",
+        "ORGA_RENAMED",
+        "ORGA_DELETED",
+      ];
+
+      events.forEach(event => registerListener(event, fetchOrgs));
+
+      return () => {
+        events.forEach(event => unregisterListener(event, fetchOrgs));
+      };
+    }, [registerListener, unregisterListener]);
+
 
   useEffect(() => {
     window.addEventListener("org-list-changed", fetchOrgs);

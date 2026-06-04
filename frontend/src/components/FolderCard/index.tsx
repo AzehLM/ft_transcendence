@@ -4,6 +4,7 @@ import styles from "./FolderCard.module.css";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useNavigate } from "react-router-dom";
+import { folderSchema } from "../../schemas/folder.schema";
 
 interface FolderProps {
   id: string;
@@ -62,13 +63,16 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
     };
 
     const handleConfirmRename = async () => {
-    try {
-        if (!renameValue.trim()) {
-        setRenameError("Invalid name");
-        return;
-        }
+    setRenameError(null);
 
-        await onRename?.(id, renameValue, name);
+    const result = folderSchema.safeParse({ name: renameValue });
+    if (!result.success) {
+      setRenameError(result.error.issues[0].message)
+      return ;
+    }
+
+    try {
+        await onRename?.(id, result.data.name, name);
 
         setShowRenameModal(false);
         setRenameError(null);
@@ -80,13 +84,13 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
   return (
     <>
         <div className={styles.row} onClick={handleEnterFolder}>
-        <div style={{ 
-            backgroundColor: "rgba(213, 79, 42, 0.08)", 
-            color: "#d54f2a", 
-            padding: "6px", 
-            borderRadius: "6px", 
-            display: "flex", 
-            alignItems: "center", 
+        <div style={{
+            backgroundColor: "rgba(213, 79, 42, 0.08)",
+            color: "#d54f2a",
+            padding: "6px",
+            borderRadius: "6px",
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
             marginRight: "10px",
             flexShrink: 0

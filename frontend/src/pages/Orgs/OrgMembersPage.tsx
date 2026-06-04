@@ -6,6 +6,7 @@ import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
 import { UserMinus, Shield, UserPlus, User } from "lucide-react";
 import { OrgLayout } from "./OrgLayout";
+import { z } from "zod";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
@@ -51,7 +52,7 @@ export default function OrgMembersPage() {
 
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const avatarUrlsRef = useRef<Record<string, string>>({});
-  
+
   const [mainError, setMainError] = useState<string | null>(null);
   const [orgError, setOrgError] = useState<string | null>(null);
   const { messages, addMessage, removeMessage } = useMessages();
@@ -214,7 +215,11 @@ export default function OrgMembersPage() {
   }, [registerListener, unregisterListener, id, myUserId]);
 
   const handleAddMember = async () => {
-    if (!memberEmail.trim()) return;
+    const result = z.email().safeParse(memberEmail);
+    if (!result.success) {
+      setModalError("Please enter a valid email");
+      return ;
+    }
     setModalError(null);
 
     const hasKeys = await checkKeys();
