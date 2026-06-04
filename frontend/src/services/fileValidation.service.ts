@@ -39,10 +39,22 @@ export async function validateFile(file: File): Promise<ValidationResult>  {
     }
 
     try {
+        const extension = file.name.split('.').pop()?.toLowerCase() || '';
+
+        let expectedMime: string | null = null;
+        for (const [mime, extensions] of Object.entries(ALLOWED_MIME_TYPES)) {
+            if (extensions.includes(extension)) {
+                expectedMime = mime;
+                break;
+            }
+        }
+
+        if (!expectedMime) {
+            return { isValid: true };
+        }
+
         const buffer = await file.slice(0, 4100).arrayBuffer();
         const typeInfo = await fileTypeFromBuffer(new Uint8Array(buffer));
-
-        const extension = file.name.split('.').pop()?.toLowerCase() || '';
         let detectedMime = typeInfo?.mime || file.type;
 
         if (!typeInfo) {
@@ -55,19 +67,10 @@ export async function validateFile(file: File): Promise<ValidationResult>  {
             }
         }
 
-        if (!detectedMime || !Object.keys(ALLOWED_MIME_TYPES).includes(detectedMime)) {
-            return {
-                isValid: false,
-                error: `Unauthorized or corrupted file type: ${detectedMime || 'Unknown'}`
-            };
-        }
-
-        const validExtensions = ALLOWED_MIME_TYPES[detectedMime] || [];
-
-        if (extension && !validExtensions.includes(extension)) {
+        if (detectedMime !== expectedMime) {
              return {
                 isValid: false,
-                error: `The .${extension} extension does not match the file content (${detectedMime}).`
+                error: `The .${extension} extension does not match the file content (${detectedMime || 'Unknown'}).`
             };
         }
 
@@ -130,6 +133,7 @@ export const getFileTypeLabel = (mimeType: string): string => {
     return typeMap[mimeType] || mimeType || 'File';
 };
 
-export const getAcceptAttribute = (): string => {
-    return Object.values(ALLOWED_MIME_TYPES).flat().map(ext => `.${ext}`).join(',');
+export const getAcceptAttribute = (): string | undefined => {
+    return undefined;
 };
+
