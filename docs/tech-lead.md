@@ -168,3 +168,8 @@ We've standardized on lucide-react for icon management in our frontend because i
 - Unified design language: Every icon adheres to the same specifications : 24px viewport, 2px stroke weight, which gives consistent visual hierarchy. This enforces design coherence across the product. As the application scales, this consistency prevents the fragmentation that occurs when teams source icons from multiple libraries or custom SVG repositories.
 - Operational sustainability: The library is maintained by the open-source community, integrated into production systems at scale (Vercel, Supabase, etc.), and published under the MIT license. This reduces technical debt compared to custom SVG management, which requires manual maintenance, testing, and versioning of individual assets.
 - Integration simplicity: Lucide-react integrates directly with our existing Tailwind and CSS modules stack. No adapter layers, middleware, or bespoke configuration required.
+
+
+### Backup blablabla
+
+Dire qu'il y a un readme specific pour ca
