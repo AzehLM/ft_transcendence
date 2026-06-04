@@ -41,7 +41,7 @@ function AboutPage() {
                     {/* Team member bubbles*/}
                     <div style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                         gap: "20px",
                         marginTop: "32px"
                     }}>
