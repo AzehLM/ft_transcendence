@@ -47,7 +47,7 @@ To guarantee that high-entropy binary byte streams cross the application boundar
 
 
 
-![Logo](images/inscription.webp)
+![Logo](images/register.webp)
 
 ---
 
