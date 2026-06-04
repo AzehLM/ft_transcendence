@@ -1,4 +1,4 @@
-import { Shield, Cpu, Lock, GraduationCap, FolderLock, Package } from "lucide-react";
+import { Shield, Cpu, Lock, GraduationCap, FolderLock } from "lucide-react";
 import styles from "../../styles/legal.module.css";
 import BackToHomeLink from "../../components/BackToHomeLink";
 
@@ -15,14 +15,8 @@ function AboutPage() {
                     gap: "16px",
                     marginBottom: "24px"
                 }}>
-                    <div style={{
-                        backgroundColor: "#865142",
-                        padding: "12px",
-                        borderRadius: "12px",
-                        color: "white"
-                    }}>
-                        <Package size={36} />
-                    </div>
+                    <img src="/app-icon.png" alt="" aria-hidden="true" style={{ width: "62px", height: "62px", objectFit: "contain" }} />
+
                     <div>
                         <h1 className={styles.title} style={{ margin: 0, fontSize: "32px", fontFamily: "IBM Plex Sans, sans-serif" }}>
                             About Ostrom
@@ -41,7 +35,7 @@ function AboutPage() {
                         <GraduationCap size={22} style={{ color: "#865142" }} /> Who we are
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        We are four students from school 42 who met during the common core and decided to build something we actually cared about for our final capstone. Different backgrounds, different specializations — but a shared belief that privacy in the cloud shouldn't be a premium feature.
+                        We are four students from school 42 who met during the common core and decided to build something we actually cared about for our final capstone. Different backgrounds, different specializations, but a shared belief that privacy in the cloud shouldn't be a premium feature.
                     </p>
 
                     {/* Team member bubbles*/}
