@@ -450,6 +450,32 @@ As the tech lead, generally made the research on differents possible stacks to u
 - **Backend file/folder structure**: Go has props for folders name and finding a global structure that everyone agrees to work with took few days. The first days learning Go were rough overall.
 
 
+## vicperri (Victoire) - Project Manager / Scrum Master & Developer
+
+### Project Management
+Alongside lbuisson, co-led the Scrum Master role throughout the project. Key responsibilities included:
+- **Team Coordination** - Organized weekly meetings and planning sessions, kept the agenda and ensured every member had clarity on their current tasks and upcoming goals
+- **Progress Tracking** - Maintained the shared Notion workspace as the central to-do tracker, updated weekly to reflect what was done, in progress, and remaining
+- **Risk & Blocker Management** - Monitored risks and surface blockers early so the team could course-correct without losing momentum
+- **Communication** - Ensured smooth day-to-day communication via Discord, and kept GitHub Issues / Projects in sync with actual work
+
+### Backend Development
+- **Two-Factor Authentication (2FA)** - Fully designed and implemented: TOTP secret generation and encryption at rest (PBKDF2 + AES-256-GCM), 10 single-use bcrypt-hashed recovery codes, 3-attempt lockout, scoped temporary JWT for the two-step login challenge, and a password-verified disable flow
+- **Avatar Upload** - Stored directly in PostgreSQL as `BYTEA`, keeping the feature independent of MinIO
+- **Zero-Knowledge Registration & Login** (co-implemented with pnaessen) - Client-side RSA keypair generation, private key encryption with a PBKDF2-derived Master Key, and auth hash derivation so the server never sees the user's password
+
+### Frontend Development
+- **Core Frontend Structure** - Built the initial scaffolding, routing, and file organization the team built on
+- **Design System** (co-implemented with lbuisson) - 30+ reusable components, Tailwind v4 + CSS modules, `theme.css` design tokens, Framer Motion transitions, and lucide-react icon system
+- **2FA Frontend** - SetupTOTP wizard, VerifyTOTP login challenge, TwoFAModal 6-state settings machine, and login page `requires_2fa` flow
+- **Profile Picture & UI/UX** - Avatar upload on backend and frontend; initial Figma mockups used as visual reference throughout development
+
+### Challenges faced
+- **Zero-knowledge 2FA secret storage** - Storing the TOTP secret securely while keeping it decryptable at login time required careful key derivation design. The solution — deriving the encryption key from `userID + clientSalt` via PBKDF2 — meant the server can re-derive the key at login without ever storing it, which preserves the zero-knowledge model while adding 2FA on top of it.
+- **Scoped temporary token architecture** - The two-step login flow (password → 2FA code) required a way to keep state between the two HTTP calls without exposing a full session. Designing the scoped `tmp_token` JWT and the `VerifyTempSession` middleware to reject regular access tokens at the 2FA endpoints took several design iterations to get right.
+- **Frontend structure ownership** - Building the core frontend early in the project meant making architectural choices (routing, module layout, CSS strategy) that would affect everyone. Coordinating these decisions while also handling Scrum Master duties required constant communication with the rest of the team.
+
+
 ---
 
 ## Other informations such as:

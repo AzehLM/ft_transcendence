@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep -E \"\\\\.\\(go|ts|tsx|js\\)$\")",
       "Read(//home/vicperri/Documents/WORKFLOW/MILESTONE_6/**)",
-      "Read(//home/vicperri/Documents/WORKFLOW/**)"
+      "Read(//home/vicperri/Documents/WORKFLOW/**)",
+      "Bash(git log *)"
     ]
   }
 }
