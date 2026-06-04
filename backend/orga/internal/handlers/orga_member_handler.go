@@ -188,6 +188,13 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 			"error": "role is required",
 		})
 	}
+	
+	if body.Role == "owner" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "cannot manually set role to owner",
+        })
+    }
+
 	if body.Role != "admin" && body.Role != "member" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "role can only be admin or member",
@@ -226,13 +233,19 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		})
 	}
 
-	if member.Role == "admin" && body.Role != "admin" {
-		if repo.CountAdmin(orgID) <= 1 {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "cannot demote the last admin",
-			})
-		}
-	}
+	if member.Role == "owner" {
+        return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+            "error": "cannot change the role of the organization owner",
+        })
+    }
+
+	// if member.Role == "admin" && body.Role != "admin" {
+	// 	if repo.CountAdmin(orgID) <= 1 {
+	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+	// 			"error": "cannot demote the last admin",
+	// 		})
+	// 	}
+	// }
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
 	if err != nil {
@@ -315,13 +328,22 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		})
 	}
 
-	if member.Role == "admin" {
+	if member.Role == "owner" {
 		if repo.CountAdmin(orgID) <= 1 {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "you are the last admin, you can't leave the organization",
+				"error": "you are the owner, you can't leave the organization",
 			})
 		}
 	}
+
+
+	// if member.Role == "admin" {
+	// 	if repo.CountAdmin(orgID) <= 1 {
+	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+	// 			"error": "you are the last admin, you can't leave the organization",
+	// 		})
+	// 	}
+	// }
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
@@ -388,13 +410,13 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 		})
 	}
 
-	if member.Role == "admin" {
-		if repo.CountAdmin(orgID) <= 1 {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "you can't remove the last admin",
-			})
-		}
-	}
+	// if member.Role == "admin" {
+	// 	if repo.CountAdmin(orgID) <= 1 {
+	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+	// 			"error": "you can't remove the last admin",
+	// 		})
+	// 	}
+	// }
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
