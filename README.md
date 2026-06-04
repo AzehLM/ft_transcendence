@@ -462,12 +462,37 @@ As the tech lead, generally made the research on differents possible stacks to u
 ### Project Maneger
 In my role as Project Manager, I spearheaded team coordination by organizing and facilitating key agile meetings and technical syncs. I was responsible for delivering actionable meeting minutes and keeping documentation up to date, while driving efficient cross-team communication to ensure project alignment and smooth delivery.
 
-### **Specific Features, Modules & Components Implemented**
 
-* **Full Organization Backend Service:** Architected the entire `backend/orga` microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
+### Backend
+
+* **Full Organization Backend Service:** Architected the entire backend/orga microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
+* **Database Setup :** Designed and deployed the initial PostgreSQL schema.
+* **API Route Extensions & Feature Engineering**: Created and upgraded core authentication endpoints to support extended identity fields (first_name, family_name). Engineered storage routing logic to manage dynamic nested folder hierarchies (folder_path), enabling seamless server-side directory traversal.
+* **Notification Accuracy Integration**: Enhanced the data routing layer and event payloads dispatched over WebSockets, maximizing telemetry and notification accuracy across active client sessions.
+
+### Frontend
+
 * **Cryptographic & Token Enforcement:** Built the E2EE key-sharing pipeline (handling encrypted AES keys and IVs) and engineered the global frontend `useKeyCheck` hook to secure file and member actions.
-* **End-to-End Core Pages & UI Architecture:** Co-developed the project's **Design System** using **Tailwind v4** and **CSS Modules**. Built and integrated full views including the *User Profile*, *OrgFilesPage*, *OrgMembersPage*, and *OrgSettingsPage*, alongside reusable components (`FileCard`, `FolderCard`, `Breadcrumb`, `ConfirmationModal`).
+* **End-to-End Core Pages & UI Architecture:** Co-developed the project's Design System using Tailwind v4 and CSS Modules. Built and integrated full responsive views including the **User Profile**, **OrgFilesPage**, **OrgMembersPage**, and **OrgSettingsPage**, alongside reusable components (**FileCard**, **FolderCard**, **Breadcrumb**, **ConfirmationModal**).
 * **Centralized State & Feedback Hooks:** Created the unified `useFileManager` hook to eliminate frontend code duplication and built the global `FeedbackMessageContainer` animated notification system.
+* **Advanced File System Navigation:** Engineered a highly interactive user interface for file and folder visualization, enabling intuitive file tree traversals, dynamic grid/list layouts, and contextual action flows.
+
+#### **Challenges Faced & Solutions Overcome**
+
+* **Challenge 1: Overcoming block-size and performance limitations when securing organization keys using only asymmetric cryptography.**
+* *Solution:* Recognizing that asymmetric user keys alone cannot efficiently process or share organization-wide credentials, I implemented a robust Key Encapsulation Mechanism (KEM). I structured a two-layer security envelope: a transient, high-performance `AES-GCM 256-bit` key encrypts the organization's private key payload locally, and this symmetric key is then safely wrapped using the user's asymmetric `RSA-OAEP 4096-bit` public key before transit.
+
+* **Challenge 2: Securing E2EE workflows across asymmetric frontend views without repeating security logic.**
+* *Solution:* Instead of writing ad-hoc validation on every page, I centralized the cryptographic validation layer into a reusable `useKeyCheck` hook. I also hooked this logic directly into the `MainLayout` route-change listener to enforce automated session logouts immediately if vital keys are missing.
+
+
+* **Challenge 3: Preventing destructive concurrent actions (like double-clicking a delete button) during slow asynchronous API requests.**
+* *Solution:* I overhauled our global `ConfirmationModal` to natively track internal asynchronous loading states. By dynamically disabling buttons and rendering visual loader feedback until the backend responds, I successfully eliminated duplicate API submissions and race conditions.
+
+
+* **Challenge 4: Managing fragmented user feedback and removing local state duplication across cryptographic workflows.**
+* *Solution:* I engineered a unified, animated `FeedbackMessageContainer` notification system driven by a global custom `useFeedbackMessage` hook. I then refactored core asynchronous flows—like `useE2EEDownload`—to leverage this centralized pipeline with automated timeouts. This successfully eliminated redundant local status states, sanitized the `UploadStatus` view component, and uniformized success, error, and info alerting application-wide.
+
 
 ---
 
