@@ -22,7 +22,7 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");  // Réinitialise les erreurs précédentes
+        setError("");
 
         if (!email || !password || !confirmPassword) {
             setError("All fields are required!");
@@ -78,7 +78,7 @@ export default function RegisterPage() {
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
-            console.error("Erreur:", err);
+            console.error("Error:", err);
             setError(err.message || "An error occurred during registration!");
             setIsLoading(false);
         }
