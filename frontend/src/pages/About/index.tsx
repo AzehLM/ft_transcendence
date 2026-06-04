@@ -35,16 +35,82 @@ function AboutPage() {
 
                 <hr style={{ border: "none", borderTop: "1px solid #e5dbd9", margin: "32px 0" }} />
 
-                {/* Who We Are */}
+                {/* Who we are */}
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle} style={{ fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-                        <GraduationCap size={22} style={{ color: "#865142" }} /> Who We Are & The Project
+                        <GraduationCap size={22} style={{ color: "#865142" }} /> Who we are
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
                         Ostrom is not a commercial product. We are a team of four student developers at school 42, and this application is our final graduation capstone. We set out to build a fully functional, production-ready, and end-to-end encrypted (E2EE) file storage system.
                     </p>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
                         Inspired by Elinor Ostrom's Nobel-prize-winning work on how communities successfully govern shared resources (the "commons") without centralized state or private control, we wanted to build a cloud storage service where users hold absolute sovereignty over their own data.
+                    </p>
+
+                    {/* Team member bubbles — photos go in frontend/public/members/ */}
+                    <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                        gap: "20px",
+                        marginTop: "32px"
+                    }}>
+                        {[
+                            { name: "Guillaume Ebersohl", description: "Technical Lead", photo: "/members/gueberso.jpeg" },
+                            { name: "Victoire Perrier", description: "Project Manager", photo: "/members/vicperri.jpeg" },
+                            { name: "Pierrick Naessen", description: "Product Owner", photo: "/members/pnaessen.jpeg" },
+                            { name: "Lou Anne Buisson", description: "Project Manager", photo: "/members/member4.jpg" },
+                        ].map((member) => (
+                            <div key={member.name} style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "14px",
+                                padding: "24px 16px",
+                                backgroundColor: "#fefdfc",
+                                border: "1px solid #ebdcd9",
+                                borderRadius: "16px",
+                                textAlign: "center",
+                                boxShadow: "0 2px 6px rgba(0,0,0,0.03)"
+                            }}>
+                                <div style={{
+                                    width: "100px",
+                                    height: "100px",
+                                    borderRadius: "50%",
+                                    overflow: "hidden",
+                                    border: "3px solid #ebdcd9",
+                                    backgroundColor: "#f0e6e3",
+                                    flexShrink: 0
+                                }}>
+                                    <img
+                                        src={member.photo}
+                                        alt={member.name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                                    />
+                                </div>
+                                <div>
+                                    <p style={{ margin: "0 0 5px 0", fontWeight: 600, fontSize: "15px", color: "#2b1008", fontFamily: "IBM Plex Sans, sans-serif" }}>
+                                        {member.name}
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: "13px", color: "#865142", lineHeight: "1.5", opacity: 0.85 }}>
+                                        {member.description}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+
+                {/* The project */}
+                <section className={styles.section}>
+                    <h2 className={styles.sectionTitle} style={{ fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                        <GraduationCap size={22} style={{ color: "#865142" }} /> The Project
+                    </h2>
+                    <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
+                        Presentation of the project
+                    </p>
+                    <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
+                        More presentation of the project
                     </p>
                 </section>
 
