@@ -7,7 +7,7 @@ import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
 import { loginSchema } from "../../schemas/auth.schema";
-import { VerifyTOTP } from "../../components/VerifyTOTP/VerifyTOTP";
+import { VerifyTOTP } from "../../components/VerifyTOTP";
 
 
 export default function LoginPage() {

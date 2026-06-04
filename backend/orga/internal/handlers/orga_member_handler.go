@@ -97,14 +97,14 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		})
 	}
 
-	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey) // ← nouveau
+	decodedAesKey, errAes := base64.StdEncoding.DecodeString(body.EncAesKey)
 	if errAes != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 aes key",
 		})
 	}
 
-	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv) // ← nouveau
+	decodedIv, errIv := base64.StdEncoding.DecodeString(body.Iv)
 	if errIv != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid base64 iv",
