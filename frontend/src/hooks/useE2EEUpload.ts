@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { fetchWithRefresh } from '../services/api.service';
 import { encryptDEKWithPublicKey, uint8ArrayToBase64, getPublicKeyFromSession, encryptFilenameAsymmetric } from '../services/crypto.service';
 import { UPLOAD_CONFIG, UPLOAD_MESSAGES } from '../config/uploadConfig';
@@ -70,6 +70,8 @@ function deriveChunkIv(baseIv: Uint8Array, chunkNumber: number): Uint8Array<Arra
 
 export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: string) {
     const [uploads, setUploads] = useState<Record<string, UploadTask>>({});
+    const queueRef = useRef<{ id: string; file: File }[]>([]);
+    const activeCountRef = useRef<number>(0);
 
     const updateUpload = (id: string, updates: Partial<UploadTask>) => {
         setUploads(prev => ({
@@ -246,19 +248,22 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
         if (!finalizeRes.ok) throw new Error(UPLOAD_MESSAGES.ERROR_FINALIZE_FAILED);
     };
 
-    const uploadFile = async (file: File) => {
-        const id = crypto.randomUUID();
+    const processQueue = () => {
+        const maxConcurrent = UPLOAD_CONFIG.MAX_CONCURRENT_FILES;
+        while (activeCountRef.current < maxConcurrent && queueRef.current.length > 0) {
+            const nextTask = queueRef.current.shift();
+            if (!nextTask) break;
 
-        const fileInfo = {
-            name: file.name,
-            size: formatFileSize(file.size),
-            type: getFileTypeLabel(file.type)
-        };
+            activeCountRef.current++;
+            runActualUpload(nextTask.id, nextTask.file);
+        }
+    };
 
-        setUploads(prev => ({
-            ...prev,
-            [id]: { id, file, fileInfo, status: UPLOAD_MESSAGES.INITIALIZING(file.name), progress: null, isUploading: true, error: null }
-        }));
+    const runActualUpload = async (id: string, file: File) => {
+        updateUpload(id, {
+            status: UPLOAD_MESSAGES.INITIALIZING(file.name),
+            isUploading: true
+        });
 
         const startTime = Date.now();
 
@@ -314,7 +319,36 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
                     setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
                 }, 400);
             }, 4000);
+        } finally {
+            activeCountRef.current--;
+            processQueue();
         }
+    };
+
+    const uploadFile = (file: File) => {
+        const id = crypto.randomUUID();
+
+        const fileInfo = {
+            name: file.name,
+            size: formatFileSize(file.size),
+            type: getFileTypeLabel(file.type)
+        };
+
+        setUploads(prev => ({
+            ...prev,
+            [id]: {
+                id,
+                file,
+                fileInfo,
+                status: UPLOAD_MESSAGES.QUEUED,
+                progress: null,
+                isUploading: false,
+                error: null
+            }
+        }));
+
+        queueRef.current.push({ id, file });
+        processQueue();
     };
 
     return { uploadFile, uploads };
