@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
-import { OrgLayout } from "./OrgLayout";
+import { OrgLayout } from "../../components/OrgLayout";
 import { StorageBar } from "../../components/StorageBar";
 import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
