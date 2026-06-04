@@ -15,7 +15,7 @@ function AboutPage() {
                     gap: "16px",
                     marginBottom: "24px"
                 }}>
-                    <img src="/app-icon.png" alt="" aria-hidden="true" style={{ width: "62px", height: "62px", objectFit: "contain" }} />
+                    <img src="/app-icon.png" alt="" aria-hidden="true" style={{ width: "52px", height: "52px", objectFit: "contain" }} />
 
                     <div>
                         <h1 className={styles.title} style={{ margin: 0, fontSize: "32px", fontFamily: "IBM Plex Sans, sans-serif" }}>
@@ -99,7 +99,7 @@ function AboutPage() {
                                     <p style={{ margin: "0 0 5px 0", fontWeight: 600, fontSize: "15px", color: "#2b1008", fontFamily: "IBM Plex Sans, sans-serif" }}>
                                         {member.name}
                                     </p>
-                                    <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#865142", lineHeight: "1.5", opacity: 0.85 }}>
+                                    <p style={{ margin: "0 0 12px 0", fontSize: "13px", color: "#865142", lineHeight: "1.5" }}>
                                         {member.description}
                                     </p>
                                     <hr style={{ border: "none", borderTop: "1px solid #ebdcd9", margin: "0 0 12px 0" }} />
