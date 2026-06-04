@@ -26,7 +26,7 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
 
 
   const handleSave = async () => {
-      if (inputValue === value) {
+      if (inputValue.trim() === value.trim()) {
           setEditing(false);
           return;
       }
