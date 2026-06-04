@@ -139,6 +139,12 @@ Alongside lbuisson, was responsible for project management and Scrum Master duti
 
 As a developer, implemented two-factor authentication (2FA), the encryption functions for the registration and login process, designed the mockups of the website, built the core structure of the frontend, added profile picture support for users on both the backend and frontend, and ensured overall UI/UX quality throughout the project.
 
+### lbuisson (Lou-Anne) - Project Manager : acilitates team coordination + Developer
+Alongside visperri, was responsible for project management duties, which included organizing team meetings and planning sessions, creating reports and to do list.
+
+
+As a developer, owns the organization backend microservice (member invitation with hybrid RSA+AES key re-encryption, role management and its whole implementation on the client-side), the application's cryptographic enforcement layer (centralized end-to-end encryption (E2EE) key verification through global frontend hooks and managing secure public/private key-sharing pipelines), and drove major UI/UX and architectural enhancements across frontend (rebuilding the user profile and organization management systems, developing an optimized, hook-driven file and folder explorer, and creating a unified, asynchronous modal and dynamic feedback system).
+
 
 ### gueberso (Guillaume) - Technical Lead / Architect: Overseeing technivcal decisions and architecture + Developer
 
@@ -216,7 +222,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Refresh-token rotation** - pnaessen - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
 
-- **Account management** - **LIRE LA SUITE POUR METTRE NOM** - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
+- **Account management** - lbuisson - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
 
 - **Avatar Upload** - vicperri - stored directly in PostgreSQL as `BYTEA` (no MinIO dependency for avatars)
 
@@ -240,9 +246,10 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Multipart upload** - gueberso - files above 96MB are split into 32MB plaintext chunks (up to 100 parts, hard cap at 2GB), with parallel PUT (concurrency by 4 chunks) and a deterministic per-chunk IV derived from the base IV + chunk number. Initialisation / finalization and abortion endpoints handle the MinIO multipart lifecycle.
 - **Encrypted download** - pnaessen (frontend E2EE) & gueberso (backend) - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
 - **Folder hierarchy** - gueberso - create, rename, move, delete folders. Cyclic detection to prevent moving folder into one of its descendants
-- **File operations** - gueberso **& lbuisson ?**- move between folders, delete (with cascade to MinIO via Redis stream events).
+- **File operations** - gueberso - move between folders, delete (with cascade to MinIO via Redis stream events).
 - **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
 - **MIME-type validation** - pnaessen (frontend) & gueberso (backend) - magic-number detection via file type before encryption, extension check and rejection of unrecognized types
+- **Folder path** - lbuisson - added a folder path resolution with cycle detection
 
 ### Organization (fully done by lbuisson)
 
@@ -267,6 +274,11 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Theming & animations** - vicperri & lbuisson - theme.css design tokens. Framer-motion for transitions.
 - **Icon system** - vicperri - lucide-react, consistent specification.
 - **Static pages** - pnaessen & gueberso - Home, About, Privacy Policy, Terms of Service, 404.
+- **End-to-End Page Creation & Integration** - lbuisson, vicperri & pnaessen - Built and wired the complete frontend-to-backend infrastructure for core application pages.
+- **Responsive Styling & Layouts** - lbuisson, vicperri & pnaessen - Implemented flexible layouts with media queries to ensure smooth responsiveness.
+- **Reusable layout system** - lbuisson & vicperri - Built MainLayout, OrgLayout, SettingsLayout with sidebar slot pattern, enabling per-route layout composition without page-level duplication.
+- **Route architecture** - lbuisson - Designed the full routing structure including protected routes, session and key lifecycle hooks, and nested org routes.
+- **Folder explorer** - lbuisson - Built a full folder tree navigation, path reconstruction from backend, and context-aware routing for both personal and organization spaces.
 
 ### DevOps & Infrastructure (fully done by gueberso)
 
@@ -322,7 +334,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Why**: the plateform shows live notifications and online-presence indicators inside organizations  for a better user experience.
 - **Implementation**: a single `/ws/notification` endpoint. A `Hub`, subscribing to wanted events. Redis pub/sub channels and re-broadcast.
-- **Owner(s)**: pnaessen (WebSocket backend and frontend integration) and gueberso (Redis infrastructure)
+- **Owner(s)**: pnaessen and lbuisson (WebSocket backend and frontend integration) and gueberso (Redis infrastructure)
 
 ### **ORM for the database - *Minor***
 
@@ -448,6 +460,42 @@ As the tech lead, generally made the research on differents possible stacks to u
 ### Challenges faced
 - **MinIO** implementation was a huge challenge. Worked correctly with simple use-cases at the beggining but it had to be maintained and updated throught the whole duration of the project. The multipart upload was implemented a week before the project was done for example.
 - **Backend file/folder structure**: Go has props for folders name and finding a global structure that everyone agrees to work with took few days. The first days learning Go were rough overall.
+
+## lbuisson (Lou-Anne) - Projet Maneger & Developer
+
+### Project Maneger
+In my role as Project Manager, I spearheaded team coordination by organizing and facilitating key agile meetings and technical syncs. I was responsible for delivering actionable meeting minutes and keeping documentation up to date, while driving efficient cross-team communication to ensure project alignment and smooth delivery.
+
+
+### Backend
+
+* **Full Organization Backend Service:** Architected the entire backend/orga microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
+* **Database Setup :** Designed and deployed the initial PostgreSQL schema.
+* **API Route Extensions & Feature Engineering**: Created and upgraded core authentication endpoints to support extended identity fields (first_name, family_name). Engineered storage routing logic to manage dynamic nested folder hierarchies (folder_path), enabling seamless server-side directory traversal.
+* **Notification Accuracy Integration**: Enhanced the data routing layer and event payloads dispatched over WebSockets, maximizing telemetry and notification accuracy across active client sessions.
+
+### Frontend
+
+* **Cryptographic & Token Enforcement:** Built the E2EE key-sharing pipeline (handling encrypted AES keys and IVs) and engineered the global frontend `useKeyCheck` hook to secure file and member actions.
+* **End-to-End Core Pages & UI Architecture:** Co-developed the project's Design System using Tailwind v4 and CSS Modules. Built and integrated full responsive views including the **User Profile**, **OrgFilesPage**, **OrgMembersPage**, and **OrgSettingsPage**, alongside reusable components (**FileCard**, **FolderCard**, **Breadcrumb**, **ConfirmationModal**).
+* **Centralized State & Feedback Hooks:** Created the unified `useFileManager` hook to eliminate frontend code duplication and built the global `FeedbackMessageContainer` animated notification system.
+* **Advanced File System Navigation:** Engineered a highly interactive user interface for file and folder visualization, enabling intuitive file tree traversals, dynamic grid/list layouts, and contextual action flows.
+
+#### **Challenges Faced & Solutions Overcome**
+
+* **Challenge 1: Overcoming block-size and performance limitations when securing organization keys using only asymmetric cryptography.**
+* *Solution:* Recognizing that asymmetric user keys alone cannot efficiently process or share organization-wide credentials, I implemented a robust Key Encapsulation Mechanism (KEM). I structured a two-layer security envelope: a transient, high-performance `AES-GCM 256-bit` key encrypts the organization's private key payload locally, and this symmetric key is then safely wrapped using the user's asymmetric `RSA-OAEP 4096-bit` public key before transit.
+
+* **Challenge 2: Securing E2EE workflows across asymmetric frontend views without repeating security logic.**
+* *Solution:* Instead of writing ad-hoc validation on every page, I centralized the cryptographic validation layer into a reusable `useKeyCheck` hook. I also hooked this logic directly into the `MainLayout` route-change listener to enforce automated session logouts immediately if vital keys are missing.
+
+
+* **Challenge 3: Preventing destructive concurrent actions (like double-clicking a delete button) during slow asynchronous API requests.**
+* *Solution:* I overhauled our global `ConfirmationModal` to natively track internal asynchronous loading states. By dynamically disabling buttons and rendering visual loader feedback until the backend responds, I successfully eliminated duplicate API submissions and race conditions.
+
+
+* **Challenge 4: Managing fragmented user feedback and removing local state duplication across cryptographic workflows.**
+* *Solution:* I engineered a unified, animated `FeedbackMessageContainer` notification system driven by a global custom `useFeedbackMessage` hook. I then refactored core asynchronous flows—like `useE2EEDownload`—to leverage this centralized pipeline with automated timeouts. This successfully eliminated redundant local status states, sanitized the `UploadStatus` view component, and uniformized success, error, and info alerting application-wide.
 
 
 ## vicperri (Victoire) - Project Manager / Scrum Master & Developer
