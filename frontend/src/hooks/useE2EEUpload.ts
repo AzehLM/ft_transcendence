@@ -193,7 +193,16 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             parts: PartURL[];
         };
 
-        updateUpload(id, { status: UPLOAD_MESSAGES.ENCRYPTING });
+        updateUpload(id, {
+            status: UPLOAD_MESSAGES.ENCRYPTING,
+            progress: {
+                uploadedBytes: 0,
+                totalBytes: file.size,
+                percentage: 0,
+                speed: 0,
+                remainingTime: 0,
+            }
+        });
 
         let completedParts: CompletedPart[];
         try {
