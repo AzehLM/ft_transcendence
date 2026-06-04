@@ -58,25 +58,25 @@ function AboutPage() {
                             {
                                 name: "Guillaume Ebersohl",
                                 description: "Technical Lead",
-                                bio: "Economics graduate turned events professional turned obsessive coder, Guillaume found his true calling when he discovered he was basically Mr. Robot in disguise. He digs deep into every subject, sweats the details others miss, and spends so much time at school 42 that his ghost probably haunts the place when he's away.",
+                                bio: "Economics grad to events pro to obsessive coder : Guillaume is basically Mr. Robot in disguise. He digs deep into every subject and spends so much time at school 42 that his ghost probably haunts the place when he's away.",
                                 photo: "/members/gueberso.jpeg"
                             },
                             {
                                 name: "Victoire Perrier",
                                 description: "Project Manager",
-                                bio: "From digital marketing to software engineering, Victoire brought a user-first mindset that kept the product grounded when the engineering got deep. You'll probably find her singing (screaming) in her car at the end of a long work day.",
+                                bio: "From digital marketing to software engineering, Victoire brought a user-first mindset that kept the product grounded when the engineering got deep. You'll probably find her singing at the top of her lungs in her alone time.",
                                 photo: "/members/vicperri.jpeg"
                             },
                             {
                                 name: "Pierrick Naessen",
                                 description: "Product Owner",
-                                bio: "From Calais in northern France, Pierrick traded a cinema studies background for a keyboard at school 42, and quickly became one of its most valued contributors. Always helping fellow students, he's as dedicated to the community as he is to the code. When he's not at school, he's probably perfecting his skincare routine.",
+                                bio: "From Calais, Pierrick traded cinema studies for a keyboard at 42 and quickly became one of its most valued contributors. When he's not helping a fellow student, he's probably perfecting his skincare routine or buying new shoes.",
                                 photo: "/members/pnaessen.jpeg"
                             },
                             {
                                 name: "Lou-Anne Buisson",
                                 description: "Project Manager",
-                                bio: "After a rich career in events management and project coordination, Lou-Anne moved into software development at 42 Lyon. Hardworking and deeply logical, she brings the kind of rigour that only comes from years of getting things done under pressure. When she's not at her desk, she's probably mid-hike somewhere.",
+                                bio: "From events management to software development at 42, Lou-Anne brings the kind of rigour that only comes from years of getting things done under pressure. When she's not at her desk, she's probably mid-hike somewhere.",
                                 photo: "/members/lbuisson.jpeg"
                             },
                         ].map((member) => (
