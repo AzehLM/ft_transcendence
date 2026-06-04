@@ -37,6 +37,7 @@ secrets
 .idea/
 .vscode/
 .mcp.json/
+.mcp.json
 
 # logs file
 *.log

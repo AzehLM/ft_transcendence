@@ -237,6 +237,8 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Temp-token 2FA challenge** - between password verification and TOTP/recovery-code submission, a scoped 5-minute JWT (scope: "2fa") gates the second step.
 - **2FA disable flow** - requires password re-verification.
 
+> Full implementation details: [docs/2fa.md](docs/2fa.md)
+
 ### Storage & File Management
 
 - **Client-side file encryption** - pnaessen - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
@@ -382,6 +384,8 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Implementation**: TOTP via `pquerna/otp` with QR-code provisioning. 5min setup window with in-memory pending-secret. TOTP secret encrypted at rest with a derived key from `client salt + user id`. 10 single-use recovery codes, lockout policy (3 attempts, 5min lockout), scoped temp-JWT. Enabling/disabling 2FA flow.
 - **Owner(s)**: vicperri
 
+> Full implementation details: [docs/2fa.md](docs/2fa.md)
+
 ### **Backend as Microservices  - *Major***
 
 - **Why**: Clean ownership boundaries between team members. Each services deployable and testable in isolation. If a service is down the whole application can still be running and usable
@@ -462,12 +466,63 @@ As the tech lead, generally made the research on differents possible stacks to u
 ### Project Maneger
 In my role as Project Manager, I spearheaded team coordination by organizing and facilitating key agile meetings and technical syncs. I was responsible for delivering actionable meeting minutes and keeping documentation up to date, while driving efficient cross-team communication to ensure project alignment and smooth delivery.
 
-### **Specific Features, Modules & Components Implemented**
 
-* **Full Organization Backend Service:** Architected the entire `backend/orga` microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
+### Backend
+
+* **Full Organization Backend Service:** Architected the entire backend/orga microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
+* **Database Setup :** Designed and deployed the initial PostgreSQL schema.
+* **API Route Extensions & Feature Engineering**: Created and upgraded core authentication endpoints to support extended identity fields (first_name, family_name). Engineered storage routing logic to manage dynamic nested folder hierarchies (folder_path), enabling seamless server-side directory traversal.
+* **Notification Accuracy Integration**: Enhanced the data routing layer and event payloads dispatched over WebSockets, maximizing telemetry and notification accuracy across active client sessions.
+
+### Frontend
+
 * **Cryptographic & Token Enforcement:** Built the E2EE key-sharing pipeline (handling encrypted AES keys and IVs) and engineered the global frontend `useKeyCheck` hook to secure file and member actions.
-* **End-to-End Core Pages & UI Architecture:** Co-developed the project's **Design System** using **Tailwind v4** and **CSS Modules**. Built and integrated full views including the *User Profile*, *OrgFilesPage*, *OrgMembersPage*, and *OrgSettingsPage*, alongside reusable components (`FileCard`, `FolderCard`, `Breadcrumb`, `ConfirmationModal`).
+* **End-to-End Core Pages & UI Architecture:** Co-developed the project's Design System using Tailwind v4 and CSS Modules. Built and integrated full responsive views including the **User Profile**, **OrgFilesPage**, **OrgMembersPage**, and **OrgSettingsPage**, alongside reusable components (**FileCard**, **FolderCard**, **Breadcrumb**, **ConfirmationModal**).
 * **Centralized State & Feedback Hooks:** Created the unified `useFileManager` hook to eliminate frontend code duplication and built the global `FeedbackMessageContainer` animated notification system.
+* **Advanced File System Navigation:** Engineered a highly interactive user interface for file and folder visualization, enabling intuitive file tree traversals, dynamic grid/list layouts, and contextual action flows.
+
+#### **Challenges Faced & Solutions Overcome**
+
+* **Challenge 1: Overcoming block-size and performance limitations when securing organization keys using only asymmetric cryptography.**
+* *Solution:* Recognizing that asymmetric user keys alone cannot efficiently process or share organization-wide credentials, I implemented a robust Key Encapsulation Mechanism (KEM). I structured a two-layer security envelope: a transient, high-performance `AES-GCM 256-bit` key encrypts the organization's private key payload locally, and this symmetric key is then safely wrapped using the user's asymmetric `RSA-OAEP 4096-bit` public key before transit.
+
+* **Challenge 2: Securing E2EE workflows across asymmetric frontend views without repeating security logic.**
+* *Solution:* Instead of writing ad-hoc validation on every page, I centralized the cryptographic validation layer into a reusable `useKeyCheck` hook. I also hooked this logic directly into the `MainLayout` route-change listener to enforce automated session logouts immediately if vital keys are missing.
+
+
+* **Challenge 3: Preventing destructive concurrent actions (like double-clicking a delete button) during slow asynchronous API requests.**
+* *Solution:* I overhauled our global `ConfirmationModal` to natively track internal asynchronous loading states. By dynamically disabling buttons and rendering visual loader feedback until the backend responds, I successfully eliminated duplicate API submissions and race conditions.
+
+
+* **Challenge 4: Managing fragmented user feedback and removing local state duplication across cryptographic workflows.**
+* *Solution:* I engineered a unified, animated `FeedbackMessageContainer` notification system driven by a global custom `useFeedbackMessage` hook. I then refactored core asynchronous flows—like `useE2EEDownload`—to leverage this centralized pipeline with automated timeouts. This successfully eliminated redundant local status states, sanitized the `UploadStatus` view component, and uniformized success, error, and info alerting application-wide.
+
+
+## vicperri (Victoire) - Project Manager / Scrum Master & Developer
+
+### Project Management
+Alongside lbuisson, co-led the Scrum Master role throughout the project. Key responsibilities included:
+- **Team Coordination** - Organized weekly meetings and planning sessions, kept the agenda and ensured every member had clarity on their current tasks and upcoming goals
+- **Progress Tracking** - Maintained the shared Notion workspace as the central to-do tracker, updated weekly to reflect what was done, in progress, and remaining
+- **Risk & Blocker Management** - Monitored risks and surface blockers early so the team could course-correct without losing momentum
+- **Communication** - Ensured smooth day-to-day communication via Discord, and kept GitHub Issues / Projects in sync with actual work
+
+### Backend Development
+- **Two-Factor Authentication (2FA)** - Fully designed and implemented: TOTP secret generation and encryption at rest (PBKDF2 + AES-256-GCM), 10 single-use bcrypt-hashed recovery codes, 3-attempt lockout, scoped temporary JWT for the two-step login challenge, and a password-verified disable flow
+- **Avatar Upload** - Stored directly in PostgreSQL as `BYTEA`, keeping the feature independent of MinIO
+- **Zero-Knowledge Registration & Login** (co-implemented with pnaessen) - Client-side RSA keypair generation, private key encryption with a PBKDF2-derived Master Key, and auth hash derivation so the server never sees the user's password
+
+### Frontend Development
+- **Core Frontend Structure** - Built the initial scaffolding, routing, and file organization the team built on
+- **Design System** (co-implemented with lbuisson) - 30+ reusable components, Tailwind v4 + CSS modules, `theme.css` design tokens, Framer Motion transitions, and lucide-react icon system
+- **2FA Frontend** - SetupTOTP wizard, VerifyTOTP login challenge, TwoFAModal 6-state settings machine, and login page `requires_2fa` flow
+- **Profile Picture & UI/UX** - Avatar upload on backend and frontend; initial Figma mockups used as visual reference throughout development
+
+### Challenges faced
+- **Zero-knowledge 2FA secret storage** - Storing the TOTP secret securely while keeping it decryptable at login time required careful key derivation design. The solution — deriving the encryption key from `userID + clientSalt` via PBKDF2 — meant the server can re-derive the key at login without ever storing it, which preserves the zero-knowledge model while adding 2FA on top of it.
+- **Scoped temporary token architecture** - The two-step login flow (password → 2FA code) required a way to keep state between the two HTTP calls without exposing a full session. Designing the scoped `tmp_token` JWT and the `VerifyTempSession` middleware to reject regular access tokens at the 2FA endpoints took several design iterations to get right.
+- **Frontend structure ownership** - Building the core frontend early in the project meant making architectural choices (routing, module layout, CSS strategy) that would affect everyone. Coordinating these decisions while also handling Scrum Master duties required constant communication with the rest of the team.
+
 
 ---
 

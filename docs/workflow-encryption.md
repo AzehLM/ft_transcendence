@@ -21,8 +21,8 @@
 Upon triggering `generateRegistrationData(email, password)`, the local browser environment isolates state variables to prevent plain text extraction:
 * **Salt Allocation:** A deterministic `Uint8Array` byte structure of 16 bytes (128 bits) is created and mutated via `crypto.getRandomValues(salt)`, filling the vector index placeholders with uniform entropy bytes ranging from 0 to 255.
 * **Key Derivation (KDF):** The plain text password is serialized to binary data via a `TextEncoder` abstraction. The engine runs a secure structural key derivation iteration:
-$$\text{Master\_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
-The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 256-bit** implementation layer.
+   * Master_Key = PBKDF2(Password_bytes, Salt, iterations=100000, hash="SHA-256")
+* The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 256-bit** implementation layer.
 
 #### 2. KeyPair Allocation & Relational Wrapping
 * **Asymmetric Infrastructure:** React calls `generateRSAKeyPair()` to allocate an asymmetric **RSA-OAEP 4096-bit** relationship constraint using the standard public exponent parameters ($65537$, encoded as `[1, 0, 1]`).
@@ -30,14 +30,14 @@ The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 
   1. The asymmetric asset is marshaled into raw binary representation using the standard export format `"pkcs8"`.
   2. A random 12-byte (96 bits) hardware-seeded Initialization Vector (`iv`) is generated.
   3. The raw private key byte-stream is encrypted symmetrically via **AES-GCM**:
-$$\text{encryptedPrivateKey} = \text{Encrypt}_{\text{AES-GCM}}(\text{PrivateKey}_{\text{pkcs8}}, \text{Master\_Key}, \text{iv})$$
+      * encryptedPrivateKey = Encrypt_AES-GCM(PrivateKey_pkcs8, Master_Key, iv)
 
 #### 3. Mathematical Proof Generation (The AuthHash)
 The client must provide structural verification of password authenticity without transferring raw key patterns over the TLS barrier. The client triggers `generateAuthHash(masterKey)`:
 1. The derived Master Key is exported to a native binary payload (`"raw"` specification).
 2. The browser mounts this raw buffer directly into a transient signing structure using **HMAC** linked with a **SHA-256** hash constraint.
 3. The structural cryptographic context signs a fixed validation constant message: `"auth_string"` via `crypto.subtle.sign`.
-$$\text{AuthHash} = \text{HMAC-SHA256}(\text{Master\_Key}_{\text{raw}}, \text{"auth\_string"})$$
+   * AuthHash = HMAC-SHA256(Master_Key_raw, "auth_string")
 
 #### 4. Transport Mapping & Serialization
 To guarantee that high-entropy binary byte streams cross the application boundary without character-set corruption, all blocks are split into chunked arrays ($8\text{ KB}$ segments) and marshaled via `uint8ArrayToBase64` using browser-native `btoa` routines before firing the underlying JSON `POST /api/auth/register`.
@@ -72,7 +72,7 @@ The Go API validates the matching proof payload against the non-reversible datab
 The React engine captures the payload response and unrolls the envelope using `unwrapPrivateKey`:
 1. The network strings are downsampled to basic byte-stream matrices via `base64ToUint8Array`.
 2. The runtime invokes `crypto.subtle.decrypt` using **AES-GCM** backed by the freshly reconstructed local Master Key context to resolve the plain text `pkcs8` binary block:
-$$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivateKey}, \text{Master\_Key}, \text{iv})$$
+   * decryptedBuffer = Decrypt_AES-GCM(encryptedPrivateKey, Master_Key, iv)
 3. The resulting binary block is parsed and mounted into a native asymmetric asset primitive through `crypto.subtle.importKey` under **RSA-OAEP** rules.
 4. **Persistent Secure Seeding:** The fully unencrypted operational asset is passed to `storePrivateKey(privateKey)`, committing it directly to **IndexedDB** (`idb.service`) to handle runtime file key decryption operations asynchronously.
 5. **Memory Sanitization:** The transient Master Key structural parameters are discarded from the browser's active scope layer, rendering client state immune to memory scraping vectors.
@@ -82,43 +82,11 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 ---
 
-### Phase 3 : L'Upload (Chiffrement Hybride par Fichier)
-
-    Génération de la DEK : Dès que l'utilisateur sélectionne un fichier, la Web Crypto API génère une clé symétrique aléatoire, strictement unique à ce fichier : la DEK (Data Encryption Key, AES-GCM 256-bit).
-
-
-    Génération de l'IV : Création d'un Vecteur d'Initialisation (Initialization Vector) aléatoire de 12 bytes.
-
-    Chiffrement du Fichier : Le contenu brut (plaintext) passe dans AES-GCM avec la DEK et l'IV.
-
-        Résultat : Le Ciphertext (blob illisible). Note d'implémentation : en Web Crypto, l'Auth Tag (MAC) n'est pas séparé, il est automatiquement concaténé à la fin du Ciphertext par l'API.
-
-    Protection de la DEK : Le frontend récupère la Clé Publique de l'utilisateur (depuis l'API ou le store local). Il l'utilise pour chiffrer la DEK via RSA-OAEP.
-
-        Résultat : Encrypted_DEK.
-
-    Routage des données :
-
-        Vers Go (PostgreSQL) : React envoie les métadonnées : nom du fichier, Encrypted_DEK et IV.
-
-        Vers MinIO : React envoie le Ciphertext (le blob) directement via la Presigned URL.
+### Phase 3 : Upload
 
 ![Logo](images/upload.webp)
 
-### Phase 4 : Le Download (Le Déchiffrement E2EE)
-
-    Requête de métadonnées : React fait un GET sur l'API Go. Le backend interroge PostgreSQL et renvoie : la Encrypted_DEK, l'IV et l'URL présignée MinIO.
-
-    Unwrapping de la DEK : Le frontend récupère la Clé Privée de l'utilisateur depuis Zustand. Il déchiffre la Encrypted_DEK.
-
-        Résultat : La DEK est de retour en clair dans la RAM du navigateur.
-
-    Téléchargement du Blob : React télécharge le Ciphertext depuis MinIO.
-
-    Déchiffrement Final : Le frontend injecte dans crypto.subtle.decrypt : la DEK, l'IV, et le Blob.
-
-        Intégrité : L'algorithme vérifie silencieusement l'Auth Tag inclus dans le blob. Si le hash correspond, il recrache le fichier original. Si un attaquant a modifié un bit sur MinIO, la fonction throw une erreur et refuse de déchiffrer.
-
+### Phase 4 : Download
 ![Logo](images/download.webp)
 
 ---
@@ -145,12 +113,12 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 2. **Symmetric Layer (Private Key Protection):**
    The client encrypts the organization's private key using the transient AES key:
-   $$\text{enc\_org\_priv\_key} = \text{Encrypt}_{\text{AES-GCM}}(\text{Org\_Priv\_Key}, \text{AES\_Key})$$
-   This outputs the `enc_org_priv_key` binary payload along with its unique Initialization Vector (`iv`).
+   enc_org_priv_key = Encrypt_AES-GCM(Org_Priv_Key, AES_Key)
+   * This outputs the `enc_org_priv_key` binary payload along with its unique Initialization Vector (`iv`).
 
 3. **Asymmetric Layer (Key Encapsulation):**
    The client retrieves the Admin's personal public RSA key from the session. The transient AES key is exported to raw bytes and encrypted:
-   $$\text{enc\_aes\_key} = \text{Encrypt}_{\text{RSA-OAEP}}(\text{AES\_Key}_{\text{raw}}, \text{Admin\_Pub\_Key})$$
+   enc_aes_key = Encrypt_RSA-OAEP(AES_Key_raw, Admin_Pub_Key)
 
 4. **API ingestion & Persistence:**
    All binary buffers are encoded to Base64 strings. The client performs a `POST /api/orgs` request.
@@ -191,10 +159,7 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 #### 3 Secure Upload & Download Flows
 
-    Upload : Lorsqu'un membre upload un fichier dans l'espace de l'organisation, React génère la DEK du fichier, chiffre le fichier, puis chiffre la DEK avec la Org_Pub_Key.
-
-    Download : N'importe quel membre récupère la DEK chiffrée. Il déchiffre d'abord son accès à l'organisation (Encrypted_Org_Priv_Key locale -> Org_Priv_Key), puis utilise l'Org_Priv_Key pour déchiffrer la DEK du fichier.
-![Logo](images/orga-upload.webp)
+![Upload organisation](images/orga-upload.png)
 ![Logo](images/orga-download.webp)
 
 ---
