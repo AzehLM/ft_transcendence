@@ -5,9 +5,11 @@ export const UPLOAD_CONFIG = {
     MULTIPART_THRESHOLD: 96 * 1024 * 1024, // files below 96 MB will be managed as a single chunk (first implementation, no chunking)
     MAX_PART_COUNT: 100, // maximum number of chunks accepted, even if it's above 2 GB
     PARALLEL_UPLOADS: 4,
+    MAX_CONCURRENT_FILES: 5,
 };
 
 export const UPLOAD_MESSAGES = {
+    QUEUED: 'Queued...',
     INITIALIZING: (filename: string) => `Initializing encryption for "${filename}"...`,
     REQUESTING_AUTH: 'Requesting server authorization...',
     ENCRYPTING: 'Encrypting and uploading chunks...',
