@@ -159,7 +159,7 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
 
 #### 3 Secure Upload & Download Flows
 
-![Logo](images/orga-upload.webp)
+![Logo](images/orga-upload.png)
 ![Logo](images/orga-download.webp)
 
 ---
