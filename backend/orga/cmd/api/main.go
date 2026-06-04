@@ -92,13 +92,14 @@ func main() {
 	org := api.Group("/orgs/:org_id")
 	org.Use(middleware.CheckOrgaExist(dbConn))
 
-	admin := middleware.RequireRole(dbConn, "admin")
-	member := middleware.RequireRole(dbConn, "admin", "member")
+	owner := middleware.RequireRole(dbConn, "owner")
+	admin := middleware.RequireRole(dbConn, "admin", "owner")
+	member := middleware.RequireRole(dbConn, "admin", "member", "owner")
 
 	// org routes
 	org.Get("/", member, orgaHandler.GetOrgaInfo)
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
-	org.Delete("/", admin, orgaHandler.DeleteOrga)
+	org.Delete("/", owner, orgaHandler.DeleteOrga)
 	org.Get("/public-key", member, orgaHandler.GetOrgaPublicKey)
 
 	// members
