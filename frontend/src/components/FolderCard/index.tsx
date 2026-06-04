@@ -102,7 +102,7 @@ export function FolderCard({ id, name, createdAt, orgId, owner_user_id, role, us
             <span className={styles.name}>{name}</span>
             <span className={styles.date}>{date}</span>
         </div>
-        {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+        {(!orgId || (orgId && (role === "admin" || role === "owner")) || (orgId && owner_user_id === user_id)) && (
           <div className={styles.menuWrapper} ref={menuRef} onClick={(e) => e.stopPropagation()}>
               <button className={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>
               <MoreVertical size={16} />
