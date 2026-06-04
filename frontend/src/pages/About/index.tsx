@@ -58,7 +58,7 @@ function AboutPage() {
                             {
                                 name: "Guillaume Ebersohl",
                                 description: "Technical Lead",
-                                bio: "Placeholder bio for Guillaume. Describe your background, your areas of expertise, and your main contribution to the project.",
+                                bio: "Economics graduate turned events professional turned obsessive coder, Guillaume found his true calling when he discovered he was basically Mr. Robot in disguise. He digs deep into every subject, sweats the details others miss, and spends so much time at school 42 that his ghost probably haunts the place when he's away.",
                                 photo: "/members/gueberso.jpeg"
                             },
                             {
@@ -74,10 +74,10 @@ function AboutPage() {
                                 photo: "/members/pnaessen.jpeg"
                             },
                             {
-                                name: "Lou Anne Buisson",
+                                name: "Lou-Anne Buisson",
                                 description: "Project Manager",
                                 bio: "After a rich career in events management and project coordination, Lou-Anne moved into software development at 42 Lyon. Hardworking and deeply logical, she brings the kind of rigour that only comes from years of getting things done under pressure. When she's not at her desk, she's probably mid-hike somewhere.",
-                                photo: "/members/member4.jpg"
+                                photo: "/members/lbuisson.jpeg"
                             },
                         ].map((member) => (
                             <div key={member.name} style={{
@@ -112,7 +112,7 @@ function AboutPage() {
                                         {member.description}
                                     </p>
                                     <hr style={{ border: "none", borderTop: "1px solid #ebdcd9", margin: "0 0 12px 0" }} />
-                                    <p style={{ margin: 0, fontSize: "13px", color: "#2b1008", lineHeight: "1.65", opacity: 0.6 }}>
+                                    <p style={{ margin: 0, fontSize: "13px", color: "#2b1008", lineHeight: "1.65", opacity: 0.6, textAlign: "justify" }}>
                                         {member.bio}
                                     </p>
                                 </div>
