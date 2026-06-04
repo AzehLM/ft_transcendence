@@ -216,7 +216,6 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
               </div>
             )}
           </div>
-
         </div>
       </div>
       <ConfirmationModal
