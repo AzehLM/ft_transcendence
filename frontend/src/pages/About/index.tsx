@@ -76,7 +76,7 @@ function AboutPage() {
                             {
                                 name: "Lou Anne Buisson",
                                 description: "Project Manager",
-                                bio: "Placeholder bio for Lou Anne. Describe your background, your areas of expertise, and your main contribution to the project.",
+                                bio: "After a rich career in events management and project coordination, Lou-Anne moved into software development at 42 Lyon. Hardworking and deeply logical, she brings the kind of rigour that only comes from years of getting things done under pressure. When she's not at her desk, she's probably mid-hike somewhere.",
                                 photo: "/members/member4.jpg"
                             },
                         ].map((member) => (
