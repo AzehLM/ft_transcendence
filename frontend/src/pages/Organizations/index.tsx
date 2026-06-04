@@ -111,7 +111,7 @@ export default function OrganizationsPage() {
       }
 
       const newOrg = await response.json();
-      setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
+      setOrgs(prev => [...prev, { ...newOrg, role: "owner" }]);
       setShowCreateModal(false);
       setOrgName("");
       window.dispatchEvent(new CustomEvent("org-list-changed"));
@@ -193,6 +193,9 @@ export default function OrganizationsPage() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const ownedCount = orgs.filter(org => org.role.toLowerCase() === "owner").length;
+  const remainingOrgs = Math.max(0, 10 - ownedCount);
+
 
   return (
     <div className={styles.container}>
@@ -202,6 +205,7 @@ export default function OrganizationsPage() {
           <div className={styles.titleGroup}>
             <h1>Organizations</h1>
             <p className={styles.subtitle}>Manage your organizations and memberships</p>
+            <p className={styles.subtitle}>You can create up to 10 organizations. ({remainingOrgs} remaining)</p>
           </div>
           <button
             className={styles.addButton}
@@ -292,11 +296,11 @@ export default function OrganizationsPage() {
                   </div>
 
                   <div className={styles.orgActions}>
-                      <div className={`${styles.roleTag} ${org.role.toLowerCase() === 'admin' ? styles.roleAdmin : ""}`}>
+                      <div className={`${styles.roleTag} ${org.role.toLowerCase() === 'admin' ? styles.roleAdmin : org.role.toLowerCase() === 'owner' ? styles.roleOwner : ""}`}>
                         {org.role}
                       </div>
 
-                      {org.role === "admin" && (
+                      {(org.role === "admin" || org.role === "owner" ) && (
                       <button
                           className={`${styles.buttonIcon} ${styles.buttonIconAdd}`}
                           onClick={(e) => {
@@ -310,18 +314,20 @@ export default function OrganizationsPage() {
                           <UserPlus size={18} />
                       </button>
                       )}
-                      <button
-                        className={`${styles.buttonIcon} ${styles.buttonIconLeave}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrg(org);
-                          setShowLeaveConfirm(true);
-                          setModalError(null);
-                        }}
-                        title="Leave Organization"
-                      >
-                        <UserMinus size={18} />
-                      </button>
+                      { org.role !== "owner" && (
+                        <button
+                          className={`${styles.buttonIcon} ${styles.buttonIconLeave}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrg(org);
+                            setShowLeaveConfirm(true);
+                            setModalError(null);
+                          }}
+                          title="Leave Organization"
+                        >
+                          <UserMinus size={18} />
+                        </button>
+                      )}
                   </div>
                 </div>
             ))}
