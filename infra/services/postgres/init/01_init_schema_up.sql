@@ -1,4 +1,3 @@
--- pour la génération native des UUID (v4)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. USERS
@@ -21,7 +20,6 @@ CREATE TABLE users (
     two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     totp_secret_encrypted BYTEA,
     recovery_codes_hashed BYTEA
-    -- username VARCHAR(50) UNIQUE
 );
 
 -- 2. CREDENTIALS

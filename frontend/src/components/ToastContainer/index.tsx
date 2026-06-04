@@ -4,7 +4,6 @@ import { useNotifications, ToastItem } from "../../contexts/NotificationContext"
 import styles from "./ToastContainer.module.css"
 
 
-// Map event types to icons and styling
 const getEventMeta = (event: string) => {
   switch (event) {
     case "MEMBER_ADDED":
@@ -124,7 +123,7 @@ function Toast({ toast, onClose }: { toast: ToastItem; onClose: () => void }) {
       <div className={styles.toastBar} style={{ backgroundColor: borderColor }} />
 
       {/* Icon */}
-      <div 
+      <div
         className={styles.toastIcon}
         style={{
           backgroundColor: bgColor,
