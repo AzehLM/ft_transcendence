@@ -1,100 +1,77 @@
-# ft_box - Architecture Zero-Knowledge
+# ostrom - Architecture Zero-Knowledge
 
-Stack : React (front) / Go + GORM (back) / PostgreSQL / Redis / MinIO
+Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
-authash == "Argon2id Stocker en db"
-
-Les JWT sont generes uniquement au register et au login. Toutes les autres requetes envoient le Access JWT dans le header `Authorization: Bearer ...`. Quand il expire, le client fait `POST /api/v1/auth/refresh` avec le Refresh JWT (cookie HttpOnly) pour en obtenir un nouveau. C'est tout.
+* **AuthHash Strategy:** Stored securely using the `Argon2id` password hashing algorithm.
+* **JWT Architecture:** Generated exclusively during register and login sequences. Sub-sequent HTTP requests transmit the Access JWT via the `Authorization: Bearer <token>` header. Upon expiration, the client reaches out to `POST /api/auth/refresh` using the HttpOnly `refresh_token` cookie to obtain a fresh pair.
 
 ---
 
-## 1. Register
+## 1. User Registration Flow
 
-1. User clique "Register"
-2. Coté client (Web Crypto) :
-   - Derive la KEK depuis le mdp (PBKDF2 + salt random)
-   - Genere une paire RSA (pub/priv)
-   - Chiffre la privkey avec la KEK (AES-GCM) -> EncryptedPrivKey + IV
-   - Calcule AuthHash = HMAC-SHA256(KEK, "ft_box_auth")
-3. `POST /api/v1/auth/register` -> envoie email, salt, AuthHash, pubkey, EncryptedPrivKey, IV
-   - Le serveur voit jamais le mdp ni la KEK (zero-knowledge)
-4. Backend Go :
-   - Hash le AuthHash avec Argon2id
-   - Stocke tout en DB (transaction)
-   - Genere Access JWT (body JSON) + Refresh JWT (cookie HttpOnly)
-   - Repond 201 Created
-5. React redirige `/dashboard`
-6. Ouvre la websocket `wss://api.../ws` avec l'Access JWT
-7. Backend ajoute la connexion au pool + ecoute le broker Redis pour ce user
+1. **Trigger:** The user submits their verified email and password combo.
+2. **Client-Side Generation (`generateRegistrationData`):**
+   * Generates a random 16-byte cryptographically secure salt string via `crypto.getRandomValues()`.
+   * Derives a symmetric **AES-GCM 256-bit Master Key** via **PBKDF2** (100,000 iterations, SHA-256).
+   * Generates a secure asymmetric **RSA-OAEP 4096-bit identity KeyPair**.
+   * Exports and encrypts ("wraps") the user's private key via **AES-GCM** using the derived Master Key.
+   * Signs the hardcoded string `"auth_string"` with an **HMAC-SHA256** key built directly from the Master Key bytes to produce the `auth_hash`.
+3. **API Payload:** Sends a `POST /api/auth/register` containing: `email`, `salt`, `auth_hash`, `public_key`, `encrypted_private_key`, and `iv` (all Base64 encoded).
+4. **Backend Processing:** Go intercepts the request, hashes the `auth_hash` string via Argon2id, commits the transaction to Postgres, and sets the secure authentication cookies.
+5. **Onboarding UI State:** React intercepts the successful response, registers the `access_token` into `localStorage`, the `public_key` and `private_key` in `IndexedDB`, and updates the DOM to display the multi-factor authentication (2FA) prompt.
 
 ![Logo](images/project-register.webp)
 
 ---
 
-## 2. Login
+## 2. User Login Flow
 
-### Phase 1 - Recup du salt
+1. **Phase 1 - Salt Query:** React pushes a `POST /api/auth/salt` containing the input email address. If the database profile exists, Go responds with the user's recorded Base64 `salt`.
+2. **Phase 2 - Local Remake:** The browser takes the user's input password and the server's returned `salt` to reconstruct the **Master Key** using **PBKDF2**.
+3. **Phase 3 - Challenge Dispatch:** React creates an authentication signature by signing the static `"auth_string"` string using an HMAC key built from the reconstructed Master Key. It issues a `POST /api/auth/login` carrying the `auth_hash`.
+4. **Phase 4 - Identity Extraction & Local Storage:**
+   * Go validates the matching signature block against the Argon2id store.
+   * On success, the API passes back the session tokens along with the user's `encrypted_private_key` and its original `iv`.
+   * React passes these parameters to `unwrapPrivateKey`, decrypting the underlying asymmetric asset via **AES-GCM**.
+   * The decrypted plaintext `privateKey` and `publicKey` objects are committed to localized state storage via **IndexedDB** (`storePrivateKey`).
+   * The core Master Key variable is contextually purged from active volatile RAM scopes to enforce runtime isolation.
 
-- User tape email + mdp
-- `GET /api/v1/auth/salt?email=student@42lyon.fr`
-- Le back renvoie le salt (base64) si le user existe
-
-### Phase 2 - Calculs coté client
-
-- Derive la KEK via PBKDF2(mdp + salt)
-- Calcule AuthHash = HMAC-SHA256(KEK, "ft_box_auth")
-
-### Phase 3 - Requete de login
-
-- `POST /api/v1/auth/login`
-  ```json
-  { "email": "student@42lyon.fr", "auth_hash": "<base64>" }
-  ```
-- Backend :
-  - Recup le hash Argon2id stocke pour cet email
-  - Compare avec l'AuthHash recu
-  - Si OK -> genere les JWT (access + refresh cookie)
-  - Recup EncryptedPrivKey + IV en DB
-- Repond 200 avec tokens + EncryptedPrivKey + IV
-
-### Phase 4 - Dechiffrement local
-
-- Le client utilise la KEK (encore en RAM) + IV pour dechiffrer la privkey (AES-GCM)
-- Maintenant le client a sa PrivKey RSA en clair en RAM
-- On ecrase la KEK direct de la memoire
-- Ouverture websocket + redirect `/dashboard`
 
 ![Logo](images/project-login.webp)
----
-
-## 3. Creation d'une orga
-
-1. User clique "Creer l'org" (ex: 42_Projects)
-2. Client genere une OrgKey aleatoire (AES-GCM 256) via Web Crypto
-3. Client génère une clé AES-GCM 256 temporaire
-4. Chiffre Org_Priv_Key avec la clé AES (AES-GCM) -> encrypted_org_private_key + iv
-5. Chiffre la clé AES avec la clé publique RSA du user (RSA-OAEP) -> encrypted_aes_key
-6. `POST /api/orgs` avec le nom, org_public_key, encrypted_org_private_key, encrypted_aes_key, iv
-5. Backend (transaction PG) :
-   - Cree l'orga (UUID)
-   - Ajoute le createur en tant qu'admin
-   - Stocke encrypted_org_private_key, encrypted_aes_key, iv dans `org_members`
-   - Le serveur voit qu'un blob opaque, il peut rien en faire
-6. Publie un event `org_created` sur Redis -> push via WS aux autres sessions du user
 
 
 ---
 
-## 4. Invitation d'un membre
+## 3. Organization Creation
 
-Cas : l'admin invite Alice dans l'orga.
+1. **Trigger:** User clicks "Create Org" (e.g., `42_Projects`).
+2. **Client-Side Generation:** * Generates an asymmetric RSA Organization Key Pair via the *Web Crypto API*.
+   * Generates a temporary symmetric key (`AES-GCM 256`).
+3. **Client-Side Encryption:**
+   * Encrypts the `Org_Private_Key` with the temporary AES key $\rightarrow$ `encrypted_org_private_key` + `iv`.
+   * Encrypts ("wraps") the temporary AES key with the User's Public RSA Key (`RSA-OAEP`) $\rightarrow$ `encrypted_aes_key`.
+4. **API Request:** `POST /api/orgs` with `name`, `public_key`, `enc_org_priv_key`, `enc_aes_key`, and `iv` (all Base64-encoded).
+5. **Backend Processing (PG Transaction):**
+   * Provisions the organization (UUID generation).
+   * Assigns the creator as the organization **Admin**.
+   * Persists the encrypted cryptographic envelope inside the `org_members` table.
+   * *Zero-Knowledge Guarantee:* The server only processes opaque BLOBs and cannot access plaintext keys.
+6. **Real-Time Sync:** Publishes an `org_created` event to Redis $\rightarrow$ pushed via WebSockets to the user's other active sessions.
 
-1. Le client de l'admin demande la PubKey RSA d'Alice au serveur
-2. L'admin dechiffre l'OrgKey (avec sa propre privkey RSA)
-3. L'admin re-chiffre l'OrgKey avec la PubKey d'Alice
-4. `POST /api/v1/orgs/{id}/members` avec ce nouveau blob
-5. Le serveur stocke ce blob dans `enc_org_priv_key` dans la table org_members pour Alice
-6. Quand Alice se connecte, elle recup le blob et le dechiffre avec sa privkey RSA -> OrgKey en clair en RAM
+---
+
+## 4. Member Invitation Flow
+
+**Scenario:** The Admin invites Alice into the organization.
+
+1. **Data Fetching:** Admin's client fetches their own encrypted organization envelope and requests Alice's Public RSA Key from the server.
+2. **Client-Side Decryption:** Admin decrypts the `encrypted_aes_key` using their private RSA key, then decrypts the `encrypted_org_private_key` to temporarily recover the organization's plaintext private key in memory (RAM).
+3. **Re-Encryption for the Invitee:** * Admin generates a brand-new temporary AES key and a unique `iv` specifically for Alice.
+   * Encrypts the organization's private key with this new AES key.
+   * Encrypts ("wraps") this new AES key with **Alice's Public RSA Key**.
+4. **API Request:** `POST /api/orgs/{id}/members` containing Alice's user ID and her targeted cryptographic payload.
+5. **Persistence:** Server stores this payload into the `enc_org_priv_key` column of the `org_members` table for Alice.
+6. **Consumption:** Upon login/access, Alice's client fetches her specific blob, decrypts it using her private RSA key, and mounts the organization's private key into volatile memory (RAM) for authorized operations.
 
 
 ---
@@ -111,7 +88,7 @@ Probleme : un fichier de 2 Go ca tient pas en RAM dans un Uint8Array, le tab cra
 
 ### Phase 2 - Negociation de l'upload (Go)
 
-1. `POST /api/v1/files/upload-url` -> "je veux upload un fichier de X octets dans le dossier Y"
+1. `POST /api/files/upload-url` -> "je veux upload un fichier de X octets dans le dossier Y"
 2. Backend verifie le JWT, check le quota dispo
 3. Genere une Presigned URL PUT via le SDK MinIO (valable ~15 min)
 4. Renvoie l'URL au client
@@ -127,7 +104,7 @@ Probleme : un fichier de 2 Go ca tient pas en RAM dans un Uint8Array, le tab cra
 2. Key wrapping :
    - Fichier perso -> chiffre la DEK avec la PubKey RSA du user
    - Fichier d'orga -> chiffre la DEK avec l'OrgKey (deja dechiffree en RAM)
-3. `POST /api/v1/files/finalize`
+3. `POST /api/files/finalize`
    ```json
    {
      "object_id": "<UUID_Minio>",
@@ -149,7 +126,7 @@ Le miroir de l'upload : recup le fichier chiffre, recup la cle, dechiffre tout e
 
 ### Phase 1 - Demande de telechargement (React -> Go)
 
-1. `GET /api/v1/files/{file_id}/download`
+1. `GET /api/files/{file_id}/download`
 2. Backend verifie les droits
 3. Genere une Presigned URL GET (MinIO)
 4. Renvoie l'URL + encrypted_dek + IV + filename
@@ -169,237 +146,92 @@ Le miroir de l'upload : recup le fichier chiffre, recup la cle, dechiffre tout e
 
 ---
 
-## 7. Suppression de fichier
+## 7. User Logout Flow
 
-### Phase 1 - Requete de suppression (React -> Go)
-
-1. `DELETE /api/v1/files/{file_id}`
-2. Backend verifie le JWT + les droits  :
-   - Fichier perso -> seul le owner peut supprimer
-   - Fichier d'orga -> faut etre admin ou avoir la permission delete
-
-### Phase 2 - Suppression (Go)
-
-1. Backend demarre une transaction PostGrey :
-   - Supprime les entrees dans la table des metadonnees (encrypted_dek, filename, iv, etc.)
-   - Supprime les entrees dans `file_keys` (les DEK wrappees pour chaque user/orga)
-2. Supprime l'objet sur MinIO via le SDK (`RemoveObject`)
-3. Commit de la transaction
-4. Publie un event `file_deleted` sur Redis -> push WS pour refresh l'UI des autres sessions
-
-Note : si le delete MinIO fail apres le commit PG, faut un mecanisme de cleanup
-
+1. **API Request:** Client issues a `POST /api/auth/logout`.
+2. **Backend Processing (Go / Fiber):** Wipes the user's active dynamic `refresh_token` from the database record and clears the secure HttpOnly cookie environment.
+3. **Client-Side Cleansing:** React destroys the local user session credentials: hard-deletes the `privateKey` and `publicKey` records from **IndexedDB** (`idb.service`), purges the local storage access token, and terminates the active WebSocket gateway connection.
+4. **Navigation:** Redirects the application router to the `/login` view context.
 
 ---
 
-## 8. Changement de role dans une orga
+## 8. Password Update Flow (Zero-Knowledge Re-keying)
 
-Roles possibles : admin, member (extensible plus tard si besoin).
+Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wrapping") the master asymmetric key set, as the server has no plaintext access to decrypt or re-encrypt user credentials.
 
-### Phase 1 - Requete (React -> Go)
-
-1. `PATCH /api/v1/orgs/{org_id}/members/{user_id}`
-   ```json
-   { "role": "admin" }
-   ```
-2. Seul un admin de l'orga peut changer les roles
-
-### Phase 2 - Backend (Go)
-
-1. Verifie le JWT + que le demandeur est admin de l'orga
-2. Verifie qu'on essaie pas de retirer le dernier admin (il faut toujours au moins 1 admin)
-3. Met a jour le role dans la table `organization_members`
-4. Publie un event `member_role_updated` sur Redis -> push WS
-
-Cote crypto : rien a faire. Le changement de role c'est purement du RBAC cote serveur. La cle d'orga (OrgKey) est la meme quel que soit le role, elle a deja ete wrappee pour ce user lors de l'invitation. Le role controle juste les permissions (qui peut invite, delete, changer les roles, etc.), pas l'acces aux cles.
-
-
----
-
-## 9. Dashboard - Chargement initial
-
-Ce qui se passe quand le user arrive sur `/dashboard` apres le login.
-
-### Phase 1 - Recup de l'arborescence (React -> Go)
-
-1. `GET /api/v1/folders?parent_id=root` (ou sans param = racine)
-2. Backend recup les dossiers + fichiers du user a la racine :
-   - Query sur `folders` WHERE `owner_user_id = $1 AND parent_id IS NULL AND org_id IS NULL`
-   - Query sur `files` WHERE `owner_user_id = $1 AND folder_id IS NULL AND org_id IS NULL`
-3. Renvoie la liste : dossiers + fichiers avec leurs metadonnees (name, size, created_at)
-
-### Phase 2 - Navigation dans les dossiers
-
-- User clique sur un dossier -> `GET /api/v1/folders/{folder_id}/contents`
-- Backend renvoie les sous-dossiers + fichiers de ce dossier
-- Meme requete pour les fichiers d'orga : `GET /api/v1/orgs/{org_id}/folders/{folder_id}/contents`
-  - La le backend check que le user est bien membre de l'orga avant de renvoyer quoi que ce soit
-
-### Phase 3 - Affichage
-
-- Liste des dossiers (icone dossier + nom + date creation)
-- Liste des fichiers (icone fichier + nom + taille + date creation)
-- Breadcrumb pour la navigation (root > dossier1 > sous-dossier)
-- Sidebar avec :
-  - "Mes fichiers" (espace perso)
-  - Liste des orgas du user (recup via `GET /api/v1/orgs`)
-
-### Orgas dans le dashboard
-
-- `GET /api/v1/orgs` -> liste les orgas dont le user est membre
-- Quand le user clique sur une orga, on charge l'arborescence de l'orga de la meme facon
-- Avant d'afficher les fichiers d'orga, le client doit avoir l'OrgKey en RAM :
-  - Recup `enc_org_priv_key` depuis `org_members`
-  - Dechiffre avec sa PrivKey RSA -> OrgKey en clair
-
-
----
-
-## 10. Page Profil
-
-### Storage usage bar
-
-1. `GET /api/v1/users/me` -> renvoie les infos du user dont `used_space` et `max_space`
-2. Affichage d'une barre de progression :
-   - `used_space / max_space * 100` = pourcentage utilise
-   - Ex : "2.3 GB / 5 GB utilises"
-   - Couleur verte < 70%, orange 70-90%, rouge > 90% MAYBE
-3. Le `used_space` est mis a jour par le backend a chaque upload (`+file_size`) et chaque delete (`-file_size`)
-
-### Infos affichees
-
-- Email
-- Date d'inscription
-- Nombre d'orgas
-- Storage utilise / total
-- (plus tard : username, avatar) maybe
-
-
----
-
-## 11. Suppression de compte
-
-### Phase 1 - Confirmation (React)
-
-1. User clique "Supprimer mon compte" sur la page profil
-2. Le client demande le mdp pour confirmer (re-derive la KEK + AuthHash comme au login)
-3. `DELETE /api/v1/users/me` avec `{ "auth_hash": "<base64>" }`
-
-### Phase 2 - Backend (Go)
-
-1. Verifie le JWT + valide l'AuthHash contre le hash Argon2id stocke (double verif)
-2. Check les orgas ou le user est le seul admin :
-   - S'il est dernier admin quelque part -> refuser la suppression (ou forcer transfert du role avant)
-3. Transaction PG :
-   - Supprime tous les fichiers perso du user dans MinIO (batch `RemoveObjects`)
-   - Supprime les entrees files, folders, org_members du user
-   - Supprime le user dans la table users
-   - Les `ON DELETE CASCADE` gerent les refs en cascade
-4. Commit
-5. Invalide les sessions : supprime les refresh tokens en DB/Redis, ferme la WS
-6. Repond 200, le client redirige vers la page de login
-
-Note : les fichiers d'orga restent intacts, c'est l'orga qui les possede. On supprime juste l'`enc_org_priv_key` du user dans `org_members`. Les autres membres gardent leur acces.
-
-
----
-
-## 12. Logout
-
-1. `POST /api/v1/auth/logout`
-2. Backend supprime le refresh token (DB ou Redis) + clear le cookie HttpOnly
-3. Cote client : ecrase la PrivKey RSA de la RAM, vide les OrgKeys, ferme la WS
-4. Redirect vers `/login`
-
-
----
-
-## 13. 2FA (TOTP)
-
-Basee sur TOTP (Time-based One-Time Password) — compatible Google Authenticator, Authy, etc.
-
-### Activation (page profil)
-
-1. `POST /api/v1/auth/2fa/enable`
-2. Backend genere un secret TOTP (base32, 160 bits) + le stocke en DB (chiffre ou en clair, le user est deja authentifie)
-3. Renvoie le secret sous forme d'URI `otpauth://` + QR code (ou juste l'URI, le front genere le QR)
-4. User scan le QR avec son app
-5. User entre le code a 6 chiffres pour confirmer -> `POST /api/v1/auth/2fa/verify` avec `{ "code": "123456" }`
-6. Backend valide le code TOTP, si OK -> marque `totp_enabled = true` en DB
-
-
-### Impact sur le login
-
-- Le login classique (phase 3) renvoie plus directement les JWT
-- Si `totp_enabled = true`, le backend repond 200 avec `{ "requires_2fa": true, "tmp_token": "<token>" }`
-- Le `tmp_token` est un token court (expire en 5 min), il sert juste a lier la session 2FA
-- Le client affiche un champ pour entrer le code TOTP
-- `POST /api/v1/auth/2fa/validate` avec `{ "tmp_token": "...", "code": "123456" }`
-- Backend valide le code TOTP + le tmp_token, si OK -> genere les vrais JWT (access + refresh cookie)
-- A partir de la, le reste du login continue normalement (recup EncryptedPrivKey, dechiffrement, WS, etc.)
-
-
-### Desactivation
-
-1. `POST /api/v1/auth/2fa/disable` avec `{ "code": "123456" }` (faut prouver qu'on a encore l'app)
-2. Backend valide le code, passe `totp_enabled = false`, supprime le secret + les recovery codes
-
-### Ajout en DB
-
-```sql
-ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64);
-ALTER TABLE users ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT false;
-
-CREATE TABLE recovery_codes (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    code_hash  VARCHAR(255) NOT NULL,
-    used       BOOLEAN NOT NULL DEFAULT false
-);
-```
-
-
----
-
-## 14. Changement de mot de passe
-
-Changer le mdp c'est plus chiant  en zero-knowledge : faut re-wrapper toutes les cles.
-
-1. User entre ancien mdp + nouveau mdp sur la page profil
-2. Client :
-   - Derive l'ancienne KEK (PBKDF2 + ancien mdp + salt actuel) -> verifie qu'elle marche en dechiffrant la PrivKey
-   - Genere un nouveau salt
-   - Derive la nouvelle KEK (PBKDF2 + nouveau mdp + nouveau salt)
-   - Re-chiffre la PrivKey avec la nouvelle KEK (AES-GCM) -> nouveau EncryptedPrivKey + nouveau IV
-   - Calcule le nouveau AuthHash = HMAC-SHA256(nouvelle KEK, "ft_box_auth")
-3. `PUT /api/v1/auth/password`
+1. **Trigger:** The user inputs their current (old) password and inputs a new password string on their profile page settings.
+2. **Client-Side Processing (`generateChangePasswordData`):**
+   * React queries the local session cache to pull the decrypted, plaintext **RSA Private Key** directly from IndexedDB.
+   * Generates a **brand-new random 16-byte salt** matrix.
+   * Derives a new symmetric **AES-GCM 256-bit Master Key** via **PBKDF2** using the new password and the new salt.
+   * Re-encrypts ("re-wraps") the existing RSA Private Key with this new Master Key $\rightarrow$ producing a new `new_encrypted_private_key` and a new `new_iv`.
+   * Computes a fresh authentication proof string by signing `"auth_string"` with an HMAC-SHA256 key built from the new Master Key $\rightarrow$ `new_auth_hash`.
+3. **API Request:** `PUT /api/auth/password` with payload fields mapped as text Base64 strings:
    ```json
    {
-     "old_auth_hash": "<base64>",
-     "new_auth_hash": "<base64>",
-     "new_salt": "<base64>",
-     "new_encrypted_private_key": "<base64>",
-     "new_iv": "<base64>"
+     "new_client_salt": "<Base64_new_salt>",
+     "new_auth_hash": "<Base64_new_auth_hash>",
+     "new_encrypted_private_key": "<Base64_new_encrypted_private_key>",
+     "new_iv": "<Base64_new_iv>"
    }
-   ```
-4. Backend :
-   - Valide l'ancien AuthHash contre le hash Argon2id stocke
-   - Hash le nouveau AuthHash avec Argon2id
-   - Met a jour salt, auth_hash, encrypted_private_key, iv en DB (transaction)
-   - Invalide tous les refresh tokens existants (force re-login sur les autres sessions)
-5. Repond 200
+4. **Backend Processing** (Go Transaction):
+   * Verifies execution context permissions.
+   * Hashes the incoming new_auth_hash parameter using Argon2id.
+   * Commits the updated structural attributes (salt, auth_hash, encrypted_private_key, iv) to PostgreSQL.
+   * Response: Returns a 200 OK transaction success confirmation.
 
-Note : la PubKey RSA change pas, les OrgKeys changent pas. Seul le wrapping de la PrivKey est refait.
-
+**Security Architecture Note**: The user's public identity reference (public_key) and all downstream organizational symmetric access matrices (OrgKeys) remain entirely untouched. Only the symmetric layer protecting the local Private Key entry is refactored.
 
 ---
 
-## Workflows manquants (a detailler plus tard)
 
-- **Creer un dossier** : `POST /api/v1/folders` avec name + parent_id + org_id optionnel
-- **Supprimer un dossier** : `DELETE /api/v1/folders/{id}` (recursif : vider les fichiers d'abord vu le `ON DELETE RESTRICT`)
-- **Renommer fichier/dossier** : `PATCH /api/v1/files/{id}` ou `PATCH /api/v1/folders/{id}`
-- **Quitter une orga** : `DELETE /api/v1/orgs/{org_id}/members/me` (interdit si dernier admin)
-- **Supprimer une orga** : `DELETE /api/v1/orgs/{org_id}` (admin only, supprime tous les fichiers MinIO de l'orga)
-- **Deplacer un fichier/dossier** : `PATCH` pour changer le `folder_id` ou `parent_id`
-- **Partage par lien** : generer un lien public/protege par mdp pour un fichier (faut wrapper la DEK differemment) MAYBE
+### 9. User Deletion
+
+```
+[DELETE /api/auth/account] 
+  └── 1. DB Transaction (PostgreSQL)
+        ├── Determine Org Ownership & Cascade Strategy
+        │     ├── Case A: Another Admin exists ──> Transfer ownership
+        │     ├── Case B: Only members exist   ──> Promote oldest member & Transfer
+        │     └── Case C: No one left          ──> Mark Org for deletion & Queue files
+        ├── Queue personal files for cleanup
+        └── Hard-delete user profile
+  └── 2. Event Broadcasting (Redis Pub/Sub)
+        ├── Publish `user_deleted` (Triggers MinIO object deletion asynchronously)
+        ├── Publish `member_removed` (Syncs remaining active organization views)
+        └── Publish `role_updated` + User notification (For newly promoted admins)
+  └── 3. Session Termination (Clear Auth Cookies)
+
+```
+
+#### 1. Identity Validation & Context Gathering
+
+* **Extraction:** The system extracts the `user_id` from the Fiber context locals and parses it into a valid UUID.
+* **Pre-fetch:** Retrieves the user's email address prior to executing the deletion payload (required for downstream notification events).
+
+#### 2. Atomic Database Transaction (PostgreSQL Cascade Logic)
+
+The entire cleanup operates inside an isolated database transaction to avoid leaving stranded files or locked organizations if a query fails:
+
+* **Organization-by-Organization Audit:** The handler loops through every organization the user belongs to:
+* **Case A (Existing Admins):** If another user already holds an **Admin** role in the organization, ownership of the deleting user's files and folders inside that organization is transferred directly to them.
+* **Case B (Member Promotion):** If the deleting user was the *sole admin* but other members exist, the system identifies the **oldest member** (ordered by `joined_at ASC`). This member is automatically promoted to **Admin**, and all file/folder records are transferred to them.
+* **Case C (Orphaned Organization):** If the deleting user was the *last remaining person*, the entire organization is marked for deletion. All associated files are queried and queued inside a `filesToCleanup` array.
+
+
+* **Personal Storage Cleanup:** The transaction queries all personal files belonging to the user (`org_id IS NULL`) and appends their `minio_object_key` to the cleanup queue.
+* **Final Record Purge:** The user record is hard-deleted from the `users` table.
+
+#### 3. Asynchronous Event Broadcasting (Redis Pub/Sub)
+
+Once the database transaction commits successfully, the system publishes targeted real-time events to handle side effects out-of-band:
+
+* **`PublishUserDeleted`:** Dispatches the `filesToCleanup` queue and ownership `transfers` mapping. A background worker intercepts this to physically purge the objects from the **MinIO S3** bucket.
+* **`PublishMemberRemoved`:** Notifies surviving organizations that the user has left, allowing real-time UI updates across active client sessions via WebSockets.
+* **`PublishRoleUpdated` & Direct Message:** If a member was promoted to Admin during *Case B*, the system resolves their email, fires a role update state event, and sends a direct interface notification to inform them of their new ownership.
+
+#### 4. Session Termination
+
+* The client's security context is destroyed by explicitly clearing the JWT `refresh_token` HTTP-only cookie.
+* Returns a `200 OK` structure confirming account termination.
+---
