@@ -211,7 +211,7 @@ export default function OrgSettingsPage() {
                   <div className={styles.leaveOrga}>
                     <div>
                       <p className={styles.label}>Leave Organization</p>
-                      <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                      <p className={styles.labelDetail}> If you want to leave this organization, be aware that all the files you upload in this organization will remain. </p>
                     </div>
                     <button
                       className={styles.leaveButton}
