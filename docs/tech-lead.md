@@ -1,184 +1,148 @@
-# Technical Lead / Architect:
+# Technical Lead / Architect
 
-Oversees technical decisions and architecture.
-- Defines technical architecture.
-- Makes technology stack decisions.
-- Ensures code quality and best practices.
-- Reviews critical code changes.
+## Build System
+
+We use a **Makefile** as the single entry point for all build and dev operations:
+
+- **Universally available** on Linux without any installation - no external dependency compared to `just` or `task`
+- **Single entry point** for contributors: `make dev` and `make up` are enough to launch a fully functional build
+- **Launching scripts** and shell commands to set up the environment (version pinning, dependency installation, etc.)
+- **Modularity** via variable sets and distinct rule groups - development mode dependencies are declared in variables, making isolation easy to read
+- **CI/CD integration** - GitHub Actions workflows stay minimal and readable by delegating to Makefile targets; logic is defined once and versioned with the code
+
+## Edge Gateway - Caddy
+
+We chose **Caddy** as the main edge gateway / reverse proxy for the following reasons:
+
+- **Traffic routing** - takes incoming requests and forwards them to the appropriate dockerized service
+- **Automatic TLS termination** - HTTPS certificates via Let's Encrypt, HTTP->HTTPS redirects, no manual renewal. This was using during development only, once we approched the end of the project a generated SSL certificate replaced the provided automatic TLS termination
+- **Security headers** - CSP (Content Security Policy), HSTS (HTTP Strict Transport Security)
+- **Single entrypoint** - the sole public entry point of the application; everything passes through Caddy first
+- **Monitoring integration** - native Prometheus metrics endpoint via `/metrics`
+
+## Monitoring Stack
+
+> High observability across the whole application using industry standards. Serves as both **production monitoring/alerting** and **development debugging** (local metrics and dashboards).
+
+We use **Prometheus + Grafana** as the core of the monitoring stack:
+
+- **Caddy** exposes HTTP/service metrics via its `/metrics` endpoint (requests, latency, 5xx errors, active connections, rate limits, etc.)
+- **PostgreSQL** and the **MinIO Prometheus exporter** expose business metrics - storage usage per user/org/group - enabling quota alerts and heatmaps
+- **Alertmanager** is integrated: Prometheus evaluates alerting rules -> Alertmanager -> Discord via native `discord_configs`
+
+## Database - PostgreSQL
+
+We chose **PostgreSQL 18** (Alpine container) as the sole relational database, shared across backend microservices:
+
+- **UUID primary keys** - native generation via `gen_random_uuid()` from the built-in `pgcrypto` extension
+- **Encryption-aware** - columns storing cryptographic material use the native `BYTEA` type; no encoding or ORM abstraction leakage (`public_key`, `salt`, `encrypted_private_key`, etc.)
+- **Quota enforcement** - `used_space` / `max_space` fields on `users` and `organizations` enforce space limits and are tracked by the storage service on upload and deletion
+- **Referential integrity** - ownership rules (`ON DELETE CASCADE` / `ON DELETE RESTRICT`) are enforced at the database level
+- **GORM compatibility** - queries are idiomatic and easily interpreted by PostgreSQL
+
+## File Storage - MinIO
+
+We chose **MinIO** (Chainguard-maintained image) as the S3-compatible object store for user and organization files:
+
+- **S3-compatible API** - self-hosted implementation of the S3 HTTP protocol; no AWS account or cloud dependency required
+- **Separation of concerns** - MinIO stores raw encrypted bytes identified by a UUID (`minio_object_key` in PostgreSQL); all metadata lives exclusively in PostgreSQL; neither service is aware of the other - the backend is the bridge
+- **Network isolation** - port `9000` is never exposed on the host; backend services reach MinIO exclusively through the internal Docker network
+
+> [!NOTE]
+> Port `9001` (MinIO console) is exposed on `127.0.0.1` in dev mode for debugging, but is closed in production.
+
+#### Issue: Presigned URLs unreachable from the browser
+
+The storage service generates MinIO presigned URLs so the frontend can upload/download files directly to MinIO, bypassing the Go backend. This introduces a fundamental networking problem.
+
+**Root cause:** The MinIO Go SDK signs presigned URLs using the `host` header of the endpoint passed to `minio.New()`. In our Docker setup, the client is initialized with `minio:9000` - a hostname only resolvable **inside** the Docker network. The generated URL (`http://minio:9000/...?X-Amz-Signature=...`) is unresolvable from the browser. Changing the hostname post-generation invalidates the AWS Signature V4 (`SignatureDoesNotMatch`).
+
+**Approaches that do not work:**
+
+| Approach | Why it fails |
+|---|---|
+| Naive URL rewrite (`minio:9000` -> `localhost:9000`) | Signature is bound to `host: minio:9000`; MinIO receives `host: localhost:9000` -> mismatch |
+| Two MinIO clients (internal + public endpoint) | `localhost` inside a container resolves to itself, not the host machine |
+| `MINIO_SERVER_URL` env var | Only affects URLs generated by MinIO itself, not by the Go SDK |
+| `/etc/hosts` mapping on the host | Requires `sudo` - not available in the 42 pedagogical environment |
+
+**Solution: Caddy as a transparent proxy with host rewriting**
+
+The Caddyfile uses `header_up Host minio:9000` inside the `/storage` reverse proxy block. This forces the `Host` header MinIO receives to match what it signed, making SigV4 validation pass. Presigned URLs are then rewritten after generation to replace the internal address with the Caddy-facing address:
+
+```go
+strings.Replace(rawURL, "http://minio:"+env.MinioPort, "https://localhost:"+env.AppPort+"/storage", 1)
+```
+
+> [!WARNING]
+> This rewrite is tightly coupled to the current network architecture (Cloudflare Tunnel -> Caddy). If the routing topology changes, the rewrite rule must be updated accordingly.
+
+## Security Tradeoff: Client-side Encryption vs. Server-side Scanning
+
+The core security guarantee of Ostrom is that **uploaded files are never in plaintext within our infrastructure**. Encryption is performed client-side in the browser before transmission; the backend receives and stores only **ciphertext**.
+
+> [!IMPORTANT]
+> This guarantee is architecturally incompatible with server-side antivirus scanning. This is a **conscious tradeoff**, not an oversight.
+
+**Why each approach fails against our threat model:**
+
+- **ClamAV (or any server-side scanner)** requires plaintext bytes to match signatures. Since the backend only ever sees ciphertext, scanning at the infrastructure level is impossible without decryption - which would break the guarantee.
+- **VirusTotal API (called from the frontend)** would require sending the plaintext file to a third-party server before encryption. VirusTotal explicitly states that files uploaded via their free API may be shared with security vendors - a direct violation of our confidentiality model.
+- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem. The threat model is not about internet exposure but about plaintext files existing anywhere within infrastructure we operate. An isolated container is still infrastructure we control, and does not constitute proof to users that a plaintext copy was destroyed after scanning.
+
+**Decision:** server-side malware scanning is intentionally absent and documented as a deliberate architectural tradeoff.
+
+**Client-side mitigations in place** (acknowledged as bypassable, not presented as security guarantees):
+
+- MIME type and file extension validation before encryption
+- File size limits enforced before upload
+
+These act as friction against accidental misuse only.
+
+## ORM - GORM
+
+We chose **GORM** over **SQLC** for its ergonomics and fit with our CRUD-oriented backend services. SQLC was our second choice for its compile-time type safety, but it is a SQL-to-Go code generator, not a full ORM. GORM provides:
+
+- **Struct-based modeling** - domain structs (`User`, `Organization`, `Folder`, `File`) are reused as DTOs across services
+- **Native associations** - ownership and relationships expressible without manual joins (`HasOne`, `BelongsTo`, etc.)
+- **Hooks / callbacks** (`BeforeCreate`, `AfterUpdate`, etc.) - transparent enforcement of business logic (quota checks, UUID generation, timestamps) at the ORM layer
+- **Transaction support** (`db.Transaction(...)`) - multi-step operations (e.g. file upload + quota update) remain atomic
+
+## Redis
+
+Redis serves multiple roles in our architecture:
+
+**Session / Auth**
+Stores refresh tokens with a native TTL - no cleanup job or DB polling needed. Logout invalidation is O(1).
+
+**Real-time UI (Pub/Sub)**
+The storage service publishes file and folder events (`file_uploaded`, `folder_created`, etc.) to per-user and per-org channels (`user_events:{id}`, `org_events:{id}`). The WebSocket broker subscribes and rebroadcasts to connected clients. This is fire-and-forget: event loss is acceptable because the frontend re-fetches on page load.
+
+**Cross-service side effects (Streams)**
+Critical events such as `user_deleted` and `file_orphaned` use `XADD`/`XREAD` for guaranteed delivery semantics. Messages persist in the stream and are consumed even after a consumer restart - a missed event would result in orphaned data in MinIO or PostgreSQL. Background workers (one goroutine per consumer) are launched alongside the HTTP server. A periodic sweep runs every 15 minutes as a safety net.
+
+## Design System - lucide-react
+
+We standardized on `lucide-react` for icon management:
+
+- **Optimized bundle** - unlike FontAwesome (which ships CSS for 7000+ icons regardless of usage), lucide-react is pure JavaScript; each icon is a React component and the bundler includes only what is imported
+- **Unified visual language** - all icons share a 24px viewport and 2px stroke weight, enforcing consistent visual hierarchy at scale
+- **Sustainability** - MIT-licensed, maintained by the open-source community, used in production at Vercel, Supabase, and others
+- **Zero-friction integration** - works directly with Tailwind v4 and CSS Modules; no adapters or custom configuration required
+
+## Schema Validation - Zod
+
+Zod is a TypeScript-first schema validation library. Schemas are defined once and TypeScript types are inferred automatically, eliminating duplication between runtime validation and static typing.
+
+All user inputs are validated on the frontend before any API call is made. Schemas are organized by domain under `src/schemas/` (auth, files, organizations, etc.), directly satisfying the subject's requirement that *"all forms and user inputs must be properly validated"*.
+
+**Two concrete benefits:**
+1. Format errors are caught and surfaced to the user immediately - no round-trip to the backend
+2. The backend receives only structurally valid requests - reducing unnecessary load and keeping monitoring free of validation noise
 
 ---
 
-### Tech lead / architect personal readme to track done work related to the role
+## Backup Strategy
 
----
-
-#### Architecture choices:
-
-- technologies choisies
-- descriptif + comparatif entre techno vues/choisies/eliminées
-- ci/cd intégré
-- outils 'quality check' vu/utilisé/intégré
-
-## Technical architecture choice
-
-### Builder
-
-- Building the project via a **Makefile** as it fits quite well our needs:
-  - **Universally available** on Linux without any installation
-    - No need external dependency compared to `just` or `task`
-  - **Single entry point** for contributors
-    - `make dev`, `make up` are enough to launch fully fonctionnal builds
-  - **Microservices by design**
-    - the `SERVICES` is auto-declared via `docker compose config --services`, so adding new services to the compose file also exposes them to the Makefile with no changes required
-  - **Launching scripts** and/or shell commands to set up the environment
-    - Technology version updating, downloading and installing dependencies, etc...
-  - **Modularity** with differents sets of variable and rules
-    - Development mode is straight forward to be used as dependencies can be declared in variables which makes isolation easy to read
-  - **CI/CD integration**
-    - GitHub Actions workflows stays minimal and readable by delegating to Makefile targets. The logic is defined once and is versioned with the code.
-
-
-### Edge Gateway
-
-> Not 100% defined but I'm committing a first choice
-
-- Chose **Caddy** as main edge gateway or reverse proxy/load balancer for its features and as reference of our backend Go choice. Caddy has also a large amount of community built **plugins** that we might want to use. Here are some features we'll use Caddy for:
-  - **Traffic routing** - takes requests and forwards them to our dockerized services
-  - **Load balancing** - distributes traffic across multiple service instances
-  - **Automatic TLS termination** - automatic HTTPS certificates (via Let's Encrypt) with HTTP to HTTPS redirects and no manual certificates renewals
-  - **Security Headers** - CSP (Content Security Policy), HSTS (HTTP Strict Transport Security) and external plugins for XSS mitigation
-  - **Single Entrypoint** - is the solely entrypoint of communication with our webapp, everything goes throught Caddy first, it acts as the public front door
-  - **Monitoring Integration** - Native Prometheus metrics endpoint (via the `/metrics` route)
-
-
-### Monitoring Stack
-
-> We want high observability over the whole application with globaly industrial standards. Serves as both **production monitoring/alerting** and **development debugging tool** (local metrics/dashboards)
-
-- **Prometheus + Grafana** are open-source and the core of the monitoring stack. Prometheus is a systems monitoring and alerting toolkit and Grafana is an analytic and interactive data-visualization platform. Linked to these services, we will also use:
-  - **Caddy** internal **HTTP/service** metrics via Caddy `/metrics` endpoint (exposing requests, latency, 5xx errors, active connections, rate limits, etc.).
-  - Business metrics will be exposed by **PostgreSQL data source** + **MinIO Prometheus exporter** for storage usage. The objective here is to create Heatmaps per user/org/group and have quota alerts
-
-> ⚠️ **THE FOLLOWING ARE NOT DEFINED YET**
-
-- Prometheus AlertManager exposing important metrics via defined extra service ? (sending discord/slack/email ?)
-- Grafana dashboards would be either imported from Community plateform or handmade depending on the needs.
-- CI/CD integration: depending on the workload I'll implement `make dev`/`make test` auto‑includes monitoring for local validation
-
-### Database (Postgres)
-
-- Chose **PostgreSQL 18 (on an alpine container)** as the sole relational database, shared across backend microservices that needs it. The following are reasons we believe Postgres is the right choice:
-  - **UUID primary keys** - native generation of UUID keys via `gen_random_uuid()` from the `pgcrypto` extension (built-in alpine container).
-  - **Encryption-aware** - columns storing cryptographic material use native `BYTEA` type;no encoding, no ORM abstraction leakage (`public_key`, `salt`, `encrypted_private_key`, etc.)
-  - **Quota enforcement** - `used_space` / `max_space` fields on `users` and `organizations` can enforce default space limits and be tracked by the file service on upload and deletion
-  - **Referential integrity** - rules like `ON DELETE CASCADE` / `ON DELETE RESTRICT` define ownership of folders and files at the database level
-  - **Credentials via docker secrets** - `POSTGRES_USER_FILE`, `POSTGRES_PASSWORD_FILE`,`POSTGRES_DB_FILE` can be passed as `secrets` so we never have plaintext of critical environment variables
-  - **Query** - GORM or SQLC SQL are is easily interpreted queries by Postgres.
-
-### File storage (MinIO)
-
-- Chose **MinIO** (via a maintained chainguard docker image) as the S3-compatible object store for users and organization uploaded files
-  - **S3-compatible API** - MinIO is self-hosted implementation of the S3 HTTP protocol, we don't need an AWS account or cloud dependency for the backend to interact with our object store
-  - **Separation** - MinIO stores raw encrypted bytes, identified by a UUID (`minio_object_key` in the Postgres db). All metadata are exclusive to Postgres, neither of the services are aware of the other; the backend is the bridge between them.
-  - **Network isolation** - the `9000` port is never exposed on the host; backend services reach MinIO from the internal `docker network`. The `127.0.0.1:9001` port will remain exposed in dev mode for debug purposes but won't in production.
-  - **Monitoring Integration** - a Prometheus-compatible `/minio/health` endpoint and metrics that can be scraped by our monitoring stack (Prometheus/Grafana).
-
-#### Issue encountered: presignedURL inaccessible from the browser
-
-- Context:
-  - The storage service generates MinIO presigned URLs so the frontend can upload/download files directly to MinIO, without going through the Go backend.
-- The core problem
-  - The MinIO Go SDK generates presigned URLs by signing the `host` header using the endpoint passed to `minio.New()`. In our Docker setup, the client is initialized with `minio:9000` - a hostname only resolvable **inside** the Docker network...
-  - Generated URLs look like `http://minio:9000/.../uuid?X-Amz-Signature=...`, which the browser cannot resolve. This hostname is part of the **AWS Signature V4 canonical request**. Changing the hostname invalidates the signature (`SignatureDoesNotMatch`)
-
-The following solutions cannot be implemented:
-- **Naive URL rewrite**: `minio:9000` -> `localhost:9000` signature is computed on `host: minio:9000`, but MinIO receives `host: localhost:9000` which results in a mismatch
-- **Two MinIO clients**: one internal and one with a public endpoint. The public client cannot reach `localhost:${PORT}` from inside a Docker container. `localhost` inside a container points to itself, not the host machine so this is not a solution either
-- `MINIO_SERVER_URL` **env variable**: only affects URLs generated internally by MinIO, not those generated by the Go SDK client.
-- `/etc/hosts` on the host machine to map `minio` -> `127.0.0.1`: requires sudo privileges, which is not an option in our pedagogical setup.
-
-##### The solution: Caddy as a transparent proxy + host rewriter
-
-The Caddyfile uses `header_up` inside the `reverse_proxy` block of the `/storage` endpoint (which points to minio) to force the `Host` header to what MinIO expects. The second fix is to rewrite the URL after generation to make it reachable from the browser
-
-> ⚠️ These fixes work in development mode; production viability is still uncertain
-
-
-
-### ⚠️ Security tradeoff: client-side encryption vs server-side file scanning
-
-The core security guarantee of our project is that **uploaded files are never in plaintext within our infrastructure**. Encryption is performed client-side in the browser before transmission; the backend receives and stores **ciphertext**.
-
-This guarantee is fundamentally incompatible with server-side antivirus scanning:
-- **ClamAV** (or any server-side scanner) requires plaintext bytes to match against signatures. Since the backend only sees ciphertext, scanning at the backend level is architecturally impossible without decryption or upload files in plaintext somewhere on the infrastructure - which would break our guarantee.
-- **VirusTotal API** calls from the frontend would require sending the plaintext file to a third-party server before encryption. These kind of services explicitly state that files uploaded via their free API may be shared with security vendors - which directly violates our confidentiality model.
-- **Isolated environments** (ephemeral containers, VMs) do not resolve the problem - the threat model is not about internet expose but about plaintext files existing on the infrastructure we operate. An isolated container still constitutes our infrastructure and does not provide a proof to users that a plaintext copy was destroyed after scanning.
-
-**Decision**: server-side malware scanning is intentionally absent. This is a conscious architectural tradeoff, not an oversight.
-
-**What is enforced client-side** as a lightweight mitigation:
-- **MIME** type and file extension validation before encryption - ⚠️ a voir ensemble
-- **File size limits** enforced before upload - ⚠️ a voir ensemble
-
-These are acknowledged as bypassable by a motivated attacker, and are not presented as security guarantees - only as friction against accidental misuse.
-
-> ⚠️ Dans l'idée cette partie pourrait etre déplacer dans nos pages *Privacy Policy* et *Terms of Service*
-
-### ORM (GORM)
-
-- Chose **GORM** over **SQLC** for its developer ergonomics and how well it fits our CRUD‑oriented backend services. SQLC was our second choice because it offers strong compile‑time type safety, but it is a SQL‑to‑Go code generator, not a full ORM. Our service is more convention‑driven and benefits from a higher‑level abstraction that GORM provides via:
-
-  - **Auto‑migration** via `AutoMigrate()` on our models, which keeps our schema in sync with Go structs during development.
-  - **Struct‑based modeling** aligned with our domain (users, organizations, folders, files), reusing the same structs as DTOs (Data Transfer Object) across services.
-  - **Native associations** Can express ownership and relationships without manual joins (via `HasOne`, `BelongsTo`, etc...).
-  - **Hooks / callbacks** (`BeforeCreate`, `AfterUpdate`, etc.) that allow transparent enforcement of business logic such as quota checks, UUID generation, and timestamps directly at the ORM layer.
-  - **Transaction support** (`db.Transaction(...)`) so multi‑step operations (e.g. file upload + quota update) remain atomic.
-
-> ⚠️ **NOTE**: GORM’s `AutoMigrate()` is restricted to **development only**. In production, we will use a dedicated migration tool (e.g. `golang‑migrate`) to ensure reversible schema changes.
-
-### Redis
-
-Redis has several roles in our architecture:
-
-- **Session / Auth**: Stores refresh tokens with a native TTL, avoiding the need
-  for a cleanup job or DB polling. Invalidation on logout is O(1).
-
-- **Events manager**
-  - **UI realtime (pub/sub)**: The storage service publishes file and folder events
-    (`file_uploaded`, `folder_created`, etc.) to per-user and per-org channels
-    (`user_events:{id}`, `org_events:{id}`). The WebSocket broker subscribes and
-    re-broadcasts to connected clients. This is fire-and-forget: event loss is
-    acceptable because the frontend re-fetches on page load.
-  - **Cross-service side effects (Streams)**: Critical events such as `user_deleted`
-    and `file_orphaned` use `XADD`/`XREAD` for their guaranteed delivery semantics.
-    Messages persist in the stream and are consumed even after a consumer restart —
-    a missed event means orphaned data in MinIO or PostgreSQL.
-    Background workers (one goroutine per consumer) are launched alongside the HTTP
-    server. A periodic sweep worker runs every 15 minutes as a safety net.
-
-### Adminer
-
-Dev mode only, not much more to say. Its easier to navigate throught the tables with it. Used to debug/validate features
-
-### Design System (lucide-react)
-
-We've standardized on lucide-react for icon management in our frontend because it delivers measurable advantages:
-
-- Optimized bundle efficiency: Icon libraries like FontAwesome ship CSS files that define styling for all 7,000+ icons, even if you only use 20. That's wasted payload. Lucide-react is pure JavaScript, each icon is a React component, and our bundler includes only what we import. No CSS declarations or unused icon definitions that bloat the bundle.
-- Unified design language: Every icon adheres to the same specifications : 24px viewport, 2px stroke weight, which gives consistent visual hierarchy. This enforces design coherence across the product. As the application scales, this consistency prevents the fragmentation that occurs when teams source icons from multiple libraries or custom SVG repositories.
-- Operational sustainability: The library is maintained by the open-source community, integrated into production systems at scale (Vercel, Supabase, etc.), and published under the MIT license. This reduces technical debt compared to custom SVG management, which requires manual maintenance, testing, and versioning of individual assets.
-- Integration simplicity: Lucide-react integrates directly with our existing Tailwind and CSS modules stack. No adapter layers, middleware, or bespoke configuration required.
-
-
-### Backup blablabla
-
-Dire qu'il y a un readme specific pour ca
-
-
-### Zod (Schema validation)
-
-Zod is a TypeScript-first schema validation library. Schemas are defined once and Zod automatically infers the corresponding TypeScript types, eliminating any duplication between runtime validation and static typing.
-
-We use it to validate all user inputs on the frontend before any API call is made. Schemas are organized by domain under `src/schemas/` (auth, files, organizations, etc.), which directly satisfies the subject's requirement that *"all forms and user inputs must be properly validated"*.
-
-This boundary has two concrete benefits: format errors are caught and surfaced to the user immediately without a round-trip to the backend (not API calls are made), and the backend receives only structurally valid requests - reducing unnecessary load and keeping the monitoring stack free of validation noise.
+> [!NOTE]
+> Refer to [backup.md](backup.md) for the full specification.
