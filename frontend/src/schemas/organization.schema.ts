@@ -12,7 +12,7 @@ export const organizationDescriptionSchema = z.object({
 	description: z
 		.string()
 		.trim()
-		.max(255, "Description is limited to 255 characters"),
+		.max(250, "Description is limited to 250 characters"),
 });
 
 export type OrganizationFormSchema = z.infer<typeof organizationSchema>;

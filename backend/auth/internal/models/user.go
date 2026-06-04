@@ -20,11 +20,9 @@ type User struct {
 	RefreshToken        *string   `gorm:"type:varchar(255);uniqueIndex" json:"refreshToken,omitempty"`
 	CreatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt           time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP" json:"updatedAt"`
-	FirstName           string    `gorm:"size:255" json:"firstName"`
-	FamilyName          string    `gorm:"size:255" json:"familyName"`
+	FirstName           string    `gorm:"size:100" json:"firstName"`
+	FamilyName          string    `gorm:"size:100" json:"familyName"`
 	TwoFactorEnabled    bool      `gorm:"default:false" json:"twoFactorEnabled"`
 	TOTPSecretEncrypted []byte    `gorm:"type:bytea" json:"-"` // Encrypted TOTP secret (only set if 2FA enabled)
 	RecoveryCodesHashed []byte    `gorm:"type:bytea" json:"-"` // Hashed recovery codes (for 2FA backup)
-	// Username  *string `gorm:"type:varchar(50);uniqueIndex" json:"username,omitempty"`
-
 }
