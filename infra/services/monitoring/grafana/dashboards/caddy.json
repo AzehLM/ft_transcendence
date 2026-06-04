@@ -42,7 +42,7 @@
     }
   ],
   "id": null,
-  "uid": "ft-transcendence-caddy-v2",
+  "uid": "ostrom",
   "title": "Caddy",
   "description": "HTTP traffic, latency, payload size and error tracking for the Caddy edge gateway.",
   "tags": [

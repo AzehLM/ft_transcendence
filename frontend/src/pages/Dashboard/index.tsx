@@ -7,6 +7,7 @@ import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownload } from "../../hooks/useE2EEDownload";
 import { useParams } from "react-router-dom";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
+import { folderSchema } from "../../schemas/folder.schema";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
 import { FolderCard } from "../../components/FolderCard";
@@ -79,20 +80,24 @@ export default function DashboardPage() {
     };
 
     const handleCreateFolderSubmit = async () => {
-        if (!folderName.trim()) {
-            setFolderError("Invalid Name");
-            return;
+        setFolderError("");
+
+        const result = folderSchema.safeParse({ name: folderName });
+        if(!result.success) {
+            setFolderError(result.error.issues[0].message);
+            return ;
         }
         try {
-            await FilesService.createFolder(folderName, folderId);
+            await FilesService.createFolder(result.data.name, folderId);
             await loadFiles();
             addFileMessage(`Folder "${folderName}" created`, "success");
         } catch (err: any) {
             addFileMessage(err.message || "Failed to create folder.", "error");
+        } finally {
+            setFolderError(null);
+            setFolderName("");
+            setIsFolderModalOpen(false);
         }
-        setFolderError(null);
-        setFolderName("");
-        setIsFolderModalOpen(false);
     };
 
     return (

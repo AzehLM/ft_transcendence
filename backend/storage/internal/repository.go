@@ -23,7 +23,6 @@ type StorageRepository interface {
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)                                                                                // GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)                                                   // PATCH /files/{file_id}
-	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	FindFilesByUserID(userID uuid.UUID) ([]File, error) // used for user_deleted event handling
 	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)   // used for org_deleted event handling

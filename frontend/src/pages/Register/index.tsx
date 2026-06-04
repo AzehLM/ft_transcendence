@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { registerSchema } from "../../schemas/auth.schema";
 import { TwoFAPrompt } from "../../components/TwoFAPrompt";
 import { SetupTOTP } from "../../components/SetupTOTP/SetupTOTP";
 
@@ -24,38 +25,20 @@ export default function RegisterPage() {
         e.preventDefault();
         setError("");
 
-        if (!email || !password || !confirmPassword) {
-            setError("All fields are required!");
+        const result = registerSchema.safeParse({ email, password, confirmPassword });
+        if (!result.success) {
+            setError(result.error.issues[0].message);
             return;
         }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email!");
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setError("Passwords do not match!");
-            return;
-        }
-
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters!");
-            return;
-        }
-
 
         setIsLoading(true);
         try {
-            const {masterKey: mk, registrationData} = await generateRegistrationData(email, password);
+            const {masterKey: mk, registrationData} = await generateRegistrationData(result.data.email, result.data.password);
 
             const response = await fetch("/api/auth/register", {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(registrationData),
             });
 
@@ -94,8 +77,8 @@ export default function RegisterPage() {
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
-            console.error("Erreur:", err);
             setError(err.message || "An error occurred during registration!");
+        } finally {
             setIsLoading(false);
         }
     };
