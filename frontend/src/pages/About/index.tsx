@@ -64,7 +64,7 @@ function AboutPage() {
                             {
                                 name: "Victoire Perrier",
                                 description: "Project Manager",
-                                bio: "Originally from a business background in digital marketing, Victoire made a deliberate leap into tech, and never looked back. Her background brings a user-first mindset to the team, which keeps the product grounded when engineering gets deep in the weeds. When she's not coding, you'll probably find her singing (screaming) songs at the top of her lungs in her car.",
+                                bio: "From digital marketing to software engineering, Victoire brought a user-first mindset that kept the product grounded when the engineering got deep. You'll probably find her singing (screaming) in her car at the end of a long work day.",
                                 photo: "/members/vicperri.jpeg"
                             },
                             {
