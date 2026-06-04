@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { generateRegistrationData } from "../../services/crypto.service";
+import { generateRegistrationData, storePrivateKey, storePublicKey, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -23,7 +23,7 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");  // Réinitialise les erreurs précédentes
+        setError("");
 
         const result = registerSchema.safeParse({ email, password, confirmPassword });
         if (!result.success) {
@@ -33,7 +33,7 @@ export default function RegisterPage() {
 
         setIsLoading(true);
         try {
-            const registrationData = await generateRegistrationData(result.data.email, result.data.password);
+            const {masterKey: mk, registrationData} = await generateRegistrationData(result.data.email, result.data.password);
 
             const response = await fetch("/api/auth/register", {
                 method: "POST",
@@ -58,6 +58,22 @@ export default function RegisterPage() {
             if (data.access_token) {
                 localStorage.setItem("token", data.access_token);
             }
+            const encryptedPrivateKey = base64ToUint8Array(registrationData.encrypted_private_key);
+            const iv = base64ToUint8Array(registrationData.iv);
+
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, mk, iv);
+            await storePrivateKey(privateKey);
+
+            const publicKeyArray = base64ToUint8Array(registrationData.public_key);
+            const publicKey = await crypto.subtle.importKey(
+                "spki",
+                new Uint8Array(publicKeyArray),
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["encrypt"]
+            );
+            await storePublicKey(publicKey);
+
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
@@ -188,10 +204,8 @@ export default function RegisterPage() {
                         setShowSetupTOTP(true);
                     }}
                     onSkip={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
                         setShowTwoFAPrompt(false);
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                 />
             )}
@@ -200,14 +214,10 @@ export default function RegisterPage() {
             {showSetupTOTP && (
                 <SetupTOTP
                     onSuccess={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                     onCancel={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                 />
             )}
