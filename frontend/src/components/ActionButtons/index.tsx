@@ -20,14 +20,25 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   const [hasKeys, setHasKeys] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let active = true;
     const runCheck = async () => {
-      const privateKey = await getPrivateKeyFromSession();
-      const publicKey = await getPublicKeyFromSession();
-      setHasKeys(!!(privateKey && publicKey));
+      try {
+        const privateKey = await getPrivateKeyFromSession();
+        const publicKey = await getPublicKeyFromSession();
+        if (active) {
+          setHasKeys(!!(privateKey && publicKey));
+        }
+      } catch (err) {
+        if (active) {
+          setHasKeys(false);
+        }
+      }
     };
     runCheck();
+    return () => {
+      active = false;
+    };
   }, [keyMissing]);
-
 
    const handleUploadClick = async () => {
      const ok = hasKeys === true ? true : await checkKeys();
@@ -36,14 +47,13 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-0
-     let ok = false;
-     try {
-       ok = await checkKeys();
-     } catch {
-       ok = false;
-     }
-     
+    let ok = false;
+    try {
+      ok = await checkKeys();
+    } catch {
+      ok = false;
+    }
+
     if (!ok) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
