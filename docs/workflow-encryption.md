@@ -134,7 +134,7 @@ The React engine captures the payload response and unrolls the envelope using `u
 
 #### 2 Member Invitation Flow
 
-**Scenario:** Alice (Admin) invites Bob (New Member) into the organization.
+**Scenario:** Alice (Admin or Owner) invites Bob (New Member) into the organization.
 
 
 

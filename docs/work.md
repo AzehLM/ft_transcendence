@@ -53,7 +53,7 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 4. **API Request:** `POST /api/orgs` with `name`, `public_key`, `enc_org_priv_key`, `enc_aes_key`, and `iv` (all Base64-encoded).
 5. **Backend Processing (PG Transaction):**
    * Provisions the organization (UUID generation).
-   * Assigns the creator as the organization **Admin**.
+   * Assigns the creator as the organization **Owner**.
    * Persists the encrypted cryptographic envelope inside the `org_members` table.
    * *Zero-Knowledge Guarantee:* The server only processes opaque BLOBs and cannot access plaintext keys.
 6. **Real-Time Sync:** Publishes an `org_created` event to Redis $\rightarrow$ pushed via WebSockets to the user's other active sessions.
@@ -62,7 +62,7 @@ Stack: React (Frontend) / Go + GORM (Backend) / PostgreSQL / Redis / MinIO
 
 ## 4. Member Invitation Flow
 
-**Scenario:** The Admin invites Alice into the organization.
+**Scenario:** The Admin/Owner invites Alice into the organization.
 
 1. **Data Fetching:** Admin's client fetches their own encrypted organization envelope and requests Alice's Public RSA Key from the server.
 2. **Client-Side Decryption:** Admin decrypts the `encrypted_aes_key` using their private RSA key, then decrypts the `encrypted_org_private_key` to temporarily recover the organization's plaintext private key in memory (RAM).
@@ -121,15 +121,16 @@ Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wr
 [DELETE /api/auth/account] 
   └── 1. DB Transaction (PostgreSQL)
         ├── Determine Org Ownership & Cascade Strategy
-        │     ├── Case A: Another Admin exists ──> Transfer ownership
-        │     ├── Case B: Only members exist   ──> Promote oldest member & Transfer
-        │     └── Case C: No one left          ──> Mark Org for deletion & Queue files
+        │     ├── Case A: Another Admin exists and owns less that 10 orgas ──> Transfer ownership
+        │     ├── Case B: Only members exist   ──> Promote oldest member if owns less than 10 orgas & Transfer
+        │     └── Case C: No one left or no one eligible         ──> Mark Org for deletion & Queue files
         ├── Queue personal files for cleanup
         └── Hard-delete user profile
   └── 2. Event Broadcasting (Redis Pub/Sub)
         ├── Publish `user_deleted` (Triggers MinIO object deletion asynchronously)
+        ├── Publish `orga_deleted` 
         ├── Publish `member_removed` (Syncs remaining active organization views)
-        └── Publish `role_updated` + User notification (For newly promoted admins)
+        └── Publish `role_updated` + User notification (For newly promoted owner)
   └── 3. Session Termination (Clear Auth Cookies)
 
 ```
@@ -144,9 +145,9 @@ Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wr
 The entire cleanup operates inside an isolated database transaction to avoid leaving stranded files or locked organizations if a query fails:
 
 * **Organization-by-Organization Audit:** The handler loops through every organization the user belongs to:
-* **Case A (Existing Admins):** If another user already holds an **Admin** role in the organization, ownership of the deleting user's files and folders inside that organization is transferred directly to them.
-* **Case B (Member Promotion):** If the deleting user was the *sole admin* but other members exist, the system identifies the **oldest member** (ordered by `joined_at ASC`). This member is automatically promoted to **Admin**, and all file/folder records are transferred to them.
-* **Case C (Orphaned Organization):** If the deleting user was the *last remaining person*, the entire organization is marked for deletion. All associated files are queried and queued inside a `filesToCleanup` array.
+* **Case A (Existing Admins):** If another user already holds an **Admin** role in the organization amd owns less than 10 organizations, ownership of the deleting user's files and folders inside that organization is transferred directly to them.
+* **Case B (Member Promotion):** If the deleting user was the *sole admin* but other members exist amd own less than 10 organizations, the system identifies the **oldest member** (ordered by `joined_at ASC`). This member is automatically promoted to **Admin**, and all file/folder records are transferred to them.
+* **Case C (Orphaned Organization or No one eligible):** If the deleting user was the *last remaining person* or all the other member and admin owns more thant 10 organizations, the entire organization is marked for deletion. All associated files are queried and queued inside a `filesToCleanup` array.
 
 
 * **Personal Storage Cleanup:** The transaction queries all personal files belonging to the user (`org_id IS NULL`) and appends their `minio_object_key` to the cleanup queue.
@@ -158,6 +159,7 @@ Once the database transaction commits successfully, the system publishes targete
 
 * **`PublishUserDeleted`:** Dispatches the `filesToCleanup` queue and ownership `transfers` mapping. A background worker intercepts this to physically purge the objects from the **MinIO S3** bucket.
 * **`PublishMemberRemoved`:** Notifies surviving organizations that the user has left, allowing real-time UI updates across active client sessions via WebSockets.
+* **`PublishOrgaDeleted`:** Notifies surviving organizations that the organization is deleted.
 * **`PublishRoleUpdated` & Direct Message:** If a member was promoted to Admin during *Case B*, the system resolves their email, fires a role update state event, and sends a direct interface notification to inform them of their new ownership.
 
 #### 4. Session Termination
