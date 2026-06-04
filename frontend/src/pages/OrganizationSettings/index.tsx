@@ -66,12 +66,20 @@ export default function OrgSettingsPage() {
       }
     };
 
+    const handleOrgaDeleted = (data: any) => {
+      if (data && data.org_id === id) {
+        navigate("/organizations");
+      }
+    };
+    
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
     registerListener("ROLE_UPDATED", handleRoleUpdated);
+    registerListener("ORGA_DELETED", handleOrgaDeleted);
 
     return () => {
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
       unregisterListener("ROLE_UPDATED", handleRoleUpdated);
+      unregisterListener("ORGA_DELETED", handleOrgaDeleted);
     };
   }, [registerListener, unregisterListener, id, userID]);
 
@@ -206,19 +214,21 @@ export default function OrgSettingsPage() {
                     handleReset={handleResetDescription}
                     isOrgaDesc={true}
                   />
-                  <div className={styles.leaveOrga}>
-                    <div>
-                      <p className={styles.label}>Leave Organization</p>
-                      <p className={styles.labelDetail}> If you want to leave this organization, be aware that all the files you upload in this organization will remain. </p>
+                  {myRole !== "owner" && (
+                    <div className={styles.leaveOrga}>
+                      <div>
+                        <p className={styles.label}>Leave Organization</p>
+                        <p className={styles.labelDetail}> If you want to leave this organization, be aware that all the files you upload in this organization will remain. </p>
+                      </div>
+                      <button
+                        className={styles.leaveButton}
+                        onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}
+                      >
+                        <Minus size={20} />
+                        Leave Organization
+                      </button>
                     </div>
-                    <button
-                      className={styles.leaveButton}
-                      onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}
-                    >
-                      <Minus size={20} />
-                      Leave Organization
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -227,7 +237,7 @@ export default function OrgSettingsPage() {
                 <StorageBar usedBytes={usedSpace} totalBytes={maxSpace} />
               </div>
 
-              {myRole === "admin" && (
+              {myRole === "owner" && (
                 <DangerZone
                   label="Delete this organization"
                   description="This action cannot be undone and will remove all members, files, and folders associated with this organization."
