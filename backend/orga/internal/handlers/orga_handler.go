@@ -122,6 +122,22 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
+	// check number of ownership
+	var ownedCount int64
+    errCount := h.DB.Table("org_members").
+        Where("user_id = ? AND role = ?", userID, "owner").
+        Count(&ownedCount).Error
+    if errCount != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "failed to verify organization limit",
+        })
+    }
+    if ownedCount >= 3 { // to change
+        return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+            "error": "you have reached the maximum limit of 10 organizations",
+        })
+    }
+
 	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
 	if errKey != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -145,7 +161,7 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 
 	orgaMember := models.OrgaMember{
 		UserID:        userID,
-		Role:          "admin",
+		Role:          "owner",
 		EncOrgPrivKey: decodedKey,
 		EncAesKey:     decodedAesKey,
 		Iv:            decodedIv,
