@@ -1,0 +1,180 @@
+# Development Caddyfile.
+# This is the environment you can touch a lot to adapt to the behavior you want to reach.
+# Once you found the correct configuration please update the Caddyfile for production to ensure you modifications are also up in prod.
+# Also documentation in here is required, but please remove it from the production config file.
+
+# To use your own domain name (with automatic HTTPS), first make
+# sure your domain's A/AAAA DNS records are properly pointed to
+# this machine's public IP, then replace ":80" below with your
+# domain name.
+
+# Global options block
+# https://caddyserver.com/docs/caddyfile/options
+{
+    debug # for development mode only as it is very verbose
+
+    # might want to hide that via CADDY_ADMIN environment variable: https://caddyserver.com/docs/api
+    # documentation exposes API endpoint we might want/have to use
+    # this will be set to off for production unless we really use the admin rights which I doubt
+    # admin has to be turned off to make config reload possible, I found a bypass for that but its not clean so this is a reminder to change back the service docker config for production
+    admin 0.0.0.0:2019
+
+    servers {
+        metrics
+    }
+}
+
+# Shared configuration snippet — all routes and headers live here once.
+# Imported by both localhost (TLS internal) and ostrom.cloud (HTTP for Cloudflare Tunnel).
+(app) {
+    log {
+        output stdout
+        format json
+    }
+
+    # Security headers (anti-XSS, etc.)
+    header {
+        # Security
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY" # DENY breaks Grafana iframes so I'm overriding it directly in grafana endpoint
+
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+        # HSTS (force HTTPS)
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        # CSP (customize later)
+        # the localhost:9000 connect-src is to test CORS (Cross-Origin Resource Sharing) setup from frontend to minio directly
+        Content-Security-Policy "
+            default-src 'self';
+            frame-src blob:;
+            script-src 'self';
+            style-src 'self' 'unsafe-inline';
+            img-src 'self' data: blob:;
+            connect-src 'self' http://localhost:9000 https://ostrom.cloud;
+            frame-ancestors 'none';
+        "
+		# Content-Security-Policy "
+		# 	default-src 'self';
+		# 	script-src 'self' 'unsafe-inline' 'unsafe-eval';
+		# 	style-src 'self' 'unsafe-inline';
+		# 	img-src 'self' data: blob:;
+		# 	font-src 'self' data:;
+		# 	connect-src 'self' wss:;
+		# 	frame-ancestors 'self';
+		# "
+
+        # CORS for API
+        # Access-Control-Allow-Origin "*"
+        # Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        # Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+
+
+    # public in prod, we wont expose this route later on, the metrics will only be accessible via Grafana, which we will secured as well
+    @metrics path /metrics
+    handle @metrics {
+        metrics
+    }
+
+	# Grafana is configured with GF_SERVER_ROOT_URL so it knows it lives at /grafana/.
+	@grafana path /grafana /grafana/*
+	handle @grafana {
+        header X-Frame-Options "SAMEORIGIN"
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'self';"
+		reverse_proxy grafana:3000
+	}
+
+	# Started with --web.external-url=/prometheus/ so all its
+	# internal links and redirects are prefix-aware.
+    @prometheus path /prometheus /prometheus/*
+    handle @prometheus {
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
+        uri strip_prefix /prometheus
+        reverse_proxy prometheus:9090
+    }
+
+
+    # minio needs the last trailing / to be accessible as it has internal redirection (/login, /browser, etc...)
+    redir /minio /minio/ 308
+
+    @minio-console path /minio/ /minio/*
+    handle @minio-console {
+        uri strip_prefix /minio
+        reverse_proxy minio:9001 {
+            header_up X-Forwarded-Prefix "/minio"
+            header_up Connection {http.request.header.Connection}
+            header_up Upgrade {http.request.header.Upgrade}
+        }
+    }
+
+    # MinIO presigned URL proxy
+    @storage path /storage /storage/*
+    handle @storage {
+        uri strip_prefix /storage
+
+        # CORS headers for presigned URL PUT/GET from the browser
+        # useless if the presigned URL goes throught https://localhost:${PORT}/storage/... (because it will be the same origin and the browser does not triggers CORS)
+        header Access-Control-Allow-Origin "{http.request.header.Origin}"
+        header Access-Control-Allow-Methods "GET, PUT, HEAD, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, x-amz-date, x-amz-content-sha256, x-amz-security-token, x-amz-*"
+        header Access-Control-Expose-Headers "ETag"
+        header Access-Control-Max-Age "3600"
+
+		# Handle preflight OPTIONS requests
+        @preflight method OPTIONS
+        handle @preflight {
+            respond 204
+        }
+
+        reverse_proxy minio:9000 {
+            header_up Host minio:9000
+        }
+    }
+
+
+    # API routes
+    @auth path /api/auth /api/user/ /api/users/ /api/auth/* /api/user/* /api/users/*
+    handle @auth {
+        reverse_proxy auth:8081
+    }
+    # super strict on the /api/orgs/*** path since I didn't find a better name for it
+    @storage-api path /api/files /api/files/* /api/folders /api/folders/* /api/storage/*/folders/*/contents
+    handle @storage-api {
+        reverse_proxy storage:8083
+    }
+    @orga path /api/orgs /api/orgs/*
+    handle @orga {
+        reverse_proxy orga:8082
+    }
+    @health path /api/health
+    handle @health {
+        reverse_proxy health-aggregator:8084
+    }
+
+# --- WebSockets ---
+    @ws path /ws/*
+    handle @ws {
+        reverse_proxy orga:8082
+    }
+
+    # SPA fallback
+    handle {
+        root * /usr/share/caddy
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+# Listen on :443 (HTTPS only), accessible externally via host:${PORT} proxy
+# Local development — self-signed cert
+:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+    import app
+}
+
+# Cloudflare Tunnel entry point — HTTP only (Cloudflare handles HTTPS for visitors)
+http://ostrom.cloud {
+    import app
+}

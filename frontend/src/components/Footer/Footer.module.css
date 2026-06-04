@@ -1,0 +1,108 @@
+/* ============================================================================
+   FOOTER COMPONENT
+   ============================================================================ */
+
+.footer {
+    background-color: #fdf3ef;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    margin-left: 0;
+}
+
+.footerWithSidebar {
+    margin-left: 230px;
+}
+
+.footerGrid {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px;
+}
+
+.footerBrand {
+    font-family: var(--font-family-primary);
+    font-size: 18px;
+    font-weight: 700;
+    color: #de7356;
+    margin-bottom: 8px;
+}
+
+.footerTagline {
+    font-family: var(--font-family-primary);
+    font-size: 13px;
+    color: var(--color-text-neutral);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.footerColumnTitle {
+    font-family: var(--font-family-primary);
+    font-size: 13px;
+    font-weight: 600;
+    color: #de7356;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.footerNav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.footerLink {
+    font-family: var(--font-family-primary);
+    font-size: 13px;
+    color: var(--color-text-neutral);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footerLink:hover {
+    color: #de7356;
+}
+
+.footerBottom {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 12px 32px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.footerCopyright {
+    font-family: var(--font-family-primary);
+    font-size: 13px;
+    color: #9ca3af;
+    text-align: center;
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .footerWithSidebar {
+        margin-left: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .footerWithSidebar {
+        margin-left: 140px;
+    }
+
+    .footerGrid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 32px;
+    }
+
+    .footerNav {
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .footerWithSidebar {
+        margin-left: 80px;
+    }
+}

@@ -1,0 +1,166 @@
+.container {
+    padding: 24px 40px;
+    width: 100%;
+    margin: 0;
+}
+
+.headerSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.titleGroup h1 {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--color-text-warm-dark);
+    margin: 0 0 4px 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: var(--color-text-warm-muted);
+    margin: 0;
+}
+.settingsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 50vw;
+    margin-left: 3%;
+    width: 100%;
+}
+
+.sectionCard {
+    background-color: white;
+    border: 1px solid rgba(215, 194, 189, 0.5);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    box-shadow: 0 2px 16px rgba(134, 81, 66, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.sectionCard:hover {
+    box-shadow: 0 4px 24px rgba(134, 81, 66, 0.11);
+    border-color: rgba(215, 194, 189, 0.9);
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #241916;
+    margin: 0 0 20px 0;
+    font-family: var(--font-family-primary);
+    letter-spacing: -0.2px;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.leaveButton {
+  display: flex;
+  flex-direction: row;
+  background-color: #ba1a1a;
+  color: white;
+  border: none;
+  align-self: flex-start;
+  padding: 10px 20px;
+  min-width: 150px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(186, 26, 26, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--font-family-primary);
+  margin-left: 10px;
+  gap: 10px;
+}
+
+.leaveButton:hover {
+  background-color: #93000a;
+  box-shadow: 0 6px 18px rgba(186, 26, 26, 0.35);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #84736f;
+  letter-spacing: 0.3px;
+}
+
+.labelDetail {
+  font-size: 13px;
+  font-weight: 300;
+  color: #84736f;
+}
+
+.leaveOrga {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media (max-width: 1080px) {
+    .settingsGrid {
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    .sectionCard {
+        padding: 24px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 40px 20px 60px;
+    }
+
+    .headerSection {
+        margin-bottom: 24px;
+    }
+
+    .headerSection h1 {
+        font-size: 26px;
+    }
+
+    .sectionCard {
+        padding: 20px;
+    }
+
+    .leaveOrga {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .leaveButton {
+        margin-left: 0;
+        font-size: 14px;
+        padding: 9px 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 24px 16px 40px;
+    }
+
+    .headerSection h1 {
+        font-size: 22px;
+    }
+
+    .sectionCard {
+        padding: 16px;
+    }
+}

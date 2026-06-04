@@ -1,0 +1,116 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"backend/auth/internal/handlers"
+	"backend/auth/internal/workers"
+	"backend/shared/config"
+	"backend/shared/db"
+
+	"backend/shared/middleware"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/redis/go-redis/v9"
+)
+
+func main() {
+	env, err := config.LoadEnv()
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to load configuration: %v", err)
+	}
+
+	dbConn := db.InitDB(env)
+
+	app := fiber.New(fiber.Config{
+		AppName:   "ostrom_auth v1.0",
+		BodyLimit: 4 * 1024 * 1024, // 4 MB max per request,
+	})
+
+	loginLimiter := limiter.New(limiter.Config{
+		Max:        50,
+		Expiration: 15 * time.Minute,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c fiber.Ctx) error {
+			log.Printf("[SECURITY] Rate limit reached for IP: %s\n", c.IP())
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "too_many_attempts_please_try_again_later",
+			})
+		},
+	})
+
+	redisAddr := fmt.Sprintf("redis:%s", env.RedisPort)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: env.RedisPassword,
+	})
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("[WARN] Redis client close error: %v", err)
+		}
+	}()
+
+	eventPublisher := workers.NewEventPublisher(redisClient)
+
+	healthHandler := handlers.NewHealthHandler(dbConn, redisClient)
+	app.Get("/health", healthHandler.Checker)
+
+	authHandler := handlers.NewAuthHandler(dbConn, env, eventPublisher)
+
+	app.Post("/api/auth/register", authHandler.RegisterUser)
+	app.Post("/api/auth/login", loginLimiter, authHandler.LoginUser)
+	app.Post("/api/auth/salt", authHandler.GetClientSalt)
+	app.Post("/api/auth/refresh", authHandler.RefreshToken)
+	app.Post("/api/auth/logout", authHandler.LogoutUser)
+
+	api := app.Group("/api")
+	api.Use(middleware.ProtectedRoute(env.JwtSecret))
+
+	api.Post("/auth/2fa/totp/generate", authHandler.GenerateTOTPSecret)
+	api.Post("/auth/2fa/totp/verify", authHandler.VerifyTOTPSetup)
+	api.Get("/auth/2fa/recovery-codes", authHandler.GetRecoveryCodes)
+	api.Post("/auth/2fa/disable", authHandler.DisableTwoFactor)
+
+	// Temp session routes (for 2FA verification during login)
+	app.Post("/api/auth/2fa/verify", middleware.VerifyTempSession(env.JwtSecret), authHandler.VerifyTOTPLogin)
+	app.Post("/api/auth/2fa/recovery-code", middleware.VerifyTempSession(env.JwtSecret), authHandler.VerifyRecoveryCode)
+
+	api.Get("/auth/me", authHandler.GetInfo)
+	api.Delete("/auth/me", authHandler.DeleteUser)
+	api.Put("/auth/password", authHandler.UpdatePassword)
+	api.Patch("/user/avatar", authHandler.UploadAvatar)
+	api.Get("/user/me/avatar", authHandler.GetMyAvatar)
+	api.Get("/user/:id/avatar", authHandler.GetUserAvatar)
+	api.Get("/auth/public-key", authHandler.GetUserPublicKey)
+	api.Patch("/auth/first-name", authHandler.ChangeFirstName)
+	api.Patch("/auth/family-name", authHandler.ChangeFamilyName)
+
+	go func() {
+		log.Println("[INFO] Starting Fiber server on port 8081...")
+		if err := app.Listen(":8081"); err != nil {
+			log.Fatalf("[FATAL] Critical Fiber server error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// The main thread blocks here and waits for a signal in the channel
+	<-quit
+	log.Println("[INFO] System interrupt signal received (SIGINT/SIGTERM)")
+
+	if err := app.Shutdown(); err != nil {
+		log.Fatalf("[ERROR] Failed to shutdown Fiber: %v", err)
+	}
+
+	log.Println("[INFO] Server stopped successfully.")
+}

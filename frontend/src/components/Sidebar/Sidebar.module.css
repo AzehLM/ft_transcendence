@@ -1,0 +1,185 @@
+/* ============================================================================
+   LEFT SIDEBAR COMPONENT
+   ============================================================================ */
+
+.sidebar {
+    position: fixed;
+    height: 100%;
+    height: 100dvh;
+    left: 0;
+    top: 0;
+    width: 230px;
+    background: #fcf1ef;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 100;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sidebar__logo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 28px 20px 20px;
+}
+
+.logoText {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.logoName {
+    font-family: var(--font-family-primary);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--color-text-warm-dark);
+    line-height: 1.2;
+}
+
+.logoSubtitle {
+    font-family: var(--font-family-primary);
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--color-text-warm-muted);
+}
+
+.sidebar__button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--color-text-warm-dark);
+    padding: 10px 12px;
+    margin: 2px 12px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+    .sidebar__button:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+}
+
+.sidebar__button--active,
+.sidebar__button--active:hover {
+    background-color: #fedfd7;
+    color: var(--color-text-warm-dark);
+}
+
+.sidebar__button__label {
+    font-family: var(--font-family-primary);
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.sidebar__button__icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+}
+
+.sidebar__links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+
+
+.sidebar__chevron {
+    width: 22px;
+    height: 22px;
+    color: var(--brand-dark);
+    transition: transform 0.2s ease;
+}
+
+.sidebar__chevron__rotated {
+    transform: rotate(-90deg);
+}
+
+
+/* Tablet — sidebar stays visible but narrower */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 180px;
+    }
+
+    .sidebar__logo {
+        padding: 20px 14px 16px;
+        gap: 6px;
+    }
+
+    .logoSubtitle {
+        display: none;
+    }
+
+    .logoName {
+        font-size: 17px;
+    }
+
+    .sidebar__links {
+        gap: 2px;
+        padding: 0 4px;
+    }
+
+    .sidebar__button {
+        padding: 10px 10px;
+        margin: 2px 4px;
+    }
+
+    .sidebar__button__label {
+        font-size: 14px;
+    }
+}
+
+/* Mobile — sidebar becomes an overlay (slide-in via hamburger in MainLayout) */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 230px;
+    }
+
+    .sidebar__logo {
+        padding: 28px 20px 20px;
+        gap: 8px;
+    }
+
+    .logoSubtitle {
+        display: flex;
+    }
+
+    .logoName {
+        font-size: 20px;
+    }
+
+    .sidebar__links {
+        gap: 2px;
+        padding: 0 8px;
+    }
+
+    .sidebar__button {
+        padding: 10px 12px;
+        margin: 2px 4px;
+    }
+
+    .sidebar__button__label {
+        font-size: 15px;
+    }
+}
