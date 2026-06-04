@@ -128,10 +128,10 @@ function AboutPage() {
                         <GraduationCap size={22} style={{ color: "#865142" }} /> The Project
                     </h2>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        Presentation of the project
+                        Ostrom is a cloud storage platform built around a zero-knowledge architecture. Every file is fully encrypted before it leaves your device. The server never sees your data, only you hold the keys.
                     </p>
                     <p className={styles.paragraph} style={{ fontSize: "15px", lineHeight: "1.8" }}>
-                        More presentation of the project
+                        Built on a distributed Go microservices backend, a self-hosted MinIO object store, a PostgreSQL database, and a Redis event layer for real-time updates — all containerized and routed through a Caddy reverse proxy.
                     </p>
                 </section>
 
