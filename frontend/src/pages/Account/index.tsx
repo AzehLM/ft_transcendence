@@ -138,7 +138,6 @@ export default function AccountPage() {
             setNewPassword("");
             setConfirmPassword("");
             setPwdError(null);
-            sessionStorage.setItem("passwordChanged", "true");
             setIsReset(true);
 
         } catch (err: any) {
