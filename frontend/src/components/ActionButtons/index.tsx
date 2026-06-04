@@ -1,9 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { UploadCloud, FolderPlus } from "lucide-react";
 import styles from "./ActionButtons.module.css";
 import { getAcceptAttribute } from "../../services/fileValidation.service";
 import { ConfirmationModal } from "../ConfirmationModal";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
+import { getPublicKeyFromSession, getPrivateKeyFromSession } from "../../services/crypto.service";
 
 interface ActionButtonsProps {
   onUploadFile?: (file: File) => void;
@@ -12,19 +13,38 @@ interface ActionButtonsProps {
 
 export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { keyMissing, setKeyMissing, password, 
-    setPassword, keyModalError, isResetting, setKeyModalError, 
+  const { keyMissing, setKeyMissing, password,
+    setPassword, keyModalError, isResetting, setKeyModalError,
     checkKeys, handleResetKeys } = useKeyCheck();
 
-  const handleUploadClick = async () => {
-    const hasKeys = await checkKeys();
-    if (!hasKeys) {
-      return
+  const [hasKeys, setHasKeys] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const runCheck = async () => {
+      const privateKey = await getPrivateKeyFromSession();
+      const publicKey = await getPublicKeyFromSession();
+      setHasKeys(!!(privateKey && publicKey));
+    };
+    runCheck();
+  }, [keyMissing]);
+
+  const handleUploadClick = () => {
+    if (hasKeys === false) {
+      checkKeys();
+      return;
     }
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const ok = await checkKeys();
+    if (!ok) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     const files = event.target.files;
     if (files && files.length > 0 && onUploadFile) {
       Array.from(files).forEach((file) => onUploadFile(file));
