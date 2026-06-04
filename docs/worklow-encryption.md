@@ -293,12 +293,3 @@ $$\text{decryptedBuffer} = \text{Decrypt}_{\text{AES-GCM}}(\text{encryptedPrivat
     - Upload File → DEK (unique au fichier) & IV → Chiffrement → Ciphertext + Auth Tag (concaténé automatiquement) → Enregistrement dans la DB (nom de fichier, DEK encrypté et IV) & Presigned URL vers MiniIO
 
 ---
-
-- E2EE = End-to-End Encryption
-    - chiffrement de bout en bout.
-    - données sont chiffrées côté émetteur et ne sont déchiffrées que côté destinataire.
-- Zustand 
-    - bibliothèque JavaScript/React pour la gestion d’état
-- Au final :
-    - GET (fichier sur API) → backend interroge DB → renvoie DEK encrypté, IV et URL présignée MinIO + front récupère Clé Privée → Déchriffrement de la DEK → front télécharge le Ciphertext → Déchiffrement final (si Auth Tag correspond)
-

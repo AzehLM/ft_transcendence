@@ -146,233 +146,46 @@ Le miroir de l'upload : recup le fichier chiffre, recup la cle, dechiffre tout e
 
 ---
 
-## 7. Suppression de fichier
+## 7. User Logout Flow
 
-### Phase 1 - Requete de suppression (React -> Go)
-
-1. `DELETE /api/files/{file_id}`
-2. Backend verifie le JWT + les droits  :
-   - Fichier perso -> seul le owner peut supprimer
-   - Fichier d'orga -> faut etre admin ou avoir la permission delete
-
-### Phase 2 - Suppression (Go)
-
-1. Backend demarre une transaction PostGrey :
-   - Supprime les entrees dans la table des metadonnees (encrypted_dek, filename, iv, etc.)
-   - Supprime les entrees dans `file_keys` (les DEK wrappees pour chaque user/orga)
-2. Supprime l'objet sur MinIO via le SDK (`RemoveObject`)
-3. Commit de la transaction
-4. Publie un event `file_deleted` sur Redis -> push WS pour refresh l'UI des autres sessions
-
-Note : si le delete MinIO fail apres le commit PG, faut un mecanisme de cleanup
-
+1. **API Request:** Client issues a `POST /api/auth/logout`.
+2. **Backend Processing (Go / Fiber):** Wipes the user's active dynamic `refresh_token` from the database record and clears the secure HttpOnly cookie environment.
+3. **Client-Side Cleansing:** React destroys the local user session credentials: hard-deletes the `privateKey` and `publicKey` records from **IndexedDB** (`idb.service`), purges the local storage access token, and terminates the active WebSocket gateway connection.
+4. **Navigation:** Redirects the application router to the `/login` view context.
 
 ---
 
-## 8. Changement de role dans une orga
+## 8. Password Update Flow (Zero-Knowledge Re-keying)
 
-Roles possibles : admin, member (extensible plus tard si besoin).
+Updating a password in a zero-knowledge ecosystem requires re-encrypting ("re-wrapping") the master asymmetric key set, as the server has no plaintext access to decrypt or re-encrypt user credentials.
 
-### Phase 1 - Requete (React -> Go)
-
-1. `PATCH /api/orgs/{org_id}/members/{user_id}`
-   ```json
-   { "role": "admin" }
-   ```
-2. Seul un admin de l'orga peut changer les roles
-
-### Phase 2 - Backend (Go)
-
-1. Verifie le JWT + que le demandeur est admin de l'orga
-2. Verifie qu'on essaie pas de retirer le dernier admin (il faut toujours au moins 1 admin)
-3. Met a jour le role dans la table `organization_members`
-4. Publie un event `member_role_updated` sur Redis -> push WS
-
-Cote crypto : rien a faire. Le changement de role c'est purement du RBAC cote serveur. La cle d'orga (OrgKey) est la meme quel que soit le role, elle a deja ete wrappee pour ce user lors de l'invitation. Le role controle juste les permissions (qui peut invite, delete, changer les roles, etc.), pas l'acces aux cles.
-
-
----
-
-## 9. Dashboard - Chargement initial
-
-Ce qui se passe quand le user arrive sur `/dashboard` apres le login.
-
-### Phase 1 - Recup de l'arborescence (React -> Go)
-
-1. `GET /api/folders?parent_id=root` (ou sans param = racine)
-2. Backend recup les dossiers + fichiers du user a la racine :
-   - Query sur `folders` WHERE `owner_user_id = $1 AND parent_id IS NULL AND org_id IS NULL`
-   - Query sur `files` WHERE `owner_user_id = $1 AND folder_id IS NULL AND org_id IS NULL`
-3. Renvoie la liste : dossiers + fichiers avec leurs metadonnees (name, size, created_at)
-
-### Phase 2 - Navigation dans les dossiers
-
-- User clique sur un dossier -> `GET /api/folders/{folder_id}/contents`
-- Backend renvoie les sous-dossiers + fichiers de ce dossier
-- Meme requete pour les fichiers d'orga : `GET /api/orgs/{org_id}/folders/{folder_id}/contents`
-  - La le backend check que le user est bien membre de l'orga avant de renvoyer quoi que ce soit
-
-### Phase 3 - Affichage
-
-- Liste des dossiers (icone dossier + nom + date creation)
-- Liste des fichiers (icone fichier + nom + taille + date creation)
-- Breadcrumb pour la navigation (root > dossier1 > sous-dossier)
-- Sidebar avec :
-  - "Mes fichiers" (espace perso)
-  - Liste des orgas du user (recup via `GET /api/orgs`)
-
-### Orgas dans le dashboard
-
-- `GET /api/orgs` -> liste les orgas dont le user est membre
-- Quand le user clique sur une orga, on charge l'arborescence de l'orga de la meme facon
-- Avant d'afficher les fichiers d'orga, le client doit avoir l'OrgKey en RAM :
-  - Recup `enc_org_priv_key` depuis `org_members`
-  - Dechiffre avec sa PrivKey RSA -> OrgKey en clair
-
-
----
-
-## 10. Page Profil
-
-### Storage usage bar
-
-1. `GET /api/users/me` -> renvoie les infos du user dont `used_space` et `max_space`
-2. Affichage d'une barre de progression :
-   - `used_space / max_space * 100` = pourcentage utilise
-   - Ex : "2.3 GB / 5 GB utilises"
-   - Couleur verte < 70%, orange 70-90%, rouge > 90% MAYBE
-3. Le `used_space` est mis a jour par le backend a chaque upload (`+file_size`) et chaque delete (`-file_size`)
-
-### Infos affichees
-
-- Email
-- Date d'inscription
-- Nombre d'orgas
-- Storage utilise / total
-- (plus tard : username, avatar) maybe
-
-
----
-
-## 11. Suppression de compte
-
-### Phase 1 - Confirmation (React)
-
-1. User clique "Supprimer mon compte" sur la page profil
-2. Le client demande le mdp pour confirmer (re-derive la KEK + AuthHash comme au login)
-3. `DELETE /api/users/me` avec `{ "auth_hash": "<base64>" }`
-
-### Phase 2 - Backend (Go)
-
-1. Verifie le JWT + valide l'AuthHash contre le hash Argon2id stocke (double verif)
-2. Check les orgas ou le user est le seul admin :
-   - S'il est dernier admin quelque part -> refuser la suppression (ou forcer transfert du role avant)
-3. Transaction PG :
-   - Supprime tous les fichiers perso du user dans MinIO (batch `RemoveObjects`)
-   - Supprime les entrees files, folders, org_members du user
-   - Supprime le user dans la table users
-   - Les `ON DELETE CASCADE` gerent les refs en cascade
-4. Commit
-5. Invalide les sessions : supprime les refresh tokens en DB/Redis, ferme la WS
-6. Repond 200, le client redirige vers la page de login
-
-Note : les fichiers d'orga restent intacts, c'est l'orga qui les possede. On supprime juste l'`enc_org_priv_key` du user dans `org_members`. Les autres membres gardent leur acces.
-
-
----
-
-## 12. Logout
-
-1. `POST /api/auth/logout`
-2. Backend supprime le refresh token (DB ou Redis) + clear le cookie HttpOnly
-3. Cote client : supprime la PubKey et la PrivKey RSA de IndexedDB, ferme la WS
-4. Redirect vers `/login`
-
-
----
-
-## 13. 2FA (TOTP)
-
-Basee sur TOTP (Time-based One-Time Password) — compatible Google Authenticator, Authy, etc.
-
-### Activation (page profil)
-
-1. `POST /api/auth/2fa/enable`
-2. Backend genere un secret TOTP (base32, 160 bits) + le stocke en DB (chiffre ou en clair, le user est deja authentifie)
-3. Renvoie le secret sous forme d'URI `otpauth://` + QR code (ou juste l'URI, le front genere le QR)
-4. User scan le QR avec son app
-5. User entre le code a 6 chiffres pour confirmer -> `POST /api/auth/2fa/verify` avec `{ "code": "123456" }`
-6. Backend valide le code TOTP, si OK -> marque `totp_enabled = true` en DB
-
-
-### Impact sur le login
-
-- Le login classique (phase 3) renvoie plus directement les JWT
-- Si `totp_enabled = true`, le backend repond 200 avec `{ "requires_2fa": true, "tmp_token": "<token>" }`
-- Le `tmp_token` est un token court (expire en 5 min), il sert juste a lier la session 2FA
-- Le client affiche un champ pour entrer le code TOTP
-- `POST /api/auth/2fa/validate` avec `{ "tmp_token": "...", "code": "123456" }`
-- Backend valide le code TOTP + le tmp_token, si OK -> genere les vrais JWT (access + refresh cookie)
-- A partir de la, le reste du login continue normalement (recup EncryptedPrivKey, dechiffrement, WS, etc.)
-
-
-### Desactivation
-
-1. `POST /api/auth/2fa/disable` avec `{ "code": "123456" }` (faut prouver qu'on a encore l'app)
-2. Backend valide le code, passe `totp_enabled = false`, supprime le secret + les recovery codes
-
-### Ajout en DB
-
-```sql
-ALTER TABLE users ADD COLUMN totp_secret VARCHAR(64);
-ALTER TABLE users ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT false;
-
-CREATE TABLE recovery_codes (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    code_hash  VARCHAR(255) NOT NULL,
-    used       BOOLEAN NOT NULL DEFAULT false
-);
-```
-
-
----
-
-## 14. Changement de mot de passe
-
-Changer le mdp c'est plus chiant  en zero-knowledge : faut re-wrapper toutes les cles.
-
-1. User entre ancien mdp + nouveau mdp sur la page profil
-2. Client :
-   - Derive l'ancienne KEK (PBKDF2 + ancien mdp + salt actuel) -> verifie qu'elle marche en dechiffrant la PrivKey
-   - Genere un nouveau salt
-   - Derive la nouvelle KEK (PBKDF2 + nouveau mdp + nouveau salt)
-   - Re-chiffre la PrivKey avec la nouvelle KEK (AES-GCM) -> nouveau EncryptedPrivKey + nouveau IV
-   - Calcule le nouveau AuthHash = HMAC-SHA256(nouvelle KEK, "ft_box_auth")
-3. `PUT /api/auth/password`
+1. **Trigger:** The user inputs their current (old) password and inputs a new password string on their profile page settings.
+2. **Client-Side Processing (`generateChangePasswordData`):**
+   * React queries the local session cache to pull the decrypted, plaintext **RSA Private Key** directly from IndexedDB.
+   * Generates a **brand-new random 16-byte salt** matrix.
+   * Derives a new symmetric **AES-GCM 256-bit Master Key** via **PBKDF2** using the new password and the new salt.
+   * Re-encrypts ("re-wraps") the existing RSA Private Key with this new Master Key $\rightarrow$ producing a new `new_encrypted_private_key` and a new `new_iv`.
+   * Computes a fresh authentication proof string by signing `"auth_string"` with an HMAC-SHA256 key built from the new Master Key $\rightarrow$ `new_auth_hash`.
+3. **API Request:** `PUT /api/auth/password` with payload fields mapped as text Base64 strings:
    ```json
    {
-     "old_auth_hash": "<base64>",
-     "new_auth_hash": "<base64>",
-     "new_salt": "<base64>",
-     "new_encrypted_private_key": "<base64>",
-     "new_iv": "<base64>"
+     "new_client_salt": "<Base64_new_salt>",
+     "new_auth_hash": "<Base64_new_auth_hash>",
+     "new_encrypted_private_key": "<Base64_new_encrypted_private_key>",
+     "new_iv": "<Base64_new_iv>"
    }
-   ```
-4. Backend :
-   - Valide l'ancien AuthHash contre le hash Argon2id stocke
-   - Hash le nouveau AuthHash avec Argon2id
-   - Met a jour salt, auth_hash, encrypted_private_key, iv en DB (transaction)
-   - Invalide tous les refresh tokens existants (force re-login sur les autres sessions)
-5. Repond 200
+4. **Backend Processing** (Go Transaction):
+   * Verifies execution context permissions.
+   * Hashes the incoming new_auth_hash parameter using Argon2id.
+   * Commits the updated structural attributes (salt, auth_hash, encrypted_private_key, iv) to PostgreSQL.
+   * Response: Returns a 200 OK transaction success confirmation.
 
-Note : la PubKey RSA change pas, les OrgKeys changent pas. Seul le wrapping de la PrivKey est refait.
-
+**Security Architecture Note**: The user's public identity reference (public_key) and all downstream organizational symmetric access matrices (OrgKeys) remain entirely untouched. Only the symmetric layer protecting the local Private Key entry is refactored.
 
 ---
 
 
-### 15. User Deletion
+### 9. User Deletion
 
 ```
 [DELETE /api/auth/account] 
@@ -422,14 +235,3 @@ Once the database transaction commits successfully, the system publishes targete
 * The client's security context is destroyed by explicitly clearing the JWT `refresh_token` HTTP-only cookie.
 * Returns a `200 OK` structure confirming account termination.
 ---
-
-
-
-## Workflows manquants (a detailler plus tard)
-
-- **Creer un dossier** : `POST /api/folders` avec name + parent_id + org_id optionnel
-- **Supprimer un dossier** : `DELETE /api/folders/{id}` (recursif : vider les fichiers d'abord vu le `ON DELETE RESTRICT`)
-- **Renommer fichier/dossier** : `PATCH /api/files/{id}` ou `PATCH /api/folders/{id}`
-- **Quitter une orga** : `DELETE /api/orgs/{org_id}/members/me` (interdit si dernier admin)
-- **Supprimer une orga** : `DELETE /api/orgs/{org_id}` (admin only, supprime tous les fichiers MinIO de l'orga)
-- **Deplacer un fichier/dossier** : `PATCH` pour changer le `folder_id` ou `parent_id`
