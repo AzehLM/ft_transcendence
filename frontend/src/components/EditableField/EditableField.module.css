@@ -1,0 +1,148 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #84736f;
+  letter-spacing: 0.3px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+}
+
+.fieldWrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background-color: white;
+  border: 1.5px solid rgba(215, 194, 189, 0.8);
+  border-radius: 8px;
+  padding: 6px 8px 6px 12px;
+  gap: 4px;
+  min-height: 38px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.fieldWrapper:hover {
+  border-color: rgba(134, 81, 66, 0.4);
+}
+
+.fieldActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.value,
+.novalue,
+.input {
+  line-height: 24px;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: var(--font-family-primary);
+  font-size: 15px;
+}
+
+.value {
+  font-weight: 400;
+  color: #241916;
+  word-break: break-word;
+  background-color: white;
+  border: 1.5px solid rgba(215, 194, 189, 0.8);
+}
+
+/* inside fieldWrapper the wrapper provides the box — strip double border */
+.fieldWrapper .value {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.novalue {
+  font-weight: 400;
+  word-break: break-word;
+  font-style: normal;
+  color: #84736f;
+}
+
+.input {
+  font-weight: 400;
+  border: 2px solid #865142;
+  outline: none;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(134, 81, 66, 0.1);
+  color: #241916;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #865142;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.iconButton:hover {
+  background-color: rgba(134, 81, 66, 0.08);
+}
+
+.readonlyValue {
+  font-size: 15px;
+  font-weight: 400;
+  color: #241916;
+  word-break: break-word;
+  padding: 2px 0 2px 13px;
+}
+
+
+.error {
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+@media (max-width: 768px) {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .fieldWrapper {
+    min-width: 0;
+  }
+
+  .input {
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
+}
+
+@media (max-width: 480px) {
+  .value,
+  .novalue,
+  .input {
+    font-size: 14px;
+  }
+
+  .input {
+    font-size: 16px;
+  }
+}

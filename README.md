@@ -111,7 +111,7 @@ make fclean			# deletes every container/images/volumes
 AI tools were used as assistants for review, debugging, and design exploration. Core architecture and implementation decisions were made by the team.
 
 - Use of Github Copilot on our Pull Requests to have a deeper review and/or problems identifications
-- [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
+- [Figma](https://www.figma.com/fr-fr/), [Stitch](https://stitch.withgoogle.com/) and [Claude Design](https://www.anthropic.com/news/claude-design-anthropic-labs) for early UI/UX mockups and design exploration for the frontend
 - Claude / Perplexity / Gemini / ChatGPT for:
   - debugging and identifying bugs or performance improvement (e.g. quota race conditions (and avoid TOCTOU), RBAC edge cases)
   - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus)
@@ -125,6 +125,13 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 - Lou-Anne Project Manager (PM) / Scrum Master + dev
 - Victoire Project Manager (PM) / Scrum Master + dev
 - Guillaume Technical Lead / Architect + dev
+
+### pnaessen (Pierrick) - Product Owner (PO): Sets vision and priorities + Developer
+
+As Product Owner, defined the platform's vision and core value proposition (zero-knowledge encrypted cloud storage). Managed feature prioritization and coordinated the team's development roadmap through GitHub Projects and Issues, translating business requirements into actionable technical tasks.
+
+As a developer, owns the backend authentication system (login/register flow, Argon2id verification, JWT/refresh token rotation), WebSocket hub for real-time notifications (both backend and frontend integration), client-side file download and decryption (E2EE), UI/UX oversight and refinement, and static pages. Also implemented rate-limited login and client salt retrieval with user-enumeration protection.
+
 
 ### vicperri (Victoire) - Project Manager  / Scrum Master :  Facilitates team coordination and removes obstacles + Developer
 
@@ -207,7 +214,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Client salt retrieval with user-enumeration protection** - pnaessen - the `/api/auth/salt` returns a fake salt for non-existent users so attackers cannot probe for valid emails.
 
-- **Refresh-token rotation** - **PIERRICK + QUI ?** - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
+- **Refresh-token rotation** - pnaessen - refresh tokens stored hashed in DB, set as HttpOnly cookies with 15min access token lifespan.
 
 - **Account management** - **LIRE LA SUITE POUR METTRE NOM** - first/family name changes, password changes (with private-key re-encryption), account deletion, profile view
 
@@ -228,10 +235,10 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Storage & File Management
 
-- **Client-side file encryption** - **METTRE NOMS** - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
+- **Client-side file encryption** - pnaessen - every files is encrypted in the browser with AES-GCM 256-bit, using a per-file DEK, which is itself RSA-encrypted with the owner's (or org's) public key.
 - **Single-PUT upload** - gueberso - files under 96MB are encrypted in a single chunk and PUT directly to MinIO via a presigned URL
 - **Multipart upload** - gueberso - files above 96MB are split into 32MB plaintext chunks (up to 100 parts, hard cap at 2GB), with parallel PUT (concurrency by 4 chunks) and a deterministic per-chunk IV derived from the base IV + chunk number. Initialisation / finalization and abortion endpoints handle the MinIO multipart lifecycle.
-- **Encrypted download** - **pierrick ou victoire pour les hooks du front ? & gueberso (backend)** - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
+- **Encrypted download** - pnaessen (frontend E2EE) & gueberso (backend) - presigned download URL returned alongside the encrypted DEK and IV. Decryption, again, happens in the users browser.
 - **Folder hierarchy** - gueberso - create, rename, move, delete folders. Cyclic detection to prevent moving folder into one of its descendants
 - **File operations** - gueberso **& lbuisson ?**- move between folders, delete (with cascade to MinIO via Redis stream events).
 - **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
@@ -247,9 +254,9 @@ The following is a complete inventory of implemented features, grouped by domain
 
 ### Real-time & Notifications
 
-- **WebSocket hub** - **pnaessen & ? QUI** - single /ws/notifications endpoint multiplexed per user. Per-user Redis pub/sub channels re-broadcast to connected clients.
-- **Online presence tracking** - **lbuisson ?** - Redis sets track active sessions. Org members see who's online in real time.
-- **Toast + dropdown notifications** - **QUI ? Je commence a avoir la flemme lol** - frontend `NotificationContext` manages connection lifecycle, reconnection backoff, listener registration, unread counts, and toast queue.
+- **WebSocket hub** - pnaessen (backend and frontend integration) & gueberso (Redis implementation) - single /ws/notifications endpoint multiplexed per user. Per-user Redis pub/sub channels re-broadcast to connected clients.
+- **Online presence tracking** - pnaessen - Redis sets track active sessions. Org members see who's online in real time.
+- **Toast + dropdown notifications** - pnaessen + lbuisson - frontend `NotificationContext` manages connection lifecycle, reconnection backoff, listener registration, unread counts, and toast queue.
 - **Cross-service event propagation** - gueberso - Redis Streams with consumer groups guarantee delivery of cleanup events between auth, orga, and storage.
 
 ### Design System & UI
@@ -315,7 +322,7 @@ The following is a complete inventory of implemented features, grouped by domain
 
 - **Why**: the plateform shows live notifications and online-presence indicators inside organizations  for a better user experience.
 - **Implementation**: a single `/ws/notification` endpoint. A `Hub`, subscribing to wanted events. Redis pub/sub channels and re-broadcast.
-- **Owner(s)**: pnaessen and gueberso
+- **Owner(s)**: pnaessen (WebSocket backend and frontend integration) and gueberso (Redis infrastructure)
 
 ### **ORM for the database - *Minor***
 
@@ -402,8 +409,48 @@ The following is a complete inventory of implemented features, grouped by domain
 # Individual contribution
 
 - Detailed breakdown of what each team member contributed
-- Specific features, modules, or componenets implemented by each person
+- Specific features, modules, or components implemented by each person
 - Any challenges faced and how they were overcome
+
+## pnaessen (Pierrick) - Product Owner & Developer
+
+### Product Management
+As the Product Owner, lead the overall vision for Ostrom as a zero-knowledge encrypted cloud storage platform. Key responsibilities included:
+- **Platform Vision & Value Proposition** - Defined the zero-knowledge principle as the core differentiator and translated it into features
+- **Feature Prioritization** - Managed the feature backlog and prioritized development tasks
+
+### Backend Development
+- **Authentication System** - Implemented the complete login flow on the backend, including Argon2id verification of client-derived auth hashes, encrypted private key retrieval, and security hardening (rate limiting with Fiber, user enumeration protection)
+- **JWT & Refresh Token Rotation** - Designed and implemented the token refresh mechanism with HttpOnly cookies, 15 minute access token lifespan, and hashed token storage in PostgreSQL for secure session management
+- **WebSocket Hub for Real-Time Notifications** - Built the backend WebSocket multiplexing layer, handling per user subscriptions and integrating with Redis pub/sub for cross-service event broadcasting
+
+### Frontend Development
+- **Client-Side File Encryption & Decryption** - Implemented the end-to-end encryption flow for file downloads, handling AES-GCM decryption in the browser using per-file DEKs and IVs
+- **WebSocket Frontend Integration** - Built the React-side WebSocket connection management, including reconnection backoff logic, event listener registration, and notification state management
+- **UI/UX Refinement** - Worked on overall UX polish, component consistency, and user feedback mechanisms throughout the application
+
+## gueberso (Guillaume) - Technical Lead / Architect & Developer
+
+### Technical Lead / Architect
+
+As the tech lead, generally made the research on differents possible stacks to use for specific use-cases, documentate these choices and looked at the majority of the Pull Requests to give feedbacks to other members.
+
+### Backend Development
+- **Storage microservice**: Implemented the complete storage microservice following Single-Responsibility Principle.
+- **Health-aggregator microservice**: Built an health-aggregator microservice that fetches other microservices states. Allowing us to have a `/status` page referencing features available to users.
+- **Microservice architecture**: Managed the complete infrastructure of the project for two distincts deployment (dev and prod).
+- **Monitoring stack**: A complete monitoring stack with Prometheus/Grafana/Alertmanager with custom Grafana dashboard and home-made metrics exposed from backend microservices.
+- **CI/CD Pipeline**: Github Actions for backend linters and a complete E2E postman collection to validate wanted behaviors are not broken throught implementation of new features.
+
+### Frontend Development
+- **Single Pages**: Made the homepage, Terms of Service, Privacy Policies and a status page
+
+### Challenges faced
+- **MinIO** implementation was a huge challenge. Worked correctly with simple use-cases at the beggining but it had to be maintained and updated throught the whole duration of the project. The multipart upload was implemented a week before the project was done for example.
+- **Backend file/folder structure**: Go has props for folders name and finding a global structure that everyone agrees to work with took few days. The first days learning Go were rough overall.
+
+
+---
 
 ## Other informations such as:
 

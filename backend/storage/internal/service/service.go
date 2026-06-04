@@ -1,0 +1,854 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"log"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"backend/storage/internal"
+
+	"backend/shared/config"
+	"backend/shared/rbac"
+	"backend/storage/internal/workers"
+
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
+	"gorm.io/gorm"
+)
+
+var (
+	ErrForbidden     = errors.New("forbidden")
+	ErrNotFound      = errors.New("not found")
+	ErrQuotaExceeded = errors.New("quota exceeded")
+
+	ErrFolderNotEmpty = errors.New("folder not empty")
+	ErrCyclicMove     = errors.New("cannot move folder into itself or one of its descendants")
+	ErrInvalidParent  = errors.New("invalid parent")
+	ErrInvalidName    = errors.New("invalid folder name")
+
+	ErrInvalidPartCount = errors.New("invalid part count")
+)
+
+// CompletePart represents one part of a multipart upload, as returned by MinIO.
+// PartNumber is 1-indexed and ETag is the value from the PUT response header (without surrounding quotes).
+// Public struct as it is used by the handler
+type CompletePart struct {
+	PartNumber	int		`json:"part_number"`
+	ETag		string	`json:"etag"`
+}
+
+const maxParts = 100
+
+// business logic contract
+type StorageService interface {
+	// File part
+	RequestUploadURL(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error)
+	FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error)
+	DownloadFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error)
+	DeleteFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID) error
+	MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error
+	GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error)
+
+	// Multipart
+	RequestMultipartUpload(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error)
+	FinalizeMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error)
+	AbortMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string) error
+
+	// Folder part
+	CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error)
+	DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error
+	UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error
+
+	ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error)
+	ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error)
+	ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error)
+	GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error)
+}
+
+type storageService struct {
+	repo        storage.StorageRepository
+	minioClient *minio.Client
+	publisher   *workers.EventPublisher
+	rbac        rbac.Checker
+	env         *config.Env
+}
+
+func NewStorageService(repo storage.StorageRepository, minioClient *minio.Client, publisher *workers.EventPublisher, checker rbac.Checker, env *config.Env) StorageService {
+	return &storageService{
+		repo:        repo,
+		minioClient: minioClient,
+		publisher:   publisher,
+		rbac:        checker,
+		env:         env,
+	}
+}
+
+/* interface methods*/
+
+// RequestUploadURL requests a presignedURL to the minio client and returns it.
+// File requested for upload are in a PENDING state until it has been fully uploaded to the minio storage service, where it then updates this status to ACTIVE via FinalizeUpload
+// The quota check is done via GetUserSpace so between a RequestUploadURL call and a FinalizeUpload call, it is possible that users have no storage space left
+func (s *storageService) RequestUploadURL(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, hostname string) (presignedURL string, objectID uuid.UUID, err error) {
+
+	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return "", uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return "", uuid.Nil, ErrNotFound
+		}
+		return "", uuid.Nil, err
+	}
+
+	objectID = uuid.New()
+
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
+	if err != nil {
+		return "", uuid.Nil, err
+	}
+
+	if used+fileSize > maxSpace {
+		return "", uuid.Nil, ErrQuotaExceeded
+	}
+
+	newFile := &storage.File{
+		ID:             uuid.New(),
+		OwnerUserID:    userID,
+		OrgID:          orgID,
+		FolderID:       folderID,
+		Name:           "",
+		FileSize:       fileSize,
+		MinioObjectKey: objectID,
+		EncryptedDEK:   []byte{},
+		IV:             []byte{},
+		Status:         "PENDING",
+	}
+
+	if err = s.repo.InsertPendingFile(newFile); err != nil {
+		return "", uuid.Nil, err
+	}
+
+	rawURL, err := s.minioClient.PresignedPutObject(ctx, "ostrom", objectID.String(), 15*time.Minute)
+	if err != nil {
+		return "", uuid.Nil, err
+	}
+
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
+
+	return presignedURL, objectID, err
+}
+
+// FinalizeUpload activates an object uploaded to the minio storage service and updates the user used space
+// It fetches twice the data of the objectID as we need updated data to publish the correct values to the redis client
+func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID) (uuid.UUID, error) {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return uuid.Nil, ErrNotFound
+	} else if err != nil {
+		return uuid.Nil, err
+	}
+
+	if !uuidPtrEqual(file.OrgID, orgID) {
+		return uuid.Nil, ErrForbidden
+	}
+
+	// rbac check for upload in organization: checks that the user still has the rights to Finalize an upload (can change between RequestURL and FinalizeUpload if the file is huge)
+	if err := s.rbac.CanCreateInFolder(userID, file.FolderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	// incrementing space used by user in DB via a single `UPDATE users SET used_space = used_space + ? WHERE id = ?` query to avoid dataraces
+	var ok bool
+	ok, err = s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if !ok {
+		return uuid.Nil, ErrQuotaExceeded
+	}
+
+	// activates file in DB
+	if err := s.repo.ActivateFile(objectID, name, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	// update of file here so the event does't return an empty name = ""
+	file, err = s.repo.FindByID(file.ID) // calling FindByID and not FindByObjectID because the file is not PENDING anymore
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// _ because we ignore the return value of this call (fire-and-forget event)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file)
+
+	return file.ID, nil
+}
+
+func (s *storageService) DownloadFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID, hostname string) (presignedURL string, encryptedDEK []byte, iv []byte, name string, err error) {
+
+	// gets the file in DB
+	file, err := s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil, nil, "", ErrNotFound
+	} else if err != nil {
+		return "", nil, nil, "", err
+	}
+
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return "", nil, nil, "", ErrForbidden
+		}
+		return "", nil, nil, "", err
+	}
+
+	// https://docs.min.io/enterprise/aistor-object-store/developers/sdk/go/api/#presignedgetobjectctx-contextcontext-bucketname-objectname-string-expiry-timeduration-reqparams-urlvalues-urlurl-error
+	// generate presigned URL (GET)
+	// leaving comments for now until it works with the front
+	rawURL, err := s.minioClient.PresignedGetObject(ctx, "ostrom", file.MinioObjectKey.String(), 5*time.Minute, nil)
+	if err != nil {
+		return "", nil, nil, "", err
+	}
+
+	presignedURL = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
+
+	return presignedURL, file.EncryptedDEK, file.IV, file.Name, nil
+}
+
+func (s *storageService) DeleteFile(ctx context.Context, userID uuid.UUID, fileID uuid.UUID) error {
+
+	// gets the file in DB
+	file, err := s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	// suppress file metadata in DB
+	if err := s.repo.DeleteFile(fileID); err != nil {
+		_ = s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID)
+		return err
+	}
+
+	// suppress actual file in minio
+	if err := s.minioClient.RemoveObject(ctx, "ostrom", file.MinioObjectKey.String(), minio.RemoveObjectOptions{}); err != nil {
+		if publishErr := s.publisher.PublishFileOrphaned(ctx, file.ID, file.MinioObjectKey, file.OwnerUserID); publishErr != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := s.decrementQuota(file.OwnerUserID, file.OrgID, file.FileSize); err != nil {
+		return err
+	}
+
+	_ = s.publisher.PublishFileDeleted(context.Background(), file)
+
+	return nil
+}
+
+func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *uuid.UUID) error {
+
+	file, err := s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, folderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	rows, err := s.repo.UpdateFileFolder(fileID, folderID)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	_ = s.publisher.PublishFileMoved(context.Background(), file, folderID)
+
+	return nil
+}
+
+func (s *storageService) GetFileInfo(userID uuid.UUID, fileID uuid.UUID) (file *storage.File, err error) {
+
+	file, err = s.repo.FindByID(fileID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	if err := s.rbac.CanReadFile(userID, file.OwnerUserID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
+	}
+
+	return file, nil
+}
+
+// folders
+
+func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *uuid.UUID, orgID *uuid.UUID) (uuid.UUID, error) {
+
+	if name == "" || utf8.RuneCountInString(name) > 100 {
+		return uuid.Nil, ErrInvalidName
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, parentID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrInvalidParent
+		}
+		return uuid.Nil, err
+	}
+
+	folder := storage.Folder{
+		ID:          uuid.New(),
+		OwnerUserID: userID,
+		OrgID:       orgID,
+		ParentID:    parentID,
+		Name:        name,
+	}
+
+	if err := s.repo.CreateFolder(&folder); err != nil {
+		return uuid.Nil, err
+	}
+
+	_ = s.publisher.PublishFolderCreated(context.Background(), &folder)
+	return folder.ID, nil
+}
+
+func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	empty, err := s.repo.IsFolderEmpty(folderID)
+	if err != nil {
+		return err
+	}
+
+	if !empty {
+		return ErrFolderNotEmpty
+	}
+
+	if err := s.repo.DeleteFolder(folderID); err != nil {
+		return err
+	}
+
+	_ = s.publisher.PublishFolderDeleted(context.Background(), folder)
+	return nil
+}
+
+// UpdateFolder takes a **uuid.UUID for the newParentID to identify an explicit null vs not supplied newParentID
+// There is a logic to allow users to rename their folder (published redis event as well) but you tell me if we delete it or not
+func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newName *string, newParentID **uuid.UUID) error {
+	folder, err := s.repo.FindFolderByID(folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.rbac.CanWrite(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return ErrForbidden
+		}
+		return err
+	}
+
+	oldName := folder.Name
+	oldParentID := folder.ParentID
+
+	updates := make(map[string]interface{})
+
+	if newName != nil {
+		if *newName == "" || utf8.RuneCountInString(*newName) > 100 {
+			return ErrInvalidName
+		}
+		updates["name"] = *newName
+	}
+
+	if newParentID != nil {
+		target := *newParentID // can be nil (move to root)
+
+		if target != nil {
+			newParent, err := s.repo.FindFolderByID(*target)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrInvalidParent
+			}
+
+			if err != nil {
+				return err
+			}
+
+			sameScope := false
+			if folder.OrgID == nil && newParent.OrgID == nil {
+				sameScope = folder.OwnerUserID == newParent.OwnerUserID
+			} else if folder.OrgID != nil && newParent.OrgID != nil {
+				sameScope = *folder.OrgID == *newParent.OrgID
+			}
+
+			if !sameScope {
+				return ErrInvalidParent
+			}
+
+			isDescendant, err := s.repo.IsDescendant(*target, folderID)
+			if err != nil {
+				return err
+			}
+
+			if isDescendant {
+				return ErrCyclicMove
+			}
+		}
+
+		updates["parent_id"] = target
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	if err := s.repo.UpdateFolder(folderID, updates); err != nil {
+		return err
+	}
+
+	if newName != nil {
+		folder.Name = *newName
+	}
+
+	if newParentID != nil {
+		folder.ParentID = *newParentID
+	}
+
+	if newName != nil && *newName != oldName {
+		_ = s.publisher.PublishFolderRenamed(context.Background(), folder)
+	}
+
+	if newParentID != nil {
+		if !uuidPtrEqual(oldParentID, *newParentID) {
+			_ = s.publisher.PublishFolderMoved(context.Background(), folder, oldParentID, *newParentID)
+		}
+	}
+
+	return nil
+}
+
+// utilitary function
+func uuidPtrEqual(oldParentID *uuid.UUID, newParentID *uuid.UUID) bool {
+	if oldParentID == nil && newParentID == nil {
+		return true
+	}
+
+	if oldParentID == nil || newParentID == nil {
+		return false
+	}
+
+	return *oldParentID == *newParentID
+}
+
+func (s *storageService) ListPersonalContents(userID uuid.UUID, parentID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
+	if parentID != nil {
+		folder, err := s.repo.FindFolderByID(*parentID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrNotFound
+		}
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// check OrgID != nil so we are sure it belongs to someone and not an organization
+		if folder.OwnerUserID != userID || folder.OrgID != nil {
+			return nil, nil, ErrForbidden
+		}
+	}
+
+	folders, files, err := s.repo.ListFolderContents(userID, parentID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+func (s *storageService) ListFolderContents(userID uuid.UUID, folderID *uuid.UUID) ([]storage.Folder, []storage.File, error) {
+
+	// guards for the dereference coming after
+	if folderID == nil {
+		return nil, nil, ErrNotFound
+	}
+
+	folder, err := s.repo.FindFolderByID(*folderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil, ErrNotFound
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if folder.OwnerUserID != userID || folder.OrgID != nil {
+		return nil, nil, ErrForbidden
+	}
+
+	folders, files, err := s.repo.ListFolderContents(userID, folderID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, []storage.File, error) {
+	// If folderID is nil/zero, user is accessing the organization root
+	if folderID != uuid.Nil {
+		folder, err := s.repo.FindFolderByID(folderID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrNotFound
+		}
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if folder.OrgID == nil || *folder.OrgID != orgID {
+			return nil, nil, ErrNotFound
+		}
+
+		if err := s.rbac.CanReadFile(userID, folder.OwnerUserID, folder.OrgID); err != nil {
+			if errors.Is(err, rbac.ErrForbidden) {
+				return nil, nil, ErrForbidden
+			}
+			return nil, nil, err
+		}
+	} else {
+		if err := s.rbac.CanReadFile(userID, uuid.Nil, &orgID); err != nil {
+			if errors.Is(err, rbac.ErrForbidden) {
+				return nil, nil, ErrForbidden
+			}
+			return nil, nil, err
+		}
+	}
+
+	folders, files, err := s.repo.ListOrgFolderContents(orgID, folderID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return folders, files, nil
+}
+
+
+func (s *storageService) presignedBaseURL(hostname string) string {
+	if hostname == s.env.DomainName {
+		return "https://" + s.env.DomainName
+	}
+	return "https://" + hostname + ":" + s.env.AppPort
+}
+
+
+func (s *storageService) getQuota(userID uuid.UUID, orgID *uuid.UUID) (int64, int64, error) {
+	if orgID == nil {
+		return s.repo.GetUserSpace(userID)
+	}
+	return s.repo.GetOrgSpace(*orgID)
+}
+
+func (s *storageService) tryIncrementQuota(userID uuid.UUID, orgID *uuid.UUID, delta int64) (bool, error) {
+	if orgID == nil {
+		return s.repo.TryIncrementUserUsedSpace(userID, delta)
+	}
+	return s.repo.TryIncrementOrgUsedSpace(*orgID, delta)
+}
+
+func (s *storageService) decrementQuota(userID uuid.UUID, orgID *uuid.UUID, delta int64) error {
+	if orgID == nil {
+		return s.repo.DecrementUserUsedSpace(userID, delta)
+	}
+	return s.repo.DecrementOrgUsedSpace(*orgID, delta)
+}
+
+// multipart
+// https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html
+func (s *storageService) RequestMultipartUpload(ctx context.Context, userID uuid.UUID, fileSize int64, folderID *uuid.UUID, orgID *uuid.UUID, partCount int, hostname string) (objectID uuid.UUID, uploadID string, presignedURLs []string, err error) {
+
+	// S3 multipart upload limits to 10000 but I think 100 (maxParts) is enough as we are giving users/organizations a 5go limit of available space.
+	if partCount <= 0 || partCount > maxParts {
+		return uuid.Nil, "", nil, ErrInvalidPartCount // mapped to 400 bad request
+	}
+
+	// rbac check
+	if err := s.rbac.CanCreateInFolder(userID, folderID, orgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, "", nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, "", nil, ErrNotFound
+		}
+		return uuid.Nil, "", nil, err
+	}
+
+	var used, maxSpace int64
+	used, maxSpace, err = s.getQuota(userID, orgID)
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	if used+fileSize > maxSpace {
+		return uuid.Nil, "", nil, ErrQuotaExceeded
+	}
+
+	// parameters needed by minio
+	objectKey := uuid.New()
+	core := minio.Core{Client: s.minioClient}
+
+	uploadIDStr, err := core.NewMultipartUpload(ctx, "ostrom", objectKey.String(), minio.PutObjectOptions{})
+	if err != nil {
+		return uuid.Nil, "", nil, err
+	}
+
+	// presigning each part
+	urls := make([]string, partCount)
+	for i := 1; i <= partCount; i++ {
+		reqParams := make(url.Values)
+		reqParams.Set("partNumber", strconv.Itoa(i))
+		reqParams.Set("uploadId", uploadIDStr)
+
+		rawURL, err := s.minioClient.Presign(ctx, "PUT", "ostrom", objectKey.String(), 15*time.Minute, reqParams)
+		if err != nil {
+			// free MinIO parts
+			_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+			return uuid.Nil, "", nil, err
+		}
+
+		urls[i-1] = strings.Replace(rawURL.String(), "http://minio:"+s.env.MinioPort, s.presignedBaseURL(hostname)+"/storage", 1)
+	}
+
+	newFile := &storage.File{
+		ID:				uuid.New(),
+		OwnerUserID:	userID,
+		OrgID:			orgID,
+		FolderID:		folderID,
+		Name:			"",
+		FileSize:		fileSize,
+		MinioObjectKey:	objectKey,
+		UploadID:		&uploadIDStr,
+		EncryptedDEK:	[]byte{},
+		IV:				[]byte{},
+		Status:			"PENDING",
+	}
+
+	if err := s.repo.InsertPendingFile(newFile); err != nil {
+		_ = core.AbortMultipartUpload(ctx, "ostrom", objectKey.String(), uploadIDStr)
+		return uuid.Nil, "", nil, err
+	}
+
+	return objectKey, uploadIDStr, urls, nil
+}
+
+func (s *storageService) FinalizeMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string, encryptedFilename string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, parts []CompletePart) (uuid.UUID, error) {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return uuid.Nil, ErrNotFound
+	}
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// checking file.UploadID != nil to be sure the db field is not NULL and we're uploading a multipart file
+	if file.UploadID == nil || *file.UploadID != uploadID {
+		return uuid.Nil, ErrForbidden
+	}
+	if !uuidPtrEqual(file.OrgID, orgID) {
+		return uuid.Nil, ErrForbidden
+	}
+
+	// checking parts are not empty
+	if len(parts) == 0 {
+		return uuid.Nil, ErrInvalidPartCount
+	}
+
+	seen := make(map[int]bool, len(parts))
+	for _, p := range parts {
+		if p.PartNumber < 1 || p.PartNumber > maxParts { // maxParts reference value of partCount in RequestMultipartUpload
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		// ETag non-empty as we use it as identifier
+		if p.ETag == "" {
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		if seen[p.PartNumber] {
+			return uuid.Nil, ErrInvalidPartCount
+		}
+		seen[p.PartNumber] = true
+	}
+
+	if err := s.rbac.CanCreateInFolder(userID, file.FolderID, file.OrgID); err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return uuid.Nil, ErrForbidden
+		}
+		if errors.Is(err, rbac.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	ok, err := s.tryIncrementQuota(userID, file.OrgID, file.FileSize)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if !ok {
+		// free MinIO parts
+		core := minio.Core{Client: s.minioClient}
+		_ = core.AbortMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID)
+		return uuid.Nil, ErrQuotaExceeded
+	}
+
+	// assembling parts on MinIO side
+	core := minio.Core{Client: s.minioClient}
+	minioParts := make([]minio.CompletePart, len(parts))
+	for i, p := range parts {
+		minioParts[i] = minio.CompletePart{PartNumber: p.PartNumber, ETag: p.ETag}
+	}
+	// concatenate uploaded parts and commit to an object.
+	if _, err := core.CompleteMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID, minioParts, minio.PutObjectOptions{}); err != nil {
+		// rollback in case of fail on MinIO side -> decrementing used space.
+		_ = s.decrementQuota(userID, file.OrgID, file.FileSize)
+		return uuid.Nil, err
+	}
+
+	if err := s.repo.ActivateFile(objectID, encryptedFilename, encryptedDEK, iv, file.OrgID, userID); err != nil {
+		// same as above, decrementing used space
+		_ = s.decrementQuota(userID, file.OrgID, file.FileSize)
+		if errors.Is(err, storage.ErrNotFound) {
+			return uuid.Nil, ErrNotFound
+		}
+		return uuid.Nil, err
+	}
+
+	file, err = s.repo.FindByID(file.ID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	_ = s.publisher.PublishFileUploaded(ctx, file)
+	return file.ID, nil
+}
+
+func (s *storageService) AbortMultipartUpload(ctx context.Context, userID uuid.UUID, objectID uuid.UUID, uploadID string) error {
+
+	file, err := s.repo.FindByObjectID(objectID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	// rbac: only owner can cancel its own upload (cannot do a CanDeleteFile as the file is still PENDING)
+	if file.OwnerUserID != userID {
+		return ErrForbidden
+	}
+
+	if file.UploadID == nil || *file.UploadID != uploadID {
+		return ErrForbidden
+	}
+
+	// aborting on MinIO side, if MinIO fails we only log it and return, leaving the sweeper do the job
+	core := minio.Core{Client: s.minioClient}
+	if err := core.AbortMultipartUpload(ctx, "ostrom", file.MinioObjectKey.String(), uploadID); err != nil {
+		log.Printf("[WARN] AbortMultipartUpload: MinIO abort failed for upload %s: %v", uploadID, err)
+		return err
+	}
+
+	// again, no need to decrement user space here as the file is still PENDING
+	return s.repo.DeleteFile(file.ID)
+}
+
+func (s *storageService) GetFolderPath(userID uuid.UUID, folderID uuid.UUID) ([]storage.Folder, error) {
+    folders, err := s.repo.GetFolderPath(folderID)
+ 	if err != nil {
+ 		if errors.Is(err, gorm.ErrRecordNotFound) {
+ 			return nil, ErrNotFound
+ 		}
+ 		return nil, err
+ 	}
+    if len(folders) == 0 {
+        return nil, ErrNotFound
+    }
+
+    rootFolder := folders[0]
+    err = s.rbac.CanReadFile(userID, rootFolder.OwnerUserID, rootFolder.OrgID)
+	if err != nil {
+		if errors.Is(err, rbac.ErrForbidden) {
+			return nil, ErrForbidden
+		}
+		return nil, err
+    }
+
+    return folders, nil
+}

@@ -1,0 +1,336 @@
+.container {
+    padding: 24px 40px;
+    width: 100%;
+    margin: 0;
+}
+
+.headerSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.titleGroup h1 {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--color-text-warm-dark);
+    margin: 0 0 4px 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: var(--color-text-warm-muted);
+    margin: 0;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #63473f;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 500;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99, 71, 63, 0.2);
+}
+
+.addButton:hover {
+    background-color: #4e3832;
+    transform: translateY(-1px);
+}
+
+.orgList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.orgCard {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    padding: 16px 24px;
+    transition: all 0.2s;
+    width: 100%;
+    cursor: pointer;
+}
+
+.orgCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+    background-color: #fffaf9;
+}
+
+.orgAvatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    margin-right: 16px;
+    background-color: #fcebe8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.initialsAvatar {
+    font-size: 18px;
+    font-weight: 600;
+    color: #d54f2a;
+}
+
+.orgInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.orgName {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-warm-dark);
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orgDesc {
+    font-size: 14px;
+    color: var(--color-text-warm-muted);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+}
+
+.orgActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 20px;
+}
+
+.roleTag {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 70px;
+    text-align: center;
+    text-transform: capitalize;
+    background-color: var(--color-surface-light);
+    color: #616161;
+}
+
+.roleAdmin {
+    background-color: #fbe9e7;
+    color: #d84315;
+}
+
+.buttonIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.buttonIconAdd {
+    background-color: #fcebe8;
+    color: #d84315;
+}
+
+.buttonIconAdd:hover {
+    background-color: #f9d8d1;
+}
+
+.buttonIconLeave {
+    background-color: #fff0f0;
+    color: var(--color-error);
+}
+
+.buttonIconLeave:hover {
+    background-color: #ffe0e0;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    background-color: white;
+    border: 2px dashed rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.emptyIcon {
+    background-color: #fcebe8;
+    color: #d84315;
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.emptyTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-warm-dark);
+    margin: 0 0 8px 0;
+}
+
+.emptyDescription {
+    font-size: 15px;
+    color: var(--color-text-warm-muted);
+    margin: 0 0 32px 0;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+.emptyButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #63473f;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.emptyButton:hover {
+    background-color: #4e3832;
+    transform: translateY(-1px);
+}
+
+.loadingState {
+    text-align: center;
+    padding: 60px;
+    color: var(--color-text-warm-muted);
+}
+
+.errorState {
+    color: var(--color-error);
+    padding: 16px;
+    background-color: #fff0f0;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.statusMessage {
+    padding: 0;
+    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+}
+
+.statusMessage.success {
+    background: linear-gradient(135deg, #f0fdf4 0%, #f1f5f9 100%);
+    border-left: 3px solid #22c55e;
+    padding: 12px 16px;
+    color: #166534;
+    margin-top: 10px;
+}
+
+.statusMessage.error {
+    background: linear-gradient(135deg, #fef2f2 0%, #f8f1f1 100%);
+    border-left: 3px solid #ef4444;
+    padding: 12px 16px;
+    color: #991b1b;
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .headerSection {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .orgCard {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .orgInfo {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .orgName,
+     .orgDesc {
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+
+    .orgActions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .titleGroup h1 {
+        font-size: 28px;
+    }
+
+    .orgActions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .orgActions > * {
+        width: 100%;
+        justify-content: center;
+    }
+}

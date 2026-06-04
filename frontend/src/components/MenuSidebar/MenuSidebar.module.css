@@ -1,0 +1,148 @@
+.orgsToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-warm-dark);
+  padding: 10px 12px;
+  margin: 2px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  width: calc(100% - 24px);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .orgsToggle:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.orgsToggleActive {
+  background-color: #fedfd7;
+}
+
+.toggleIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toggleLabel {
+  flex: 1;
+  font-family: var(--font-family-primary);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--color-text-warm-muted);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.orgsList {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 4px;
+}
+
+.emptyMsg {
+  padding: 6px 12px 6px 44px;
+  font-family: var(--font-family-primary);
+  font-size: 13px;
+  color: var(--color-text-warm-muted);
+}
+
+.orgRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-warm-dark);
+  padding: 8px 12px 8px 28px;
+  margin: 1px 12px;
+  border-radius: 10px;
+  width: calc(100% - 24px);
+  text-align: left;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .orgRow:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.orgRowActive {
+  background-color: rgba(254, 223, 215, 0.6);
+}
+
+.orgRowIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.orgRowName {
+  flex: 1;
+  font-family: var(--font-family-primary);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.orgSubLinks {
+  padding-left: 20px;
+}
+
+@media (max-width: 768px) {
+  .subLink span:last-child {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .toggleLabel {
+    font-size: 14px;
+  }
+
+  .orgRowName {
+    font-size: 13px;
+  }
+
+  .orgsToggle {
+    margin: 2px 4px;
+    width: calc(100% - 8px);
+    padding: 10px 10px;
+  }
+
+  .orgRow {
+    margin: 1px 4px;
+    width: calc(100% - 8px);
+    padding: 7px 10px 7px 22px;
+  }
+
+  .orgSubLinks {
+    padding-left: 12px;
+  }
+}
