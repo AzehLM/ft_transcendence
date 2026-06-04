@@ -57,7 +57,7 @@ func (c *DBChecker) CanReadFile(userID uuid.UUID, ownerUserID uuid.UUID, orgID *
 		return nil
 	}
 
-	var count int64 // maybe its too much lol ?
+	var count int64 
 	err := c.db.Table("org_members"). // not checking role here since it doesn't matter, everyone have the same rights
 		Where("org_id = ? AND user_id = ?", *orgID, userID).
 		Count(&count).Error // count instead of First

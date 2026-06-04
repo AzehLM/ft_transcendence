@@ -1,7 +1,6 @@
 import styles from "./home.module.css";
 
-// to be updated or deleted if we have no idea of what/who to put here
-const LOGOS = ["Pierre", "Paul", "Jacques", "Michel", "Someone"];
+const LOGOS = ["Julian Assange", "Edward Snowden", "Chelsea Manning", "Boston Globe", "John Doe"];
 
 export function SocialProof() {
     return (

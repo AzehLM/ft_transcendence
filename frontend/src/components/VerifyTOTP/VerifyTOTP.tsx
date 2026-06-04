@@ -54,7 +54,6 @@ export function VerifyTOTP({
             const data = await verifyRecoveryCode(code, tempToken);
             setRemainingCodes(data.remaining);
 
-            // Show warning and complete
             if (data.warning) {
                 console.warn(data.warning);
             }
