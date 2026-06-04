@@ -159,7 +159,7 @@ The React engine captures the payload response and unrolls the envelope using `u
 
 #### 3 Secure Upload & Download Flows
 
-![Logo](images/orga-upload.png)
+![Upload organisation](images/orga-upload.png)
 ![Logo](images/orga-download.webp)
 
 ---
