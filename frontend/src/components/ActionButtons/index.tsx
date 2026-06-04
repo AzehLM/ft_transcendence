@@ -28,11 +28,10 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
     runCheck();
   }, [keyMissing]);
 
-  const handleUploadClick = () => {
-    if (hasKeys === false) {
-      checkKeys();
-      return;
-    }
+
+   const handleUploadClick = async () => {
+     const ok = hasKeys === true ? true : await checkKeys();
+     if (!ok) return;
     fileInputRef.current?.click();
   };
 
