@@ -8,7 +8,7 @@ import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
 import { registerSchema } from "../../schemas/auth.schema";
 import { TwoFAPrompt } from "../../components/TwoFAPrompt";
-import { SetupTOTP } from "../../components/SetupTOTP/SetupTOTP";
+import { SetupTOTP } from "../../components/SetupTOTP";
 
 
 export default function RegisterPage() {
