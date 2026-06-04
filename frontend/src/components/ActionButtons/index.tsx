@@ -36,7 +36,14 @@ export function ActionButtons({ onUploadFile, onCreateFolder }: ActionButtonsPro
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const ok = await checkKeys();
+0
+     let ok = false;
+     try {
+       ok = await checkKeys();
+     } catch {
+       ok = false;
+     }
+     
     if (!ok) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
