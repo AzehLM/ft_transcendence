@@ -21,7 +21,7 @@
 Upon triggering `generateRegistrationData(email, password)`, the local browser environment isolates state variables to prevent plain text extraction:
 * **Salt Allocation:** A deterministic `Uint8Array` byte structure of 16 bytes (128 bits) is created and mutated via `crypto.getRandomValues(salt)`, filling the vector index placeholders with uniform entropy bytes ranging from 0 to 255.
 * **Key Derivation (KDF):** The plain text password is serialized to binary data via a `TextEncoder` abstraction. The engine runs a secure structural key derivation iteration:
-$$\mathtt{Master\_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
+$$\mathtt{Master_Key} = \text{PBKDF2}(\text{Password}_{\text{bytes}}, \text{Salt}, \text{iterations}=100000, \text{hash}=\text{"SHA-256"})$$
 The returned `CryptoKey` reference points to an extractable symmetric **AES-GCM 256-bit** implementation layer.
 
 #### 2. KeyPair Allocation & Relational Wrapping
