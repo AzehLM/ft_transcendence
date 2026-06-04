@@ -173,3 +173,12 @@ We've standardized on lucide-react for icon management in our frontend because i
 ### Backup blablabla
 
 Dire qu'il y a un readme specific pour ca
+
+
+### Zod (Schema validation)
+
+Zod is a TypeScript-first schema validation library. Schemas are defined once and Zod automatically infers the corresponding TypeScript types, eliminating any duplication between runtime validation and static typing.
+
+We use it to validate all user inputs on the frontend before any API call is made. Schemas are organized by domain under `src/schemas/` (auth, files, organizations, etc.), which directly satisfies the subject's requirement that *"all forms and user inputs must be properly validated"*.
+
+This boundary has two concrete benefits: format errors are caught and surfaced to the user immediately without a round-trip to the backend (not API calls are made), and the backend receives only structurally valid requests - reducing unnecessary load and keeping the monitoring stack free of validation noise.
