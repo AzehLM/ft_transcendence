@@ -254,10 +254,12 @@ The following is a complete inventory of implemented features, grouped by domain
 ### Organization (fully done by lbuisson)
 
 - **Org creation with shared cryptography** - each org has its own RSA keypair. The org's private key is wrapped with a per-member AES key, itself RSA-encrypted with each member's public key. New members get their own wrapped copy.
-- **Roles (admin / member)** - admins manage members, settings, and quota. Members read and contribute. Enforced by a middleware.
-- **Member management** - invite/add, change role, remove member, leave organization, set personal description in the org.
+- **Roles (owner / admin / member)** - The creator automatically becomes the **owner**. Owners have exclusive rights to delete the organization or transfer ownership. Admins manage members, settings, and quota. Members read and contribute. Enforced by a middleware.
+- **Ownership Guardrails & Transfer** - Enforced a strict maximum limit of **10 owned organizations** per user. Added a secure, transactional ownership transfer system to seamlessly assign a new owner and demote the old one to administrator.
+- **Member management** - invite/add, change role (restricted so admins cannot demote/remove other admins, only owners can), remove member, leave organization (blocked for owners), set personal description in the org.
+- **Account Deletion & Auto-Succession** - If an owner deletes their account, a safe cleanup pipeline automatically demotes them and transfers the organization's ownership to the next eligible administrator or member based on internal seniority (`joined_at`), preventing orphan organizations.
 - **Org-scoped storage** - lbuisson for orga & gueberso for storage integration - files and folders can belong to an organization. The RBAC checker resolves permissions based on membership.
-- **Org settings** - rename, delete, retrieve public key for member onboarding.
+- **Org settings** - rename, delete (owner only), retrieve public key for member onboarding. Includes real-time WebSocket synchronization across all client dashboards for live role and member updates.
 
 ### Real-time & Notifications
 
