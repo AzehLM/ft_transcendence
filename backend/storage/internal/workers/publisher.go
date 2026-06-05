@@ -155,12 +155,13 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder) error {
+func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder, actorID uuid.UUID) error {
 
 	payload := FolderRenamedPayload{
 		FolderID:		folder.ID,
 		ParentID:		folder.ParentID,
 		OwnerID:		folder.OwnerUserID,
+		ActorID:        actorID,
 		OrgID:			folder.OrgID,
 		NewName:		folder.Name,
 	}
@@ -171,7 +172,7 @@ func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files
 		Data:		payload,
 	}
 
-	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+	return p.publish(ctx, actorID, folder.OrgID, event)
 }
 
 func (p *EventPublisher) PublishFileOrphaned(ctx context.Context, fileID uuid.UUID, minioObjectKey uuid.UUID, ownerID uuid.UUID) error {

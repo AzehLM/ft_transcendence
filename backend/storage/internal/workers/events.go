@@ -82,6 +82,7 @@ type FolderRenamedPayload struct {
 	FolderID	uuid.UUID	`json:"folder_id"`
 	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
 	OwnerID		uuid.UUID	`json:"owner_id"`
+	ActorID  	uuid.UUID  `json:"actor_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	NewName		string		`json:"new_name"`
 }

@@ -483,7 +483,7 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 	}
 
 	if newName != nil && *newName != oldName {
-		_ = s.publisher.PublishFolderRenamed(context.Background(), folder)
+		_ = s.publisher.PublishFolderRenamed(context.Background(), folder, userID)
 	}
 
 	if newParentID != nil {
