@@ -600,7 +600,7 @@ func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, fold
 	return folders, files, nil
 }
 
-// URL had to be secured (https), so the clients browser will communicate securely with minio
+// URL have to be secured (https), so the clients browser will communicate securely with minio
 func (s *storageService) presignedBaseURL(hostname string) string {
 	if hostname == s.env.DomainName {
 		return "https://" + s.env.DomainName
