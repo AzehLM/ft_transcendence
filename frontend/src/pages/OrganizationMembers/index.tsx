@@ -201,6 +201,12 @@ export default function OrgMembersPage() {
       }
     };
 
+    const handleRemoved = (data: any) => {
+        if (data && data.org_id === id) {
+            navigate("/organizations");
+        }
+    };
+
     registerListener("MEMBER_ADDED", handleMemberChange);
     registerListener("MEMBER_REMOVED", handleMemberChange);
     registerListener("USER_PROFILE_UPDATED", handleMemberChange);
@@ -209,6 +215,7 @@ export default function OrgMembersPage() {
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
     registerListener("ROLE_UPDATED", handleRoleUpdated);
     registerListener("ORGA_DELETED", handleOrgaDeleted);
+    registerListener("REMOVED_FROM_ORGA", handleRemoved);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
@@ -219,6 +226,8 @@ export default function OrgMembersPage() {
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
       unregisterListener("ROLE_UPDATED", handleRoleUpdated);
       unregisterListener("ORGA_DELETED", handleOrgaDeleted);
+      unregisterListener("REMOVED_FROM_ORGA", handleRemoved)
+
     };
   }, [registerListener, unregisterListener, id, myUserId]);
 
