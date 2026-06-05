@@ -63,8 +63,7 @@ setup: $(ENV_FILE)
 
 # ---------------------------------- rules -------------------------------------
 
-# dev for now, will be switched for up later
-.DEFAULT_GOAL := dev
+.DEFAULT_GOAL := up
 
 .PHONY: up
 up: setup $(CERT_PATH) $(KEY_PATH) dirs
