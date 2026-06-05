@@ -474,6 +474,7 @@ In my role as Project Manager, I spearheaded team coordination by organizing and
 * **Database Setup :** Designed and deployed the initial PostgreSQL schema.
 * **API Route Extensions & Feature Engineering**: Created and upgraded core authentication endpoints to support extended identity fields (first_name, family_name). Engineered storage routing logic to manage dynamic nested folder hierarchies (folder_path), enabling seamless server-side directory traversal.
 * **Notification Accuracy Integration**: Enhanced the data routing layer and event payloads dispatched over WebSockets, maximizing telemetry and notification accuracy across active client sessions.
+* **Automated Ownership & Resource Transfer Pipeline**: Engineered a resilient data preservation layer that dynamically intercepts member departures, forced removals, and total account deletions (`LeaveOrga` / `DeleteMember` / `DeleteUser`). Automated the atomic transfer of file and folder ownership directly to the active Owner, or orchestrated a role-succession transaction to promote the oldest eligible member to Owner, preventing orphan data and enforcing relational integrity.
 
 ### Frontend
 

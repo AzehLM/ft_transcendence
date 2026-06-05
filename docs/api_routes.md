@@ -363,7 +363,7 @@ Response (200) :
 ### `DELETE /auth/me`
 
 Delete the account (with personal files on Minio, BD entries - cascade, refresh token, close ws). 
-If user is last admin of an organization, and there are no other members. The organization is deleted. If there are other members, the oldest added member becomes admin and get the ownership of its files and folders. If there are other admin, the oldest admin get the ownership of its files and folders.
+If user is owner of an organization, and there are no other members or admins or no eligible transfer (owns less than 10 organizations), he organization is deleted.  If there are other admin who own less than 10 organizations, the oldest admin get the ownership of its files and folders. If there are other members who own less than 10 organizations, the oldest added member becomes admin and get the ownership of its files and folders.
 
 Response (200) :
 ```json
@@ -410,7 +410,7 @@ Response `200 OK` :
   "name": "42_Projects",
   "used_space" : "",
   "max_space" : "",
-  "role": "member/admin",
+  "role": "member/admin/owner",
   "description": "description"
 }
 ```
@@ -419,7 +419,7 @@ Response `200 OK` :
 
 ### `POST /orgs`
 
-Create an organiation. The creator becomes the admin. 
+Create an organiation. The creator becomes the owner. 
 
 Body :
 ```json
@@ -444,7 +444,7 @@ Response (201) :
 
 ### `DELETE /orgs/{org_id}`
 
-Admin only. Delete an organization and all its Minio objetcs
+Owner only. Delete an organization and all its Minio objetcs
 
 Response : `204 No Content`
 
@@ -452,7 +452,7 @@ Response : `204 No Content`
 
 ### `PATCH /orgs/{org_id}`
 
-Admin only. Rename an organization.
+Admin and Owner only. Rename an organization.
 
 Body :
 ```json
@@ -466,6 +466,27 @@ Response (200) :
 {
   "id": "<uuid>",
   "name": "new_name"
+}
+```
+---
+
+### `POST /orgs/{org_id}/transfer-ownership`
+
+`owner` only. Permanently transfer the organization's ownership to another existing member. The current owner is automatically demoted to `admin`.
+> **Database Integrity :** A transactional index constraint (`unique_org_owner`) prevents an organization from having more than one owner simultaneously.
+
+Body :
+```json
+{
+  "new_owner_id": "7fa85f64-5717-4562-b3fc-2c963f66afa2"
+}
+```
+
+Response (200) :
+
+```json
+{
+  "message": "ownership transferred successfully"
 }
 ```
 ---
@@ -486,7 +507,7 @@ Response `200 OK` :
 ## Org Members
 
 ### `POST /orgs/{org_id}/members`
-Add a member to an organization. The admin encrypts the organization private key of the new member with the new member's public key.
+Add a member to an organization. The admin/owner encrypts the organization private key of the new member with the new member's public key.
 
 Body :
 ```json
@@ -526,7 +547,7 @@ Response : `200 OK`
 
 ### `PATCH /orgs/{org_id}/members/{user_id}`
 
-Admin only. Change the user's role. If last admin, cannot become member.
+Admin/Owner only. Change the user's role. Can't change the owner role.
 
 Body :
 ```json
@@ -567,7 +588,7 @@ Response : `200 OK`
 
 ### `DELETE /orgs/{org_id}/members/me`
 
-Leave the organization. Unable if last admin.
+Leave the organization. Unable if owner.
 
 Response : `204 No content`
 
@@ -575,7 +596,7 @@ Response : `204 No content`
 
 ### `DELETE /orgs/{org_id}/members/{user_id}`
 
-Delete a member of the organization. Unable if last admin.
+Delete a member of the organization. Unable if owner.
 
 Response : `204 No content`
 
