@@ -193,7 +193,7 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 			}
 		case <-ticker.C:
 			if err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(10*time.Second)); err != nil {
-				log.Printf("[WS] Erreur Ping, client déconnecté: %v", err)
+				log.Printf("[WS] Error Ping, client disconected: %v", err)
 				return
 			}
 		}

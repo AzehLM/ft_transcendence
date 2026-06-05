@@ -21,7 +21,6 @@ const (
 	channelOrgEvents = "org_events:"
 )
 
-// TODO: mettre en shared ?
 type WSEvent struct {
 	Type    string      `json:"type"` // ex: MEMBER_ADDED, FILE_UPLOADED
 	OrgID   string      `json:"org_id,omitempty"`

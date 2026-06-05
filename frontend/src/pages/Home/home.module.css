@@ -1,7 +1,3 @@
-/* ============================================================================
-   HOME PAGE — NAVBAR
-   ============================================================================ */
-
 .navbar {
     background-color: #f5faff;
     position: sticky;
@@ -388,7 +384,7 @@
 .features {
     padding: 96px 32px;
     background-color: #fff;
-    scroll-margin-top: 72px; /* hauteur de la navbar sticky */
+    scroll-margin-top: 72px;
 }
 
 .features__inner {
@@ -608,11 +604,11 @@
     }
 
     .navbar__links {
-        display: none; /* remplacé par le drawer mobile */
+        display: none;
     }
 
     .navbar__desktop_actions {
-        display: none; /* remplacé par le drawer mobile */
+        display: none; 
     }
 
     .navbar__hamburger {

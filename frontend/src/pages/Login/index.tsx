@@ -7,7 +7,7 @@ import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
 import { loginSchema } from "../../schemas/auth.schema";
-import { VerifyTOTP } from "../../components/VerifyTOTP/VerifyTOTP";
+import { VerifyTOTP } from "../../components/VerifyTOTP";
 
 
 export default function LoginPage() {
@@ -149,7 +149,7 @@ export default function LoginPage() {
                     <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
                         <img src="/app-icon.png" alt="" aria-hidden="true" width={44} height={44} />
                         <span className={styles.logo_title}>
-                            ostrom
+                            Ostrom
                         </span>
                     </Link>
                     <h1 className={styles.page_title}>
