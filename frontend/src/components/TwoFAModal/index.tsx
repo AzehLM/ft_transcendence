@@ -305,9 +305,11 @@ export function TwoFAModal({
                         setVerificationCode(value);
                         setError(null);
                     }}
+                    onKeyDown={(e) => { if (e.key === "Enter" && verificationCode.length === 6 && !loading) handleVerifyTOTP(); }}
                     maxLength={6}
                     className={`${styles.totp_verify__input} ${styles.totp_verify__input_code}`}
                     disabled={loading}
+                    autoFocus
                 />
             </div>
 
@@ -405,8 +407,10 @@ export function TwoFAModal({
                         setPassword(e.target.value);
                         setError(null);
                     }}
+                    onKeyDown={(e) => { if (e.key === "Enter" && password && !loading) setStep("disable-confirm"); }}
                     className={styles.totp_verify__input}
                     disabled={loading}
+                    autoFocus
                 />
             </div>
 
