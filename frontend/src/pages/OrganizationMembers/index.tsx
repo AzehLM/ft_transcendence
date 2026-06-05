@@ -182,17 +182,20 @@ export default function OrgMembersPage() {
       }
     };
 
-    const handleRoleUpdated = (data: any) => {
-      if (data && data.user_id && data.role) {
-        setMembers((prev) =>
-          prev.map((m) =>
-            m.user_id === data.user_id ? { ...m, role: data.role } : m
-          )
-        );
-        if (myUserId && data.user_id === myUserId) {
-          setMyRole(data.role);
-        }
+    const handleRoleUpdated = () => {
+      fetchMembers();
+    };
+
+    const handleOrgaDeleted = (data: any) => {
+      if (data && data.org_id === id) {
+        navigate("/organizations");
       }
+    };
+
+    const handleRemoved = (data: any) => {
+        if (data && data.org_id === id) {
+            navigate("/organizations");
+        }
     };
 
     registerListener("MEMBER_ADDED", handleMemberChange);
@@ -202,6 +205,8 @@ export default function OrgMembersPage() {
     registerListener("USER_OFFLINE", handleUserOffline);
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
     registerListener("ROLE_UPDATED", handleRoleUpdated);
+    registerListener("ORGA_DELETED", handleOrgaDeleted);
+    registerListener("REMOVED_FROM_ORGA", handleRemoved);
 
     return () => {
       unregisterListener("MEMBER_ADDED", handleMemberChange);
@@ -211,6 +216,9 @@ export default function OrgMembersPage() {
       unregisterListener("USER_OFFLINE", handleUserOffline);
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
       unregisterListener("ROLE_UPDATED", handleRoleUpdated);
+      unregisterListener("ORGA_DELETED", handleOrgaDeleted);
+      unregisterListener("REMOVED_FROM_ORGA", handleRemoved)
+
     };
   }, [registerListener, unregisterListener, id, myUserId]);
 
@@ -327,7 +335,7 @@ export default function OrgMembersPage() {
             <h1>Organization Members</h1>
             <p className={styles.subtitle}>Manage your organization members and their roles</p>
           </div>
-          {myRole === "admin" && (
+          {(myRole === "admin" || myRole === "owner") && (
             <button
               className={styles.addButton}
               onClick={() => { setShowAddMemberModal(true); setModalError(null); }}
@@ -376,6 +384,7 @@ export default function OrgMembersPage() {
                 </div>
                 <div className={styles.memberActions}>
                   <div className={`${styles.roleTag} ${
+                    member.role.toLowerCase() === 'owner' ? styles.roleOwner :
                     member.role.toLowerCase() === 'admin' ? styles.roleAdmin :
                     member.role.toLowerCase() === 'editor' ? styles.roleEditor :
                     styles.roleViewer
@@ -388,8 +397,9 @@ export default function OrgMembersPage() {
                     }`}></span>
                     {member.is_online ? "Active" : "Offline"}
                   </div>
-                  {myRole === "admin" && (
-                    <div className={styles.buttonsGroup}>
+                {(myRole === "admin" || myRole === "owner") && (
+                  <div className={styles.buttonsGroup}>
+                    {member.role.toLowerCase() !== 'owner' && (
                       <button
                         className={`${styles.actionBtn} ${styles.roleBtn}`}
                         title="Change Role"
@@ -402,6 +412,9 @@ export default function OrgMembersPage() {
                       >
                         <Shield size={18} />
                       </button>
+                    )}
+                    
+                    {member.role.toLowerCase() !== 'owner' && member.user_id !== myUserId && (
                       <button
                         className={`${styles.actionBtn} ${styles.kickBtn}`}
                         title="Remove Member"
@@ -413,8 +426,9 @@ export default function OrgMembersPage() {
                       >
                         <UserMinus size={18} />
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
                 </div>
               </div>
             ))}

@@ -165,8 +165,10 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
                                     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                                     setVerificationCode(value);
                                 }}
+                                onKeyDown={(e) => { if (e.key === "Enter" && verificationCode.length === 6 && !loading) handleVerifyCode(); }}
                                 maxLength={6}
                                 className={styles.totp_setup__input}
+                                autoFocus
                             />
                         </div>
 

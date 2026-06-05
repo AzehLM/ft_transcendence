@@ -171,7 +171,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
             <button className={styles.actionBtn} onClick={() => handleDownloadClick()} title="Download">
               <Download size={16} />
             </button>
-            {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+            {(!orgId || (orgId && (role === "admin" || role === "owner")) || (orgId && owner_user_id === user_id)) && (
               <>
               <button className={styles.actionBtn} onClick={() => setShowMoveModal(true)} title="Move">
                 <Move size={16} />
@@ -198,7 +198,7 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
                 <button onClick={() => { handleDownloadClick(); setShowMenu(false); }}>
                   <Download size={14} /> Download
                 </button>
-              {(!orgId || (orgId && role === "admin") || (orgId && owner_user_id === user_id)) && (
+              {(!orgId || (orgId && (role === "admin" || role === "owner")) || (orgId && owner_user_id === user_id)) && (
                 <>
                 <button onClick={() => { setShowMoveModal(true); setShowMenu(false); }}>
                   <Move size={14} /> Move

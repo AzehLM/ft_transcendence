@@ -136,6 +136,12 @@
     color: #d84315;
 }
 
+.roleOwner {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
 .roleEditor {
     background-color: #fff3e0;
     color: #ef6c00;
@@ -173,6 +179,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 72px;
 }
 
 .actionBtn {
