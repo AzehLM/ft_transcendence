@@ -200,3 +200,39 @@ func (r *OrganizationRepository) UpdateDescription(orgID uuid.UUID, userID uuid.
 func (r *OrganizationRepository) GetUserByID(userID uuid.UUID, user *models.User) error {
     return r.DB.Where("id = ?", userID).Take(user).Error
 }
+var ErrOwnerNotFound = errors.New("no owner found for organization")
+
+func (r *OrganizationRepository) TransferFilesToOwner(orgID uuid.UUID, leavingUserID uuid.UUID) error {
+	var ownerIDString string
+	err := r.DB.Table("org_members").
+		Where("org_id = ? AND role = ?", orgID, "owner").
+		Select("user_id").
+		Scan(&ownerIDString).Error
+	if err != nil {
+		return err
+	}
+    if ownerIDString == "" {
+        return ErrOwnerNotFound
+    }
+
+	ownerID, err := uuid.Parse(ownerIDString)
+	if err != nil {
+		return ErrOwnerNotFound
+	}
+
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("files").
+			Where("org_id = ? AND owner_user_id = ?", orgID, leavingUserID).
+			Update("owner_user_id", ownerID).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Table("folders").
+			Where("org_id = ? AND owner_user_id = ?", orgID, leavingUserID).
+			Update("owner_user_id", ownerID).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

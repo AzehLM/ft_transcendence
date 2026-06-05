@@ -336,6 +336,16 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		}
 	}
 
+	if err := repo.TransferFilesToOwner(orgID, userID); err != nil {
+		if errors.Is(err, repository.ErrOwnerNotFound) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "organization has no owner to transfer files to",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to secure files before leaving",
+		})
+	}
 
 	// if member.Role == "admin" {
 	// 	if repo.CountAdmin(orgID) <= 1 {
@@ -407,6 +417,17 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 	if err := repo.GetOrgaMember(orgID, userID, &member); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "member not found",
+		})
+	}
+
+	if err := repo.TransferFilesToOwner(orgID, userID); err != nil {
+		if errors.Is(err, repository.ErrOwnerNotFound) {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "organization has no owner to transfer files to",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to secure files before leaving",
 		})
 	}
 
