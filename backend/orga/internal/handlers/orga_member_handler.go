@@ -245,13 +245,6 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
         })
     }
 
-	// if member.Role == "admin" && body.Role != "admin" {
-	// 	if repo.CountAdmin(orgID) <= 1 {
-	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-	// 			"error": "cannot demote the last admin",
-	// 		})
-	// 	}
-	// }
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
 	if err != nil {
@@ -356,13 +349,7 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		})
 	}
 
-	// if member.Role == "admin" {
-	// 	if repo.CountAdmin(orgID) <= 1 {
-	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-	// 			"error": "you are the last admin, you can't leave the organization",
-	// 		})
-	// 	}
-	// }
+
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
@@ -439,14 +426,6 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 			"error": "failed to secure files before leaving",
 		})
 	}
-
-	// if member.Role == "admin" {
-	// 	if repo.CountAdmin(orgID) <= 1 {
-	// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-	// 			"error": "you can't remove the last admin",
-	// 		})
-	// 	}
-	// }
 
 	deleted, err := repo.DeleteOrgaMember(orgID, userID)
 	if err != nil {
