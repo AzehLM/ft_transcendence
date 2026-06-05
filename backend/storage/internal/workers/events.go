@@ -38,7 +38,7 @@ type FileUploadedPayload struct {
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	Name		string		`json:"name"`
 	FileSize	int64		`json:"file_size"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
 }
 
 type FileDeletedPayload struct {
@@ -46,7 +46,7 @@ type FileDeletedPayload struct {
 	FolderID	*uuid.UUID	`json:"folder_id,omitempty"`
 	OwnerID		uuid.UUID	`json:"owner_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
 }
 
 type FileMovedPayload struct {
@@ -55,7 +55,7 @@ type FileMovedPayload struct {
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	OldFolderID	*uuid.UUID	`json:"old_folder_id,omitempty"`
 	NewFolderID	*uuid.UUID	`json:"new_folder_id,omitempty"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
 }
 
 type FolderCreatedPayload struct {
@@ -64,7 +64,7 @@ type FolderCreatedPayload struct {
 	OwnerID		uuid.UUID	`json:"owner_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	Name		string		`json:"name"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID  `json:"actor_id"`
 }
 
 type FolderDeletedPayload struct {
@@ -72,7 +72,8 @@ type FolderDeletedPayload struct {
 	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
 	OwnerID		uuid.UUID	`json:"owner_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
+	Name     	string      `json:"name"`
 }
 
 type FolderMovedPayload struct {
@@ -81,14 +82,15 @@ type FolderMovedPayload struct {
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	OldParentID	*uuid.UUID	`json:"old_parent_id,omitempty"`
 	NewParentID	*uuid.UUID	`json:"new_parent_id,omitempty"`
-	ActorID  uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
 }
 
 type FolderRenamedPayload struct {
 	FolderID	uuid.UUID	`json:"folder_id"`
 	ParentID	*uuid.UUID	`json:"parent_id,omitempty"`
 	OwnerID		uuid.UUID	`json:"owner_id"`
-	ActorID  	uuid.UUID  `json:"actor_id"`
+	ActorID  	uuid.UUID   `json:"actor_id"`
 	OrgID		*uuid.UUID	`json:"org_id,omitempty"`
 	NewName		string		`json:"new_name"`
+	OldName  	string      `json:"old_name"`
 }

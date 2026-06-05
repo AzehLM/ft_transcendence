@@ -254,11 +254,36 @@ func (h *Hub) enrichEventMessage(payload []byte, orgNames map[string]string) []b
 	case "file_deleted":
 		enrichedMsg = fmt.Sprintf("[%s] A file has been deleted", orgName)
 	case "folder_created":
-		enrichedMsg = fmt.Sprintf("[%s] A new folder has been created", orgName)
-	case "folder_deleted":
-		enrichedMsg = fmt.Sprintf("[%s] A folder has been deleted", orgName)
-	case "folder_renamed":
-		enrichedMsg = fmt.Sprintf("[%s] A folder has been renamed", orgName)
+        folderName, _ := data["name"].(string)
+        if folderName != "" {
+            enrichedMsg = fmt.Sprintf("[%s] folder created: %s", orgName, folderName)
+        } else {
+            enrichedMsg = fmt.Sprintf("[%s] folder created", orgName)
+        }
+
+    case "folder_deleted":
+        folderName, _ := data["name"].(string)
+        if folderName != "" {
+            enrichedMsg = fmt.Sprintf("[%s] folder deleted: %s", orgName, folderName)
+        } else {
+            enrichedMsg = fmt.Sprintf("[%s] folder deleted", orgName)
+        }
+
+    case "folder_renamed":
+        oldName, _ := data["old_name"].(string)
+        newName, _ := data["new_name"].(string)
+        if newName == "" {
+            newName, _ = data["name"].(string)
+        }
+
+        if oldName != "" && newName != "" {
+            enrichedMsg = fmt.Sprintf("[%s] folder '%s' renamed to '%s'", orgName, oldName, newName)
+        } else if newName != "" {
+            enrichedMsg = fmt.Sprintf("[%s] folder renamed to %s", orgName, newName)
+        } else {
+            enrichedMsg = fmt.Sprintf("[%s] folder renamed", orgName)
+        }
+		
 	case "ORGA_RENAMED":
 		oldName, _ := data["old_name"].(string)
 		if oldName == "" {

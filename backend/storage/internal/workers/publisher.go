@@ -130,6 +130,7 @@ func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files
 		OwnerID:	folder.OwnerUserID,
 		OrgID:		folder.OrgID,
 		ActorID:    actorID,
+		Name:       folder.Name,
 	}
 
 	event := WSEvent{
@@ -149,7 +150,7 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 		OrgID:			folder.OrgID,
 		OldParentID:	oldParentID,
 		NewParentID:	newParentID,
-		ActorID:    actorID,
+		ActorID:    	actorID,
 	}
 
 	event := WSEvent{
@@ -161,7 +162,7 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder, actorID uuid.UUID) error {
+func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder, actorID uuid.UUID, oldName string) error {
 
 	payload := FolderRenamedPayload{
 		FolderID:		folder.ID,
@@ -170,6 +171,7 @@ func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files
 		ActorID:        actorID,
 		OrgID:			folder.OrgID,
 		NewName:		folder.Name,
+		OldName:        oldName,
 	}
 
 	event := WSEvent{

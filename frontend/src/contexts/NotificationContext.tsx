@@ -106,8 +106,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         const isActorMe = currentUserIdRef.current && actorId && currentUserIdRef.current.toLowerCase() === actorId.toLowerCase();
 
         const isTechnicalEvent = eventType === "USER_ONLINE" || eventType === "USER_OFFLINE" || eventType === "USER_PROFILE_UPDATED";
+        const shouldNotify = eventType !== "file_moved" && eventType !== "folder_moved";
 
-        if (!isActorMe && !isTechnicalEvent) {
+        if (!isActorMe && !isTechnicalEvent && shouldNotify) {
           const newNotification: NotificationItem = {
             id: crypto.randomUUID(),
             event: eventType,
