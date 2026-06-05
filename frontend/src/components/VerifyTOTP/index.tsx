@@ -152,7 +152,16 @@ export function VerifyTOTP({
                             placeholder="ABC-123-DEF"
                             value={code}
                             onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleVerify(); }}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key === "Enter" &&
+                                    !loading &&
+                                    ((method === "totp" && code.length === 6) ||
+                                        (method === "recovery" && !!code))
+                                ) {
+                                    handleVerify();
+                                }
+                            }}
                             disabled={loading}
                             className={styles.totp_verify__input}
                             autoFocus
