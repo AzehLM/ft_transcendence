@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"log"
+	"strings"
 )
 
 func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
@@ -122,6 +123,11 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 	}
 
 	if err := repo.CreateNewOrgaMember(&orgaMember); err != nil {
+		if strings.Contains(err.Error(), "unique_org_owner") {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "This organization already has an owner. Cannot assign a second one.",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create member",
 		})
@@ -249,6 +255,11 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 
 	updated, err := repo.UpdateMemberRole(orgID, userID, body.Role)
 	if err != nil {
+		if strings.Contains(err.Error(), "unique_org_owner") {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "This organization already has an owner. Cannot assign a second one.",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update member role"})
 	}
 	if !updated {
