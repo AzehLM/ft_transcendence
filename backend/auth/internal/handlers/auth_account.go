@@ -116,7 +116,8 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 						// get the other admins
 						errQueryAdmins := tx.Table("org_members").
 							Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
-							Select("user_id").
+							Select("user_id, joined_at").
+    						Order("joined_at ASC").
 							Find(&otherAdmins).Error
 	
 						if errQueryAdmins == nil && len(otherAdmins) > 0 {
