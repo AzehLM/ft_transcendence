@@ -795,7 +795,7 @@ func (s *storageService) FinalizeMultipartUpload(ctx context.Context, userID uui
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFileUploaded(ctx, file)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file)
 	return file.ID, nil
 }
 
