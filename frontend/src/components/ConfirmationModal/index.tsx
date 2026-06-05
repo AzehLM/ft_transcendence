@@ -195,6 +195,7 @@ export function ConfirmationModal({
                     onChange={(e) => onInputChange?.(e.target.value)}
                     className={styles.modal__input}
                     disabled={isLoading}
+                    autoFocus
                 />
                 )}
 

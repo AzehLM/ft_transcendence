@@ -120,9 +120,11 @@ export function VerifyTOTP({
                                 const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                                 setCode(value);
                             }}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleVerify(); }}
                             maxLength={6}
                             className={`${styles.totp_verify__input} ${styles.totp_verify__input_code}`}
                             disabled={loading}
+                            autoFocus
                         />
                         <p className={styles.totp_verify__hint}>
                             This code changes every 30 seconds
@@ -141,8 +143,10 @@ export function VerifyTOTP({
                             placeholder="ABC-123-DEF"
                             value={code}
                             onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleVerify(); }}
                             disabled={loading}
                             className={styles.totp_verify__input}
+                            autoFocus
                         />
                         <p className={styles.totp_verify__hint}>
                             Each code can only be used once
