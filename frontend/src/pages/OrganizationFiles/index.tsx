@@ -80,6 +80,18 @@ export default function OrgFilesPage() {
             }
         };
 
+        const handleOrgaDeleted = (data: any) => {
+            if (data && data.org_id === id) {
+                navigate("/organizations");
+            }
+        };
+
+        const handleRemoved = (data: any) => {
+            if (data && data.org_id === id) {
+                navigate("/organizations");
+            }
+        };
+
         registerListener("file_uploaded", handleFilesChange);
         registerListener("file_deleted", handleFilesChange);
         registerListener("file_moved", handleFilesChange);
@@ -89,6 +101,8 @@ export default function OrgFilesPage() {
         registerListener("folder_moved", handleFilesChange);
         registerListener("ORGA_RENAMED", handleOrgaRenamed);
         registerListener("ROLE_UPDATED", handleRoleUpdated);
+        registerListener("ORGA_DELETED", handleOrgaDeleted);
+        registerListener("REMOVED_FROM_ORGA", handleRemoved);
 
         return () => {
             unregisterListener("file_uploaded", handleFilesChange);
@@ -100,6 +114,9 @@ export default function OrgFilesPage() {
             unregisterListener("folder_moved", handleFilesChange);
             unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
             unregisterListener("ROLE_UPDATED", handleRoleUpdated);
+            unregisterListener("ORGA_DELETED", handleOrgaDeleted);
+            unregisterListener("REMOVED_FROM_ORGA", handleRemoved)
+
         };
     }, [registerListener, unregisterListener, loadFiles, userID]);
 

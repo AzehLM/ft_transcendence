@@ -48,7 +48,7 @@ CREATE TABLE organizations (
 CREATE TABLE org_members (
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'member')),
+    role VARCHAR(20) NOT NULL CHECK (role IN ('owner', 'admin', 'member')),
     description VARCHAR(250),
     enc_org_priv_key BYTEA NOT NULL,
     enc_aes_key     BYTEA NOT NULL,
@@ -95,3 +95,4 @@ CREATE TABLE user_avatars (
 CREATE INDEX idx_folders_parent_id ON folders(parent_id);
 CREATE INDEX idx_files_folder_id ON files(folder_id);
 CREATE INDEX idx_credentials_user_id ON credentials(user_id);
+CREATE UNIQUE INDEX unique_org_owner ON org_members (org_id) WHERE role = 'owner';

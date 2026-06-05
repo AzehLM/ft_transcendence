@@ -68,7 +68,7 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
   return (
     <div className={styles.container}>
       <p className={styles.label}>{label}</p>
-      { ((isOrgaName && role === "admin") || isOrgaDesc || isFirstName || isFamilyName) && (<div className={styles.row}>
+      { ((isOrgaName && (role === "admin" || role === "owner")) || isOrgaDesc || isFirstName || isFamilyName) && (<div className={styles.row}>
         {editing ? (
           <>
             <input
@@ -136,7 +136,7 @@ export function EditableField({ label, value, role, isOrgaName = false, isOrgaDe
           </div>
         )}
       </div>)}
-        { (role !== "admin" && isOrgaName) && (<div className={styles.row}>
+        { (role !== "admin" && role !== "owner" && isOrgaName) && (<div className={styles.row}>
             <p className={styles.value}>{value}</p>
       </div>)}
       {error && <p className={styles.error}>{error}</p>}

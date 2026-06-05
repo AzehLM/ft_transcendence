@@ -101,7 +101,7 @@ func (c *DBChecker) CanWrite(userID uuid.UUID, ownerUserID uuid.UUID, orgID *uui
 		return err
 	}
 
-	if role.Role == "admin" {
+	if (role.Role == "admin" || role.Role == "owner") {
 		return nil
 	}
 
