@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/auth/internal/models"
+	"context"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -270,12 +271,12 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
         orgIDStr := orgUUID.String()
         orgName := orgNamesMap[orgIDStr]
 
-        if err := h.Publisher.PublishOrgaDeleted(c.Context(), orgIDStr, orgName); err != nil {
+        if err := h.Publisher.PublishOrgaDeleted(context.Background(), orgIDStr, orgName); err != nil {
             log.Printf("[WARN] Failed to publish ORGA_DELETED via WS for org %s: %v", orgIDStr, err)
         }
     }
 
-	if err := h.Publisher.PublishUserDeleted(c.Context(), userID, transfers, filesToCleanup); err != nil {
+	if err := h.Publisher.PublishUserDeleted(context.Background(), userID, transfers, filesToCleanup); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 	}
 

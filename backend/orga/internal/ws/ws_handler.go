@@ -178,7 +178,7 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 				if eventType == "" {
 					eventType, _ = raw["type"].(string)
 				}
-				if eventType == "REMOVED_FROM_ORGA" || eventType == "ADDED_TO_NEW_ORGA" {
+				if eventType == "REMOVED_FROM_ORGA" || eventType == "ADDED_TO_NEW_ORGA" || eventType == "ORGA_DELETED" {
 					payloadBytes := h.enrichEventMessage([]byte(msg.Payload), orgNames)
 					_ = c.WriteMessage(websocket.TextMessage, payloadBytes)
 					return //connection is closed via defer
