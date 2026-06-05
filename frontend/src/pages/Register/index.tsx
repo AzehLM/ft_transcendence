@@ -91,7 +91,7 @@ export default function RegisterPage() {
                     <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
                         <img src="/app-icon.png" alt="" aria-hidden="true" width={44} height={44} />
                         <span className={styles.logo_title}>
-                            ostrom
+                            Ostrom
                         </span>
                     </Link>
                     <h1 className={styles.page_title}>
