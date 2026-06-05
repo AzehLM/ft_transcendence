@@ -95,3 +95,4 @@ CREATE TABLE user_avatars (
 CREATE INDEX idx_folders_parent_id ON folders(parent_id);
 CREATE INDEX idx_files_folder_id ON files(folder_id);
 CREATE INDEX idx_credentials_user_id ON credentials(user_id);
+CREATE UNIQUE INDEX unique_org_owner ON org_members (org_id) WHERE role = 'owner';
