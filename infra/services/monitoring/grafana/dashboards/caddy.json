@@ -803,7 +803,7 @@
         "x": 0,
         "y": 9,
         "w": 12,
-        "h": 8
+        "h": 10
       },
       "options": {
         "legend": {
@@ -880,7 +880,7 @@
         "x": 12,
         "y": 9,
         "w": 12,
-        "h": 8
+        "h": 10
       },
       "options": {
         "legend": {
@@ -910,10 +910,6 @@
             "gradientMode": "opacity",
             "showPoints": "never",
             "spanNulls": false,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            },
             "axisBorderShow": false
           },
           "mappings": [],
@@ -1006,7 +1002,7 @@
         "x": 0,
         "y": 18,
         "w": 12,
-        "h": 7
+        "h": 9
       },
       "options": {
         "legend": {
@@ -1107,7 +1103,7 @@
         "x": 12,
         "y": 18,
         "w": 12,
-        "h": 7
+        "h": 9
       },
       "options": {
         "legend": {
@@ -1221,7 +1217,7 @@
         "x": 0,
         "y": 26,
         "w": 12,
-        "h": 8
+        "h": 10
       },
       "options": {
         "legend": {
@@ -1322,7 +1318,7 @@
         "x": 12,
         "y": 26,
         "w": 12,
-        "h": 8
+        "h": 10
       },
       "options": {
         "calculate": false,
@@ -1582,7 +1578,7 @@
         "x": 0,
         "y": 42,
         "w": 12,
-        "h": 7
+        "h": 10
       },
       "options": {
         "legend": {
@@ -1659,7 +1655,7 @@
         "x": 12,
         "y": 42,
         "w": 12,
-        "h": 7
+        "h": 10
       },
       "options": {
         "legend": {
@@ -1720,83 +1716,6 @@
           "instant": false,
           "range": true,
           "legendFormat": "{{handler}} {{code}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 33,
-      "type": "timeseries",
-      "title": "Requests In Flight by Handler",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 49,
-        "w": 24,
-        "h": 6
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "last",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisBorderShow": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "pluginVersion": "12.0.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "sum by(handler) (caddy_http_requests_in_flight)",
-          "instant": false,
-          "range": true,
-          "legendFormat": "{{handler}}",
           "refId": "A"
         }
       ]
