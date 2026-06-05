@@ -42,7 +42,7 @@ $(ENV_FILE):
 
 $(CERT_PATH) $(KEY_PATH): $(HOSTNAME_FILE)
 	@openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
-		-subj "/C=FR/ST=France/L=Lyon/O=42Lyon/OU=DevOps/CN=$(DOMAIN_NAME)" \
+		-subj "/C=FR/ST=France/L=Lyon/O=42Lyon/OU=Ostrom/CN=$(DOMAIN_NAME)" \
 		-addext "subjectAltName=DNS:$(DOMAIN_NAME),DNS:localhost,IP:127.0.0.1" \
 		-keyout $(KEY_PATH) -out $(CERT_PATH)
 
@@ -160,7 +160,7 @@ clean: down
 
 .PHONY: fclean
 fclean: clean
-#	@$(COMPOSE_CMD) down --volumes --remove-orphans
+	@$(COMPOSE_CMD) down --volumes --remove-orphans
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 	@rm -rf ${HOME}/backups
@@ -172,13 +172,14 @@ db-reset:
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
-		-c "TRUNCATE users, organizations, org_members, files, folders CASCADE;" >/dev/null
+		-c "TRUNCATE users, organizations, user_avatars, org_members, files, folders CASCADE;" >/dev/null
 	@echo "[db-reset] Done. Current counts:"
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
 		-c "SELECT 'users' AS table, COUNT(*) FROM users \
 			UNION ALL SELECT 'organizations', COUNT(*) FROM organizations \
+			UNION ALL SELECT 'user_avatars', COUNT(*) FROM user_avatars \
 			UNION ALL SELECT 'org_members', COUNT(*) FROM org_members \
 			UNION ALL SELECT 'folders', COUNT(*) FROM folders \
 			UNION ALL SELECT 'files', COUNT(*) FROM files;"
