@@ -196,7 +196,7 @@ func (s *storageService) FinalizeUpload(userID uuid.UUID, objectID uuid.UUID, na
 	}
 
 	// _ because we ignore the return value of this call (fire-and-forget event)
-	_ = s.publisher.PublishFileUploaded(context.Background(), file)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file, userID)
 
 	return file.ID, nil
 }
@@ -266,7 +266,7 @@ func (s *storageService) DeleteFile(ctx context.Context, userID uuid.UUID, fileI
 		return err
 	}
 
-	_ = s.publisher.PublishFileDeleted(context.Background(), file)
+	_ = s.publisher.PublishFileDeleted(context.Background(), file, userID)
 
 	return nil
 }
@@ -306,7 +306,7 @@ func (s *storageService) MoveFile(userID uuid.UUID, fileID uuid.UUID, folderID *
 		return ErrNotFound
 	}
 
-	_ = s.publisher.PublishFileMoved(context.Background(), file, folderID)
+	_ = s.publisher.PublishFileMoved(context.Background(), file, folderID, userID)
 
 	return nil
 }
@@ -360,7 +360,7 @@ func (s *storageService) CreateFolder(userID uuid.UUID, name string, parentID *u
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFolderCreated(context.Background(), &folder)
+	_ = s.publisher.PublishFolderCreated(context.Background(), &folder, userID)
 	return folder.ID, nil
 }
 
@@ -394,7 +394,7 @@ func (s *storageService) DeleteFolder(userID uuid.UUID, folderID uuid.UUID) erro
 		return err
 	}
 
-	_ = s.publisher.PublishFolderDeleted(context.Background(), folder)
+	_ = s.publisher.PublishFolderDeleted(context.Background(), folder, userID)
 	return nil
 }
 
@@ -483,12 +483,12 @@ func (s *storageService) UpdateFolder(userID uuid.UUID, folderID uuid.UUID, newN
 	}
 
 	if newName != nil && *newName != oldName {
-		_ = s.publisher.PublishFolderRenamed(context.Background(), folder)
+		_ = s.publisher.PublishFolderRenamed(context.Background(), folder, userID, oldName)
 	}
 
 	if newParentID != nil {
 		if !uuidPtrEqual(oldParentID, *newParentID) {
-			_ = s.publisher.PublishFolderMoved(context.Background(), folder, oldParentID, *newParentID)
+			_ = s.publisher.PublishFolderMoved(context.Background(), folder, oldParentID, *newParentID, userID)
 		}
 	}
 
@@ -795,7 +795,7 @@ func (s *storageService) FinalizeMultipartUpload(ctx context.Context, userID uui
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFileUploaded(context.Background(), file)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file, userID)
 	return file.ID, nil
 }
 

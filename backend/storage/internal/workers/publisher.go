@@ -40,7 +40,7 @@ func (p *EventPublisher) publish(ctx context.Context, ownerID uuid.UUID, orgID *
 	return nil
 }
 
-func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.File) error {
+func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.File, actorID uuid.UUID) error {
 
 	payload := FileUploadedPayload{
 		FileID:		file.ID,
@@ -49,6 +49,7 @@ func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.Fi
 		OrgID:		file.OrgID,
 		Name:		file.Name,
 		FileSize:	file.FileSize,
+		ActorID:    actorID,
 	}
 
 	event := WSEvent{
@@ -60,13 +61,14 @@ func (p *EventPublisher) PublishFileUploaded(ctx context.Context, file *files.Fi
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.File) error {
+func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.File, actorID uuid.UUID) error {
 
 	payload := FileDeletedPayload{
 		FileID:		file.ID,
 		FolderID:	file.FolderID,
 		OwnerID:	file.OwnerUserID,
 		OrgID:		file.OrgID,
+		ActorID:    actorID,
 	}
 
 	event := WSEvent{
@@ -80,7 +82,7 @@ func (p *EventPublisher) PublishFileDeleted(ctx context.Context, file *files.Fil
 
 
 // expects file.FolderID to still hold the OldFolderID at call time
-func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File, newFolderID *uuid.UUID) error {
+func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File, newFolderID *uuid.UUID, actorID uuid.UUID) error {
 
 	payload := FileMovedPayload{
 		FileID:			file.ID,
@@ -88,6 +90,7 @@ func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File,
 		OrgID:			file.OrgID,
 		OldFolderID:	file.FolderID,
 		NewFolderID:	newFolderID,
+		ActorID:    	actorID,
 	}
 
 	event := WSEvent{
@@ -99,7 +102,7 @@ func (p *EventPublisher) PublishFileMoved(ctx context.Context, file *files.File,
 	return p.publish(ctx, file.OwnerUserID, file.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files.Folder) error {
+func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files.Folder, actorID uuid.UUID) error {
 
 	payload := FolderCreatedPayload{
 		FolderID:	folder.ID,
@@ -107,6 +110,7 @@ func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files
 		OwnerID:	folder.OwnerUserID,
 		OrgID:		folder.OrgID,
 		Name:		folder.Name,
+		ActorID:    actorID,
 	}
 
 	event := WSEvent{
@@ -118,13 +122,15 @@ func (p *EventPublisher) PublishFolderCreated(ctx context.Context, folder *files
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files.Folder) error {
+func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files.Folder, actorID uuid.UUID) error {
 
 	payload := FolderDeletedPayload{
 		FolderID:	folder.ID,
 		ParentID:	folder.ParentID,
 		OwnerID:	folder.OwnerUserID,
 		OrgID:		folder.OrgID,
+		ActorID:    actorID,
+		Name:       folder.Name,
 	}
 
 	event := WSEvent{
@@ -136,7 +142,7 @@ func (p *EventPublisher) PublishFolderDeleted(ctx context.Context, folder *files
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.Folder, oldParentID *uuid.UUID, newParentID *uuid.UUID) error {
+func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.Folder, oldParentID *uuid.UUID, newParentID *uuid.UUID, actorID uuid.UUID) error {
 
 	payload := FolderMovedPayload{
 		FolderID:		folder.ID,
@@ -144,6 +150,7 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 		OrgID:			folder.OrgID,
 		OldParentID:	oldParentID,
 		NewParentID:	newParentID,
+		ActorID:    	actorID,
 	}
 
 	event := WSEvent{
@@ -155,14 +162,16 @@ func (p *EventPublisher) PublishFolderMoved(ctx context.Context, folder *files.F
 	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
 }
 
-func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder) error {
+func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files.Folder, actorID uuid.UUID, oldName string) error {
 
 	payload := FolderRenamedPayload{
 		FolderID:		folder.ID,
 		ParentID:		folder.ParentID,
 		OwnerID:		folder.OwnerUserID,
+		ActorID:        actorID,
 		OrgID:			folder.OrgID,
 		NewName:		folder.Name,
+		OldName:        oldName,
 	}
 
 	event := WSEvent{
@@ -171,7 +180,7 @@ func (p *EventPublisher) PublishFolderRenamed(ctx context.Context, folder *files
 		Data:		payload,
 	}
 
-	return p.publish(ctx, folder.OwnerUserID, folder.OrgID, event)
+	return p.publish(ctx, actorID, folder.OrgID, event)
 }
 
 func (p *EventPublisher) PublishFileOrphaned(ctx context.Context, fileID uuid.UUID, minioObjectKey uuid.UUID, ownerID uuid.UUID) error {

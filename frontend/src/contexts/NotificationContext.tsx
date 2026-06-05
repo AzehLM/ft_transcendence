@@ -102,7 +102,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         const payload = JSON.parse(event.data);
 
         const eventType = payload.event || payload.type || "UNKNOWN";
-        const actorId = payload.data?.owner_id || payload.data?.user_id;
+        const actorId = payload.data?.actor_id || payload.data?.user_id || payload.data?.owner_id;
         const isActorMe = currentUserIdRef.current && actorId && currentUserIdRef.current.toLowerCase() === actorId.toLowerCase();
 
         const isTechnicalEvent = eventType === "USER_ONLINE" || eventType === "USER_OFFLINE" || eventType === "USER_PROFILE_UPDATED";
