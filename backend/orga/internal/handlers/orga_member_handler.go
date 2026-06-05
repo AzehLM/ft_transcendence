@@ -329,11 +329,9 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 	}
 
 	if member.Role == "owner" {
-		if repo.CountAdmin(orgID) <= 1 {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "you are the owner, you can't leave the organization",
-			})
-		}
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "you are the owner, you can't leave the organization",
+		})
 	}
 
 	if err := repo.TransferFilesToOwner(orgID, userID); err != nil {
