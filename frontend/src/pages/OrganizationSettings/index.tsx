@@ -231,7 +231,7 @@ export default function OrgSettingsPage() {
 
       setTransferError(null);
       setShowTransferConfirm(false);
-      addMessage(`You successfully passed thw ownership`, "success");
+      addMessage(`You successfully passed the ownership`, "success");
       setSelectedTargetMember("");
       setMyRole("admin"); 
       window.dispatchEvent(new CustomEvent("org-list-changed"));

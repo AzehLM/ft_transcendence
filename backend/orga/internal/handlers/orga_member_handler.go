@@ -595,6 +595,21 @@ func (h *OrgaHandler) TransferOwnership(c fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "target user is not a member of this organization"})
 	}
 
+	var ownedCount int64
+    errCount := h.DB.Table("org_members").
+        Where("user_id = ? AND role = ?", newOwnerID, "owner").
+        Count(&ownedCount).Error
+
+    if errCount != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to verify user organization limit"})
+    }
+
+    if ownedCount >= 3 { // to change
+        return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+            "error": "The target user already owns the maximum allowed number of organizations (10).",
+        })
+    }
+
 	if err := repo.TransferOwnership(orgID, currentOwnerID, newOwnerID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to transfer ownership"})
 	}
