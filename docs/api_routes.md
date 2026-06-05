@@ -470,6 +470,27 @@ Response (200) :
 ```
 ---
 
+### `POST /orgs/{org_id}/transfer-ownership`
+
+`owner` only. Permanently transfer the organization's ownership to another existing member. The current owner is automatically demoted to `admin`.
+> **Database Integrity :** A transactional index constraint (`unique_org_owner`) prevents an organization from having more than one owner simultaneously.
+
+Body :
+```json
+{
+  "new_owner_id": "7fa85f64-5717-4562-b3fc-2c963f66afa2"
+}
+```
+
+Response (200) :
+
+```json
+{
+  "message": "ownership transferred successfully"
+}
+```
+---
+
 ### `GET /orgs/{org_id}/public-key`
 
 Retrieve the public key of an organization.
