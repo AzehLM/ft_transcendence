@@ -83,7 +83,7 @@ export function MainLayout({ sidebar }: { sidebar: React.ReactNode }) {
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.03)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               >
-                <Bell size={20} />
+                <Bell size={24} />
                 {unreadCount > 0 && (
                   <span style={{
                     position: "absolute",

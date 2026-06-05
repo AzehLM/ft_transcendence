@@ -22,7 +22,7 @@
 }
 
 .footerBrand {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 18px;
     font-weight: 700;
     color: #de7356;
@@ -30,15 +30,15 @@
 }
 
 .footerTagline {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 13px;
-    color: #6b7280;
+    color: var(--color-text-neutral);
     line-height: 1.5;
     margin: 0;
 }
 
 .footerColumnTitle {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 13px;
     font-weight: 600;
     color: #de7356;
@@ -53,9 +53,9 @@
 }
 
 .footerLink {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 13px;
-    color: #6b7280;
+    color: var(--color-text-neutral);
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -72,7 +72,7 @@
 }
 
 .footerCopyright {
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 13px;
     color: #9ca3af;
     text-align: center;

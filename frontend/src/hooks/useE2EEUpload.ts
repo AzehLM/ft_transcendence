@@ -53,6 +53,12 @@ async function getOrgPublicKey(orgId: string): Promise<CryptoKey> {
 /**
  * Derive a chunk IV from the base IV and a 1-indexed chunk number (up to 100).
  * Must match the decryption logic in useE2EEDownload.ts.
+ *
+ * NOTE: The addition of chunkNumber only mutates the lower 4 bytes (indices 8-11)
+ * of the 12-byte IV. Any overflow is handled via 32-bit silent wrapping, without
+ * carry propagation into the upper 8 bytes. This behavior is intentional and
+ * strictly identical on both the encryption (upload) and decryption (download/preview)
+ * sides, guaranteeing correct decryption even across 32-bit boundaries.
  */
 function deriveChunkIv(baseIv: Uint8Array, chunkNumber: number): Uint8Array<ArrayBuffer> {
     const chunkIv = new Uint8Array(12);
@@ -121,7 +127,6 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             encryptedChunks.push(new Uint8Array(encrypted));
         }
 
-        // Concatenate all encrypted chunks into one body for the single PUT
         const body = new Blob(encryptedChunks as BlobPart[], { type: "application/octet-stream" });
 
         updateUpload(id, { status: UPLOAD_MESSAGES.UPLOADING });

@@ -1,7 +1,7 @@
 import { fileTypeFromBuffer } from 'file-type';
-import { UPLOAD_CONFIG } from '../config/uploadConfig';
 import MIME_TYPES_RAW from '../config/mime.types?raw';
-
+import { fileSchema } from '../schemas/file.schema';
+import { UPLOAD_CONFIG } from '../config/uploadConfig';
 
 const parseMimeTypes = (raw: string): Record<string, string[]> => {
     const types: Record<string, string[]> = {};
@@ -28,11 +28,13 @@ export interface ValidationResult {
 }
 
 
-export const validateFile = async (file: File): Promise<ValidationResult> => {
-    if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE) {
+export async function validateFile(file: File): Promise<ValidationResult>  {
+
+    const result = fileSchema.safeParse({ file });
+    if (!result.success) {
         return {
             isValid: false,
-            error:`ERROR_VALIDATION_SIZE`
+            error: result.error.issues[0].message
         };
     }
 
@@ -40,33 +42,39 @@ export const validateFile = async (file: File): Promise<ValidationResult> => {
         const buffer = await file.slice(0, 4100).arrayBuffer();
         const typeInfo = await fileTypeFromBuffer(new Uint8Array(buffer));
 
+        const extension = file.name.split('.').pop()?.toLowerCase() || '';
         let detectedMime = typeInfo?.mime || file.type;
 
-        if (!typeInfo && file.name.endsWith('.txt')) {
-            detectedMime = 'text/plain';
+        if (!typeInfo) {
+            if (['txt', 'md', 'go', 'css', 'tsx', 'ts', 'js', 'html', 'sh', 'yaml', 'yml', 'cpp', 'c', 'h'].includes(extension)) {
+                detectedMime = 'text/plain';
+            } else if (extension === 'rtf') {
+                detectedMime = 'application/rtf';
+            } else if (extension === 'json') {
+                detectedMime = 'application/json';
+            }
         }
 
         if (!detectedMime || !Object.keys(ALLOWED_MIME_TYPES).includes(detectedMime)) {
             return {
                 isValid: false,
-                error: `Type de fichier non autorisé ou corrompu : ${detectedMime || 'Inconnu'}`
+                error: `Unauthorized or corrupted file type: ${detectedMime || 'Unknown'}`
             };
         }
 
-        const extension = file.name.split('.').pop()?.toLowerCase();
         const validExtensions = ALLOWED_MIME_TYPES[detectedMime] || [];
 
         if (extension && !validExtensions.includes(extension)) {
              return {
                 isValid: false,
-                error: `L'extension .${extension} ne correspond pas au contenu du fichier (${detectedMime}).`
+                error: `The .${extension} extension does not match the file content (${detectedMime}).`
             };
         }
 
     } catch (err) {
         return {
             isValid: false,
-            error: "Erreur lors de l'analyse du contenu du fichier."
+            error: "Error while analyzing the file content."
         };
     }
 
@@ -81,35 +89,45 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+export const getDecryptedSize = (encryptedSize: number): number => {
+    if (encryptedSize <= 0) return 0;
+    const chunkSize = UPLOAD_CONFIG.CHUNK_SIZE;
+    const cipherChunkSize = chunkSize + 16;
+    const numChunks = Math.ceil(encryptedSize / cipherChunkSize);
+    return encryptedSize - numChunks * 16;
+};
+
+
 export const getFileTypeLabel = (mimeType: string): string => {
     const typeMap: Record<string, string> = {
-        'image/jpeg': 'Image JPEG',
-        'image/png': 'Image PNG',
-        'image/gif': 'Image GIF',
-        'image/webp': 'Image WebP',
-        'image/bmp': 'Image BMP',
-        'image/svg+xml': 'Image SVG',
-        'video/mp4': 'Vidéo MP4',
-        'video/webm': 'Vidéo WebM',
-        'video/mpeg': 'Vidéo MPEG',
-        'video/quicktime': 'Vidéo QuickTime',
-        'video/x-msvideo': 'Vidéo AVI',
-        'application/pdf': 'Document PDF',
-        'text/plain': 'Fichier texte',
-        'text/csv': 'Fichier CSV',
-        'application/msword': 'Document Word',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Document Word',
-        'application/vnd.ms-excel': 'Classeur Excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Classeur Excel',
-        'application/vnd.ms-powerpoint': 'Présentation PowerPoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'Présentation PowerPoint',
-        'application/zip': 'Archive ZIP',
-        'application/x-rar-compressed': 'Archive RAR',
-        'application/x-7z-compressed': 'Archive 7z',
-        'application/json': 'Fichier JSON',
+        'image/jpeg': ' JPEG Image',
+        'image/png': 'PNG Image',
+        'image/gif': 'GIF Image',
+        'image/webp': 'WebP Image',
+        'image/bmp': 'BMP Image',
+        'image/svg+xml': 'SVG Image',
+        'video/mp4': 'MP4 Video',
+        'video/webm': 'WebM Video',
+        'video/mpeg': 'MPEG Video',
+        'video/quicktime': 'QuickTime Video',
+        'video/x-msvideo': 'AVI Video',
+        'application/pdf': 'PDF Document',
+        'application/rtf': 'RTF Document',
+        'text/plain': 'Text File',
+        'text/csv': 'CSV File',
+        'application/msword': 'Word Document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+        'application/vnd.ms-excel': 'Excel Folder',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Folder',
+        'application/vnd.ms-powerpoint': 'PowerPoint Presentation',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint Presentation',
+        'application/zip': 'ZIP Archive',
+        'application/x-rar-compressed': 'RAR Archive',
+        'application/x-7z-compressed': '7z Archive',
+        'application/json': 'JSON File',
     };
 
-    return typeMap[mimeType] || mimeType || 'Fichier';
+    return typeMap[mimeType] || mimeType || 'File';
 };
 
 export const getAcceptAttribute = (): string => {

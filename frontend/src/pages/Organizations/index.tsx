@@ -5,6 +5,8 @@ import { UserPlus, UserMinus, Plus, Building2 } from "lucide-react";
 import { generateOrganization, addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { useNavigate } from "react-router-dom";
+import { organizationSchema } from "../../schemas/organization.schema";
+import { z } from "zod";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
@@ -25,8 +27,8 @@ export default function OrganizationsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
-  const { keyMissing, setKeyMissing, password, 
-    setPassword, isResetting, keyModalError, setKeyModalError, 
+  const { keyMissing, setKeyMissing, password,
+    setPassword, isResetting, keyModalError, setKeyModalError,
     checkKeys, handleResetKeys } = useKeyCheck();
   const [mainError, setMainError] = useState<string | null>(null);
   const { messages, addMessage, removeMessage } = useMessages();
@@ -79,19 +81,19 @@ export default function OrganizationsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [orgName, setOrgName] = useState("");
   const handleCreateOrg = async () => {
-    if (!orgName.trim()) return;
-    if (orgName.length > 100) {
-      setModalError(`The organization name cannot exceed 100 characters`)
-      return;
-    }
     try {
+      const result = organizationSchema.safeParse({ name: orgName });
+      if (!result.success) {
+        setModalError(result.error.issues[0].message);
+        return;
+      }
 
       const hasKeys = await checkKeys();
       if (!hasKeys) {
         return
       }
 
-      const data = await generateOrganization(orgName);
+      const data = await generateOrganization(result.data.name);
 
       const response = await fetchWithRefresh("/api/orgs", {
         method: "POST",
@@ -112,6 +114,7 @@ export default function OrganizationsPage() {
       setOrgs(prev => [...prev, { ...newOrg, role: "admin" }]);
       setShowCreateModal(false);
       setOrgName("");
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
       reconnect();
     } catch (err) {
       console.error("Error:", err);
@@ -124,10 +127,17 @@ export default function OrganizationsPage() {
   // Add a member
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
+  const [addMemberError, setAddMemberError] = useState<string | null>(null);
 
   const handleAddMember = async () => {
+    const result = z.email().safeParse(memberEmail);
+    if (!result.success) {
+      setAddMemberError("Please enter a valid email");
+      return ;
+    }
+
     if (!memberEmail.trim() || !selectedOrg) return;
-    setModalError(null);
+    setAddMemberError(null);
 
     const hasKeys = await checkKeys();
     if (!hasKeys) {
@@ -136,7 +146,7 @@ export default function OrganizationsPage() {
 
     const { success, error } = await addMemberToOrg(selectedOrg.id, memberEmail);
     if (!success) {
-      setModalError(error ?? "Failed to add member.");
+      setAddMemberError(error ?? "Failed to add member.");
       return;
     }
 
@@ -169,6 +179,7 @@ export default function OrganizationsPage() {
       setShowLeaveConfirm(false);
       setOrgs(prev => prev.filter(o => o.id !== selectedOrg.id));
       setSelectedOrg(null);
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
 
     } catch (err) {
       console.error("Network error:", err);
@@ -217,11 +228,14 @@ export default function OrganizationsPage() {
           isOpen={showAddMemberModal}
           fileName={memberEmail}
           onConfirm={handleAddMember}
-          onCancel={() => { setShowAddMemberModal(false); setModalError(null); }}
+          onCancel={() => { setShowAddMemberModal(false); setAddMemberError(null); }}
           isAddMember={true}
           inputValue={memberEmail}
-          onInputChange={setMemberEmail}
-          errorMessage={modalError ?? undefined}
+          onInputChange={(value) => {
+            setMemberEmail(value);
+            if (addMemberError) setAddMemberError(null);
+          }}
+          errorMessage={addMemberError ?? undefined}
         />
         <ConfirmationModal
           isOpen={keyMissing}

@@ -23,7 +23,6 @@ type StorageRepository interface {
 	ActivateFile(objectID uuid.UUID, name string, encryptedDEK []byte, iv []byte, orgID *uuid.UUID, ownerID uuid.UUID) error // POST /files/finalize
 	FindByID(fileID uuid.UUID) (*File, error)                                                                                // GET /download and DELETE
 	UpdateFileFolder(fileID uuid.UUID, folderID *uuid.UUID) (int64, error)                                                   // PATCH /files/{file_id}
-	// ref: https://github.com/AzehLM/ft_transcendence/blob/docs/general-documentation/docs/api_routes.md#files
 
 	FindFilesByUserID(userID uuid.UUID) ([]File, error) // used for user_deleted event handling
 	FindFilesByOrgID(orgID uuid.UUID) ([]File, error)   // used for org_deleted event handling
@@ -240,11 +239,6 @@ func (r *storageRepository) IsDescendant(folderID uuid.UUID, ancestorID uuid.UUI
 	// this create an ancestors temporary table used for the recursive.
 	// f is a shorcut for folder, a for ancestors
 
-	// things to test:
-	// root folder to different root folder -> false
-	// folder to its own id -> true
-	// child folder to direct parent -? true
-	// deep child folder to high ancestor (several folders aboves) -> true
 	err := r.db.Raw(`
 		WITH RECURSIVE ancestors AS (
 			SELECT id, parent_id FROM folders WHERE id = ?

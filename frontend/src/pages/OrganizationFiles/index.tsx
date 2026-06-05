@@ -7,7 +7,7 @@ import { useE2EEUpload } from "../../hooks/useE2EEUpload";
 import { useE2EEDownloadOrg } from "../../hooks/useE2EEDownloadOrg";
 import styles from "../Dashboard/Dashboard.module.css";
 import statusStyles from "../Organizations/Organizations.module.css"
-import { OrgLayout } from "./OrgLayout";
+import { OrgLayout } from "../../components/OrgLayout";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { UploadStatus } from "../../components/UploadStatus.tsx";
 import { FolderCard } from "../../components/FolderCard";
@@ -168,7 +168,7 @@ export default function OrgFilesPage() {
             <div className={styles.headerRow}>
                 <div className={styles.titleGroup}>
                     <h1>
-                        Organization space
+                        Organization Space
                     </h1>
                     <h2 className={styles.subtitle}>
                         All files and folders

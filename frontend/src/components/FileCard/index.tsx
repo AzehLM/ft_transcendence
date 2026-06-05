@@ -9,7 +9,8 @@ import {
   Download,
   Move,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  Eye
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import styles from "./FileCard.module.css";
@@ -17,6 +18,8 @@ import { ConfirmationModal } from "../ConfirmationModal";
 import { MoveModal } from "../MoveModal";
 import { useDecryptFilename } from "../../hooks/useDecryptFilename";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
+import { FilePreviewModal } from "../FilePreviewModal";
+import { formatFileSize, getDecryptedSize } from "../../services/fileValidation.service";
 
 interface FileCardProps {
   id: string;
@@ -71,7 +74,7 @@ const getFileIconAndColor = (fileName: string) => {
             bg: "rgba(245, 158, 11, 0.1)"
         };
     }
-    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'py', 'sh', 'yaml', 'yml'].includes(ext)) {
+    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'sh', 'yaml', 'yml'].includes(ext)) {
         return {
             Icon: FileCode,
             color: "#06b6d4",
@@ -96,6 +99,7 @@ const getFileIconAndColor = (fileName: string) => {
 export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_id, onDelete, onDownload, onMove }: FileCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const { decryptedName, loading } = useDecryptFilename(name, orgId);
   const displayName = loading ? "..." : (decryptedName || name);
 
@@ -111,11 +115,13 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
     onDownload?.(id)
   }
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  };
+  const handlePreviewClick = async () => {
+    const hasKeys = await checkKeys();
+    if (!hasKeys) {
+      return;
+    }
+    setShowPreviewModal(true);
+  }
 
   const menuRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -157,8 +163,11 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
           <span className={styles.name}>{displayName}</span>
         </div>
         <div className={styles.right}>
-          <span className={styles.size}>{formatSize(fileSize)}</span>
+          <span className={styles.size}>{formatFileSize(getDecryptedSize(fileSize))}</span>
           <div className={styles.actions}>
+            <button className={styles.actionBtn} onClick={() => handlePreviewClick()} title="Preview">
+              <Eye size={16} />
+            </button>
             <button className={styles.actionBtn} onClick={() => handleDownloadClick()} title="Download">
               <Download size={16} />
             </button>
@@ -183,6 +192,9 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
             </button>
             {showMenu && (
               <div className={styles.dropdown}>
+                <button onClick={() => { handlePreviewClick(); setShowMenu(false); }}>
+                  <Eye size={14} /> Preview
+                </button>
                 <button onClick={() => { handleDownloadClick(); setShowMenu(false); }}>
                   <Download size={14} /> Download
                 </button>
@@ -199,7 +211,6 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
               </div>
             )}
           </div>
-
         </div>
       </div>
       <ConfirmationModal
@@ -231,6 +242,17 @@ export function FileCard({ id, name, fileSize, orgId, owner_user_id, role, user_
             setShowMoveModal(false);
           }}
           onCancel={() => setShowMoveModal(false)}
+        />
+      )}
+
+      {showPreviewModal && (
+        <FilePreviewModal
+          isOpen={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
+          fileId={id}
+          fileName={displayName}
+          fileSize={fileSize}
+          orgId={orgId}
         />
       )}
     </>

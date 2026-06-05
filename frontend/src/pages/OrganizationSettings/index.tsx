@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
-import { OrgLayout } from "./OrgLayout";
+import { OrgLayout } from "../../components/OrgLayout";
 import { StorageBar } from "../../components/StorageBar";
 import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
@@ -89,6 +89,7 @@ export default function OrgSettingsPage() {
           return;
       }
 
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
       navigate("/organizations");
     } catch (err) {
       setError("Network error, please try again.");
@@ -194,7 +195,6 @@ export default function OrgSettingsPage() {
                     label="Organization name"
                     value={orgName}
                     role={myRole}
-                    maxCharac={100}
                     onSave={handleRenameOrg}
                     isOrgaName={true}
                   />
@@ -202,14 +202,15 @@ export default function OrgSettingsPage() {
                     label="Organization description"
                     value={orgDesc}
                     role={myRole}
-                    maxCharac={250}
                     onSave={handleChangeDescription}
                     handleReset={handleResetDescription}
                     isOrgaDesc={true}
                   />
                   <div className={styles.leaveOrga}>
-                    <p className={styles.label}>Leave Organization</p>
-                    <p className={styles.labelDetail}>If you want to leave this organization, click here.</p>
+                    <div>
+                      <p className={styles.label}>Leave Organization</p>
+                      <p className={styles.labelDetail}> If you want to leave this organization, be aware that all the files you upload in this organization will remain. </p>
+                    </div>
                     <button
                       className={styles.leaveButton}
                       onClick={() => { setShowLeaveConfirm(true); setModalError(null); }}

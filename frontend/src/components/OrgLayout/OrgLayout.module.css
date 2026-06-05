@@ -16,16 +16,16 @@
 }
 
 .logo {
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
 }
 
 .org {
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     font-size: 14px;
     background: none;
     border: none;
     cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: var(--font-family-primary);
     font-size: 14px;
     font-weight: 400;
     padding: 2px 4px;
@@ -33,21 +33,21 @@
 }
 
 .org:hover {
-  background-color: rgba(213, 79, 42, 0.08);
+  background-color: var(--color-hover-brand-subtle);
 }
 
 
 .orgName {
-    color: #8c7b75;
+    color: var(--color-text-warm-muted);
     font-size: 14px;
     font-weight: 700;
     word-break: break-word;
 }
 
-.separator { color: #999; }
+.separator { color: var(--color-text-secondary); }
 
 .orgDesc {
-    color: #999;
+    color: var(--color-text-secondary);
     font-size: 14px;
     font-style: italic;
     word-break: break-word;

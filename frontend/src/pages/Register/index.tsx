@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { generateRegistrationData } from "../../services/crypto.service";
+import { generateRegistrationData, storePrivateKey, storePublicKey, base64ToUint8Array, unwrapPrivateKey } from "../../services/crypto.service";
 import { Lock, Mail, ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "../../styles/auth.module.css"
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/Input";
+import { registerSchema } from "../../schemas/auth.schema";
 import { TwoFAPrompt } from "../../components/TwoFAPrompt";
-import { SetupTOTP } from "../../components/SetupTOTP/SetupTOTP";
+import { SetupTOTP } from "../../components/SetupTOTP";
 
 
 export default function RegisterPage() {
@@ -22,40 +23,22 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");  // Réinitialise les erreurs précédentes
+        setError("");
 
-        if (!email || !password || !confirmPassword) {
-            setError("All fields are required!");
+        const result = registerSchema.safeParse({ email, password, confirmPassword });
+        if (!result.success) {
+            setError(result.error.issues[0].message);
             return;
         }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email!");
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setError("Passwords do not match!");
-            return;
-        }
-
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters!");
-            return;
-        }
-
 
         setIsLoading(true);
         try {
-            const registrationData = await generateRegistrationData(email, password);
+            const {masterKey: mk, registrationData} = await generateRegistrationData(result.data.email, result.data.password);
 
             const response = await fetch("/api/auth/register", {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(registrationData),
             });
 
@@ -75,11 +58,27 @@ export default function RegisterPage() {
             if (data.access_token) {
                 localStorage.setItem("token", data.access_token);
             }
+            const encryptedPrivateKey = base64ToUint8Array(registrationData.encrypted_private_key);
+            const iv = base64ToUint8Array(registrationData.iv);
+
+            const privateKey = await unwrapPrivateKey(encryptedPrivateKey, mk, iv);
+            await storePrivateKey(privateKey);
+
+            const publicKeyArray = base64ToUint8Array(registrationData.public_key);
+            const publicKey = await crypto.subtle.importKey(
+                "spki",
+                new Uint8Array(publicKeyArray),
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["encrypt"]
+            );
+            await storePublicKey(publicKey);
+
             setShowTwoFAPrompt(true);
 
         } catch (err: any) {
-            console.error("Erreur:", err);
             setError(err.message || "An error occurred during registration!");
+        } finally {
             setIsLoading(false);
         }
     };
@@ -92,7 +91,7 @@ export default function RegisterPage() {
                     <Link to="/" className={styles.logo_container} style={{ textDecoration: "none" }}>
                         <img src="/app-icon.png" alt="" aria-hidden="true" width={44} height={44} />
                         <span className={styles.logo_title}>
-                            ostrom
+                            Ostrom
                         </span>
                     </Link>
                     <h1 className={styles.page_title}>
@@ -205,10 +204,8 @@ export default function RegisterPage() {
                         setShowSetupTOTP(true);
                     }}
                     onSkip={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
                         setShowTwoFAPrompt(false);
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                 />
             )}
@@ -217,14 +214,10 @@ export default function RegisterPage() {
             {showSetupTOTP && (
                 <SetupTOTP
                     onSuccess={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                     onCancel={() => {
-                        // Clear the registration token and go to login
-                        localStorage.removeItem("token");
-                        navigate("/login");
+                        navigate("/dashboard");
                     }}
                 />
             )}

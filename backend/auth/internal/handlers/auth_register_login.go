@@ -114,9 +114,6 @@ func (h *AuthHandler) RegisterUser(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing parameters"})
 	}
 
-	// TODO:  Regex Email
-	// if !isValidEmail(req.Email) { return 400 ... }
-
 	serverHash, serverSaltHex, err := hashWithArgon2id(req.AuthHash)
 	if err != nil {
 		log.Printf("[ERROR] Register: Argon2id failure: %v\n", err)

@@ -86,7 +86,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 		}
 
 		for _, orgIDStr := range orgIDs {
-			// Get org nam
+			// Get org name
 			var orgName string
  			if err := tx.Table("organizations").Where("id = ?", orgIDStr).Select("name").Scan(&orgName).Error; err != nil {
  				return err

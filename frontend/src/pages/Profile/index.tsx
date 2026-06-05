@@ -169,17 +169,15 @@ export default function ProfilePage() {
                 <EditableField
                   label="First Name"
                   value={firstName}
-                  maxCharac={250}
                   onSave={handleChangeFirstName}
-                  isUserNames={true}
+                  isFirstName={true}
                   handleReset={handleResetFirstName}
                 ></EditableField>
                 <EditableField
                   label="Family Name"
                   value={familyName}
-                  maxCharac={250}
                   onSave={handleChangeFamilyName}
-                  isUserNames={true}
+                  isFamilyName={true}
                   handleReset={handleResetFamilyName}
                 ></EditableField>
                 <div className={fieldStyles.container}>

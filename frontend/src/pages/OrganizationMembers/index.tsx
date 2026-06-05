@@ -5,7 +5,8 @@ import { addMemberToOrg } from "../../services/organizations.service";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import styles from "./OrgMembers.module.css";
 import { UserMinus, Shield, UserPlus, User } from "lucide-react";
-import { OrgLayout } from "./OrgLayout";
+import { OrgLayout } from "../../components/OrgLayout";
+import { z } from "zod";
 import { useKeyCheck } from "../../hooks/useKeyCheck";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
@@ -51,7 +52,7 @@ export default function OrgMembersPage() {
 
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const avatarUrlsRef = useRef<Record<string, string>>({});
-  
+
   const [mainError, setMainError] = useState<string | null>(null);
   const [orgError, setOrgError] = useState<string | null>(null);
   const { messages, addMessage, removeMessage } = useMessages();
@@ -93,7 +94,9 @@ export default function OrgMembersPage() {
     fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
-          navigate("/404");
+            if (window.location.pathname.includes(`/orgs/${id}`)) {
+              navigate("/404");
+            }
           return null;
         }
         if (!res.ok) {
@@ -212,7 +215,11 @@ export default function OrgMembersPage() {
   }, [registerListener, unregisterListener, id, myUserId]);
 
   const handleAddMember = async () => {
-    if (!memberEmail.trim()) return;
+    const result = z.email().safeParse(memberEmail);
+    if (!result.success) {
+      setModalError("Please enter a valid email");
+      return ;
+    }
     setModalError(null);
 
     const hasKeys = await checkKeys();
@@ -234,9 +241,9 @@ export default function OrgMembersPage() {
       }
     } catch {}
 
+    addMessage(`${memberEmail} added to ${orgName}`, "success");
     setMemberEmail("");
     setShowAddMemberModal(false);
-    addMessage(`${memberEmail} added to ${orgName}`, "success");
   };
 
   const handleChangeRole = async () => {
@@ -261,9 +268,9 @@ export default function OrgMembersPage() {
       setMembers(prev => prev.map(m =>
         m.user_id === selectedMember.user_id ? { ...m, role: newRole } : m
       ));
+      addMessage(`${selectedMember.email} successfully changed role`, "success");
       setShowChangeRoleModal(false);
       setSelectedMember(null);
-      addMessage(`${selectedMember.email} successfully changed role`, "success");
     } catch {
       setModalError("Network error, please try again later.");
     }
@@ -271,6 +278,10 @@ export default function OrgMembersPage() {
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
+
+    const isRemovingMyself = memberToRemove.user_id === myUserId;
+    const removedEmail = memberToRemove.email;
+
     try {
       const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
   
@@ -284,10 +295,17 @@ export default function OrgMembersPage() {
           return;
       }
   
+      if (isRemovingMyself) {
+        setShowRemoveModal(false);
+        setMemberToRemove(null);
+        navigate("/organizations");
+        return;
+      }
+
       setMembers(prev => prev.filter(m => m.user_id !== memberToRemove.user_id));
+      addMessage(`${removedEmail} was removed from ${orgName}`, "success");
       setShowRemoveModal(false);
       setMemberToRemove(null);
-      addMessage(`${memberToRemove.email} was removed from ${orgName}`, "success");
     } catch {
       setModalError("Network error, please try again later.");
     }
