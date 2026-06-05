@@ -132,7 +132,7 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
             "error": "failed to verify organization limit",
         })
     }
-    if ownedCount >= 3 { // to change
+    if ownedCount >= 10 { 
         return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
             "error": "you have reached the maximum limit of 10 organizations",
         })

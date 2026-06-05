@@ -132,7 +132,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 								}
 	
 								// if less than 10 we transfer
-								if ownedCount < 3 { // to change
+								if ownedCount < 10 {
 									if err := tx.Table("org_members").
 										Where("org_id = ? AND user_id = ?", orgIDStr, userID).
 										Update("role", "member").Error; err != nil {
@@ -175,7 +175,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 										return err
 									}
 	
-									if ownedCount < 3 { // to change
+									if ownedCount < 10 {
 										if err := tx.Table("org_members").
                                             Where("org_id = ? AND user_id = ?", orgIDStr, userID).
                                             Update("role", "member").Error; err != nil {

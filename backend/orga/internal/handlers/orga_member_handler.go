@@ -604,7 +604,7 @@ func (h *OrgaHandler) TransferOwnership(c fiber.Ctx) error {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to verify user organization limit"})
     }
 
-    if ownedCount >= 3 { // to change
+    if ownedCount >= 10 {
         return c.Status(fiber.StatusConflict).JSON(fiber.Map{
             "error": "The target user already owns the maximum allowed number of organizations (10).",
         })
