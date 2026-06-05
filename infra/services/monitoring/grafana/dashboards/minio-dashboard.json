@@ -635,7 +635,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by(name) (rate(minio_api_requests_total{name!=\"PutBucket\"}[2m]))",
+          "expr": "sum by(name) (rate(minio_api_requests_total{name!~\"PutBucket|GetBucketLocation|HeadBucket\"}[2m]))",
           "legendFormat": "{{name}}",
           "refId": "A"
         },
