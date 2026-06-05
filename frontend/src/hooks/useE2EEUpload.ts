@@ -74,7 +74,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
     const activeCountRef = useRef<number>(0);
 
     const updateUpload = (id: string, updates: Partial<UploadTask>) => {
-        setUploads(prev => ({
+        setUploads((prev: Record<string, UploadTask>) => ({
             ...prev,
             [id]: { ...prev[id], ...updates }
         }));
@@ -312,7 +312,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             setTimeout(() => {
                 updateUpload(id, { hiding: true });
                 setTimeout(() => {
-                    setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+                    setUploads((prev: Record<string, UploadTask>) => { const next = { ...prev }; delete next[id]; return next; });
                 }, 400);
             }, 4000);
 
@@ -324,7 +324,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             setTimeout(() => {
                 updateUpload(id, { hiding: true });
                 setTimeout(() => {
-                    setUploads(prev => { const next = { ...prev }; delete next[id]; return next; });
+                    setUploads((prev: Record<string, UploadTask>) => { const next = { ...prev }; delete next[id]; return next; });
                 }, 400);
             }, 4000);
         } finally {
@@ -342,7 +342,7 @@ export function useE2EEUpload(onSuccess: () => void, orgId?: string, folderId?: 
             type: getFileTypeLabel(file.type)
         };
 
-        setUploads(prev => ({
+        setUploads((prev: Record<string, UploadTask>) => ({
             ...prev,
             [id]: {
                 id,
