@@ -144,10 +144,10 @@ func (p *EventPublisher) PublishToUser(ctx context.Context, orgID string, userID
 
 	event := WSEvent{
 		Event:   "ROLE_UPDATED",
-		Message: "Your role has changed to admin in organization [" + orgName +"]",
+		Message: "Your role has changed to owner in organization [" + orgName +"]",
 		Data: map[string]interface{}{
 			"org_id": orgID,
-			"role":   "admin",
+			"role":   "owner",
 		},
 	}
 	payload, err := json.Marshal(event)
@@ -156,4 +156,30 @@ func (p *EventPublisher) PublishToUser(ctx context.Context, orgID string, userID
 	}
 
 	return p.redis.Publish(ctx, "user_events:"+userID, payload).Err()
+}
+
+func (p *EventPublisher) PublishOrgaDeleted(ctx context.Context, orgID string, orgName string) error {
+    type WSEvent struct {
+        Event   string      `json:"event"`
+        OrgID   string      `json:"org_id,omitempty"`
+        Message string      `json:"message"`
+        Data    interface{} `json:"data,omitempty"`
+    }
+
+    event := WSEvent{
+        Event:   "ORGA_DELETED",
+        OrgID:   orgID,
+        Message: "The organization [" + orgName + "] has been deleted (owner deleted)",
+        Data: map[string]interface{}{
+            "org_id":   orgID,
+            "org_name": orgName,
+        },
+    }
+
+    payload, err := json.Marshal(event)
+    if err != nil {
+        return err
+    }
+	
+    return p.redis.Publish(ctx, "org_events:"+orgID, payload).Err()
 }

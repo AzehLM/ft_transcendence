@@ -5,6 +5,7 @@ import (
 	"backend/orga/internal/repository"
 	"backend/orga/internal/workers"
 	"log"
+	"context"
 
 	"backend/orga/internal/ws"
 	"encoding/base64"
@@ -122,6 +123,22 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
 	}
 
+	// check number of ownership
+	var ownedCount int64
+    errCount := h.DB.Table("org_members").
+        Where("user_id = ? AND role = ?", userID, "owner").
+        Count(&ownedCount).Error
+    if errCount != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "failed to verify organization limit",
+        })
+    }
+    if ownedCount >= 10 { 
+        return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+            "error": "you have reached the maximum limit of 10 organizations",
+        })
+    }
+
 	decodedKey, errKey := base64.StdEncoding.DecodeString(body.EncOrgaPrivateKey)
 	if errKey != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -145,7 +162,7 @@ func (h *OrgaHandler) CreateOrga(c fiber.Ctx) error {
 
 	orgaMember := models.OrgaMember{
 		UserID:        userID,
-		Role:          "admin",
+		Role:          "owner",
 		EncOrgPrivKey: decodedKey,
 		EncAesKey:     decodedAesKey,
 		Iv:            decodedIv,
@@ -202,7 +219,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 			"user_id":  userIDStr,
 		},
 	}
-	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+	if errPublish := h.Hub.PublishToOrga(context.Background(), orgID.String(), event); errPublish != nil {
 		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
 	}
 
