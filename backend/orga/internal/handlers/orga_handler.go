@@ -218,7 +218,7 @@ func (h *OrgaHandler) DeleteOrga(c fiber.Ctx) error {
 			"user_id":  userIDStr,
 		},
 	}
-	if errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); errPublish != nil {
+	if errPublish := h.Hub.PublishToOrga(context.Background(), orgID.String(), event); errPublish != nil {
 		log.Printf("[WS] Non-blocking error: failed to publish ORGA_DELETED: %v", errPublish)
 	}
 
