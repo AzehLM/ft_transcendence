@@ -7,9 +7,18 @@ import styles from "./OrgSettings.module.css";
 import { DangerZone } from "../../components/DangerZone";
 import { EditableField } from "../../components/EditableField";
 import { useNotifications } from "../../contexts/NotificationContext";
-import { Minus } from "lucide-react";
+import { Minus, ShieldAlert } from "lucide-react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import statusStyles from "../Organizations/Organizations.module.css"
+import { FeedbackMessageContainer } from "../../components/FeedbackMessageContainer";
+import { useMessages } from "../../hooks/useFeedbackMessage";
+
+interface Member {
+  user_id: string;
+  email: string;
+  first_name?: string;
+  family_name?: string;
+}
 
 export default function OrgSettingsPage() {
   const { id } = useParams();
@@ -26,7 +35,15 @@ export default function OrgSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [orgError, setOrgError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedTargetMember, setSelectedTargetMember] = useState<string>("");
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
+
+  const { messages, addMessage, removeMessage } = useMessages();
+  const allMessages = messages;
+
+  const loadOrgSettings = () => {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
@@ -34,7 +51,7 @@ export default function OrgSettingsPage() {
           return;
         }
         if (!res.ok) {
-            setOrgError("Failed to fetch Organization.")
+            setOrgError("Failed to fetch Organization.");
             throw new Error("Failed to fetch Organization.");
         }
         return res.json();
@@ -47,10 +64,26 @@ export default function OrgSettingsPage() {
           setMaxSpace(data.max_space);
           setOrgDesc(data.description);
           setUserID(data.user_id);
+
+          if (data.role?.toLowerCase() === "owner") {
+            fetchWithRefresh(`/api/orgs/${id}/members`)
+              .then(res => (res.ok ? res.json() : []))
+              .then((membersData: Member[]) => {
+                const choices = membersData.filter(m => m.user_id !== data.user_id);
+                setMembers(choices);
+              })
+              .catch(() => setMembers([]));
+          } else {
+            setMembers([]);
+          }
         }
       })
       .catch(() => setOrgName("Unknown"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadOrgSettings();
   }, [id, navigate]);
 
   useEffect(() => {
@@ -61,8 +94,11 @@ export default function OrgSettingsPage() {
     };
 
     const handleRoleUpdated = (data: any) => {
-      if (data && data.user_id === userID && data.role) {
-        setMyRole(data.role);
+      if (data) {
+        if (data.user_id === userID && data.role) {
+          setMyRole(data.role);
+        }
+        loadOrgSettings();
       }
     };
 
@@ -78,17 +114,27 @@ export default function OrgSettingsPage() {
             navigate("/organizations");
         }
     };
+
+  const handleMemberChanges = (data: any) => {
+      if (data && (data.org_id === id || data.org_id === undefined)) {
+        loadOrgSettings();
+      }
+    };
     
     registerListener("ORGA_RENAMED", handleOrgaRenamed);
     registerListener("ROLE_UPDATED", handleRoleUpdated);
     registerListener("ORGA_DELETED", handleOrgaDeleted);
     registerListener("REMOVED_FROM_ORGA", handleRemoved);
+    registerListener("MEMBER_ADDED", handleMemberChanges);
+    registerListener("MEMBER_REMOVED", handleMemberChanges);
 
     return () => {
       unregisterListener("ORGA_RENAMED", handleOrgaRenamed);
       unregisterListener("ROLE_UPDATED", handleRoleUpdated);
       unregisterListener("ORGA_DELETED", handleOrgaDeleted);
-      unregisterListener("REMOVED_FROM_ORGA", handleRemoved)
+      unregisterListener("REMOVED_FROM_ORGA", handleRemoved);
+      unregisterListener("MEMBER_ADDED", handleMemberChanges);
+      unregisterListener("MEMBER_REMOVED", handleMemberChanges);
 
     };
   }, [registerListener, unregisterListener, id, userID]);
@@ -168,6 +214,32 @@ export default function OrgSettingsPage() {
     setOrgDesc("");
   };
 
+
+  const handleTransferOwnership = async () => {
+    if (!selectedTargetMember) return;
+    try {
+      const response = await fetchWithRefresh(`/api/orgs/${id}/transfer-ownership`, {
+        method: "POST",
+        body: JSON.stringify({ new_owner_id: selectedTargetMember }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setTransferError(body?.error || "Failed to transfer ownership.");
+        return;
+      }
+
+      setTransferError(null);
+      setShowTransferConfirm(false);
+      addMessage(`You successfully passed thw ownership`, "success");
+      setSelectedTargetMember("");
+      setMyRole("admin"); 
+      window.dispatchEvent(new CustomEvent("org-list-changed"));
+    } catch {
+      setTransferError("Network error, please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <OrgLayout orgName={orgName} orgDesc={orgDesc}>
@@ -180,9 +252,14 @@ export default function OrgSettingsPage() {
     );
   }
 
+  const getTargetMemberEmail = () => {
+    return members.find(m => m.user_id === selectedTargetMember)?.email || "";
+  };
+
   return (
       <OrgLayout orgName={orgName} orgDesc={orgDesc}>
       <div className={styles.container}>
+        <FeedbackMessageContainer messages={allMessages} onRemove={removeMessage} />
         <ConfirmationModal
           isOpen={showLeaveConfirm}
           fileName={orgName}
@@ -192,6 +269,15 @@ export default function OrgSettingsPage() {
           isLeaveOrga={true}
           isMe={true}
           errorMessage={modalError ?? undefined}
+        />
+        <ConfirmationModal
+          isOpen={showTransferConfirm}
+          fileName={getTargetMemberEmail()}
+          onConfirm={handleTransferOwnership}
+          onCancel={() => { setShowTransferConfirm(false); setTransferError(null); }}
+          isChangeRole={true}
+          newRole="owner"
+          errorMessage={transferError ?? undefined}
         />
         <div className={styles.headerSection}>
           <div className={styles.titleGroup}>
@@ -239,6 +325,44 @@ export default function OrgSettingsPage() {
                       </button>
                     </div>
                   )}
+
+                  {myRole === "owner" && (
+                    <div className={styles.leaveOrga}>
+                      <div className={styles.leaveOrgaText}>
+                        <p className={styles.label}>Transfer Organization Ownership</p>
+                        <p className={styles.labelDetail}>
+                          {members.length > 0 
+                            ? "You cannot leave this organization as the owner. Select another member to transfer your ownership to. You will become an administrator."
+                            : "You are currently the only member of this organization. To leave, you must delete the organization entirely from the Danger Zone below."}
+                        </p>
+                      </div>
+                      {members.length > 0 && (
+                        <div className={styles.transferControls}>
+                          <select
+                            value={selectedTargetMember}
+                            onChange={(e) => setSelectedTargetMember(e.target.value)}
+                            className={styles.selectMember}
+                          >
+                            <option value="">-- Choose a successor --</option>
+                            {members.map(member => (
+                              <option key={member.user_id} value={member.user_id}>
+                                {member.email} {member.first_name ? `(${member.first_name})` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className={`${styles.leaveButton} ${styles.transferButton}`}
+                            disabled={!selectedTargetMember}
+                            onClick={() => { setShowTransferConfirm(true); setTransferError(null); }}
+                          >
+                            <ShieldAlert size={20} />
+                            Transfer Ownership
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               </div>
 

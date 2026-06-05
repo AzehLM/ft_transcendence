@@ -182,17 +182,8 @@ export default function OrgMembersPage() {
       }
     };
 
-    const handleRoleUpdated = (data: any) => {
-      if (data && data.user_id && data.role) {
-        setMembers((prev) =>
-          prev.map((m) =>
-            m.user_id === data.user_id ? { ...m, role: data.role } : m
-          )
-        );
-        if (myUserId && data.user_id === myUserId) {
-          setMyRole(data.role);
-        }
-      }
+    const handleRoleUpdated = () => {
+      fetchMembers();
     };
 
     const handleOrgaDeleted = (data: any) => {
