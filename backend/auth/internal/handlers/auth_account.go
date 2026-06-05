@@ -85,152 +85,152 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 			return err
 		}
 
-				for _, orgIDStr := range orgIDs {
-					var orgName string
-					if err := tx.Table("organizations").Where("id = ?", orgIDStr).Select("name").Scan(&orgName).Error; err != nil {
-						return err
-					}
-					orgNamesMap[orgIDStr] = orgName
+		for _, orgIDStr := range orgIDs {
+			var orgName string
+			if err := tx.Table("organizations").Where("id = ?", orgIDStr).Select("name").Scan(&orgName).Error; err != nil {
+				return err
+			}
+			orgNamesMap[orgIDStr] = orgName
 
-					var transferTargetID string
-					ownershipTransferred := false
+			var transferTargetID string
+			ownershipTransferred := false
 
-					// check role in organizations
-					var myRole string
-					errRole := tx.Table("org_members").
-						Where("org_id = ? AND user_id = ?", orgIDStr, userID).
-						Select("role").
-						Scan(&myRole).Error
-					if errRole != nil {
-						return errRole
-					}
+			// check role in organizations
+			var myRole string
+			errRole := tx.Table("org_members").
+				Where("org_id = ? AND user_id = ?", orgIDStr, userID).
+				Select("role").
+				Scan(&myRole).Error
+			if errRole != nil {
+				return errRole
+			}
 
-					if myRole == "owner" {
+			if myRole == "owner" {
 
-						// check among other admins
-						type AdminInfo struct {
-							UserID uuid.UUID `gorm:"column:user_id"`
-							JoinedAt time.Time `gorm:"column:joined_at"`
+				// check among other admins
+				type AdminInfo struct {
+					UserID uuid.UUID `gorm:"column:user_id"`
+					JoinedAt time.Time `gorm:"column:joined_at"`
+				}
+				var otherAdmins []AdminInfo
+
+				// get the other admins
+				errQueryAdmins := tx.Table("org_members").
+					Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
+					Select("user_id, joined_at").
+					Order("joined_at ASC").
+					Find(&otherAdmins).Error
+
+				if errQueryAdmins == nil && len(otherAdmins) > 0 {
+					for _, admin := range otherAdmins {
+						// count number of orgas possessed by the admin
+						var ownedCount int64
+						if err := tx.Table("org_members").
+							Where("user_id = ? AND role = ?", admin.UserID, "owner").
+							Count(&ownedCount).Error; err != nil {
+							return err
 						}
-						var otherAdmins []AdminInfo
-						
-						// get the other admins
-						errQueryAdmins := tx.Table("org_members").
-							Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "admin", userID).
-							Select("user_id, joined_at").
-    						Order("joined_at ASC").
-							Find(&otherAdmins).Error
-	
-						if errQueryAdmins == nil && len(otherAdmins) > 0 {
-							for _, admin := range otherAdmins {
-								// count number of orgas possessed by the admin
-								var ownedCount int64
-								if err := tx.Table("org_members").
-									Where("user_id = ? AND role = ?", admin.UserID, "owner").
-									Count(&ownedCount).Error; err != nil {
-									return err
-								}
-	
-								// if less than 10 we transfer
-								if ownedCount < 10 {
-									if err := tx.Table("org_members").
-										Where("org_id = ? AND user_id = ?", orgIDStr, userID).
-										Update("role", "member").Error; err != nil {
-										return err
-									}
-									if err := tx.Table("org_members").
-										Where("org_id = ? AND user_id = ?", orgIDStr, admin.UserID).
-										Update("role", "owner").Error; err != nil {
-										return err
-									}
-									transferTargetID = admin.UserID.String()
-									transfers[orgIDStr] = transferTargetID
-									promotions[orgIDStr] = admin.UserID
-									ownershipTransferred = true
-									break 
-								}
+
+						// if less than 10 we transfer
+						if ownedCount < 10 {
+							if err := tx.Table("org_members").
+								Where("org_id = ? AND user_id = ?", orgIDStr, userID).
+								Update("role", "member").Error; err != nil {
+								return err
 							}
-						}
-	
-						// if no admin we look through members
-						if !ownershipTransferred {
-							type MemberInfo struct {
-								UserID   uuid.UUID `gorm:"column:user_id"`
-								JoinedAt time.Time `gorm:"column:joined_at"`
+							if err := tx.Table("org_members").
+								Where("org_id = ? AND user_id = ?", orgIDStr, admin.UserID).
+								Update("role", "owner").Error; err != nil {
+								return err
 							}
-							var potentialMembers []MemberInfo
-	
-							errQueryMembers := tx.Table("org_members").
-								Select("user_id, joined_at").
-								Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "member", userID).
-								Order("joined_at ASC").
-								Find(&potentialMembers).Error
-	
-							if errQueryMembers == nil && len(potentialMembers) > 0 {
-								for _, member := range potentialMembers {
-									var ownedCount int64
-									if err := tx.Table("org_members").
-										Where("user_id = ? AND role = ?", member.UserID, "owner").
-										Count(&ownedCount).Error; err != nil {
-										return err
-									}
-	
-									if ownedCount < 10 {
-										if err := tx.Table("org_members").
-                                            Where("org_id = ? AND user_id = ?", orgIDStr, userID).
-                                            Update("role", "member").Error; err != nil {
-                                            return err
-                                        }
-										if err := tx.Table("org_members").
-											Where("org_id = ? AND user_id = ?", orgIDStr, member.UserID).
-											Update("role", "owner").Error; err != nil {
-											return err
-										}
-										transferTargetID = member.UserID.String()
-										transfers[orgIDStr] = transferTargetID
-										promotions[orgIDStr] = member.UserID
-										ownershipTransferred = true
-										break 
-									}
-								}
-							}
-						}
-	
-						// no one was found
-						if !ownershipTransferred {
-							orgUUID, errParse := uuid.Parse(orgIDStr)
-							if errParse == nil {
-								orgsToDelete = append(orgsToDelete, orgUUID)
-							}
-						}
-					} else {
-						// the user is not the owner so we will transfer the files and folders to the owner
-						var currentOwnerID uuid.UUID
-						errOwner := tx.Table("org_members").
-							Where("org_id = ? AND role = ?", orgIDStr, "owner").
-							Select("user_id").
-							Scan(&currentOwnerID).Error
-						
-						if errOwner == nil {
-							transferTargetID = currentOwnerID.String()
+							transferTargetID = admin.UserID.String()
+							transfers[orgIDStr] = transferTargetID
+							promotions[orgIDStr] = admin.UserID
 							ownershipTransferred = true
-						}
-					}
-
-					// transfer
-					if transferTargetID != "" {
-						if err := tx.Table("files").
-							Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
-							Update("owner_user_id", transferTargetID).Error; err != nil {
-							return err
-						}
-						if err := tx.Table("folders").
-							Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
-							Update("owner_user_id", transferTargetID).Error; err != nil {
-							return err
+							break
 						}
 					}
 				}
+
+				// if no admin we look through members
+				if !ownershipTransferred {
+					type MemberInfo struct {
+						UserID   uuid.UUID `gorm:"column:user_id"`
+						JoinedAt time.Time `gorm:"column:joined_at"`
+					}
+					var potentialMembers []MemberInfo
+
+					errQueryMembers := tx.Table("org_members").
+						Select("user_id, joined_at").
+						Where("org_id = ? AND role = ? AND user_id != ?", orgIDStr, "member", userID).
+						Order("joined_at ASC").
+						Find(&potentialMembers).Error
+
+					if errQueryMembers == nil && len(potentialMembers) > 0 {
+						for _, member := range potentialMembers {
+							var ownedCount int64
+							if err := tx.Table("org_members").
+								Where("user_id = ? AND role = ?", member.UserID, "owner").
+								Count(&ownedCount).Error; err != nil {
+								return err
+							}
+
+							if ownedCount < 10 {
+								if err := tx.Table("org_members").
+									Where("org_id = ? AND user_id = ?", orgIDStr, userID).
+									Update("role", "member").Error; err != nil {
+									return err
+								}
+								if err := tx.Table("org_members").
+									Where("org_id = ? AND user_id = ?", orgIDStr, member.UserID).
+									Update("role", "owner").Error; err != nil {
+									return err
+								}
+								transferTargetID = member.UserID.String()
+								transfers[orgIDStr] = transferTargetID
+								promotions[orgIDStr] = member.UserID
+								ownershipTransferred = true
+								break
+							}
+						}
+					}
+				}
+
+				// no one was found
+				if !ownershipTransferred {
+					orgUUID, errParse := uuid.Parse(orgIDStr)
+					if errParse == nil {
+						orgsToDelete = append(orgsToDelete, orgUUID)
+					}
+				}
+			} else {
+				// the user is not the owner so we will transfer the files and folders to the owner
+				var currentOwnerID uuid.UUID
+				errOwner := tx.Table("org_members").
+					Where("org_id = ? AND role = ?", orgIDStr, "owner").
+					Select("user_id").
+					Scan(&currentOwnerID).Error
+
+				if errOwner == nil {
+					transferTargetID = currentOwnerID.String()
+					ownershipTransferred = true
+				}
+			}
+
+			// transfer
+			if transferTargetID != "" {
+				if err := tx.Table("files").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
+				if err := tx.Table("folders").
+					Where("owner_user_id = ? AND org_id = ?", userID, orgIDStr).
+					Update("owner_user_id", transferTargetID).Error; err != nil {
+					return err
+				}
+			}
+		}
 
 		if len(orgsToDelete) > 0 {
 			var orgKeys []string
@@ -269,7 +269,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	for _, orgUUID := range orgsToDelete {
         orgIDStr := orgUUID.String()
         orgName := orgNamesMap[orgIDStr]
-        
+
         if err := h.Publisher.PublishOrgaDeleted(c.Context(), orgIDStr, orgName); err != nil {
             log.Printf("[WARN] Failed to publish ORGA_DELETED via WS for org %s: %v", orgIDStr, err)
         }
