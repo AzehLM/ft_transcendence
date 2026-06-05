@@ -22,19 +22,7 @@ CREATE TABLE users (
     recovery_codes_hashed BYTEA
 );
 
--- 2. CREDENTIALS
-CREATE TABLE credentials (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    credential_id BYTEA NOT NULL,
-    public_key BYTEA NOT NULL,
-    device_name VARCHAR(100) NOT NULL,
-    last_used_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, credential_id)
-);
-
--- 3. ORGANIZATIONS
+-- 2. ORGANIZATIONS
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
@@ -44,7 +32,7 @@ CREATE TABLE organizations (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. ORG_MEMBERS
+-- 3. ORG_MEMBERS
 CREATE TABLE org_members (
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -57,7 +45,7 @@ CREATE TABLE org_members (
     PRIMARY KEY (org_id, user_id)
 );
 
--- 5. FOLDERS
+-- 4. FOLDERS
 CREATE TABLE folders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -67,7 +55,7 @@ CREATE TABLE folders (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. FILES
+-- 5. FILES
 CREATE TABLE files (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -83,7 +71,7 @@ CREATE TABLE files (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. USER_AVATARS
+-- 6. USER_AVATARS
 CREATE TABLE user_avatars (
     user_id        UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     data           BYTEA        NOT NULL,
@@ -94,4 +82,3 @@ CREATE TABLE user_avatars (
 
 CREATE INDEX idx_folders_parent_id ON folders(parent_id);
 CREATE INDEX idx_files_folder_id ON files(folder_id);
-CREATE INDEX idx_credentials_user_id ON credentials(user_id);
