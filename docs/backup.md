@@ -51,7 +51,8 @@ ls -lh ${HOME}/backups/ostrom/weekly/
 
 ## Disaster recovery — PostgreSQL
 
-> **Warning:** Restore replaces all current data. Only run this after a confirmed data loss event.
+> [!WARNING]
+> Restore replaces all current data. Only run this after a confirmed data loss event.
 
 ### Prerequisites
 
@@ -78,8 +79,8 @@ docker exec -it backup restore.sh daily/backup_2026-05-03.dump
 # Restore a specific weekly dump
 docker exec -it backup restore.sh weekly/backup_2026-W18.dump
 ```
-
-The script will display the dump details and require you to type `RESTORE` to confirm before proceeding.
+> [!NOTE]
+> The script will display the dump details and require you to type `RESTORE` to confirm before proceeding.
 
 ### Step 3 — Verify
 

@@ -18,7 +18,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
     const [error, setError] = useState<string>("");
     const [showCopyModal, setShowCopyModal] = useState<boolean>(false);
 
-    // Step 1: Generate QR Code
     useEffect(() => {
         const generateQR = async () => {
             try {
@@ -38,7 +37,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
         generateQR();
     }, []);
 
-    // Step 2: Verify Setup
     const handleVerifyCode = async () => {
         if (verificationCode.length !== 6) {
             setError("Code must be 6 digits");
@@ -59,7 +57,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
         }
     };
 
-    // Copy recovery codes
     const copyRecoveryCodes = () => {
         const text = recoveryCodes.join("\n");
         navigator.clipboard.writeText(text);
@@ -67,7 +64,6 @@ export function SetupTOTP({ onSuccess, onCancel }: SetupTOTPProps) {
         setTimeout(() => setShowCopyModal(false), 2000);
     };
 
-    // Download recovery codes
     const downloadRecoveryCodes = () => {
         const text = `RECOVERY CODES - SAVE THESE IN A SAFE PLACE\n\n${recoveryCodes.join(
             "\n"

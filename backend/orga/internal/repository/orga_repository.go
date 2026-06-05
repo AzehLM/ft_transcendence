@@ -23,17 +23,6 @@ func (r *OrganizationRepository) GetAllOrgas() ([]models.Orga, error) {
 }
 
 
-// func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.Orga, error) {
-//     var orgas []models.Orga
-//     result := r.DB.
-//         Distinct().
-//         Joins("JOIN org_members ON org_members.org_id = organizations.id").
-//         Where("org_members.user_id IN (?)", userID).
-//         Find(&orgas)
-
-//     return orgas, result.Error
-// }
-
 func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.OrgResponse, error) {
     var orgResponses []models.OrgResponse
     result := r.DB.Table("organizations").
@@ -49,10 +38,6 @@ func (r *OrganizationRepository) GetMemberOrga(userID uuid.UUID) ([]models.OrgRe
     }
     return orgResponses, nil
 }
-
-// func (r *OrganizationRepository) CreateNewOrga(orga *models.Orga) error {
-//     return r.DB.Create(orga).Error
-// }
 
 func (r *OrganizationRepository) CreateOrgWithAdmin(org *models.Orga, adminMember *models.OrgaMember) error {
     return r.DB.Transaction(func(tx *gorm.DB) error {

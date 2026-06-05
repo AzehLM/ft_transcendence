@@ -15,9 +15,8 @@ func setRefreshTokenCookie(c fiber.Ctx, token string) {
 		Value:    token,
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HTTPOnly: true,
-		Secure:   true, // test avec caddy
+		Secure:   true,
 		SameSite: "Strict",
-		// SameSite: "None",
 		Path: "/",
 	})
 }
@@ -55,7 +54,7 @@ func (h *AuthHandler) LogoutUser(c fiber.Ctx) error {
 	}
 
 	clearRefreshTokenCookie(c)
-	log.Printf("[INFO] User logged out - refresh token cookie cleared")
+	log.Printf("[INFO] User logged out refresh token cookie cleared")
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "logged out successfully",

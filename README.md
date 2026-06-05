@@ -460,6 +460,7 @@ As the tech lead, generally made the research on differents possible stacks to u
 ### Challenges faced
 - **MinIO** implementation was a huge challenge. Worked correctly with simple use-cases at the beggining but it had to be maintained and updated throught the whole duration of the project. The multipart upload was implemented a week before the project was done for example.
 - **Backend file/folder structure**: Go has props for folders name and finding a global structure that everyone agrees to work with took few days. The first days learning Go were rough overall.
+- **Managing local vs. deployed environment parity**: Some behaviors only surfaced once deployed behind Cloudflare Tunnel — notably the MinIO presigned URL rewrite, which needed to work transparently across both environments, and CORS/CSP policies whose allowed origins differ between `localhost` and `ostrom.cloud`.
 
 ## lbuisson (Lou-Anne) - Projet Maneger & Developer
 

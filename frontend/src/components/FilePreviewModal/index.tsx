@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useE2EEPreview } from "../../hooks/useE2EEPreview";
 import styles from "./FilePreviewModal.module.css";
+import { formatFileSize, getDecryptedSize } from "../../services/fileValidation.service";
 
 interface FilePreviewModalProps {
     isOpen: boolean;
@@ -144,12 +145,6 @@ export function FilePreviewModal({
 
     if (!isOpen) return null;
 
-    const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-    };
-
     const handleDownloadInstant = () => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
@@ -180,7 +175,7 @@ export function FilePreviewModal({
                         </div>
                         <div className={styles.meta}>
                             <h3 className={styles.fileName} title={fileName}>{fileName}</h3>
-                            <span className={styles.fileSize}>{formatSize(fileSize)}</span>
+                            <span className={styles.fileSize}>{formatFileSize(blob ? blob.size : getDecryptedSize(fileSize))}</span>
                         </div>
                     </div>
 
