@@ -110,6 +110,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 						// check among other admins
 						type AdminInfo struct {
 							UserID uuid.UUID `gorm:"column:user_id"`
+							JoinedAt time.Time `gorm:"column:joined_at"`
 						}
 						var otherAdmins []AdminInfo
 						
