@@ -236,3 +236,21 @@ func (r *OrganizationRepository) TransferFilesToOwner(orgID uuid.UUID, leavingUs
 		return nil
 	})
 }
+
+func (r *OrganizationRepository) TransferOwnership(orgID uuid.UUID, currentOwnerID uuid.UUID, newOwnerID uuid.UUID) error {
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("org_members").
+			Where("org_id = ? AND user_id = ? AND role = ?", orgID, currentOwnerID, "owner").
+			Update("role", "admin").Error; err != nil {
+			return err
+		}
+
+		if err := tx.Table("org_members").
+			Where("org_id = ? AND user_id = ?", orgID, newOwnerID).
+			Update("role", "owner").Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

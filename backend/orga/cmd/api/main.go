@@ -101,6 +101,7 @@ func main() {
 	org.Patch("/", admin, orgaHandler.ChangeOrgaName)
 	org.Delete("/", owner, orgaHandler.DeleteOrga)
 	org.Get("/public-key", member, orgaHandler.GetOrgaPublicKey)
+	org.Post("/transfer-ownership", owner, orgaHandler.TransferOwnership)
 
 	// members
 	org.Post("/members", admin, orgaHandler.CreateOrgaMember)

@@ -322,12 +322,12 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 
 	userIDLocals, errUser := c.Locals("user_id").(string)
 	if !errUser {
-		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user_id type"})
 	}
 
 	userID, errUserID := uuid.Parse(userIDLocals)
 	if errUserID != nil {
-		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error":"invalid UUID for user"})
 	}
 
 	var member models.OrgaMember
@@ -535,12 +535,12 @@ func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 
 	userIDLocals, errUser := c.Locals("user_id").(string)
 	if !errUser {
-		return c.Status(fiber.StatusBadRequest).SendString("invalid user_id type")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user_id type"})
 	}
 
 	userID, errUserID := uuid.Parse(userIDLocals)
 	if errUserID != nil {
-		return c.Status(fiber.StatusBadRequest).SendString("invalid UUID for user")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid UUID for user"})
 	}
 
 	var member models.OrgaMember
@@ -556,5 +556,82 @@ func (h *OrgaHandler) GetMemberKeys(c fiber.Ctx) error {
 		"enc_org_priv_key": base64.StdEncoding.EncodeToString(member.EncOrgPrivKey),
 		"enc_aes_key":      base64.StdEncoding.EncodeToString(member.EncAesKey),
 		"iv":               base64.StdEncoding.EncodeToString(member.Iv),
+	})
+}
+
+func (h *OrgaHandler) TransferOwnership(c fiber.Ctx) error {
+	var body struct {
+		NewOwnerID string `json:"new_owner_id"`
+	}
+
+	if err := c.Bind().Body(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
+	}
+
+	orgID, errOrg := uuid.Parse(c.Params("org_id"))
+	newOwnerID, errNewOwner := uuid.Parse(body.NewOwnerID)
+	if errOrg != nil || errNewOwner != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid uuid format"})
+	}
+
+	userIDLocals, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user id"})
+	}
+	currentOwnerID, errUserID := uuid.Parse(userIDLocals)
+	if errUserID != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid UUID for user"})
+	}
+
+	repo := repository.NewOrganizationRepository(h.DB)
+
+	var currentMember models.OrgaMember
+	if err := repo.GetOrgaMember(orgID, currentOwnerID, &currentMember); err != nil || currentMember.Role != "owner" {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "only the organization owner can transfer ownership"})
+	}
+
+	var targetMember models.OrgaMember
+	if err := repo.GetOrgaMember(orgID, newOwnerID, &targetMember); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "target user is not a member of this organization"})
+	}
+
+	if err := repo.TransferOwnership(orgID, currentOwnerID, newOwnerID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to transfer ownership"})
+	}
+
+	org, err := repo.GetOrgaByID(orgID)
+ 	if err != nil { org.Name = "Unknown organization" }
+	var targetUser models.User
+	if err := repo.GetUserByID(newOwnerID, &targetUser); err != nil { targetUser.Email = "unknown" }
+
+	event := ws.WSEvent{
+		Event:   "ROLE_UPDATED",
+		OrgID:   orgID.String(),
+		Message: "Ownership of [" + org.Name + "] has been transferred to " + targetUser.Email,
+		Data: fiber.Map{
+			"user_id": newOwnerID.String(),
+			"role":    "owner",
+		},
+	}
+	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
+		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), newOwnerID.String(), err)
+	}
+
+	userEvent := ws.WSEvent{
+		Event:   "ROLE_UPDATED",
+		Message: "Your role has changed to owner in organization [" + org.Name + "]",
+		Data: fiber.Map{
+			"org_id": orgID.String(),
+			"role":   "owner",
+		},
+	}
+
+	err = h.Hub.PublishToUser(c.Context(), newOwnerID.String(), userEvent)
+	if err != nil {
+		log.Printf("[WS] Non-blocking error during Redis notification: %v", err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ownership transferred successfully",
 	})
 }
