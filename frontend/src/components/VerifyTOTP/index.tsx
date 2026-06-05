@@ -120,7 +120,16 @@ export function VerifyTOTP({
                                 const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                                 setCode(value);
                             }}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleVerify(); }}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key === "Enter" &&
+                                    !loading &&
+                                    ((method === "totp" && code.length === 6) ||
+                                        (method === "recovery" && !!code))
+                                ) {
+                                    handleVerify();
+                                }
+                            }}
                             maxLength={6}
                             className={`${styles.totp_verify__input} ${styles.totp_verify__input_code}`}
                             disabled={loading}
