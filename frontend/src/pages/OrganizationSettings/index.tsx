@@ -47,7 +47,9 @@ export default function OrgSettingsPage() {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
-          navigate("/404");
+            if (window.location.pathname.includes(`/orgs/${id}`)) {
+              navigate("/404");
+            }
           return;
         }
         if (!res.ok) {
