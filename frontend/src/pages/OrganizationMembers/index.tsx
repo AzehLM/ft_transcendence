@@ -58,6 +58,8 @@ export default function OrgMembersPage() {
   const { messages, addMessage, removeMessage } = useMessages();
   const allMessages = messages;
 
+  const isLeavingRef = useRef(false);
+
   useEffect(() => {
     return () => { (Object.values(avatarUrlsRef.current) as string[]).forEach(url => URL.revokeObjectURL(url)); };
   }, []);
@@ -91,12 +93,11 @@ export default function OrgMembersPage() {
 
   const fetchMembers = (signal?: AbortSignal) => {
     setMainError(null);
+    if (isLeavingRef.current) return; 
     fetchWithRefresh(`/api/orgs/${id}/members`, { signal })
       .then(res => {
         if (res.status === 404 || res.status === 400) {
-            if (window.location.pathname.includes(`/orgs/${id}`)) {
-              navigate("/404");
-            }
+          navigate("/404");
           return null;
         }
         if (!res.ok) {
@@ -289,11 +290,13 @@ export default function OrgMembersPage() {
 
     const isRemovingMyself = memberToRemove.user_id === myUserId;
     const removedEmail = memberToRemove.email;
+    if (isRemovingMyself) isLeavingRef.current = true;
 
     try {
       const response = await fetchWithRefresh(`/api/orgs/${id}/members/${memberToRemove.user_id}`, { method: "DELETE" });
   
       if (!response.ok) {
+          isLeavingRef.current = false;
           if (response.status === 502 || response.status === 503) {
               setModalError("Network error, please try again later.");
           } else {
@@ -315,6 +318,7 @@ export default function OrgMembersPage() {
       setShowRemoveModal(false);
       setMemberToRemove(null);
     } catch {
+      isLeavingRef.current = false;
       setModalError("Network error, please try again later.");
     }
   };

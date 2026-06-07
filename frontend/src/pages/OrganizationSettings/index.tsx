@@ -50,8 +50,7 @@ export default function OrgSettingsPage() {
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
-          if (isLeavingRef.current) return;
-              navigate("/404");
+          navigate("/404");
           return;
         }
         if (!res.ok) {
