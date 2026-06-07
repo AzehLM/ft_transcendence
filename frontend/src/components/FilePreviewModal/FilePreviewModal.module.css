@@ -453,6 +453,12 @@
     color: #64748b;
 }
 
+.errorActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
