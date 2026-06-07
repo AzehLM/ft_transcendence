@@ -55,26 +55,16 @@ export async function validateFile(file: File): Promise<ValidationResult>  {
 
         const buffer = await file.slice(0, 4100).arrayBuffer();
         const typeInfo = await fileTypeFromBuffer(new Uint8Array(buffer));
-        let detectedMime = typeInfo?.mime || file.type;
-
-        if (!typeInfo) {
-            if (['txt', 'md', 'go', 'css', 'tsx', 'ts', 'js', 'html', 'sh', 'yaml', 'yml', 'cpp', 'c', 'h'].includes(extension)) {
-                detectedMime = 'text/plain';
-            } else if (extension === 'rtf') {
-                detectedMime = 'application/rtf';
-            } else if (extension === 'json') {
-                detectedMime = 'application/json';
-            }
-        }
+        const detectedMime = typeInfo ? typeInfo.mime : expectedMime;
 
         if (detectedMime !== expectedMime) {
-             return {
+            return {
                 isValid: false,
-                error: `The .${extension} extension does not match the file content (${detectedMime || 'Unknown'}).`
+                error: `The .${extension} extension does not match the file content (${detectedMime}).`
             };
         }
 
-    } catch (err) {
+    } catch {
         return {
             isValid: false,
             error: "Error while analyzing the file content."
@@ -82,7 +72,7 @@ export async function validateFile(file: File): Promise<ValidationResult>  {
     }
 
     return { isValid: true };
-};
+}
 
 export const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -100,10 +90,9 @@ export const getDecryptedSize = (encryptedSize: number): number => {
     return encryptedSize - numChunks * 16;
 };
 
-
 export const getFileTypeLabel = (mimeType: string): string => {
     const typeMap: Record<string, string> = {
-        'image/jpeg': ' JPEG Image',
+        'image/jpeg': 'JPEG Image',
         'image/png': 'PNG Image',
         'image/gif': 'GIF Image',
         'image/webp': 'WebP Image',
@@ -117,17 +106,24 @@ export const getFileTypeLabel = (mimeType: string): string => {
         'application/pdf': 'PDF Document',
         'application/rtf': 'RTF Document',
         'text/plain': 'Text File',
+        'text/html': 'HTML File',
+        'text/css': 'CSS File',
+        'application/javascript': 'JavaScript File',
         'text/csv': 'CSV File',
         'application/msword': 'Word Document',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
-        'application/vnd.ms-excel': 'Excel Folder',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Folder',
+        'application/vnd.ms-excel': 'Excel Spreadsheet',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
         'application/vnd.ms-powerpoint': 'PowerPoint Presentation',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint Presentation',
         'application/zip': 'ZIP Archive',
         'application/x-rar-compressed': 'RAR Archive',
         'application/x-7z-compressed': '7z Archive',
         'application/json': 'JSON File',
+        'audio/mpeg': 'MP3 Audio',
+        'audio/ogg': 'OGG Audio',
+        'audio/flac': 'FLAC Audio',
+        'audio/wav': 'WAV Audio',
     };
 
     return typeMap[mimeType] || mimeType || 'File';
@@ -136,4 +132,3 @@ export const getFileTypeLabel = (mimeType: string): string => {
 export const getAcceptAttribute = (): string | undefined => {
     return undefined;
 };
-
