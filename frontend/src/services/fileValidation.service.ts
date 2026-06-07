@@ -55,6 +55,11 @@ export async function validateFile(file: File): Promise<ValidationResult>  {
 
         const buffer = await file.slice(0, 4100).arrayBuffer();
         const typeInfo = await fileTypeFromBuffer(new Uint8Array(buffer));
+
+        // When file-type returns null, the file uses a text-based format with no magic bytes.
+        // For these formats, content-based validation is not possible: file.type is OS-dependent
+        // and unreliable across browsers and platforms. Binary formats that could be spoofed
+        // always produce a non-null typeInfo.
         const detectedMime = typeInfo ? typeInfo.mime : expectedMime;
 
         if (detectedMime !== expectedMime) {
