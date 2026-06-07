@@ -29,7 +29,7 @@ const TABLE: Record<string, PreviewDescriptor> = {
 	tsx: { kind: 'code', mime: 'text/typescript' },
 	js: { kind: 'code', mime: 'text/javascript' },
 	css: { kind: 'code', mime: 'text/css' },
-	html: { kind: 'text', mime: 'text/plain' }, // text/plain on purpose: neutralizes the blob URL
+	html: { kind: 'code', mime: 'text/plain' },
 	sh: { kind: 'code', mime: 'text/x-sh' },
 	yaml: { kind: 'code', mime: 'text/yaml' },
 	yml: { kind: 'code', mime: 'text/yaml' },
