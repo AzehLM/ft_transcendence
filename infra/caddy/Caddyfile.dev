@@ -44,8 +44,6 @@
         # HSTS (force HTTPS)
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-        # CSP (customize later)
-        # the localhost:9000 connect-src is to test CORS (Cross-Origin Resource Sharing) setup from frontend to minio directly
         Content-Security-Policy "
             default-src 'self';
             script-src 'self';
