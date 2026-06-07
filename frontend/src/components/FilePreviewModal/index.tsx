@@ -4,17 +4,16 @@ import {
     Download,
     AlertTriangle,
     Loader2,
-    FileText,
-    FileImage,
-    FileCode,
     File,
     FileVideo,
-    FileSpreadsheet,
-    FileArchive
 } from "lucide-react";
 import { useE2EEPreview } from "../../hooks/useE2EEPreview";
 import styles from "./FilePreviewModal.module.css";
 import { formatFileSize, getDecryptedSize } from "../../services/fileValidation.service";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { resolvePreview, MAX_VIDEO_PREVIEW_BYTES } from '../../config/previewType';
+import { getFileVisual } from "../../config/fileIcon";
 
 interface FilePreviewModalProps {
     isOpen: boolean;
@@ -23,34 +22,8 @@ interface FilePreviewModalProps {
     fileName: string;
     fileSize: number;
     orgId?: string;
+    onDownload?: () => void;
 }
-
-const getFileIconAndColor = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase() || '';
-
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
-        return { Icon: FileImage, color: "#ec4899" };
-    }
-    if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'mpeg'].includes(ext)) {
-        return { Icon: FileVideo, color: "#8b5cf6" };
-    }
-    if (['pdf'].includes(ext)) {
-        return { Icon: FileText, color: "#ef4444" };
-    }
-    if (['xls', 'xlsx', 'csv', 'ods'].includes(ext)) {
-        return { Icon: FileSpreadsheet, color: "#10b981" };
-    }
-    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-        return { Icon: FileArchive, color: "#f59e0b" };
-    }
-    if (['json', 'js', 'ts', 'tsx', 'html', 'css', 'go', 'sh', 'yaml', 'yml'].includes(ext)) {
-        return { Icon: FileCode, color: "#06b6d4" };
-    }
-    if (['txt', 'md', 'rtf'].includes(ext)) {
-        return { Icon: FileText, color: "#3b82f6" };
-    }
-    return { Icon: File, color: "#865142" };
-};
 
 export function FilePreviewModal({
     isOpen,
@@ -58,7 +31,8 @@ export function FilePreviewModal({
     fileId,
     fileName,
     fileSize,
-    orgId
+    orgId,
+    onDownload
 }: FilePreviewModalProps) {
     const { decryptForPreview, downloadStatus, isDownloading, downloadError } = useE2EEPreview();
     const [blob, setBlob] = useState<Blob | null>(null);
@@ -83,6 +57,10 @@ export function FilePreviewModal({
         const controller = new AbortController();
 
         const loadPreview = async () => {
+            if (resolvePreview(fileName).kind === 'video'
+                && getDecryptedSize(fileSize) > MAX_VIDEO_PREVIEW_BYTES) {
+                return;
+            }
             try {
                 const result = await decryptForPreview(fileId, orgId, controller.signal);
                 if (result && isMounted) {
@@ -91,8 +69,8 @@ export function FilePreviewModal({
                     objectUrlRef.current = url;
                     setObjectUrl(url);
 
-                    const type = result.blob.type;
-                    if (type.startsWith("text/") || type === "application/json") {
+                    const { kind: resolvedKind } = resolvePreview(fileName);
+                    if (resolvedKind === 'text' || resolvedKind === 'code' || resolvedKind === 'markdown') {
                         setIsTextLoading(true);
                         try {
                             const text = await result.blob.text();
@@ -145,6 +123,11 @@ export function FilePreviewModal({
 
     if (!isOpen) return null;
 
+    const { kind } = resolvePreview(fileName);
+    const { Icon, color } = getFileVisual(fileName);
+    const decryptedSize = getDecryptedSize(fileSize);
+    const videoTooLarge = kind === 'video' && decryptedSize > MAX_VIDEO_PREVIEW_BYTES;
+
     const handleDownloadInstant = () => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
@@ -156,12 +139,6 @@ export function FilePreviewModal({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
-    const isImage = blob?.type.startsWith("image/");
-    const isPDF = blob?.type === "application/pdf";
-    const isText = blob?.type.startsWith("text/") || blob?.type === "application/json";
-
-    const { Icon, color } = getFileIconAndColor(fileName);
 
     return (
         <>
@@ -217,23 +194,48 @@ export function FilePreviewModal({
                         </div>
                     )}
 
+                    {!isDownloading && !downloadError && videoTooLarge && (
+                        <div className={styles.fallbackContainer}>
+                            <FileVideo size={64} className={styles.fallbackIcon} />
+                            <h4 className={styles.fallbackTitle}>Video too large to preview</h4>
+                            <p className={styles.fallbackMessage}>
+                                This video is {formatFileSize(decryptedSize)}. In-browser preview is capped at{' '}
+                                {formatFileSize(MAX_VIDEO_PREVIEW_BYTES)} to keep memory usage safe.
+                                Downloading it streams directly to disk.
+                            </p>
+                            <button
+                                className={styles.fallbackDownloadButton}
+                                onClick={() => { onDownload?.(); onClose(); }}
+                            >
+                                <Download size={16} /> Download instead
+                            </button>
+                        </div>
+                    )}
                     {!isDownloading && !downloadError && blob && (
                         <div className={styles.previewContainer}>
-                            {isImage && objectUrl && (
+                            {kind === 'image' && objectUrl && (
                                 <div className={styles.imageWrapper}>
                                     <img src={objectUrl} alt={fileName} className={styles.previewImage} />
                                 </div>
                             )}
 
-                            {isPDF && objectUrl && (
-                                <iframe
-                                    src={`${objectUrl}#toolbar=1`}
-                                    className={styles.pdfViewer}
-                                    title={fileName}
-                                />
+                            {kind === 'pdf' && objectUrl && (
+                                <iframe src={`${objectUrl}#toolbar=1`} className={styles.pdfViewer} title={fileName} />
                             )}
 
-                            {isText && (
+                            {kind === 'audio' && objectUrl && (
+                                <div className={styles.mediaWrapper}>
+                                    <audio controls src={objectUrl} className={styles.audioPlayer} />
+                                </div>
+                            )}
+
+                            {kind === 'video' && objectUrl && (
+                                <div className={styles.mediaWrapper}>
+                                    <video controls src={objectUrl} className={styles.videoPlayer} />
+                                </div>
+                            )}
+
+                            {(kind === 'text' || kind === 'code') && (
                                 <div className={styles.textWrapper}>
                                     {isTextLoading ? (
                                         <div className={styles.textLoadingContainer}>
@@ -241,14 +243,27 @@ export function FilePreviewModal({
                                             <p className={styles.textStatus}>Reading text content...</p>
                                         </div>
                                     ) : (
-                                        <pre className={styles.textPre}>
-                                            <code>{textContent}</code>
-                                        </pre>
+                                        <pre className={styles.textPre}><code>{textContent}</code></pre>
                                     )}
                                 </div>
                             )}
 
-                            {!isImage && !isPDF && !isText && (
+                            {kind === 'markdown' && (
+                                <div className={styles.markdownWrapper}>
+                                    {isTextLoading ? (
+                                        <div className={styles.textLoadingContainer}>
+                                            <Loader2 className={styles.textSpinner} size={24} />
+                                            <p className={styles.textStatus}>Reading content...</p>
+                                        </div>
+                                    ) : (
+                                        <div className={styles.markdownBody}>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {kind === 'unknown' && (
                                 <div className={styles.fallbackContainer}>
                                     <File size={64} className={styles.fallbackIcon} />
                                     <h4 className={styles.fallbackTitle}>No Preview Available</h4>
@@ -256,8 +271,7 @@ export function FilePreviewModal({
                                         We don't support previewing {fileName.split('.').pop()?.toUpperCase() || 'this type of'} files directly.
                                     </p>
                                     <button className={styles.fallbackDownloadButton} onClick={handleDownloadInstant}>
-                                        <Download size={16} />
-                                        Download Decrypted File
+                                        <Download size={16} /> Download Decrypted File
                                     </button>
                                 </div>
                             )}

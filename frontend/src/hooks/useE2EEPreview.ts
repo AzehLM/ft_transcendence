@@ -8,6 +8,7 @@ import {
 import { decryptOrgPrivateKey } from '../services/organizations.service';
 import { fetchWithRefresh } from '../services/api.service';
 import { UPLOAD_CONFIG } from '../config/uploadConfig';
+import { resolvePreview } from '../config/previewType';
 
 interface DownloadMetadata {
     presigned_url: string;
@@ -20,35 +21,6 @@ export function useE2EEPreview() {
     const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState(false);
-
-    const getMimeTypeByExtension = (filename: string): string => {
-        const ext = filename.split('.').pop()?.toLowerCase() || '';
-        switch (ext) {
-            case 'pdf': return 'application/pdf';
-            case 'png': return 'image/png';
-            case 'jpg':
-            case 'jpeg': return 'image/jpeg';
-            case 'gif': return 'image/gif';
-            case 'webp': return 'image/webp';
-            case 'svg': return 'image/svg+xml';
-            case 'bmp': return 'image/bmp';
-            case 'json': return 'application/json';
-            case 'txt':
-            case 'md':
-            case 'html':
-            case 'css':
-            case 'js':
-            case 'ts':
-            case 'tsx':
-            case 'go':
-            case 'sh':
-            case 'yaml':
-            case 'yml':
-                return 'text/plain';
-            default:
-                return 'application/octet-stream';
-        }
-    };
 
     const decryptForPreview = async (
         fileId: string,
@@ -215,8 +187,8 @@ export function useE2EEPreview() {
             }
 
             if (signal?.aborted) return null;
-            const mimeType = getMimeTypeByExtension(filename);
-            const blob = new Blob(decryptedChunks, { type: mimeType });
+            const { mime } = resolvePreview(filename);
+            const blob = new Blob(decryptedChunks, { type: mime });
 
             return { blob, filename };
         } catch (err: any) {
@@ -239,4 +211,3 @@ export function useE2EEPreview() {
 
     return { decryptForPreview, downloadStatus, isDownloading, downloadError };
 }
-
