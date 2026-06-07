@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchWithRefresh } from "../../services/api.service";
 import { useParams, useNavigate } from "react-router-dom";
 import { OrgLayout } from "../../components/OrgLayout";
@@ -43,13 +43,15 @@ export default function OrgSettingsPage() {
   const { messages, addMessage, removeMessage } = useMessages();
   const allMessages = messages;
 
+  const isLeavingRef = useRef(false);
+
   const loadOrgSettings = () => {
+    if (isLeavingRef.current) return;
     fetchWithRefresh(`/api/orgs/${id}`)
       .then(res => {
         if (res.status === 404 || res.status === 400) {
-            if (window.location.pathname.includes(`/orgs/${id}`)) {
+          if (isLeavingRef.current) return;
               navigate("/404");
-            }
           return;
         }
         if (!res.ok) {
@@ -118,7 +120,7 @@ export default function OrgSettingsPage() {
     };
 
   const handleMemberChanges = (data: any) => {
-      if (data && (data.org_id === id || data.org_id === undefined)) {
+      if (data && (data.org_id === id || data.org_id === undefined )) {
         loadOrgSettings();
       }
     };
@@ -143,9 +145,11 @@ export default function OrgSettingsPage() {
 
   const handleDeleteOrga = async () => {
     try {
+      isLeavingRef.current = true;
       const response = await fetchWithRefresh(`/api/orgs/${id}`, { method: "DELETE" });
 
       if (!response.ok) {
+          isLeavingRef.current = false;
           if (response.status === 502 || response.status === 503) {
               setError("Network error, please try again later.");
           } else {
@@ -158,6 +162,7 @@ export default function OrgSettingsPage() {
       window.dispatchEvent(new CustomEvent("org-list-changed"));
       navigate("/organizations");
     } catch (err) {
+      isLeavingRef.current = false;
       setError("Network error, please try again.");
     }
   };
@@ -167,9 +172,11 @@ export default function OrgSettingsPage() {
 
   const handleLeaveOrga = async () => {
     try {
+      isLeavingRef.current = true;
       const response = await fetchWithRefresh(`/api/orgs/${id}/members/me`, { method: "DELETE" });
 
       if (!response.ok) {
+          isLeavingRef.current = false;
           if (response.status === 502 || response.status === 503) {
               setModalError("Network error, please try again later.");
           } else {
@@ -178,11 +185,11 @@ export default function OrgSettingsPage() {
           }
           return;
       }
-
       setModalError(null);
       setShowLeaveConfirm(false);
       navigate("/organizations")
     } catch (err) {
+      isLeavingRef.current = false;
       console.error("Network error:", err);
       setModalError("Network error, please try again.");
       return;
