@@ -69,7 +69,7 @@ export function FilePreviewModal({
                     objectUrlRef.current = url;
                     setObjectUrl(url);
 
-                    const { kind: resolvedKind } = resolvePreview(fileName);
+                    const { kind: resolvedKind } = resolvePreview(result.filename);
                     if (resolvedKind === 'text' || resolvedKind === 'code' || resolvedKind === 'markdown') {
                         setIsTextLoading(true);
                         try {
