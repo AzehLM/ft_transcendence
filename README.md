@@ -120,12 +120,6 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 
 # Team information
 
-### Chacun fais sa partie ici (j'ai repris l'ordre des roles du sujet)
-- Pierrick Product Owner (PO) + dev
-- Lou-Anne Project Manager (PM) / Scrum Master + dev
-- Victoire Project Manager (PM) / Scrum Master + dev
-- Guillaume Technical Lead / Architect + dev
-
 ### pnaessen (Pierrick) - Product Owner (PO): Sets vision and priorities + Developer
 
 As Product Owner, defined the platform's vision and core value proposition (zero-knowledge encrypted cloud storage). Managed feature prioritization and coordinated the team's development roadmap through GitHub Projects and Issues, translating business requirements into actionable technical tasks.
@@ -154,9 +148,6 @@ As a developer, owns the storage microservice (client-side encrypted file storag
 
 
 ---
-
-For each member we need:
-  - Assigned roles + brief description of their responsibilities
 
 # Project Management
 
