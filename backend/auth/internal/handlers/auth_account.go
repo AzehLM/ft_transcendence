@@ -276,7 +276,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
         }
     }
 
-	if err := h.Publisher.PublishUserDeleted(context.Background(), userID, transfers, filesToCleanup); err != nil {
+	if err := h.Publisher.PublishUserDeleted(c.Context(), userID, transfers, filesToCleanup); err != nil {
 		log.Printf("[ERROR] Failed to publish user_deleted event for user %s: %v", userIDStr, err)
 	}
 
@@ -295,7 +295,7 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
 	}
 
 	if len(remainingOrgIDs) > 0 {
-		if err := h.Publisher.PublishMemberRemoved(c.Context(), userID, remainingOrgIDs, userEmail, orgNamesMap); err != nil {
+		if err := h.Publisher.PublishMemberRemoved(context.Background(), userID, remainingOrgIDs, userEmail, orgNamesMap); err != nil {
 			log.Printf("[WARN] Failed to publish MEMBER_REMOVED events for user %s: %v", userID, err)
 		}
 	}
@@ -306,11 +306,11 @@ func (h *AuthHandler) DeleteUser(c fiber.Ctx) error {
  			log.Printf("[WARN] Failed to fetch promoted user email for %s: %v", promotedUserID, err)
  		}
 		orgName := orgNamesMap[orgIDStr]
-		if err := h.Publisher.PublishRoleUpdated(c.Context(), orgIDStr, promotedUserID, "owner", orgName, promotedUserEmail); err != nil {
+		if err := h.Publisher.PublishRoleUpdated(context.Background(), orgIDStr, promotedUserID, "owner", orgName, promotedUserEmail); err != nil {
 			log.Printf("[WARN] Failed to publish ROLE_UPDATED event for promoted user %s in org %s: %v", promotedUserID, orgIDStr, err)
 		}
 
-		if err := h.Publisher.PublishToUser(c.Context(), orgIDStr, promotedUserID.String(), orgName); err != nil {
+		if err := h.Publisher.PublishToUser(context.Background(), orgIDStr, promotedUserID.String(), orgName); err != nil {
 			log.Printf("[WARN] Failed to publish direct notification to promoted user %s: %v", promotedUserID.String(), err)
 		}
 	}
@@ -555,7 +555,7 @@ func (h *AuthHandler) ChangeFirstName(c fiber.Ctx) error {
 	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
 		var orgIDs []string
 		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
-			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+			_ = h.Publisher.PublishUserProfileUpdated(context.Background(), userID, orgIDs, user.FirstName, user.FamilyName)
 		}
 	}
 
@@ -605,7 +605,7 @@ func (h *AuthHandler) ChangeFamilyName(c fiber.Ctx) error {
 	if errDb := h.DB.Select("first_name", "family_name").First(&user, userID).Error; errDb == nil {
 		var orgIDs []string
 		if errOrgs := h.DB.Table("org_members").Where("user_id = ?", userID).Pluck("org_id", &orgIDs).Error; errOrgs == nil {
-			_ = h.Publisher.PublishUserProfileUpdated(c.Context(), userID, orgIDs, user.FirstName, user.FamilyName)
+			_ = h.Publisher.PublishUserProfileUpdated(context.Background(), userID, orgIDs, user.FirstName, user.FamilyName)
 		}
 	}
 

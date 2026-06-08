@@ -36,7 +36,6 @@ func (h *Hub) GlobalWSHandler(c *websocket.Conn) {
 		return
 	}
 
-	log.Printf("[WS] New user: %s", userID)
 	ctx := context.Background()
 
 	connID := uuid.New().String()

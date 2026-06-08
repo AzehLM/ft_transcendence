@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -150,7 +152,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		},
 	}
 
-	errPublish := h.Hub.PublishToOrga(c.Context(), orgID.String(), event)
+	errPublish := h.Hub.PublishToOrga(context.Background(), orgID.String(), event)
 	if errPublish != nil {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
 	}
@@ -163,7 +165,7 @@ func (h *OrgaHandler) CreateOrgaMember(c fiber.Ctx) error {
 		},
 	}
 
-	errPublish = h.Hub.PublishToUser(c.Context(), user.ID.String(), userEvent)
+	errPublish = h.Hub.PublishToUser(context.Background(), user.ID.String(), userEvent)
 	if errPublish != nil {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", errPublish)
 	}
@@ -194,7 +196,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 			"error": "role is required",
 		})
 	}
-	
+
 	if body.Role == "owner" {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "error": "cannot manually set role to owner",
@@ -275,7 +277,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 		},
 	}
 
-	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
+	if err := h.Hub.PublishToOrga(context.Background(), orgID.String(), event); err != nil {
 		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), userID.String(), err)
 	}
 
@@ -289,7 +291,7 @@ func (h *OrgaHandler) ChangeRole(c fiber.Ctx) error {
 	}
 
 
-	err = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+	err = h.Hub.PublishToUser(context.Background(), userID.String(), userEvent)
 	if err != nil {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", err)
 	}
@@ -371,14 +373,14 @@ func (h *OrgaHandler) LeaveOrga(c fiber.Ctx) error {
 		Message: targetUser.Email + " has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
-	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+	_ = h.Hub.PublishToOrga(context.Background(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
 		Event:   "REMOVED_FROM_ORGA",
 		Message: "You left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
-	_ = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+	_ = h.Hub.PublishToUser(context.Background(), userID.String(), userEvent)
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
@@ -447,14 +449,14 @@ func (h *OrgaHandler) DeleteMember(c fiber.Ctx) error {
 		Message: targetUser.Email + " has left the organization [" + org.Name + "]",
 		Data:    fiber.Map{"user_id": userID.String()},
 	}
-	_ = h.Hub.PublishToOrga(c.Context(), orgID.String(), orgaEvent)
+	_ = h.Hub.PublishToOrga(context.Background(), orgID.String(), orgaEvent)
 
 	userEvent := ws.WSEvent{
 		Event:   "REMOVED_FROM_ORGA",
 		Message: "You have been removed from the organization [" + org.Name + "]",
 		Data:    fiber.Map{"org_id": orgID.String()},
 	}
-	_ = h.Hub.PublishToUser(c.Context(), userID.String(), userEvent)
+	_ = h.Hub.PublishToUser(context.Background(), userID.String(), userEvent)
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
@@ -607,7 +609,7 @@ func (h *OrgaHandler) TransferOwnership(c fiber.Ctx) error {
 			"role":    "owner",
 		},
 	}
-	if err := h.Hub.PublishToOrga(c.Context(), orgID.String(), event); err != nil {
+	if err := h.Hub.PublishToOrga(context.Background(), orgID.String(), event); err != nil {
 		log.Printf("failed to publish ROLE_UPDATED event for org %s user %s: %v", orgID.String(), newOwnerID.String(), err)
 	}
 
@@ -620,7 +622,7 @@ func (h *OrgaHandler) TransferOwnership(c fiber.Ctx) error {
 		},
 	}
 
-	err = h.Hub.PublishToUser(c.Context(), newOwnerID.String(), userEvent)
+	err = h.Hub.PublishToUser(context.Background(), newOwnerID.String(), userEvent)
 	if err != nil {
 		log.Printf("[WS] Non-blocking error during Redis notification: %v", err)
 	}

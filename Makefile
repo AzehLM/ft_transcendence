@@ -37,12 +37,12 @@ $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR):
 $(ENV_FILE):
 	@[ -f $(ENV_EXAMPLE) ] || (echo "Error: $(ENV_EXAMPLE) not found" && exit 1)
 	cp $(ENV_EXAMPLE) $(ENV_FILE)
-	@echo "$(ENV_FILE) created from $(ENV_EXAMPLE) — edit it before running."
+	@echo "[setup] $(ENV_FILE) created from $(ENV_EXAMPLE) - edit it before running."
 
 
 $(CERT_PATH) $(KEY_PATH): $(HOSTNAME_FILE)
 	@openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
-		-subj "/C=FR/ST=France/L=Lyon/O=42Lyon/OU=DevOps/CN=$(DOMAIN_NAME)" \
+		-subj "/C=FR/ST=France/L=Lyon/O=42Lyon/OU=Ostrom/CN=$(DOMAIN_NAME)" \
 		-addext "subjectAltName=DNS:$(DOMAIN_NAME),DNS:localhost,IP:127.0.0.1" \
 		-keyout $(KEY_PATH) -out $(CERT_PATH)
 
@@ -57,17 +57,20 @@ dirs: $(BACKUP_DIR) $(BACKUP_DAILY_DIR) $(BACKUP_WEEKLY_DIR) $(BACKUP_MINIO_DIR)
 .PHONY: ssl
 ssl: $(CERT_PATH) $(KEY_PATH)
 
+.PHONY: setup
+setup: $(ENV_FILE)
+	@bash scripts/setup.sh
+
 # ---------------------------------- rules -------------------------------------
 
-# dev for now, will be switched for up later
-.DEFAULT_GOAL := dev
+.DEFAULT_GOAL := up
 
 .PHONY: up
-up: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
+up: setup $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_CMD) up -d --build --remove-orphans
 
 .PHONY: dev
-dev: $(ENV_FILE) $(CERT_PATH) $(KEY_PATH) dirs
+dev: setup $(CERT_PATH) $(KEY_PATH) dirs
 	$(COMPOSE_DEV_CMD) up -d --build --remove-orphans
 
 .PHONY: stop
@@ -106,21 +109,6 @@ exec:
 		|| (echo "Usage: make exec <service>" && exit 1)
 	$(COMPOSE_CMD) exec $(word 2,$(MAKECMDGOALS)) sh
 
-# rules to help check
-.PHONY: reset-quota
-reset-quota:
-	@[ -n "$(email)" ] || (echo "Usage: make reset-quota email=<email>" && exit 1)
-	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
-		-c "UPDATE users SET used_space = 0 WHERE email = '\''$(email)'\'';"' 2>/dev/null
-	@echo "[reset-quota] Quota reset for $(email)"
-
-.PHONY: saturate-quota
-saturate-quota:
-	@[ -n "$(email)" ] || (echo "Usage: make saturate-quota email=<email>" && exit 1)
-	@docker exec postgres sh -lc 'psql -U "$$(cat /run/secrets/postgres_user)" -d "$$(cat /run/secrets/postgres_db)" \
-		-c "UPDATE users SET used_space = max_space WHERE email = '\''$(email)'\'';"' 2>/dev/null
-	@echo "[saturate-quota] Quota saturated for $(email)"
-
 .PHONY: backup
 backup:
 	@[ -n "$(type)" ] || (echo "Usage: make backup type=<postgres|minio>" && exit 1)
@@ -157,7 +145,7 @@ clean: down
 
 .PHONY: fclean
 fclean: clean
-#	@$(COMPOSE_CMD) down --volumes --remove-orphans
+	@$(COMPOSE_CMD) down --volumes --remove-orphans
 	@$(COMPOSE_DEV_CMD) down --volumes --remove-orphans
 	@rm -rf frontend/node_modules frontend/dist
 	@rm -rf ${HOME}/backups
@@ -169,13 +157,14 @@ db-reset:
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
-		-c "TRUNCATE users, organizations, org_members, files, folders CASCADE;" >/dev/null
+		-c "TRUNCATE users, organizations, user_avatars, org_members, files, folders CASCADE;" >/dev/null
 	@echo "[db-reset] Done. Current counts:"
 	@docker exec postgres psql \
 		-U $$(cat secrets/postgres/postgres_user.txt) \
 		-d $$(cat secrets/postgres/postgres_db.txt) \
 		-c "SELECT 'users' AS table, COUNT(*) FROM users \
 			UNION ALL SELECT 'organizations', COUNT(*) FROM organizations \
+			UNION ALL SELECT 'user_avatars', COUNT(*) FROM user_avatars \
 			UNION ALL SELECT 'org_members', COUNT(*) FROM org_members \
 			UNION ALL SELECT 'folders', COUNT(*) FROM folders \
 			UNION ALL SELECT 'files', COUNT(*) FROM files;"

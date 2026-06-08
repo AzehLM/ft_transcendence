@@ -63,7 +63,7 @@ export function useRequireUnauth() {
           }
 
           localStorage.setItem("token", data.access_token);
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
         } else {
             localStorage.removeItem("token");
           await clearAllKeys();

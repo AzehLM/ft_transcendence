@@ -44,31 +44,16 @@
         # HSTS (force HTTPS)
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-        # CSP (customize later)
-        # the localhost:9000 connect-src is to test CORS (Cross-Origin Resource Sharing) setup from frontend to minio directly
         Content-Security-Policy "
             default-src 'self';
-            frame-src blob:;
             script-src 'self';
+            frame-src blob:;
+            media-src 'self' blob:;
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
-            connect-src 'self' http://localhost:9000 https://ostrom.cloud;
+            connect-src 'self';
             frame-ancestors 'none';
         "
-		# Content-Security-Policy "
-		# 	default-src 'self';
-		# 	script-src 'self' 'unsafe-inline' 'unsafe-eval';
-		# 	style-src 'self' 'unsafe-inline';
-		# 	img-src 'self' data: blob:;
-		# 	font-src 'self' data:;
-		# 	connect-src 'self' wss:;
-		# 	frame-ancestors 'self';
-		# "
-
-        # CORS for API
-        # Access-Control-Allow-Origin "*"
-        # Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        # Access-Control-Allow-Headers "Content-Type, Authorization"
     }
 
 

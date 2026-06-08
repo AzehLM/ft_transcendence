@@ -600,7 +600,7 @@ func (s *storageService) ListOrgContents(userID uuid.UUID, orgID uuid.UUID, fold
 	return folders, files, nil
 }
 
-
+// URLs have to be secured (HTTPS), so the client's browser will communicate securely with MinIO
 func (s *storageService) presignedBaseURL(hostname string) string {
 	if hostname == s.env.DomainName {
 		return "https://" + s.env.DomainName
@@ -795,7 +795,7 @@ func (s *storageService) FinalizeMultipartUpload(ctx context.Context, userID uui
 		return uuid.Nil, err
 	}
 
-	_ = s.publisher.PublishFileUploaded(ctx, file, userID)
+	_ = s.publisher.PublishFileUploaded(context.Background(), file, userID)
 	return file.ID, nil
 }
 

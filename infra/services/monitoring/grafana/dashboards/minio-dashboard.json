@@ -50,18 +50,12 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 5368709120
-              },
-              {
-                "color": "red",
-                "value": 9663676416
-              }
+              { "color": "#2ECC71", "value": 5368709120 },
+              { "color": "#58D68D", "value": 10737418240 },
+              { "color": "#A3E635", "value": 21474836480 },
+              { "color": "#F1C40F", "value": 42949672960 },
+              { "color": "#F39C12", "value": 85899345920 },
+              { "color": "#E74C3C", "value": 128849018880 }
             ]
           },
           "unit": "bytes"
@@ -641,8 +635,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(minio_api_requests_total[2m])",
-          "legendFormat": "Total",
+          "expr": "sum by(name) (rate(minio_api_requests_total{name!~\"PutBucket|GetBucketLocation|HeadBucket\"}[2m]))",
+          "legendFormat": "{{name}}",
           "refId": "A"
         },
         {
@@ -755,7 +749,7 @@
             "uid": "prometheus"
           },
           "expr": "rate(minio_api_requests_traffic_sent_bytes[2m])",
-          "legendFormat": "Sent",
+          "legendFormat": "{{type}}",
           "refId": "A"
         }
       ],

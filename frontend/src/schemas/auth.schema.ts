@@ -1,20 +1,23 @@
 import { z } from "zod";
 
+const SPECIAL_CHARS_REGEX = /[^a-zA-Z0-9]/;
+const SPECIAL_CHARS_EXAMPLES = `!@#$%^&*+-_=?.,;:'"/\\()[]{}|~\``;
+
 // reused when changing password in settings page
 const passwordSchema = z
 	.string()
 	.min(8, { message: "Password must be at least 8 characters" })
-	.max(20, { message: "Password must be less than 20 characters" })
+	.max(128, { message: "Password must be less than 128 characters" })
 	.refine((password) => /[A-Z]/.test(password), {
-		message: "Password must be at least contain one uppercase character",
+		message: "Password must contain at least one uppercase letter",
 	})
 	.refine((password) => /[a-z]/.test(password), {
-		message: "Password must be at least contain one lowercase character",
+		message: "Password must contain at least one lowercase letter",
 	})
-	.refine((password) => /[0-9]/.test(password), { message: "Password must be at least contain one number" })
-	.refine((password) => /[!@#$%^&*]/.test(password), {
-		message: "Password must be at least contain one special character",
-	});
+	.refine((password) => /[0-9]/.test(password), { message: "Password must contain at least one number" })
+	.refine((password) => SPECIAL_CHARS_REGEX.test(password), {
+		message: `Password must contain at least one special character (e.g. ${SPECIAL_CHARS_EXAMPLES})`,
+});
 
 export const registerSchema = z
 	.object({
@@ -43,9 +46,9 @@ export const changePasswordSchema = z
 		path: ["confirmPassword"],
 	})
 	.refine((data) => data.current !== data.newPassword, {
-		message: "New password must be different from current password",
+		message: "New password must be different from your current password",
 		path: ["newPassword"]
-	});
+});
 
 
 // need to infer schemas to be source of true

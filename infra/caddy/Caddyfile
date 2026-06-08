@@ -4,8 +4,6 @@
     servers {
         metrics
     }
-
-	local_certs
 }
 
 
@@ -22,6 +20,8 @@
         Content-Security-Policy "
             default-src 'self';
             script-src 'self';
+            frame-src blob:;
+            media-src 'self' blob:;
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
             connect-src 'self';
@@ -102,8 +102,8 @@
     }
 }
 
-localhost:443 {
-    tls internal
+:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
     import app
 }
 

@@ -35,6 +35,11 @@ func LoadEnv() (*Env, error) {
 		return nil, fmt.Errorf("secret postgres_user: %v", err)
 	}
 
+	postgresDBname, err := ReadSecret("postgres_db")
+	if err != nil {
+		return nil, fmt.Errorf("secret postgres_db: %v", err)
+	}
+
 	jwtSecret, err := ReadSecret("jwt_secret")
 	if err != nil {
 		return nil, fmt.Errorf("secret jwt_secret: %v", err)
@@ -48,7 +53,7 @@ func LoadEnv() (*Env, error) {
 	env := &Env{
 		PostgresHost:		os.Getenv("POSTGRES_HOST"),
 		PostgresPort:		os.Getenv("POSTGRES_PORT"),
-		PostgresDBname:		os.Getenv("POSTGRES_DB_NAME"),
+		PostgresDBname:		postgresDBname,
 		PostgresUser:		postgresUser,
 		PostgresPassword:	postgresPassword,
 		JwtSecret:			jwtSecret,

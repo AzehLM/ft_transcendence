@@ -119,6 +119,7 @@ services:
   adminer:
     container_name: adminer
     image: adminer@sha256:3a1582df310cf49a3c9cad2882496eed4596563f8d33250703f8b26e538cef7d
+    init: true
     networks:
       - dev
     restart: unless-stopped
@@ -197,6 +198,7 @@ services:
       - minio_admin_pwd
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
       - redis_pwd
     depends_on:
@@ -218,6 +220,7 @@ services:
       - redis_pwd
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
     env_file:
       - ../.env
@@ -244,6 +247,7 @@ services:
     secrets:
       - postgres_pwd
       - postgres_user
+      - postgres_db
       - jwt_secret
       - redis_pwd
     depends_on:
