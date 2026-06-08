@@ -248,7 +248,7 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Folder hierarchy** - gueberso - create, rename, move, delete folders. Cyclic detection to prevent moving folder into one of its descendants
 - **File operations** - gueberso - move between folders, delete (with cascade to MinIO via Redis stream events).
 - **Quota enforcement** - gueberso **& d'autres ?** - per-user and per-org quotas (5GB default), atomic queries to avoid TOCTOU races, rollback if the upload fails after the increment.
-- **MIME-type validation** - pnaessen (frontend) & gueberso (backend) - magic-number detection via file type before encryption, extension check and rejection of unrecognized types
+- **MIME-type validation** - pnaessen (frontend) & gueberso (backend) - magic-number detection before encryption: accepts all file types by default, but rejects files if their content does not match their extension (e.g. rejecting an MP3 renamed to PNG), while allowing unknown extensions
 - **Folder path** - lbuisson - added a folder path resolution with cycle detection
 
 ### Organization (fully done by lbuisson)
@@ -359,7 +359,7 @@ The following is a complete inventory of implemented features, grouped by domain
 ### **File upload and management system  - *Minor***
 
 - **Why**: it is the core feature of the plateform. Must handle large files, partial failures without exposing plaintext to the server.
-- **Implementation**: dual-mode upload (single-PUT or multipart depending on file size). Pre-encryption mime.types validation via magic-numbers. Per-chunk IV derivation for multipart, folder hierarchy with cyclic-move detection, quota enforcement + rollback/soft-delete + Redis-stream-driven MinIO cleanup.
+- **Implementation**: dual-mode upload (single-PUT or multipart depending on file size). Pre-encryption magic-number validation (accepting all file types, but rejecting extension mismatches like an MP3 renamed to PNG). Per-chunk IV derivation for multipart, folder hierarchy with cyclic-move detection, quota enforcement + rollback/soft-delete + Redis-stream-driven MinIO cleanup.
 - **Owner(s)**: gueberso for the backend and business logic, pnaessen/vicperri for the upload/download - encryption/decryption implementation in the frontend
 
 ### **Support for additional browsers - *Minor***
