@@ -207,8 +207,6 @@ The core entity storing authentication tokens (zero-knowledge architecture using
 * `first_name`, `family_name` (`VARCHAR(100)`): personal information
 * `two_factor_enabled` (`BOOLEAN`), `  totp_secret_encrypted`, `   recovery_codes_hashed` (`BYTEA`): implement Time-Based One-Time Password (TOTP) security
 
-
-
 #### `user_avatars`
 
 A strict **1:1 relationship** extension of the `users` table. Isolating large binary blob data (`BYTEA`) prevents slowing down standard, high-frequency lookups on the primary user table.
@@ -217,8 +215,6 @@ A strict **1:1 relationship** extension of the `users` table. Isolating large bi
 * `user_id` (`UUID`, PK, FK): References `users(id)` with cascading deletion.
 * `data` (`BYTEA`): Raw binary data of the profile image.
 
-
-
 #### `organizations`
 
 Represents shared enterprise or group environments, containing its own dedicated storage volume metrics.
@@ -226,7 +222,6 @@ Represents shared enterprise or group environments, containing its own dedicated
 * **Key Fields:**
 * `id` (`UUID`, PK): Unique organization identifier.
 * `public_key` (`BYTEA`): The organization's public key used for encrypting shared items.
-
 * `name` (`VARCHAR(100)`): Organization name
 * `used_space`, `max_space` (`BIGINT`): Storage metrics tracked in bytes (defaults to 5 GB).
 
@@ -240,8 +235,6 @@ A **junction table** facilitating the **N:M (Many-to-Many) relationship** betwee
 * `enc_org_priv_key`, `enc_aes_key`, `iv` (`BYTEA`): Corporate keys encrypted specifically for this member to grant access to organization files.
 * `description` (`VARCHAR(250)`): Organization description specific to the member
 
-
-
 #### `folders`
 
 A hierarchical structure container used to organize files. A folder can belong to an individual user, or be tied to an organization.
@@ -252,8 +245,6 @@ A hierarchical structure container used to organize files. A folder can belong t
 * `org_id` (`UUID`, FK, Nullable): If filled, the folder belongs to a shared organizational space rather than a private user space.
 * `parent_id` (`UUID`, FK, Nullable): Points back to `folders(id)`. This **self-reference** creates nested folder trees.
 * `name` (`VARCHAR(100)`): Folder name
-
-
 
 #### `files`
 
