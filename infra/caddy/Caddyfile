@@ -21,6 +21,8 @@
             default-src 'self';
             frame-src blob:;
             script-src 'self';
+            frame-src blob:;
+            media-src 'self' blob:;
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: blob:;
             connect-src 'self';
