@@ -258,7 +258,7 @@ Metadata repository for files physically stored in an object storage engine (suc
 * `name` (`VARCHAR(2048)`): File name encrypted
 * `owner_user_id` (`UUID`): The user who created the file.
 * `org_id` (`UUID`, Nullable): If filled, the folder belongs to a shared organizational space rather than a private user space.
-* `status` (`VARCHAR(20)`): PENDING when loading (default), pass to ACTIVE when file is fully saved in DB
+* `status` (`VARCHAR(20)`): PENDING when loading (default), passing to ACTIVE when the file is fully saved in DB
 * `upload_id` (`VARCHAR(25)`): Allow to track upload
 * `file_size` (`BIGINT`): size of the file
 
@@ -270,6 +270,8 @@ Metadata repository for files physically stored in an object storage engine (suc
 * **Cascading Deletes (`ON DELETE CASCADE`):** If a user deletes their account or an organization is dissolved, PostgreSQL automatically wipes all dependent rows (memberships, folders, avatars) to prevent orphaned data.
 * **File Safety on Folder Deletion (`ON DELETE SET NULL`):** In the `files` table, the foreign key link to folders uses `ON DELETE SET NULL`. If a folder is deleted, **its contents are not deleted**; instead, their `folder_id` changes to `NULL`, conceptually moving them to the "Root" directory.
 * **Performance Indexing:** Explicit indexes on `folders(parent_id)` and `files(folder_id)` ensure that listing subfolders or fetching all files within a directory remains instant, even as your dataset scales to millions of entries.
+
+
 # Features List
 
 The following is a complete inventory of implemented features, grouped by domain. Each feature lists the members who worked for its implementation
