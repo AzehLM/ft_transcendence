@@ -198,8 +198,6 @@ Task tracking and development workflow were handled through GitHub Issues and Gi
 
 # Database Schema
 
-# Database Schema
-
 ### Visual representation
 ![DB](docs/images/DB.png)
 
