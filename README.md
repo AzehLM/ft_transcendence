@@ -365,7 +365,9 @@ The following is a complete inventory of implemented features, grouped by domain
 ### **Support for additional browsers - *Minor***
 
 - **Why**: the project aim for large scale so this was a logic choice.
-- **Implementation**: frontend relies only on standardized Web Crypto API primitives (PBKDF2, AES-GCM, RSA-OAEP, SHA-256) and standard `fetch` / Websocket APIs
+- **Implementation**: frontend relies only on standardized Web Crypto API primitives (PBKDF2, AES-GCM, RSA-OAEP, SHA-256) and standard `fetch` / Websocket APIs. For downloading decrypted files:
+  - **Chrome / Chromium browsers** (supporting the File System Access API): streams and decrypts chunks directly to disk using `showSaveFilePicker` and a `FileSystemWritableFileStream` to avoid high memory usage.
+  - **Firefox** (lacking File System Access API): falls back to accumulating decrypted chunks in RAM, creating a `Blob` in memory, and triggering the download via an object URL once completion is reached.
 - **Owner(s)**: vicperri, lbuisson, pnaessen
 
 ### **Standard user management & authentication - *Major***
