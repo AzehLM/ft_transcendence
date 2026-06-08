@@ -596,6 +596,8 @@ Alongside lbuisson, co-led the Scrum Master role throughout the project. Key res
 
 ---
 
-## Other informations such as:
+### Credits
 
-- Known limitations, credits
+> [!NOTE]
+> Thanks to ***pjarnac, aascedu, lbutel, elagouch, bwisniew, mjuffard*** for their feedbacks on UI/UX and features improvements.  
+> Thanks to ***ebini, oelleaum, pabellis, lgirerd*** for their help on testing and fixing details

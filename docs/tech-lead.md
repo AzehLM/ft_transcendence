@@ -94,7 +94,6 @@ The core security guarantee of Ostrom is that **uploaded files are never in plai
 
 **Client-side mitigations in place** (acknowledged as bypassable, not presented as security guarantees):
 
-- MIME type and file extension validation before encryption
 - File size limits enforced before upload
 
 These act as friction against accidental misuse only.
