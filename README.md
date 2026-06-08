@@ -120,12 +120,6 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 
 # Team information
 
-### Chacun fais sa partie ici (j'ai repris l'ordre des roles du sujet)
-- Pierrick Product Owner (PO) + dev
-- Lou-Anne Project Manager (PM) / Scrum Master + dev
-- Victoire Project Manager (PM) / Scrum Master + dev
-- Guillaume Technical Lead / Architect + dev
-
 ### pnaessen (Pierrick) - Product Owner (PO): Sets vision and priorities + Developer
 
 As Product Owner, defined the platform's vision and core value proposition (zero-knowledge encrypted cloud storage). Managed feature prioritization and coordinated the team's development roadmap through GitHub Projects and Issues, translating business requirements into actionable technical tasks.
@@ -154,9 +148,6 @@ As a developer, owns the storage microservice (client-side encrypted file storag
 
 
 ---
-
-For each member we need:
-  - Assigned roles + brief description of their responsibilities
 
 # Project Management
 
@@ -198,15 +189,88 @@ Task tracking and development workflow were handled through GitHub Issues and Gi
 
 # Database Schema
 
-> [!NOTE]
-> **je vous laisse faire ca**
+### Visual representation
+![DB](docs/images/DB.png)
 
 
-prérequis sujet:
+### 2. Table Breakdowns: Key Fields & Data Types
 
-- Visual representation or description of the DB structure
-- Tables/collections and their relationships
-- Key fields and data types
+#### `users`
+
+The core entity storing authentication tokens (zero-knowledge architecture using salts and keys), user profiles, and storage tracking.
+
+* **Key Fields:**
+* `id` (`UUID`, PK): Generated via `gen_random_uuid()`.
+* `email` (`VARCHAR(250)`, Unique): User's login identifier.
+* `client_salt`, `server_salt`, `iv`, `public_key`, `encrypted_private_key` (`BYTEA`): Binary cryptographic data used to secure encryption keys client-side.
+* `used_space`, `max_space` (`BIGINT`): Storage metrics tracked in bytes (defaults to 5 GB).
+* `first_name`, `family_name` (`VARCHAR(100)`): personal information
+* `two_factor_enabled` (`BOOLEAN`), `  totp_secret_encrypted`, `   recovery_codes_hashed` (`BYTEA`): implement Time-Based One-Time Password (TOTP) security
+
+#### `user_avatars`
+
+A strict **1:1 relationship** extension of the `users` table. Isolating large binary blob data (`BYTEA`) prevents slowing down standard, high-frequency lookups on the primary user table.
+
+* **Key Fields:**
+* `user_id` (`UUID`, PK, FK): References `users(id)` with cascading deletion.
+* `data` (`BYTEA`): Raw binary data of the profile image.
+
+#### `organizations`
+
+Represents shared enterprise or group environments, containing its own dedicated storage volume metrics.
+
+* **Key Fields:**
+* `id` (`UUID`, PK): Unique organization identifier.
+* `public_key` (`BYTEA`): The organization's public key used for encrypting shared items.
+* `name` (`VARCHAR(100)`): Organization name
+* `used_space`, `max_space` (`BIGINT`): Storage metrics tracked in bytes (defaults to 5 GB).
+
+#### `org_members`
+
+A **junction table** facilitating the **N:M (Many-to-Many) relationship** between users and organizations.
+
+* **Key Fields:**
+* `org_id` + `user_id` (`UUID`): Ensures a user cannot join the same organization multiple times.
+* `role` (`VARCHAR(20)`): Enforced by a `CHECK` constraint to restrict values to `'owner'`, `'admin'`, or `'member'`.
+* `enc_org_priv_key`, `enc_aes_key`, `iv` (`BYTEA`): Corporate keys encrypted specifically for this member to grant access to organization files.
+* `description` (`VARCHAR(250)`): Organization description specific to the member
+
+#### `folders`
+
+A hierarchical structure container used to organize files. A folder can belong to an individual user, or be tied to an organization.
+
+* **Key Fields:**
+* `id` (`UUID`, PK): Unique folder identifier.
+* `owner_user_id` (`UUID`, FK): The user who created the folder.
+* `org_id` (`UUID`, FK, Nullable): If filled, the folder belongs to a shared organizational space rather than a private user space.
+* `parent_id` (`UUID`, FK, Nullable): Points back to `folders(id)`. This **self-reference** creates nested folder trees.
+* `name` (`VARCHAR(100)`): Folder name
+
+#### `files`
+
+Metadata repository for files physically stored in an object storage engine (such as MinIO).
+
+* **Key Fields:**
+* `id` (`UUID`, PK): Unique file identifier.
+* `minio_object_key` (`UUID`, Unique): The absolute pointer/filename of the object inside your MinIO bucket.
+* `folder_id` (`UUID`, FK, Nullable): The parent folder. If `NULL`, the file resides in the root directory.
+* `encrypted_dek`, `iv` (`BYTEA`): The encrypted Data Encryption Key parameters required to decrypt the file client-side.
+* `name` (`VARCHAR(2048)`): File name encrypted
+* `owner_user_id` (`UUID`): The user who created the file.
+* `org_id` (`UUID`, Nullable): If filled, the folder belongs to a shared organizational space rather than a private user space.
+* `status` (`VARCHAR(20)`): PENDING when loading (default), passing to ACTIVE when the file is fully saved in DB
+* `upload_id` (`VARCHAR(25)`): Allow to track upload
+* `file_size` (`BIGINT`): size of the file
+
+---
+
+### 3. Key Relationships & Integrity Rules
+
+* **Single Owner Enforcement (`unique_org_owner`):** The partial index `CREATE UNIQUE INDEX unique_org_owner ON org_members (org_id) WHERE role = 'owner';` is an excellent architectural choice. It enforces a database-level constraint guaranteeing that **an organization can only have one owner**, while still allowing multiple admins or regular members.
+* **Cascading Deletes (`ON DELETE CASCADE`):** If a user deletes their account or an organization is dissolved, PostgreSQL automatically wipes all dependent rows (memberships, folders, avatars) to prevent orphaned data.
+* **File Safety on Folder Deletion (`ON DELETE SET NULL`):** In the `files` table, the foreign key link to folders uses `ON DELETE SET NULL`. If a folder is deleted, **its contents are not deleted**; instead, their `folder_id` changes to `NULL`, conceptually moving them to the "Root" directory.
+* **Performance Indexing:** Explicit indexes on `folders(parent_id)` and `files(folder_id)` ensure that listing subfolders or fetching all files within a directory remains instant, even as your dataset scales to millions of entries.
+
 
 # Features List
 
