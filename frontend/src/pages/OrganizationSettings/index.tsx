@@ -119,6 +119,7 @@ export default function OrgSettingsPage() {
     };
 
   const handleMemberChanges = (data: any) => {
+      if (data?.user_id && data.user_id === userID) return;
       if (data && (data.org_id === id || data.org_id === undefined )) {
         loadOrgSettings();
       }

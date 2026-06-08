@@ -153,7 +153,8 @@ export default function OrgMembersPage() {
   }, [id, navigate, status]);
 
   useEffect(() => {
-    const handleMemberChange = () => {
+    const handleMemberChange = (data: any) => {
+      if (data?.user_id && data.user_id === myUserId) return;
       fetchMembers();
     };
 
