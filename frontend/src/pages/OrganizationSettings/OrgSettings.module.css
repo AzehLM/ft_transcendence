@@ -134,6 +134,11 @@
     min-width: 220px;
     outline: none;
     transition: border-color 0.2s ease;
+    max-width: 280px;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .selectMember:focus {
@@ -201,6 +206,7 @@
 
     .selectMember {
         width: 100%;
+        max-width: 100%;
     }
 }
 
