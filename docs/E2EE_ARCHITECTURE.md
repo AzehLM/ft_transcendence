@@ -18,7 +18,7 @@ The platform is designed to guarantee zero-knowledge privacy
 Before encrypting, files are validated in [fileValidation.service.ts](../frontend/src/services/fileValidation.service.ts):
 1. **Size check:** Files must not exceed the limit (`MAX_FILE_SIZE = 2 GB` in [uploadConfig.ts](../frontend/src/config/uploadConfig.ts)).
 2. **Type verification:** The client reads the first 4100 bytes of the file and uses `file-type` to detect the actual MIME type based on binary signatures.
-3. **Extension matching:** The detected MIME type is validated against the allowed types in [mime.types](../frontend/src/config/mime.types). The file extension must match the allowed list for that MIME type.
+3. **Extension matching:** The file extension is validated against the detected MIME type to prevent extension-spoofing (e.g. rejecting an MP3 file renamed to PNG). If the extension is unknown or does not have a defined mapping in [mime.types](../frontend/src/config/mime.types), the file is accepted by default.
 
 ### B. Encryption Mechanism
 When a file is approved for upload:
