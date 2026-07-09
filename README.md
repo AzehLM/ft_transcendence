@@ -359,14 +359,6 @@ The following is a complete inventory of implemented features, grouped by domain
 - **CI/CD** - GitHub Actions: golangci-lint matrix (one job per service: storage / auth / orga / shared) and a Postman collection run on every PR with the full stack spun up in dev mode.
 - **Self-signed TLS cert generation** - Makefile generates a per-host SSL cert on first build for local development (whic is also used in prod).
 
-
----
-
-
-- Complete list of implemented features
-- Which team member(s) worked on each features
-- Brief descritioon of each feature's functionality
-
 # Modules
 
 ### Points Summary
@@ -478,19 +470,7 @@ The following is a complete inventory of implemented features, grouped by domain
 - **Implementation**: Web Crypto API exclusively — no third-party crypto library. PBKDF2 (100 000 iterations, SHA-256) derives a Master Key client-side; an RSA-OAEP 4096-bit key pair is generated at registration, the private key wrapped with AES-GCM 256-bit using the Master Key and stored in IndexedDB. An HMAC-SHA256 auth hash is sent to the server instead of the password. Files are encrypted with a per-file AES-GCM DEK split into 32 MB chunks with per-chunk IV derivation; the DEK and filename are RSA-OAEP encrypted with the owner's public key. Org keys use a double-wrapping scheme: the org private key is AES-GCM wrapped, and that AES key is RSA-OAEP encrypted per member individually.
 - **Owner(s)**: vicperri, pnaessen, lbuisson for the registration/login crypto and the frontend upload/download encryption hooks, gueberso for the storage backend and presigned-URL integration
 
----
-
-- list of all chosen modules (major and minor)
-- Point calculation
-- **Justification for each module choice**
-- How each module was implemented
-- Which team member worked on each module
-
 # Individual contribution
-
-- Detailed breakdown of what each team member contributed
-- Specific features, modules, or components implemented by each person
-- Any challenges faced and how they were overcome
 
 ## pnaessen (Pierrick) - Product Owner & Developer
 
@@ -535,7 +515,6 @@ As the tech lead, generally made the research on differents possible stacks to u
 ### Project Maneger
 In my role as Project Manager, I spearheaded team coordination by organizing and facilitating key agile meetings and technical syncs. I was responsible for delivering actionable meeting minutes and keeping documentation up to date, while driving efficient cross-team communication to ensure project alignment and smooth delivery.
 
-
 ### Backend
 
 * **Full Organization Backend Service:** Architected the entire backend/orga microservice from scratch, including API entrypoints, business logic, Repository Pattern data separation, and reusable RBAC middleware (`RequireRole`).
@@ -559,14 +538,11 @@ In my role as Project Manager, I spearheaded team coordination by organizing and
 * **Challenge 2: Securing E2EE workflows across asymmetric frontend views without repeating security logic.**
 * *Solution:* Instead of writing ad-hoc validation on every page, I centralized the cryptographic validation layer into a reusable `useKeyCheck` hook. I also hooked this logic directly into the `MainLayout` route-change listener to enforce automated session logouts immediately if vital keys are missing.
 
-
 * **Challenge 3: Preventing destructive concurrent actions (like double-clicking a delete button) during slow asynchronous API requests.**
 * *Solution:* I overhauled our global `ConfirmationModal` to natively track internal asynchronous loading states. By dynamically disabling buttons and rendering visual loader feedback until the backend responds, I successfully eliminated duplicate API submissions and race conditions.
 
-
 * **Challenge 4: Managing fragmented user feedback and removing local state duplication across cryptographic workflows.**
 * *Solution:* I engineered a unified, animated `FeedbackMessageContainer` notification system driven by a global custom `useFeedbackMessage` hook. I then refactored core asynchronous flows—like `useE2EEDownload`—to leverage this centralized pipeline with automated timeouts. This successfully eliminated redundant local status states, sanitized the `UploadStatus` view component, and uniformized success, error, and info alerting application-wide.
-
 
 ## vicperri (Victoire) - Project Manager / Scrum Master & Developer
 
@@ -592,7 +568,6 @@ Alongside lbuisson, co-led the Scrum Master role throughout the project. Key res
 - **Zero-knowledge 2FA secret storage** - Storing the TOTP secret securely while keeping it decryptable at login time required careful key derivation design. The solution — deriving the encryption key from `userID + clientSalt` via PBKDF2 — meant the server can re-derive the key at login without ever storing it, which preserves the zero-knowledge model while adding 2FA on top of it.
 - **Scoped temporary token architecture** - The two-step login flow (password → 2FA code) required a way to keep state between the two HTTP calls without exposing a full session. Designing the scoped `tmp_token` JWT and the `VerifyTempSession` middleware to reject regular access tokens at the 2FA endpoints took several design iterations to get right.
 - **Frontend structure ownership** - Building the core frontend early in the project meant making architectural choices (routing, module layout, CSS strategy) that would affect everyone. Coordinating these decisions while also handling Scrum Master duties required constant communication with the rest of the team.
-
 
 ---
 
