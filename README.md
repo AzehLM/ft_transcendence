@@ -98,7 +98,6 @@ make fclean			# deletes every container/images/volumes
 - [Redis](https://redis.io/docs/latest/develop/clients/go/)
 - [Postgres 18](https://www.postgresql.org/docs/18/index.html)
 - [GORM](https://gorm.io/docs/index.html)
-- ...
 
 ### Inspiration
 
@@ -115,8 +114,6 @@ AI tools were used as assistants for review, debugging, and design exploration. 
 - Claude / Perplexity / Gemini / ChatGPT for:
   - debugging and identifying bugs or performance improvement (e.g. quota race conditions (and avoid TOCTOU), RBAC edge cases)
   - clarifying documentation and library usage (Fiber, GORM, MinIO presigned URLs, Prometheus)
-  - ...
-- ...
 
 # Team information
 
